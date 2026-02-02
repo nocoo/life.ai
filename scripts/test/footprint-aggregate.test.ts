@@ -1,5 +1,6 @@
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { rmSync } from "node:fs";
-import { openDb } from "../../scripts/db/db";
+import { openDb, testDbPath } from "../import/footprint/db";
 
 const createSchema = (db: ReturnType<typeof openDb>) => {
   db.exec(`
@@ -61,10 +62,10 @@ const seed = (db: ReturnType<typeof openDb>) => {
   insert.run("footprint", "2024-01-08", "2024-01-08T00:00:00Z", 4, 5, 6, 4, 13);
 };
 
-import { aggregate } from "../../scripts/db/aggregate";
+import { aggregate, runAggregateCli } from "../import/footprint/aggregate";
 
 describe("aggregate", () => {
-  const dbFile = "db/test-footprint.sqlite";
+  const dbFile = testDbPath;
 
   beforeEach(() => {
     rmSync(dbFile, { force: true });
@@ -131,6 +132,21 @@ describe("aggregate", () => {
     expect(day.count).toBe(3);
     expect(week.count).toBe(2);
     expect(month.count).toBe(1);
+    expect(year.count).toBe(1);
+
+    db.close();
+  });
+
+  it("runs from the module entrypoint", () => {
+    const db = openDb(dbFile);
+    createSchema(db);
+    seed(db);
+
+    runAggregateCli({ force: true });
+
+    const year = db.query(
+      "select count(*) as count from track_year_agg where source = 'footprint'"
+    ).get() as { count: number };
     expect(year.count).toBe(1);
 
     db.close();

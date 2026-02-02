@@ -1,6 +1,7 @@
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { rmSync, writeFileSync } from "node:fs";
-import { loadGpx } from "../../scripts/db/load-gpx";
-import { openDb } from "../../scripts/db/db";
+import { loadGpx } from "../import/footprint/load-gpx";
+import { openDb, testDbPath } from "../import/footprint/db";
 
 const createSchema = (db: ReturnType<typeof openDb>) => {
   db.exec(`
@@ -15,12 +16,43 @@ const createSchema = (db: ReturnType<typeof openDb>) => {
       speed real,
       course real
     );
+    create table track_day_agg (
+      source text not null,
+      day text not null,
+      point_count integer not null,
+      min_ts text,
+      max_ts text,
+      avg_speed real,
+      min_lat real,
+      max_lat real,
+      min_lon real,
+      max_lon real,
+      primary key (source, day)
+    );
+    create table track_week_agg (
+      source text not null,
+      week_start text not null,
+      point_count integer not null,
+      primary key (source, week_start)
+    );
+    create table track_month_agg (
+      source text not null,
+      month text not null,
+      point_count integer not null,
+      primary key (source, month)
+    );
+    create table track_year_agg (
+      source text not null,
+      year integer not null,
+      point_count integer not null,
+      primary key (source, year)
+    );
   `);
 };
 
 
 describe("load gpx", () => {
-  const dbFile = "db/test-load.sqlite";
+  const dbFile = testDbPath;
   const gpxFile = "db/test.gpx";
 
   beforeEach(() => {
@@ -47,7 +79,7 @@ describe("load gpx", () => {
 
     const db = openDb(dbFile);
     createSchema(db);
-    const count = await loadGpx(db, gpxFile, "footprint");
+    const count = await loadGpx(db, 2024, gpxFile, "footprint");
 
     const rows = db.query("select count(*) as count from track_point").get() as {
       count: number;
@@ -62,7 +94,7 @@ describe("load gpx", () => {
     const db = openDb(dbFile);
     createSchema(db);
 
-    await expect(loadGpx(db, "db/missing.gpx", "footprint")).rejects.toThrow(
+    await expect(loadGpx(db, 2024, "db/missing.gpx", "footprint")).rejects.toThrow(
       "GPX file not found"
     );
 
