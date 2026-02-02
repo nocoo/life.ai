@@ -1,4 +1,4 @@
-# 02 data structure - footprint
+# 02 footprint 数据结构
 
 ## 概览
 这份数据来自 footprint 项目导出，目前仅包含轨迹文件（GPX）。
