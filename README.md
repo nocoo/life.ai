@@ -40,3 +40,10 @@ bun run db:agg
 - pre-push：运行 UT + Lint
 
 覆盖率要求：90% 以上（UT 需通过覆盖率门槛）。
+
+## Husky 与质量门禁
+- Husky 路径：`.husky/`（需要保持 `core.hooksPath` 指向根目录 `.husky`）
+- 禁止跳过测试：pre-commit 与 pre-push 均强制执行
+- 运行方式：
+  - `bun run ut`
+  - `bun run lint`
