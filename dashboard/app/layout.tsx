@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Footprint Dashboard",
-  description: "Footprint data visualization dashboard",
+  title: "Life.ai",
+  description: "Life.ai dashboard",
 };
 
 export default function RootLayout({
