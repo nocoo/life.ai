@@ -66,8 +66,8 @@ export const aggregate = (
   db.exec("commit");
 };
 
-/* c8 ignore start */
-if (import.meta.main) {
+export const runAggregateCli = (options?: { force?: boolean }) => {
+  if (!options?.force && !import.meta.main) return;
   const db = openDb();
   try {
     aggregate(db);
@@ -75,5 +75,6 @@ if (import.meta.main) {
   } finally {
     db.close();
   }
-}
-/* c8 ignore end */
+};
+
+runAggregateCli();

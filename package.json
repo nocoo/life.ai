@@ -3,13 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "ut": "bun test --coverage --coverage-reporter=text --coverage-reporter=lcov && bun run scripts/db/coverage-check.ts",
+    "ut": "bun test --coverage --coverage-reporter=text --coverage-reporter=lcov && bun run scripts/coverage-check.ts",
     "lint": "eslint . --ext .ts && bun run --cwd dashboard lint",
     "prepare": "husky",
-    "db:init": "bun run scripts/db/init.ts",
-    "db:load": "bun run scripts/db/cli.ts load",
-    "db:agg": "bun run scripts/db/cli.ts agg",
-    "db:refresh": "bun run scripts/db/refresh.ts"
+    "db:init": "bun run scripts/import/footprint/init.ts",
+    "db:load": "bun run scripts/import/footprint/cli.ts load",
+    "db:agg": "bun run scripts/import/footprint/cli.ts agg",
+    "db:refresh": "bun run scripts/import/footprint/refresh.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.20.0",

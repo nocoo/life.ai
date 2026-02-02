@@ -12,6 +12,7 @@ const tagValue = (block: string, tag: string) => {
 
 export const loadGpx = async (
   db: ReturnType<typeof openDb>,
+  year: number,
   gpxPath: string = defaultGpxPath,
   source: string = sourceName
 ) => {
@@ -21,13 +22,45 @@ export const loadGpx = async (
   }
 
   const xml = await file.text();
+  const yearStart = `${year}-01-01`;
+  const yearEnd = `${year}-12-31`;
+  const yearPrefix = `${year}-`;
+
   const insert = db.prepare(
     `insert into track_point
       (source, track_date, ts, lat, lon, ele, speed, course)
      values (?, ?, ?, ?, ?, ?, ?, ?)`
   );
 
+  const deleteParams = [source, yearStart, yearEnd] as const;
+  const deleteYearData = () => {
+    db
+      .prepare(
+        "delete from track_point where source = ? and track_date between ? and ?"
+      )
+      .run(...deleteParams);
+    db
+      .prepare(
+        "delete from track_day_agg where source = ? and day between ? and ?"
+      )
+      .run(...deleteParams);
+    db
+      .prepare(
+        "delete from track_week_agg where source = ? and week_start between ? and ?"
+      )
+      .run(...deleteParams);
+    db
+      .prepare(
+        "delete from track_month_agg where source = ? and month between ? and ?"
+      )
+      .run(...deleteParams);
+    db
+      .prepare("delete from track_year_agg where source = ? and year = ?")
+      .run(source, year);
+  };
+
   db.exec("begin");
+  deleteYearData();
 
   let match: RegExpExecArray | null;
   let count = 0;
@@ -49,6 +82,7 @@ export const loadGpx = async (
     const date = new Date(time);
     if (Number.isNaN(date.getTime())) continue;
     const trackDate = date.toISOString().slice(0, 10);
+    if (!trackDate.startsWith(yearPrefix)) continue;
 
     insert.run(
       source,
