@@ -1,10 +1,11 @@
 # life.ai
 
-本项目用于统一管理健康数据与足迹数据，并提供结构化存储与可视化基础能力。当前包含 Apple Health 数据结构梳理与 footprint 轨迹数据的数据库化与聚合方案。✨
+本项目用于统一管理健康数据、足迹数据与记账数据，并提供结构化存储与可视化基础能力。当前包含 Apple Health 数据结构梳理、footprint 轨迹数据的数据库化与聚合方案，以及 pixiu 记账导出数据的结构说明。✨
 
 ## 🚀 项目主要功能
 - Apple Health 导出数据结构梳理
 - footprint 轨迹数据落库与多粒度聚合（日/周/月/年）
+- pixiu 记账导出数据结构梳理（按年 CSV）
 - 可视化前端雏形（Next.js + Tailwind + shadcn）
 
 ## 📁 主要目录结构
@@ -21,6 +22,7 @@
 - `docs/00-overview.md`：项目概览与文档导航
 - `docs/01-data-structure-apple-health.md`：Apple Health 数据结构
 - `docs/02-data-structure-footprint.md`：footprint 数据结构与数据库 schema
+- `docs/03-data-structure-pixiu.md`：pixiu 记账数据结构
 
 ## 🧭 如何运行
 ### 后端/脚本
