@@ -178,13 +178,26 @@ export const transformAppleHealthData = (raw: AppleHealthRawData): DayHealthData
 /** Transform raw Footprint data to DayFootprintData view model */
 export const transformFootprintData = (raw: FootprintRawData): DayFootprintData => {
   const summary = transformTrackSummary(raw.trackPoints, raw.dayAgg);
+  const trackPoints = transformTrackPoints(raw.trackPoints);
 
   return {
     date: raw.date,
     summary,
+    trackPoints,
     locations: [], // Location clustering requires additional processing
     segments: [], // Segment detection requires additional processing
   };
+};
+
+/** Transform raw track point rows to TrackPoint view model */
+const transformTrackPoints = (points: TrackPointRow[]): DayFootprintData["trackPoints"] => {
+  return points.map((p) => ({
+    ts: p.ts,
+    lat: p.lat,
+    lon: p.lon,
+    ele: p.ele ?? undefined,
+    speed: p.speed !== null && p.speed >= 0 ? p.speed : undefined,
+  }));
 };
 
 /** Transform track points and day agg to DayTrackSummary */

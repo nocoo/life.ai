@@ -152,6 +152,7 @@ export const createMockSegments = (): TrackSegment[] => [
 export const createMockDayFootprintData = (date: string): DayFootprintData => ({
   date,
   summary: createMockTrackSummary(),
+  trackPoints: [], // Mock data doesn't need full track points
   locations: createMockLocations(),
   segments: createMockSegments(),
 });

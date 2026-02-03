@@ -63,6 +63,7 @@ describe("footprint model", () => {
       const data: DayFootprintData = {
         date: "2025-01-15",
         summary: null,
+        trackPoints: [],
         locations: [],
         segments: [],
       };

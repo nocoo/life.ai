@@ -41,6 +41,18 @@ const formatDuration = (minutes: number): string => {
   return `${mins}m`;
 };
 
+/** Extract time (HH:mm:ss) from ISO datetime string */
+const extractTime = (isoString: string): string => {
+  // Handle format like "2025-12-02T07:13:26Z"
+  const match = isoString.match(/T(\d{2}:\d{2}:\d{2})/);
+  return match ? match[1] : isoString;
+};
+
+/** Format coordinates to display */
+const formatCoord = (value: number, decimals = 6): string => {
+  return value.toFixed(decimals);
+};
+
 export function RawFootprintData({ data }: RawFootprintDataProps) {
   return (
     <Card>
@@ -82,6 +94,56 @@ export function RawFootprintData({ data }: RawFootprintDataProps) {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Track Points Section */}
+            {data.trackPoints.length > 0 && (
+              <div>
+                <h3 className="text-sm font-medium mb-2">
+                  轨迹点 ({data.trackPoints.length})
+                </h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">#</TableHead>
+                      <TableHead>时间</TableHead>
+                      <TableHead>纬度</TableHead>
+                      <TableHead>经度</TableHead>
+                      <TableHead className="text-right">海拔 (m)</TableHead>
+                      <TableHead className="text-right">速度</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.trackPoints.slice(0, 100).map((point, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell className="text-muted-foreground">
+                          {idx + 1}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {extractTime(point.ts)}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {formatCoord(point.lat)}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {formatCoord(point.lon)}
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {point.ele !== undefined ? point.ele.toFixed(1) : "-"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {point.speed !== undefined ? formatSpeed(point.speed) : "-"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {data.trackPoints.length > 100 && (
+                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                    显示前 100 条，共 {data.trackPoints.length} 条轨迹点
+                  </p>
+                )}
               </div>
             )}
 
@@ -153,6 +215,7 @@ export function RawFootprintData({ data }: RawFootprintDataProps) {
 
             {/* Empty State */}
             {!data.summary &&
+              data.trackPoints.length === 0 &&
               data.locations.length === 0 &&
               data.segments.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">

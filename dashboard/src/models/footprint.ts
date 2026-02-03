@@ -47,6 +47,7 @@ export interface DayTrackSummary {
 export interface DayFootprintData {
   date: string; // YYYY-MM-DD
   summary: DayTrackSummary | null;
+  trackPoints: TrackPoint[]; // Raw GPS track points
   locations: LocationRecord[];
   segments: TrackSegment[];
 }
@@ -55,6 +56,7 @@ export interface DayFootprintData {
 export const createEmptyDayFootprintData = (date: string): DayFootprintData => ({
   date,
   summary: null,
+  trackPoints: [],
   locations: [],
   segments: [],
 });
