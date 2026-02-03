@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { DayHealthData } from "@/models/apple-health";
+import type { DayHealthData, SleepStageType } from "@/models/apple-health";
 
 export interface RawHealthDataProps {
   data: DayHealthData;
@@ -35,6 +35,22 @@ const formatDistance = (meters: number): string => {
   return `${Math.round(meters)} m`;
 };
 
+/** Get sleep stage display name and color */
+const getSleepStageInfo = (type: SleepStageType): { name: string; color: string } => {
+  switch (type) {
+    case "deep":
+      return { name: "深睡", color: "bg-indigo-500" };
+    case "core":
+      return { name: "核心", color: "bg-blue-500" };
+    case "rem":
+      return { name: "REM", color: "bg-purple-500" };
+    case "awake":
+      return { name: "清醒", color: "bg-orange-400" };
+    default:
+      return { name: type, color: "bg-gray-500" };
+  }
+};
+
 export function RawHealthData({ data }: RawHealthDataProps) {
   return (
     <Card>
@@ -46,7 +62,7 @@ export function RawHealthData({ data }: RawHealthDataProps) {
       <CardContent>
         <ScrollArea className="h-[calc(100vh-200px)]">
           <div className="space-y-6">
-            {/* Summary Cards */}
+            {/* Summary Cards - Row 1: Core Metrics */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="rounded-lg border p-3">
                 <div className="text-xs text-muted-foreground">总步数</div>
@@ -55,54 +71,123 @@ export function RawHealthData({ data }: RawHealthDataProps) {
                 </div>
               </div>
               <div className="rounded-lg border p-3">
-                <div className="text-xs text-muted-foreground">饮水量</div>
-                <div className="text-xl font-bold">{data.totalWater} ml</div>
+                <div className="text-xs text-muted-foreground">步行距离</div>
+                <div className="text-xl font-bold">
+                  {data.distance ? `${data.distance.total.toFixed(2)} km` : "-"}
+                </div>
+              </div>
+              <div className="rounded-lg border p-3">
+                <div className="text-xs text-muted-foreground">攀爬楼层</div>
+                <div className="text-xl font-bold">{data.flightsClimbed} 层</div>
               </div>
               {data.activity && (
-                <>
-                  <div className="rounded-lg border p-3">
-                    <div className="text-xs text-muted-foreground">活动能量</div>
-                    <div className="text-xl font-bold">
-                      {Math.round(data.activity.activeEnergy)} kcal
-                    </div>
+                <div className="rounded-lg border p-3">
+                  <div className="text-xs text-muted-foreground">活动能量</div>
+                  <div className="text-xl font-bold">
+                    {Math.round(data.activity.activeEnergy)} kcal
                   </div>
-                  <div className="rounded-lg border p-3">
-                    <div className="text-xs text-muted-foreground">运动时间</div>
-                    <div className="text-xl font-bold">
-                      {data.activity.exerciseMinutes} 分钟
-                    </div>
-                  </div>
-                </>
+                </div>
               )}
             </div>
+
+            {/* Summary Cards - Row 2: Activity */}
+            {data.activity && (
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-lg border p-3 text-center">
+                  <div className="text-xs text-muted-foreground">运动时间</div>
+                  <div className="text-lg font-bold text-green-500">
+                    {data.activity.exerciseMinutes} 分钟
+                  </div>
+                </div>
+                <div className="rounded-lg border p-3 text-center">
+                  <div className="text-xs text-muted-foreground">站立小时</div>
+                  <div className="text-lg font-bold text-cyan-500">
+                    {data.activity.standHours} 小时
+                  </div>
+                </div>
+                {data.sleepingWristTemperature && (
+                  <div className="rounded-lg border p-3 text-center">
+                    <div className="text-xs text-muted-foreground">睡眠腕温</div>
+                    <div className="text-lg font-bold">
+                      {data.sleepingWristTemperature}°C
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Sleep Section */}
             {data.sleep && (
               <div>
-                <h3 className="text-sm font-medium mb-2">睡眠</h3>
-                <div className="rounded-lg border p-3 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">总时长</span>
-                    <span className="font-medium">
-                      {formatDuration(data.sleep.duration)}
-                    </span>
+                <h3 className="text-sm font-medium mb-2">睡眠分析</h3>
+                <div className="rounded-lg border p-3 space-y-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div>
+                      <div className="text-xs text-muted-foreground">总时长</div>
+                      <div className="text-lg font-bold">
+                        {formatDuration(data.sleep.duration)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">深睡</div>
+                      <div className="text-lg font-bold text-indigo-500">
+                        {formatDuration(data.sleep.deepMinutes)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">核心睡眠</div>
+                      <div className="text-lg font-bold text-blue-500">
+                        {formatDuration(data.sleep.coreMinutes)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">REM</div>
+                      <div className="text-lg font-bold text-purple-500">
+                        {formatDuration(data.sleep.remMinutes)}
+                      </div>
+                    </div>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">开始时间</span>
-                    <span>{data.sleep.start}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">结束时间</span>
-                    <span>{data.sleep.end}</span>
+                    <span className="text-muted-foreground">时间范围</span>
+                    <span>{data.sleep.start} - {data.sleep.end}</span>
                   </div>
                   {data.sleep.stages.length > 0 && (
-                    <div className="flex gap-2 flex-wrap pt-2">
-                      {data.sleep.stages.map((stage, idx) => (
-                        <Badge key={idx} variant="secondary">
-                          {stage.type}: {formatDuration(stage.duration)}
-                        </Badge>
-                      ))}
-                    </div>
+                    <details className="text-sm">
+                      <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                        查看 {data.sleep.stages.length} 个睡眠阶段
+                      </summary>
+                      <Table className="mt-2">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>阶段</TableHead>
+                            <TableHead>开始</TableHead>
+                            <TableHead>结束</TableHead>
+                            <TableHead className="text-right">时长</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {data.sleep.stages.map((stage, idx) => {
+                            const info = getSleepStageInfo(stage.type);
+                            return (
+                              <TableRow key={idx}>
+                                <TableCell>
+                                  <Badge className={info.color}>{info.name}</Badge>
+                                </TableCell>
+                                <TableCell className="text-muted-foreground">
+                                  {stage.start}
+                                </TableCell>
+                                <TableCell className="text-muted-foreground">
+                                  {stage.end}
+                                </TableCell>
+                                <TableCell className="text-right font-medium">
+                                  {formatDuration(stage.duration)}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </details>
                   )}
                 </div>
               </div>
@@ -112,11 +197,11 @@ export function RawHealthData({ data }: RawHealthDataProps) {
             {data.heartRate && (
               <div>
                 <h3 className="text-sm font-medium mb-2">心率</h3>
-                <div className="grid grid-cols-3 gap-3 mb-3">
+                <div className="grid grid-cols-3 md:grid-cols-5 gap-3 mb-3">
                   <div className="rounded-lg border p-3 text-center">
                     <div className="text-xs text-muted-foreground">平均</div>
                     <div className="text-lg font-bold">
-                      {Math.round(data.heartRate.avg)} bpm
+                      {data.heartRate.avg} bpm
                     </div>
                   </div>
                   <div className="rounded-lg border p-3 text-center">
@@ -131,6 +216,22 @@ export function RawHealthData({ data }: RawHealthDataProps) {
                       {data.heartRate.max} bpm
                     </div>
                   </div>
+                  {data.heartRate.restingHeartRate && (
+                    <div className="rounded-lg border p-3 text-center">
+                      <div className="text-xs text-muted-foreground">静息</div>
+                      <div className="text-lg font-bold text-green-500">
+                        {data.heartRate.restingHeartRate} bpm
+                      </div>
+                    </div>
+                  )}
+                  {data.heartRate.walkingAverage && (
+                    <div className="rounded-lg border p-3 text-center">
+                      <div className="text-xs text-muted-foreground">步行</div>
+                      <div className="text-lg font-bold text-orange-500">
+                        {data.heartRate.walkingAverage} bpm
+                      </div>
+                    </div>
+                  )}
                 </div>
                 {data.heartRate.records.length > 0 && (
                   <details className="text-sm">
@@ -167,6 +268,168 @@ export function RawHealthData({ data }: RawHealthDataProps) {
               </div>
             )}
 
+            {/* Blood Oxygen Section */}
+            {data.oxygenSaturation && (
+              <div>
+                <h3 className="text-sm font-medium mb-2">血氧饱和度</h3>
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  <div className="rounded-lg border p-3 text-center">
+                    <div className="text-xs text-muted-foreground">平均</div>
+                    <div className="text-lg font-bold">
+                      {data.oxygenSaturation.avg}%
+                    </div>
+                  </div>
+                  <div className="rounded-lg border p-3 text-center">
+                    <div className="text-xs text-muted-foreground">最低</div>
+                    <div className="text-lg font-bold text-yellow-500">
+                      {data.oxygenSaturation.min}%
+                    </div>
+                  </div>
+                  <div className="rounded-lg border p-3 text-center">
+                    <div className="text-xs text-muted-foreground">最高</div>
+                    <div className="text-lg font-bold text-green-500">
+                      {data.oxygenSaturation.max}%
+                    </div>
+                  </div>
+                </div>
+                {data.oxygenSaturation.records.length > 0 && (
+                  <details className="text-sm">
+                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                      查看 {data.oxygenSaturation.records.length} 条记录
+                    </summary>
+                    <Table className="mt-2">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>时间</TableHead>
+                          <TableHead className="text-right">血氧 (%)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {data.oxygenSaturation.records.map((record, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell className="text-muted-foreground">
+                              {record.time}
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {record.value}%
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </details>
+                )}
+              </div>
+            )}
+
+            {/* Respiratory Rate Section */}
+            {data.respiratoryRate && (
+              <div>
+                <h3 className="text-sm font-medium mb-2">呼吸频率</h3>
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  <div className="rounded-lg border p-3 text-center">
+                    <div className="text-xs text-muted-foreground">平均</div>
+                    <div className="text-lg font-bold">
+                      {data.respiratoryRate.avg} 次/分
+                    </div>
+                  </div>
+                  <div className="rounded-lg border p-3 text-center">
+                    <div className="text-xs text-muted-foreground">最低</div>
+                    <div className="text-lg font-bold text-blue-500">
+                      {data.respiratoryRate.min} 次/分
+                    </div>
+                  </div>
+                  <div className="rounded-lg border p-3 text-center">
+                    <div className="text-xs text-muted-foreground">最高</div>
+                    <div className="text-lg font-bold text-red-500">
+                      {data.respiratoryRate.max} 次/分
+                    </div>
+                  </div>
+                </div>
+                {data.respiratoryRate.records.length > 0 && (
+                  <details className="text-sm">
+                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                      查看 {data.respiratoryRate.records.length} 条记录
+                    </summary>
+                    <Table className="mt-2">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>时间</TableHead>
+                          <TableHead className="text-right">呼吸频率 (次/分)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {data.respiratoryRate.records.map((record, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell className="text-muted-foreground">
+                              {record.time}
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {record.value}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </details>
+                )}
+              </div>
+            )}
+
+            {/* HRV Section */}
+            {data.hrv && (
+              <div>
+                <h3 className="text-sm font-medium mb-2">心率变异性 (HRV)</h3>
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  <div className="rounded-lg border p-3 text-center">
+                    <div className="text-xs text-muted-foreground">平均</div>
+                    <div className="text-lg font-bold">
+                      {data.hrv.avg} ms
+                    </div>
+                  </div>
+                  <div className="rounded-lg border p-3 text-center">
+                    <div className="text-xs text-muted-foreground">最低</div>
+                    <div className="text-lg font-bold text-yellow-500">
+                      {data.hrv.min} ms
+                    </div>
+                  </div>
+                  <div className="rounded-lg border p-3 text-center">
+                    <div className="text-xs text-muted-foreground">最高</div>
+                    <div className="text-lg font-bold text-green-500">
+                      {data.hrv.max} ms
+                    </div>
+                  </div>
+                </div>
+                {data.hrv.records.length > 0 && (
+                  <details className="text-sm">
+                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                      查看 {data.hrv.records.length} 条记录
+                    </summary>
+                    <Table className="mt-2">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>时间</TableHead>
+                          <TableHead className="text-right">HRV SDNN (ms)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {data.hrv.records.map((record, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell className="text-muted-foreground">
+                              {record.time}
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {record.value}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </details>
+                )}
+              </div>
+            )}
+
             {/* Steps Section */}
             {data.steps.length > 0 && (
               <div>
@@ -176,21 +439,36 @@ export function RawHealthData({ data }: RawHealthDataProps) {
                     <TableRow>
                       <TableHead>时间</TableHead>
                       <TableHead className="text-right">步数</TableHead>
+                      {data.distance && (
+                        <TableHead className="text-right">距离 (km)</TableHead>
+                      )}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {data.steps
                       .filter((s) => s.count > 0)
-                      .map((step) => (
-                        <TableRow key={step.hour}>
-                          <TableCell className="text-muted-foreground">
-                            {step.hour.toString().padStart(2, "0")}:00
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {step.count.toLocaleString()}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      .map((step) => {
+                        const distanceForHour = data.distance?.records.find(
+                          (d) => d.hour === step.hour
+                        );
+                        return (
+                          <TableRow key={step.hour}>
+                            <TableCell className="text-muted-foreground">
+                              {step.hour.toString().padStart(2, "0")}:00
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {step.count.toLocaleString()}
+                            </TableCell>
+                            {data.distance && (
+                              <TableCell className="text-right text-muted-foreground">
+                                {distanceForHour
+                                  ? distanceForHour.distance.toFixed(3)
+                                  : "-"}
+                              </TableCell>
+                            )}
+                          </TableRow>
+                        );
+                      })}
                   </TableBody>
                 </Table>
               </div>
@@ -294,6 +572,9 @@ export function RawHealthData({ data }: RawHealthDataProps) {
             {/* Empty State */}
             {!data.sleep &&
               !data.heartRate &&
+              !data.oxygenSaturation &&
+              !data.respiratoryRate &&
+              !data.hrv &&
               data.steps.length === 0 &&
               data.workouts.length === 0 &&
               data.water.length === 0 && (
