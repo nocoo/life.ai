@@ -31,7 +31,7 @@ scripts/
 
 ### pixiu
 
-- (empty) Placeholder for Pixiu import scripts.
+- pixiu import scripts live under `scripts/import/pixiu`.
 
 ## Verify scripts
 

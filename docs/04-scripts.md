@@ -40,13 +40,35 @@ scripts/
 - 说明：预留用于 Apple Health 导入脚本
 
 ### scripts/import/pixiu/
-- 说明：预留用于 pixiu CSV 导入脚本
+- 说明：pixiu CSV 导入脚本
+
+### scripts/import/pixiu/init.ts
+- 作用：初始化 pixiu 数据库并写入 schema
+- 执行：`bun run scripts/import/pixiu/init.ts`
+
+### scripts/import/pixiu/load-csv.ts
+- 作用：解析 pixiu CSV 并写入 `pixiu_transaction`
+
+### scripts/import/pixiu/aggregate.ts
+- 作用：按日/月/年聚合 pixiu 数据
+
+### scripts/import/pixiu/cli.ts
+- 作用：统一入口（load/agg/refresh）
+- 执行：`bun run scripts/import/pixiu/cli.ts <load|agg|refresh> <year> [csvPath]`
+
+### scripts/import/pixiu/refresh.ts
+- 作用：初始化 + 导入 + 聚合
+- 执行：`bun run scripts/import/pixiu/refresh.ts <year> [csvPath]`
 
 ## 校验脚本（verify）
 
 ### scripts/verify/footprint.ts
 - 作用：校验 GPX 与数据库写入结果的一致性
 - 执行：`bun run scripts/verify/footprint.ts <year> [gpxPath] [--json]`
+
+### scripts/verify/pixiu.ts
+- 作用：校验 pixiu CSV 与数据库写入结果的一致性
+- 执行：`bun run scripts/verify/pixiu.ts <year> [csvPath] [--json]`
 
 ## 其他
 
@@ -75,3 +97,17 @@ bun run db:load
 bun run db:agg
 bun run db:refresh
 ```
+
+### pixiu 导入流程
+1) 初始化数据库
+- `bun run scripts/import/pixiu/init.ts`
+
+2) 按年份导入数据
+- `bun run scripts/import/pixiu/cli.ts load <year> [csvPath]`
+- 导入前会删除该年份已有记录，只写入该年份数据
+
+3) 聚合
+- `bun run scripts/import/pixiu/cli.ts agg`
+
+4) 一键刷新（init + load + agg）
+- `bun run scripts/import/pixiu/refresh.ts <year> [csvPath]`
