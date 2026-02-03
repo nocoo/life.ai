@@ -11,6 +11,7 @@
     "ut:watch": "bun test --watch"
   },
   "dependencies": {
+    "better-sqlite3": "^12.6.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -24,18 +25,19 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "typescript": "^5.7.3",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/react": "^16.2.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/bun": "latest",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/bun": "latest",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.2.4",
-    "@eslint/eslintrc": "^3",
-    "@testing-library/react": "^16.2.0",
-    "@testing-library/dom": "^10.4.0",
-    "happy-dom": "^17.4.4"
+    "happy-dom": "^17.4.4",
+    "tailwindcss": "^4",
+    "typescript": "^5.7.3"
   }
 }
