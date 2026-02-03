@@ -145,7 +145,7 @@ function SunCurveIndicator({ hour, minute, date, latitude, longitude }: SunCurve
   
   return (
     <div 
-      className="w-16 flex-shrink-0 relative h-full flex items-center"
+      className="w-16 flex-shrink-0 relative h-full flex items-center ml-4"
       style={{ minHeight: 32 }}
     >
       {/* Horizon reference line (dashed vertical line at 50%) */}
