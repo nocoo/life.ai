@@ -104,3 +104,43 @@ export const buildDaySummary = (
   net: pixiu.summary?.net ?? 0,
   transactionCount: pixiu.summary?.transactionCount ?? 0,
 });
+
+// ============================================================================
+// Enhanced Timeline Types (15-minute slots with center axis layout)
+// ============================================================================
+
+/** Data type for timeline items - used for color mapping and side positioning */
+export type TimelineDataType =
+  // Sleep stages (left side)
+  | "sleep-deep"
+  | "sleep-core"
+  | "sleep-rem"
+  | "sleep-awake"
+  // Activities (left side)
+  | "workout"
+  | "water"
+  // Physiological metrics (right side)
+  | "heartRate"
+  | "hrv"
+  | "oxygenSaturation"
+  | "respiratoryRate"
+  // Activity metrics (right side)
+  | "steps"
+  | "distance";
+
+/** A single item to display in a timeline slot */
+export interface TimelineItem {
+  type: TimelineDataType;
+  value?: number;
+  label: string; // Display text: "Deep", "♥ 72", "🏃 Running"
+  side: "left" | "right";
+}
+
+/** A 15-minute time slot in the enhanced timeline */
+export interface TimeSlot {
+  slot: string; // "00:00", "00:15", "00:30", "00:45", ...
+  hour: number; // 0-23
+  quarter: 0 | 1 | 2 | 3; // 0=:00, 1=:15, 2=:30, 3=:45
+  items: TimelineItem[];
+  hasData: boolean;
+}
