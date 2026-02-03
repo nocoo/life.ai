@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import type { TimeSlot, TimelineItem } from "@/models/day-view";
 import { TIMELINE_COLORS } from "@/lib/timeline-colors";
+import { getSunAltitude, isSunUp } from "@/lib/sun-position";
 
 export interface EnhancedTimelineProps {
   slots: TimeSlot[];
@@ -70,6 +71,9 @@ function Pill({ item }: { item: TimelineItem }) {
 function GapIndicator() {
   return (
     <div className="flex items-center py-1">
+      {/* Sun curve spacer */}
+      <div className="w-8 flex-shrink-0" />
+
       {/* Left side empty */}
       <div className="flex-1" />
 
@@ -80,6 +84,39 @@ function GapIndicator() {
 
       {/* Right side empty */}
       <div className="flex-1" />
+    </div>
+  );
+}
+
+/**
+ * Sun/Moon curve indicator
+ * Shows a dot positioned horizontally based on celestial body altitude
+ */
+function SunCurveIndicator({ hour, minute }: { hour: number; minute: number }) {
+  const altitude = getSunAltitude(hour, minute);
+  const sunUp = isSunUp(hour, minute);
+  
+  // Map altitude (-1 to 1) to horizontal position
+  // altitude 1 (noon) = rightmost, altitude -1 (midnight) = leftmost
+  // We want sun to curve right during day, left during night
+  const position = ((altitude + 1) / 2) * 100; // 0-100%
+  
+  return (
+    <div 
+      className="w-8 flex-shrink-0 relative h-full flex items-center"
+      style={{ minHeight: 32 }}
+    >
+      {/* The dot indicator */}
+      <div
+        className={cn(
+          "absolute w-2 h-2 rounded-full",
+          sunUp ? "bg-amber-400" : "bg-slate-400"
+        )}
+        style={{
+          left: `${position}%`,
+          transform: "translateX(-50%)",
+        }}
+      />
     </div>
   );
 }
@@ -99,9 +136,12 @@ function TimeSlotRow({ slot }: { slot: TimeSlot }) {
     <div
       className={cn(
         "flex items-center py-1 min-h-[32px]",
-        isOddHour && "bg-muted/30"
+        isOddHour && "bg-muted/50"
       )}
     >
+      {/* Sun/Moon curve indicator */}
+      <SunCurveIndicator hour={slot.hour} minute={slot.quarter * 15} />
+
       {/* Left side - right aligned */}
       <div className="flex-1 flex justify-end gap-1 pr-3">
         {leftItems.map((item, idx) => (
@@ -120,7 +160,7 @@ function TimeSlotRow({ slot }: { slot: TimeSlot }) {
             className={cn(
               "text-xs px-1",
               // Use transparent background to let row bg show through
-              isOddHour ? "bg-muted/30" : "bg-background",
+              isOddHour ? "bg-muted/50" : "bg-background",
               slot.hasData
                 ? "text-foreground font-medium"
                 : "text-muted-foreground"
