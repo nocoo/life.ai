@@ -1,2 +1,2 @@
-bun run ut
+bun run ut:scripts
 bun run lint
