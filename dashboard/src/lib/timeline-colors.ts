@@ -82,3 +82,39 @@ export function getItemSide(type: TimelineDataType): "left" | "right" {
 export function getTimelineColor(type: TimelineDataType): string {
   return TIMELINE_COLORS[type];
 }
+
+/**
+ * Heart rate zones for a 40-year-old male
+ * Based on resting heart rate health indicators:
+ * - Green (Ideal): 50-70 bpm - excellent cardiovascular health
+ * - Yellow (Elevated): 70-85 bpm - normal but slightly elevated
+ * - Orange (High): 85-100 bpm - elevated, may indicate stress or deconditioning
+ * - Red (Very High): >100 bpm - tachycardia territory, needs attention
+ */
+export type HeartRateZone = "ideal" | "elevated" | "high" | "very-high";
+
+export const HEART_RATE_ZONE_COLORS: Record<HeartRateZone, string> = {
+  ideal: "bg-green-600",      // Green - healthy resting heart rate
+  elevated: "bg-yellow-600",  // Yellow - slightly elevated
+  high: "bg-orange-600",      // Orange - high
+  "very-high": "bg-red-600",  // Red - very high / tachycardia
+};
+
+/**
+ * Get the heart rate zone based on BPM value
+ * Thresholds designed for 40-year-old male resting heart rate
+ */
+export function getHeartRateZone(bpm: number): HeartRateZone {
+  if (bpm < 70) return "ideal";
+  if (bpm < 85) return "elevated";
+  if (bpm < 100) return "high";
+  return "very-high";
+}
+
+/**
+ * Get dynamic color class for heart rate based on BPM value
+ */
+export function getHeartRateColor(bpm: number): string {
+  const zone = getHeartRateZone(bpm);
+  return HEART_RATE_ZONE_COLORS[zone];
+}

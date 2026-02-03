@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import type { TimeSlot, TimelineItem, TimelineDataType } from "@/models/day-view";
-import { TIMELINE_COLORS } from "@/lib/timeline-colors";
+import { TIMELINE_COLORS, getHeartRateColor } from "@/lib/timeline-colors";
 import { getSunAltitude, isSunUp } from "@/lib/sun-position";
 import {
   Tooltip,
@@ -89,7 +89,10 @@ function getTooltipText(item: TimelineItem): string {
  * Pill component for displaying a timeline item with hover tooltip
  */
 function Pill({ item }: { item: TimelineItem }) {
-  const colorClass = TIMELINE_COLORS[item.type];
+  // Use dynamic color for heart rate based on BPM value
+  const colorClass = item.type === "heartRate" && item.value !== undefined
+    ? getHeartRateColor(item.value)
+    : TIMELINE_COLORS[item.type];
   const tooltipText = getTooltipText(item);
 
   return (
