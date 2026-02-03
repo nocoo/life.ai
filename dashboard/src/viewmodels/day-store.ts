@@ -1,7 +1,14 @@
 import { create } from "zustand";
 import { addDays, subDays, startOfDay } from "date-fns";
 import type { DayViewData, TimelineEvent } from "@/models/day-view";
-import { getMockDayData, buildTimelineEvents } from "@/mocks";
+import { buildDaySummary } from "@/models/day-view";
+import { buildTimelineEvents } from "@/mocks";
+import { fetchAllDayData } from "@/lib/api-client";
+import {
+  transformAppleHealthData,
+  transformFootprintData,
+  transformPixiuData,
+} from "@/lib/transformers";
 
 export interface DayState {
   /** Currently selected date */
@@ -85,9 +92,26 @@ export const useDayStore = create<DayStore>((set, get) => ({
     set({ loading: true, error: null });
 
     try {
-      // For now, use mock data
-      // TODO: Replace with actual API call
-      const data = getMockDayData(selectedDate);
+      // Fetch raw data from APIs
+      const { appleHealth, footprint, pixiu } = await fetchAllDayData(selectedDate);
+
+      // Transform raw data to view models
+      const health = transformAppleHealthData(appleHealth);
+      const footprintData = transformFootprintData(footprint);
+      const pixiuData = transformPixiuData(pixiu);
+
+      // Build summary and combined data
+      const dateStr = selectedDate.toISOString().split("T")[0];
+      const summary = buildDaySummary(dateStr, health, footprintData, pixiuData);
+
+      const data: DayViewData = {
+        date: dateStr,
+        summary,
+        health,
+        footprint: footprintData,
+        pixiu: pixiuData,
+      };
+
       const timelineEvents = buildTimelineEvents(data);
 
       set({
