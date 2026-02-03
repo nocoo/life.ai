@@ -45,6 +45,12 @@ describe("transformAppleHealthData", () => {
     expect(result.heartRate).toBeNull();
     expect(result.steps).toEqual([]);
     expect(result.totalSteps).toBe(0);
+    expect(result.distance).toBeNull();
+    expect(result.oxygenSaturation).toBeNull();
+    expect(result.respiratoryRate).toBeNull();
+    expect(result.hrv).toBeNull();
+    expect(result.flightsClimbed).toBe(0);
+    expect(result.sleepingWristTemperature).toBeUndefined();
     expect(result.workouts).toEqual([]);
     expect(result.activity).toBeNull();
   });
@@ -228,6 +234,452 @@ describe("transformAppleHealthData", () => {
     expect(result.activity!.activeEnergy).toBe(450);
     expect(result.activity!.exerciseMinutes).toBe(35);
     expect(result.activity!.standHours).toBe(10);
+  });
+
+  test("transforms sleep records", () => {
+    const raw: AppleHealthRawData = {
+      date: "2024-01-15",
+      records: [
+        {
+          id: 1,
+          type: "HKCategoryTypeIdentifierSleepAnalysis",
+          unit: null,
+          value: "HKCategoryValueSleepAnalysisAsleepDeep",
+          source_name: "Apple Watch",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15 00:00:00 +0800",
+          end_date: "2024-01-15 01:00:00 +0800",
+          day: "2024-01-15",
+          timezone: null,
+        },
+        {
+          id: 2,
+          type: "HKCategoryTypeIdentifierSleepAnalysis",
+          unit: null,
+          value: "HKCategoryValueSleepAnalysisAsleepCore",
+          source_name: "Apple Watch",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15 01:00:00 +0800",
+          end_date: "2024-01-15 03:00:00 +0800",
+          day: "2024-01-15",
+          timezone: null,
+        },
+        {
+          id: 3,
+          type: "HKCategoryTypeIdentifierSleepAnalysis",
+          unit: null,
+          value: "HKCategoryValueSleepAnalysisAsleepREM",
+          source_name: "Apple Watch",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15 03:00:00 +0800",
+          end_date: "2024-01-15 04:30:00 +0800",
+          day: "2024-01-15",
+          timezone: null,
+        },
+        {
+          id: 4,
+          type: "HKCategoryTypeIdentifierSleepAnalysis",
+          unit: null,
+          value: "HKCategoryValueSleepAnalysisAwake",
+          source_name: "Apple Watch",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15 04:30:00 +0800",
+          end_date: "2024-01-15 04:45:00 +0800",
+          day: "2024-01-15",
+          timezone: null,
+        },
+      ],
+      workouts: [],
+      activitySummary: null,
+    };
+
+    const result = transformAppleHealthData(raw);
+
+    expect(result.sleep).not.toBeNull();
+    expect(result.sleep!.start).toBe("00:00");
+    expect(result.sleep!.end).toBe("04:45");
+    expect(result.sleep!.deepMinutes).toBe(60);
+    expect(result.sleep!.coreMinutes).toBe(120);
+    expect(result.sleep!.remMinutes).toBe(90);
+    expect(result.sleep!.awakeMinutes).toBe(15);
+    expect(result.sleep!.duration).toBe(285); // 60 + 120 + 90 + 15
+    expect(result.sleep!.stages).toHaveLength(4);
+  });
+
+  test("transforms distance records", () => {
+    const raw: AppleHealthRawData = {
+      date: "2024-01-15",
+      records: [
+        {
+          id: 1,
+          type: "HKQuantityTypeIdentifierDistanceWalkingRunning",
+          unit: "km",
+          value: "0.5",
+          source_name: "iPhone",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15T10:00:00+08:00",
+          end_date: "2024-01-15T10:15:00+08:00",
+          day: "2024-01-15",
+          timezone: null,
+        },
+        {
+          id: 2,
+          type: "HKQuantityTypeIdentifierDistanceWalkingRunning",
+          unit: "km",
+          value: "0.3",
+          source_name: "iPhone",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15T10:30:00+08:00",
+          end_date: "2024-01-15T10:45:00+08:00",
+          day: "2024-01-15",
+          timezone: null,
+        },
+        {
+          id: 3,
+          type: "HKQuantityTypeIdentifierDistanceWalkingRunning",
+          unit: "km",
+          value: "1.2",
+          source_name: "iPhone",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15T11:00:00+08:00",
+          end_date: "2024-01-15T11:30:00+08:00",
+          day: "2024-01-15",
+          timezone: null,
+        },
+      ],
+      workouts: [],
+      activitySummary: null,
+    };
+
+    const result = transformAppleHealthData(raw);
+
+    expect(result.distance).not.toBeNull();
+    expect(result.distance!.total).toBe(2); // 0.5 + 0.3 + 1.2 = 2.0
+    expect(result.distance!.records).toHaveLength(2); // 2 hours
+    expect(result.distance!.records[0]).toEqual({ hour: 10, distance: 0.8 }); // 0.5 + 0.3
+    expect(result.distance!.records[1]).toEqual({ hour: 11, distance: 1.2 });
+  });
+
+  test("transforms oxygen saturation records", () => {
+    const raw: AppleHealthRawData = {
+      date: "2024-01-15",
+      records: [
+        {
+          id: 1,
+          type: "HKQuantityTypeIdentifierOxygenSaturation",
+          unit: "%",
+          value: "0.98",
+          source_name: "Apple Watch",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15T02:00:00+08:00",
+          end_date: "2024-01-15T02:00:00+08:00",
+          day: "2024-01-15",
+          timezone: null,
+        },
+        {
+          id: 2,
+          type: "HKQuantityTypeIdentifierOxygenSaturation",
+          unit: "%",
+          value: "0.95",
+          source_name: "Apple Watch",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15T04:00:00+08:00",
+          end_date: "2024-01-15T04:00:00+08:00",
+          day: "2024-01-15",
+          timezone: null,
+        },
+        {
+          id: 3,
+          type: "HKQuantityTypeIdentifierOxygenSaturation",
+          unit: "%",
+          value: "0.99",
+          source_name: "Apple Watch",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15T06:00:00+08:00",
+          end_date: "2024-01-15T06:00:00+08:00",
+          day: "2024-01-15",
+          timezone: null,
+        },
+      ],
+      workouts: [],
+      activitySummary: null,
+    };
+
+    const result = transformAppleHealthData(raw);
+
+    expect(result.oxygenSaturation).not.toBeNull();
+    expect(result.oxygenSaturation!.avg).toBe(97); // (98 + 95 + 99) / 3 ≈ 97
+    expect(result.oxygenSaturation!.min).toBe(95);
+    expect(result.oxygenSaturation!.max).toBe(99);
+    expect(result.oxygenSaturation!.records).toHaveLength(3);
+  });
+
+  test("transforms respiratory rate records", () => {
+    const raw: AppleHealthRawData = {
+      date: "2024-01-15",
+      records: [
+        {
+          id: 1,
+          type: "HKQuantityTypeIdentifierRespiratoryRate",
+          unit: "count/min",
+          value: "14.5",
+          source_name: "Apple Watch",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15T02:00:00+08:00",
+          end_date: "2024-01-15T02:00:00+08:00",
+          day: "2024-01-15",
+          timezone: null,
+        },
+        {
+          id: 2,
+          type: "HKQuantityTypeIdentifierRespiratoryRate",
+          unit: "count/min",
+          value: "12.0",
+          source_name: "Apple Watch",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15T04:00:00+08:00",
+          end_date: "2024-01-15T04:00:00+08:00",
+          day: "2024-01-15",
+          timezone: null,
+        },
+        {
+          id: 3,
+          type: "HKQuantityTypeIdentifierRespiratoryRate",
+          unit: "count/min",
+          value: "16.5",
+          source_name: "Apple Watch",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15T10:00:00+08:00",
+          end_date: "2024-01-15T10:00:00+08:00",
+          day: "2024-01-15",
+          timezone: null,
+        },
+      ],
+      workouts: [],
+      activitySummary: null,
+    };
+
+    const result = transformAppleHealthData(raw);
+
+    expect(result.respiratoryRate).not.toBeNull();
+    expect(result.respiratoryRate!.avg).toBe(14.3); // (14.5 + 12.0 + 16.5) / 3 ≈ 14.3
+    expect(result.respiratoryRate!.min).toBe(12);
+    expect(result.respiratoryRate!.max).toBe(16.5);
+    expect(result.respiratoryRate!.records).toHaveLength(3);
+  });
+
+  test("transforms HRV records", () => {
+    const raw: AppleHealthRawData = {
+      date: "2024-01-15",
+      records: [
+        {
+          id: 1,
+          type: "HKQuantityTypeIdentifierHeartRateVariabilitySDNN",
+          unit: "ms",
+          value: "45",
+          source_name: "Apple Watch",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15T02:00:00+08:00",
+          end_date: "2024-01-15T02:00:00+08:00",
+          day: "2024-01-15",
+          timezone: null,
+        },
+        {
+          id: 2,
+          type: "HKQuantityTypeIdentifierHeartRateVariabilitySDNN",
+          unit: "ms",
+          value: "55",
+          source_name: "Apple Watch",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15T04:00:00+08:00",
+          end_date: "2024-01-15T04:00:00+08:00",
+          day: "2024-01-15",
+          timezone: null,
+        },
+        {
+          id: 3,
+          type: "HKQuantityTypeIdentifierHeartRateVariabilitySDNN",
+          unit: "ms",
+          value: "35",
+          source_name: "Apple Watch",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15T10:00:00+08:00",
+          end_date: "2024-01-15T10:00:00+08:00",
+          day: "2024-01-15",
+          timezone: null,
+        },
+      ],
+      workouts: [],
+      activitySummary: null,
+    };
+
+    const result = transformAppleHealthData(raw);
+
+    expect(result.hrv).not.toBeNull();
+    expect(result.hrv!.avg).toBe(45); // (45 + 55 + 35) / 3 = 45
+    expect(result.hrv!.min).toBe(35);
+    expect(result.hrv!.max).toBe(55);
+    expect(result.hrv!.records).toHaveLength(3);
+  });
+
+  test("transforms flights climbed", () => {
+    const raw: AppleHealthRawData = {
+      date: "2024-01-15",
+      records: [
+        {
+          id: 1,
+          type: "HKQuantityTypeIdentifierFlightsClimbed",
+          unit: "count",
+          value: "3",
+          source_name: "iPhone",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15T10:00:00+08:00",
+          end_date: "2024-01-15T10:15:00+08:00",
+          day: "2024-01-15",
+          timezone: null,
+        },
+        {
+          id: 2,
+          type: "HKQuantityTypeIdentifierFlightsClimbed",
+          unit: "count",
+          value: "2",
+          source_name: "iPhone",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15T14:00:00+08:00",
+          end_date: "2024-01-15T14:15:00+08:00",
+          day: "2024-01-15",
+          timezone: null,
+        },
+      ],
+      workouts: [],
+      activitySummary: null,
+    };
+
+    const result = transformAppleHealthData(raw);
+
+    expect(result.flightsClimbed).toBe(5); // 3 + 2
+  });
+
+  test("transforms sleeping wrist temperature", () => {
+    const raw: AppleHealthRawData = {
+      date: "2024-01-15",
+      records: [
+        {
+          id: 1,
+          type: "HKQuantityTypeIdentifierAppleSleepingWristTemperature",
+          unit: "degC",
+          value: "0.35",
+          source_name: "Apple Watch",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15T04:00:00+08:00",
+          end_date: "2024-01-15T04:00:00+08:00",
+          day: "2024-01-15",
+          timezone: null,
+        },
+      ],
+      workouts: [],
+      activitySummary: null,
+    };
+
+    const result = transformAppleHealthData(raw);
+
+    expect(result.sleepingWristTemperature).toBe(0.4); // rounded to 1 decimal
+  });
+
+  test("transforms resting and walking heart rate", () => {
+    const raw: AppleHealthRawData = {
+      date: "2024-01-15",
+      records: [
+        {
+          id: 1,
+          type: "HKQuantityTypeIdentifierHeartRate",
+          unit: "count/min",
+          value: "72",
+          source_name: "Apple Watch",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15T10:00:00+08:00",
+          end_date: "2024-01-15T10:00:00+08:00",
+          day: "2024-01-15",
+          timezone: null,
+        },
+        {
+          id: 2,
+          type: "HKQuantityTypeIdentifierRestingHeartRate",
+          unit: "count/min",
+          value: "55",
+          source_name: "Apple Watch",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15T00:00:00+08:00",
+          end_date: "2024-01-15T00:00:00+08:00",
+          day: "2024-01-15",
+          timezone: null,
+        },
+        {
+          id: 3,
+          type: "HKQuantityTypeIdentifierWalkingHeartRateAverage",
+          unit: "count/min",
+          value: "98",
+          source_name: "Apple Watch",
+          source_version: null,
+          device: null,
+          creation_date: null,
+          start_date: "2024-01-15T00:00:00+08:00",
+          end_date: "2024-01-15T00:00:00+08:00",
+          day: "2024-01-15",
+          timezone: null,
+        },
+      ],
+      workouts: [],
+      activitySummary: null,
+    };
+
+    const result = transformAppleHealthData(raw);
+
+    expect(result.heartRate).not.toBeNull();
+    expect(result.heartRate!.restingHeartRate).toBe(55);
+    expect(result.heartRate!.walkingAverage).toBe(98);
   });
 });
 
