@@ -115,7 +115,7 @@ export function RawFootprintData({ data }: RawFootprintDataProps) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {data.trackPoints.slice(0, 100).map((point, idx) => (
+                    {data.trackPoints.map((point, idx) => (
                       <TableRow key={idx}>
                         <TableCell className="text-muted-foreground">
                           {idx + 1}
@@ -139,11 +139,6 @@ export function RawFootprintData({ data }: RawFootprintDataProps) {
                     ))}
                   </TableBody>
                 </Table>
-                {data.trackPoints.length > 100 && (
-                  <p className="text-xs text-muted-foreground mt-2 text-center">
-                    显示前 100 条，共 {data.trackPoints.length} 条轨迹点
-                  </p>
-                )}
               </div>
             )}
 
