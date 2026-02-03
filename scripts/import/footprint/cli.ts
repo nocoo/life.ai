@@ -27,10 +27,10 @@ try {
     }
     const gpxPath = args[2] ?? defaultGpxPath;
     const count = await loadGpx(db, year, gpxPath);
-    console.log(`Inserted ${count} track points`);
+    console.log(`✅ Inserted ${count} track points`);
   } else if (command === "agg") {
     aggregate(db);
-    console.log("Aggregation complete");
+    console.log("📊 Aggregation complete");
   } else if (command === "refresh") {
     const year = Number(args[1]);
     if (!Number.isInteger(year)) {
@@ -40,7 +40,7 @@ try {
     const gpxPath = args[2] ?? defaultGpxPath;
     const count = await loadGpx(db, year, gpxPath);
     aggregate(db);
-    console.log(`Refresh complete, loaded ${count} points`);
+    console.log(`✅ Refresh complete, loaded ${count} points`);
   } else {
     usage();
     process.exit(1);

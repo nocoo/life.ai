@@ -27,10 +27,10 @@ try {
     }
     const csvPath = args[2] ?? defaultCsvPath;
     const count = await loadCsv(db, year, csvPath);
-    console.log(`Inserted ${count} transactions`);
+    console.log(`✅ Inserted ${count} transactions`);
   } else if (command === "agg") {
     aggregate(db);
-    console.log("Aggregation complete");
+    console.log("📊 Aggregation complete");
   } else if (command === "refresh") {
     const year = Number(args[1]);
     if (!Number.isInteger(year)) {
@@ -40,7 +40,7 @@ try {
     const csvPath = args[2] ?? defaultCsvPath;
     const count = await loadCsv(db, year, csvPath);
     aggregate(db);
-    console.log(`Refresh complete, loaded ${count} rows`);
+    console.log(`✅ Refresh complete, loaded ${count} rows`);
   } else {
     usage();
     process.exit(1);

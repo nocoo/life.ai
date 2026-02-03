@@ -183,9 +183,9 @@ export const runCli = async (
     output.log(JSON.stringify({ ok: result.ok, ...result.report }, null, 2));
   } else {
     if (result.ok) {
-      output.log("Verify OK");
+      output.log("✅ Verify OK");
     } else {
-      output.error("Verify failed:");
+      output.error("❌ Verify failed:");
       for (const err of result.errors) output.error(`- ${err}`);
     }
     output.log(`year: ${result.report.year}`);

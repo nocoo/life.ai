@@ -8,4 +8,4 @@ const db = openDb();
 db.exec(schema);
 db.close();
 
-console.log("DB initialized");
+console.log("✅ DB initialized");

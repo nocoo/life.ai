@@ -60,7 +60,7 @@ export const runAggregateCli = (options?: { force?: boolean }) => {
   const db = openDb();
   try {
     aggregate(db);
-    console.log("Aggregation complete");
+    console.log("📊 Aggregation complete");
   } finally {
     db.close();
   }
