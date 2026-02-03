@@ -86,13 +86,22 @@ function GapIndicator() {
 
 /**
  * Single time slot row with left/right item display
+ * Background alternates by hour for visual grouping
  */
 function TimeSlotRow({ slot }: { slot: TimeSlot }) {
   const leftItems = slot.items.filter((i) => i.side === "left");
   const rightItems = slot.items.filter((i) => i.side === "right");
 
+  // Alternate background by hour (odd hours get light gray)
+  const isOddHour = slot.hour % 2 === 1;
+
   return (
-    <div className="flex items-center py-1 min-h-[32px]">
+    <div
+      className={cn(
+        "flex items-center py-1 min-h-[32px]",
+        isOddHour && "bg-muted/30"
+      )}
+    >
       {/* Left side - right aligned */}
       <div className="flex-1 flex justify-end gap-1 pr-3">
         {leftItems.map((item, idx) => (
@@ -109,7 +118,9 @@ function TimeSlotRow({ slot }: { slot: TimeSlot }) {
         <div className="relative flex justify-center">
           <span
             className={cn(
-              "text-xs px-1 bg-background",
+              "text-xs px-1",
+              // Use transparent background to let row bg show through
+              isOddHour ? "bg-muted/30" : "bg-background",
               slot.hasData
                 ? "text-foreground font-medium"
                 : "text-muted-foreground"
