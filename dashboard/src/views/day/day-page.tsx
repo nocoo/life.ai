@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDayStore } from "@/viewmodels/day-store";
 import { DayHeader } from "./day-header";
 import { DayCalendar } from "./day-calendar";
-import { Timeline } from "./timeline";
+import { EnhancedTimeline } from "./enhanced-timeline";
 import { HealthPanel } from "./health-panel";
 import { ActivityPanel } from "./activity-panel";
 import { RawHealthData } from "./raw-health-data";
@@ -17,18 +17,16 @@ import { RawPixiuData } from "./raw-pixiu-data";
 function LoadingSkeleton() {
   return (
     <div className="p-6">
-      {/* Two-column layout skeleton: Timeline left, Cards right */}
-      <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
+      {/* Two-column layout skeleton: Timeline primary, Cards sidebar */}
+      <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         {/* Timeline skeleton */}
-        <Skeleton className="h-[800px] w-full" />
-        {/* Cards grid skeleton */}
-        <div className="grid gap-4 sm:grid-cols-2">
+        <Skeleton className="h-[600px] w-full" />
+        {/* Cards sidebar skeleton */}
+        <div className="grid gap-4">
           <Skeleton className="h-40 w-full" />
           <Skeleton className="h-36 w-full" />
           <Skeleton className="h-48 w-full" />
           <Skeleton className="h-44 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-56 w-full" />
         </div>
       </div>
     </div>
@@ -52,7 +50,7 @@ export function DayPage() {
     loading,
     error,
     data,
-    timelineEvents,
+    timeSlots,
     calendarOpen,
     setDate,
     goToday,
@@ -129,19 +127,19 @@ export function DayPage() {
 
                 {/* Dashboard Tab */}
                 <TabsContent value="dashboard">
-                  <div className="grid gap-6 lg:grid-cols-[220px_1fr] mt-4">
-                    {/* Left: Timeline */}
-                    <div className="order-first">
-                      <div className="sticky top-6">
-                        <h2 className="mb-4 text-sm font-medium text-muted-foreground pl-14">
-                          Timeline
-                        </h2>
-                        <Timeline events={timelineEvents} />
-                      </div>
+                  {/* Mobile: Stack layout (cards above timeline) */}
+                  {/* Desktop: Timeline primary (60%) + Cards sidebar (40%) */}
+                  <div className="grid gap-6 lg:grid-cols-[1fr_340px] mt-4">
+                    {/* Left: Enhanced Timeline (primary content) */}
+                    <div className="order-2 lg:order-1">
+                      <h2 className="mb-4 text-sm font-medium text-muted-foreground text-center">
+                        Timeline
+                      </h2>
+                      <EnhancedTimeline slots={timeSlots} />
                     </div>
 
-                    {/* Right: Two-column card grid */}
-                    <div className="grid gap-4 sm:grid-cols-2 auto-rows-min">
+                    {/* Right: Single-column cards sidebar */}
+                    <div className="order-1 lg:order-2 grid gap-4 auto-rows-min">
                       {/* Health cards */}
                       <HealthPanel data={data.health} />
 
