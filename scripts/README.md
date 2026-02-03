@@ -24,6 +24,7 @@ scripts/
 - `scripts/import/footprint/refresh.ts`: Run init + refresh in one command with year filtering.
 - `scripts/import/footprint/explore-gpx.ts`: Inspect GPX file structure and summary.
 
+
 ### applehealth
 
 - (empty) Placeholder for Apple Health import scripts.

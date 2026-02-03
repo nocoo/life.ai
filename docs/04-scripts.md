@@ -4,23 +4,15 @@
 ```
 scripts/
 ├── import/
-│   ├── apple-health/
+│   ├── applehealth/
 │   ├── footprint/
-│   ├── pixiu/
-│   ├── db.ts
-│   └── schema.sql
+│   └── pixiu/
 ├── verify/
-│   └── footprint/
+│   └── footprint.ts
 └── coverage-check.ts
 ```
 
 ## 导入脚本（import）
-
-### scripts/import/db.ts
-- 作用：SQLite 连接与默认数据源配置
-
-### scripts/import/schema.sql
-- 作用：数据库 schema（当前用于 footprint）
 
 ### scripts/import/footprint/init.ts
 - 作用：初始化数据库并写入 schema
@@ -34,17 +26,17 @@ scripts/
 
 ### scripts/import/footprint/cli.ts
 - 作用：统一入口（load/agg/refresh）
-- 执行：`bun run scripts/import/footprint/cli.ts <load|agg|refresh> [gpxPath]`
+- 执行：`bun run scripts/import/footprint/cli.ts <load|agg|refresh> <year> [gpxPath]`
 
 ### scripts/import/footprint/refresh.ts
 - 作用：初始化 + 导入 + 聚合
-- 执行：`bun run scripts/import/footprint/refresh.ts`
+- 执行：`bun run scripts/import/footprint/refresh.ts <year> [gpxPath]`
 
 ### scripts/import/footprint/explore-gpx.ts
 - 作用：探索 GPX 结构与时间范围，输出统计摘要
 - 执行：`bun run scripts/import/footprint/explore-gpx.ts`
 
-### scripts/import/apple-health/
+### scripts/import/applehealth/
 - 说明：预留用于 Apple Health 导入脚本
 
 ### scripts/import/pixiu/
@@ -52,8 +44,9 @@ scripts/
 
 ## 校验脚本（verify）
 
-### scripts/verify/footprint/
-- 说明：用于对比原始 GPX 与数据库写入结果的一致性校验脚本（待补）
+### scripts/verify/footprint.ts
+- 作用：校验 GPX 与数据库写入结果的一致性
+- 执行：`bun run scripts/verify/footprint.ts <year> [gpxPath] [--json]`
 
 ## 其他
 
@@ -61,17 +54,19 @@ scripts/
 - 作用：UT 覆盖率检查（阈值 90%）
 
 ## 导入操作
-### 初始化 + 导入 + 聚合
-```
-bun run scripts/import/footprint/refresh.ts
-```
+### footprint 导入流程
+1) 初始化数据库
+- `bun run scripts/import/footprint/init.ts`
 
-### 分步骤执行
-```
-bun run scripts/import/footprint/init.ts
-bun run scripts/import/footprint/cli.ts load
-bun run scripts/import/footprint/cli.ts agg
-```
+2) 按年份导入数据
+- `bun run scripts/import/footprint/cli.ts load <year> [gpxPath]`
+- 导入前会删除该年份已有记录，只写入该年份数据
+
+3) 聚合
+- `bun run scripts/import/footprint/cli.ts agg`
+
+4) 一键刷新（init + load + agg）
+- `bun run scripts/import/footprint/refresh.ts <year> [gpxPath]`
 
 ### 使用默认 npm scripts
 ```
