@@ -63,7 +63,7 @@ export class AppleHealthService {
     const db = openDbByPath(this.dbPath);
     try {
       const records = db
-        .query(
+        .prepare(
           `SELECT id, type, unit, value, source_name, source_version, device, 
                   creation_date, start_date, end_date, day, timezone
            FROM apple_record 
@@ -73,7 +73,7 @@ export class AppleHealthService {
         .all(date) as AppleRecordRow[];
 
       const workouts = db
-        .query(
+        .prepare(
           `SELECT id, workout_type, duration, total_distance, total_energy,
                   source_name, device, creation_date, start_date, end_date, day
            FROM apple_workout 
@@ -83,7 +83,7 @@ export class AppleHealthService {
         .all(date) as AppleWorkoutRow[];
 
       const activitySummary = db
-        .query(
+        .prepare(
           `SELECT id, date_components, active_energy, exercise_time, 
                   stand_hours, movement_energy, day
            FROM apple_activity_summary 

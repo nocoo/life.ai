@@ -47,7 +47,7 @@ export class PixiuService {
     try {
       // tx_date format is "YYYY-MM-DD HH:mm", so we need to use LIKE
       const transactions = db
-        .query(
+        .prepare(
           `SELECT id, source, tx_date, category_l1, category_l2, 
                   inflow, outflow, currency, account, tags, note, year
            FROM pixiu_transaction 
@@ -57,7 +57,7 @@ export class PixiuService {
         .all(`${date}%`) as PixiuTransactionRow[];
 
       const dayAgg = db
-        .query(
+        .prepare(
           `SELECT source, day, income, expense, net, tx_count
            FROM pixiu_day_agg 
            WHERE source = 'pixiu' AND day = ?`

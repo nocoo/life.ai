@@ -47,7 +47,7 @@ export class FootprintService {
     const db = openDbByPath(this.dbPath);
     try {
       const trackPoints = db
-        .query(
+        .prepare(
           `SELECT id, source, track_date, ts, lat, lon, ele, speed, course
            FROM track_point 
            WHERE source = 'footprint' AND track_date = ? 
@@ -56,7 +56,7 @@ export class FootprintService {
         .all(date) as TrackPointRow[];
 
       const dayAgg = db
-        .query(
+        .prepare(
           `SELECT source, day, point_count, min_ts, max_ts, avg_speed,
                   min_lat, max_lat, min_lon, max_lon
            FROM track_day_agg 
