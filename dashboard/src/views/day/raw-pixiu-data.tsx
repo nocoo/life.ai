@@ -28,7 +28,7 @@ export function RawPixiuData({ data }: RawPixiuDataProps) {
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium">
-          Pixiu Raw Data (记账软件)
+          貔貅记账原始数据
         </CardTitle>
       </CardHeader>
       <CardContent>

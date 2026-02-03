@@ -56,7 +56,7 @@ export function RawHealthData({ data }: RawHealthDataProps) {
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium">
-          Apple Health Raw Data
+          Apple Health 原始数据
         </CardTitle>
       </CardHeader>
       <CardContent>

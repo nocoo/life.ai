@@ -51,7 +51,7 @@ export function ActivityPanel({
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Dumbbell className="h-4 w-4 text-green-500" />
-              Workouts
+              运动
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -67,7 +67,7 @@ export function ActivityPanel({
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-center text-sm">
                     <div>
-                      <p className="text-xs text-muted-foreground">Duration</p>
+                      <p className="text-xs text-muted-foreground">时长</p>
                       <p className="font-medium">
                         {formatDuration(workout.duration)}
                       </p>
@@ -75,7 +75,7 @@ export function ActivityPanel({
                     {workout.distance && (
                       <div>
                         <p className="text-xs text-muted-foreground">
-                          Distance
+                          距离
                         </p>
                         <p className="font-medium">
                           {formatDistance(workout.distance)}
@@ -85,9 +85,9 @@ export function ActivityPanel({
                     {workout.calories && (
                       <div>
                         <p className="text-xs text-muted-foreground">
-                          Calories
+                          消耗
                         </p>
-                        <p className="font-medium">{workout.calories} kcal</p>
+                        <p className="font-medium">{workout.calories} 千卡</p>
                       </div>
                     )}
                   </div>
@@ -104,7 +104,7 @@ export function ActivityPanel({
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <MapPin className="h-4 w-4 text-blue-500" />
-              Locations
+              地点
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -134,24 +134,24 @@ export function ActivityPanel({
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Route className="h-4 w-4 text-cyan-500" />
-              Movement
+              移动
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Total Distance</span>
+              <span className="text-muted-foreground">总距离</span>
               <span className="font-medium">
                 {formatDistance(footprint.summary.totalDistance)}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Avg Speed</span>
+              <span className="text-muted-foreground">平均速度</span>
               <span>
                 {(footprint.summary.avgSpeed * 3.6).toFixed(1)} km/h
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Track Points</span>
+              <span className="text-muted-foreground">轨迹点</span>
               <span>{footprint.summary.pointCount.toLocaleString()}</span>
             </div>
           </CardContent>
@@ -164,7 +164,7 @@ export function ActivityPanel({
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Wallet className="h-4 w-4 text-rose-500" />
-              Transactions
+              交易
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -173,14 +173,14 @@ export function ActivityPanel({
               <>
                 <div className="grid grid-cols-2 gap-2 text-center">
                   <div>
-                    <p className="text-xs text-muted-foreground">Expense</p>
+                    <p className="text-xs text-muted-foreground">支出</p>
                     <p className="text-lg font-semibold text-rose-500">
                       ¥{pixiu.summary.expense.toFixed(2)}
                     </p>
                   </div>
                   {pixiu.summary.income > 0 && (
                     <div>
-                      <p className="text-xs text-muted-foreground">Income</p>
+                      <p className="text-xs text-muted-foreground">收入</p>
                       <p className="text-lg font-semibold text-emerald-500">
                         ¥{pixiu.summary.income.toFixed(2)}
                       </p>
@@ -194,7 +194,7 @@ export function ActivityPanel({
             {/* Category breakdown */}
             {pixiu.expenseByCategory.length > 0 && (
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">By Category</p>
+                <p className="text-xs text-muted-foreground">按分类</p>
                 {pixiu.expenseByCategory.slice(0, 5).map((cat) => (
                   <div
                     key={cat.category}

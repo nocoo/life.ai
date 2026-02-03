@@ -56,13 +56,13 @@ const formatHours = (hours: number | null): string => {
   if (hours === null) return "-";
   const h = Math.floor(hours);
   const m = Math.round((hours - h) * 60);
-  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  return m > 0 ? `${h}小时${m}分` : `${h}小时`;
 };
 
 /** Format distance in km */
 const formatDistance = (meters: number | null): string => {
   if (meters === null) return "-";
-  return `${(meters / 1000).toFixed(1)} km`;
+  return `${(meters / 1000).toFixed(1)} 公里`;
 };
 
 /** Format currency */
@@ -76,7 +76,7 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
       {/* Steps */}
       <SummaryCard
         icon={<Footprints className="h-5 w-5" />}
-        label="Steps"
+        label="步数"
         value={formatNumber(summary.steps)}
         iconColor="text-green-500"
       />
@@ -84,11 +84,11 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
       {/* Heart Rate */}
       <SummaryCard
         icon={<Heart className="h-5 w-5" />}
-        label="Heart Rate"
-        value={summary.heartRateAvg ? `${summary.heartRateAvg} bpm` : "-"}
+        label="心率"
+        value={summary.heartRateAvg ? `${summary.heartRateAvg} 次/分` : "-"}
         subtitle={
           summary.heartRateMin && summary.heartRateMax
-            ? `${summary.heartRateMin}-${summary.heartRateMax} bpm`
+            ? `${summary.heartRateMin}-${summary.heartRateMax} 次/分`
             : undefined
         }
         iconColor="text-red-500"
@@ -97,9 +97,9 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
       {/* Active Energy */}
       <SummaryCard
         icon={<Flame className="h-5 w-5" />}
-        label="Active Energy"
+        label="活动能量"
         value={
-          summary.activeEnergy ? `${Math.round(summary.activeEnergy)} kcal` : "-"
+          summary.activeEnergy ? `${Math.round(summary.activeEnergy)} 千卡` : "-"
         }
         iconColor="text-orange-500"
       />
@@ -107,9 +107,9 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
       {/* Exercise */}
       <SummaryCard
         icon={<Timer className="h-5 w-5" />}
-        label="Exercise"
+        label="运动"
         value={
-          summary.exerciseMinutes ? `${summary.exerciseMinutes} min` : "-"
+          summary.exerciseMinutes ? `${summary.exerciseMinutes} 分钟` : "-"
         }
         iconColor="text-blue-500"
       />
@@ -117,7 +117,7 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
       {/* Sleep */}
       <SummaryCard
         icon={<Moon className="h-5 w-5" />}
-        label="Sleep"
+        label="睡眠"
         value={formatHours(summary.sleepHours)}
         iconColor="text-indigo-500"
       />
@@ -125,11 +125,11 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
       {/* Distance */}
       <SummaryCard
         icon={<MapPin className="h-5 w-5" />}
-        label="Distance"
+        label="距离"
         value={formatDistance(summary.distance)}
         subtitle={
           summary.locationCount > 0
-            ? `${summary.locationCount} locations`
+            ? `${summary.locationCount} 个地点`
             : undefined
         }
         iconColor="text-cyan-500"
@@ -138,11 +138,11 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
       {/* Spending */}
       <SummaryCard
         icon={<Wallet className="h-5 w-5" />}
-        label="Spending"
+        label="支出"
         value={formatCurrency(summary.expense)}
         subtitle={
           summary.transactionCount > 0
-            ? `${summary.transactionCount} transactions`
+            ? `${summary.transactionCount} 笔交易`
             : undefined
         }
         iconColor="text-rose-500"
@@ -152,9 +152,9 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
       {summary.income > 0 && (
         <SummaryCard
           icon={<TrendingUp className="h-5 w-5" />}
-          label="Net"
+          label="净收入"
           value={formatCurrency(summary.net)}
-          subtitle={`Income: ${formatCurrency(summary.income)}`}
+          subtitle={`收入：${formatCurrency(summary.income)}`}
           iconColor={summary.net >= 0 ? "text-emerald-500" : "text-rose-500"}
         />
       )}

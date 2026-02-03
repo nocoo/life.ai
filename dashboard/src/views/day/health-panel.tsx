@@ -26,10 +26,10 @@ const stageColors: Record<string, string> = {
 
 /** Sleep stage labels */
 const stageLabels: Record<string, string> = {
-  deep: "Deep",
-  light: "Light",
+  deep: "深睡",
+  light: "浅睡",
   rem: "REM",
-  awake: "Awake",
+  awake: "清醒",
 };
 
 export function HealthPanel({ data }: HealthPanelProps) {
@@ -41,27 +41,27 @@ export function HealthPanel({ data }: HealthPanelProps) {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Moon className="h-4 w-4 text-indigo-500" />
-              Sleep
+              睡眠
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Duration</span>
+              <span className="text-muted-foreground">时长</span>
               <span className="font-medium">
                 {(data.sleep.duration / 60).toFixed(1)}h
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Bedtime</span>
+              <span className="text-muted-foreground">入睡</span>
               <span>{formatTime(data.sleep.start)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Wake up</span>
+              <span className="text-muted-foreground">醒来</span>
               <span>{formatTime(data.sleep.end)}</span>
             </div>
             <Separator />
             <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Sleep Stages</p>
+              <p className="text-xs text-muted-foreground">睡眠阶段</p>
               <div className="flex h-3 w-full overflow-hidden rounded-full">
                 {data.sleep.stages.map((stage, i) => (
                   <div
@@ -106,30 +106,30 @@ export function HealthPanel({ data }: HealthPanelProps) {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Heart className="h-4 w-4 text-red-500" />
-              Heart Rate
+              心率
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-3 gap-2 text-center">
               <div>
-                <p className="text-xs text-muted-foreground">Min</p>
+                <p className="text-xs text-muted-foreground">最低</p>
                 <p className="text-lg font-semibold">{data.heartRate.min}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Avg</p>
+                <p className="text-xs text-muted-foreground">平均</p>
                 <p className="text-lg font-semibold text-red-500">
                   {data.heartRate.avg}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Max</p>
+                <p className="text-xs text-muted-foreground">最高</p>
                 <p className="text-lg font-semibold">{data.heartRate.max}</p>
               </div>
             </div>
             <Separator />
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">
-                Recent Readings (bpm)
+                最近记录 (次/分)
               </p>
               <div className="flex flex-wrap gap-1">
                 {data.heartRate.records.slice(-10).map((r, i) => (
@@ -149,19 +149,19 @@ export function HealthPanel({ data }: HealthPanelProps) {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Footprints className="h-4 w-4 text-green-500" />
-              Steps
+              步数
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Total</span>
+              <span className="text-muted-foreground">总计</span>
               <span className="text-lg font-semibold text-green-500">
                 {data.totalSteps.toLocaleString()}
               </span>
             </div>
             <Separator />
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Hourly Breakdown</p>
+              <p className="text-xs text-muted-foreground">每小时分布</p>
               <div className="flex h-16 items-end gap-[2px]">
                 {data.steps.map((s, i) => {
                   const maxSteps = Math.max(...data.steps.map((x) => x.count));
@@ -187,12 +187,12 @@ export function HealthPanel({ data }: HealthPanelProps) {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Droplets className="h-4 w-4 text-cyan-500" />
-              Water
+              饮水
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Total</span>
+              <span className="text-muted-foreground">总计</span>
               <span className="text-lg font-semibold text-cyan-500">
                 {(data.totalWater / 1000).toFixed(1)}L
               </span>
@@ -218,28 +218,28 @@ export function HealthPanel({ data }: HealthPanelProps) {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Activity className="h-4 w-4 text-orange-500" />
-              Activity Rings
+              活动圆环
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Move</span>
+              <span className="text-muted-foreground">活动</span>
               <span>
                 {Math.round(data.activity.activeEnergy)} /{" "}
-                {data.activity.activeEnergyGoal ?? 500} kcal
+                {data.activity.activeEnergyGoal ?? 500} 千卡
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Exercise</span>
+              <span className="text-muted-foreground">运动</span>
               <span>
                 {data.activity.exerciseMinutes} /{" "}
-                {data.activity.exerciseGoal ?? 30} min
+                {data.activity.exerciseGoal ?? 30} 分钟
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Stand</span>
+              <span className="text-muted-foreground">站立</span>
               <span>
-                {data.activity.standHours} / {data.activity.standGoal ?? 12} hr
+                {data.activity.standHours} / {data.activity.standGoal ?? 12} 小时
               </span>
             </div>
           </CardContent>

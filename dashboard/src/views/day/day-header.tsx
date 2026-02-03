@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import { zhCN } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -42,7 +43,7 @@ export function DayHeader({
           disabled={isToday}
           className="mr-2"
         >
-          Today
+          今天
         </Button>
 
         {/* Previous Day */}
@@ -50,7 +51,7 @@ export function DayHeader({
           variant="ghost"
           size="icon"
           onClick={onPrevDay}
-          aria-label="Previous day"
+          aria-label="前一天"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -60,7 +61,7 @@ export function DayHeader({
           onClick={onToggleCalendar}
           className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
         >
-          <span>{format(selectedDate, "EEEE, MMMM d, yyyy")}</span>
+          <span>{format(selectedDate, "yyyy年M月d日 EEEE", { locale: zhCN })}</span>
           {onToggleCalendar && (
             <CalendarIcon className="h-4 w-4 text-muted-foreground" />
           )}
@@ -71,7 +72,7 @@ export function DayHeader({
           variant="ghost"
           size="icon"
           onClick={onNextDay}
-          aria-label="Next day"
+          aria-label="后一天"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
