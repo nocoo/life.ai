@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { addDays, subDays, startOfDay, format } from "date-fns";
-import type { DayViewData, TimelineEvent } from "@/models/day-view";
+import type { DayViewData, TimelineEvent, TimeSlot } from "@/models/day-view";
 import { buildDaySummary } from "@/models/day-view";
 import { buildTimelineEvents } from "@/mocks";
 import { fetchAllDayData } from "@/lib/api-client";
@@ -9,6 +9,7 @@ import {
   transformFootprintData,
   transformPixiuData,
 } from "@/lib/transformers";
+import { generateHealthTimeSlots } from "@/lib/timeline-aggregator";
 
 export interface DayState {
   /** Currently selected date */
@@ -21,6 +22,8 @@ export interface DayState {
   data: DayViewData | null;
   /** Timeline events */
   timelineEvents: TimelineEvent[];
+  /** Enhanced timeline slots (15-minute granularity) */
+  timeSlots: TimeSlot[];
   /** Calendar visibility */
   calendarOpen: boolean;
 }
@@ -53,6 +56,7 @@ const initialState: DayState = {
   error: null,
   data: null,
   timelineEvents: [],
+  timeSlots: [],
   calendarOpen: false,
 };
 
@@ -116,10 +120,12 @@ export const useDayStore = create<DayStore>((set, get) => ({
       };
 
       const timelineEvents = buildTimelineEvents(data);
+      const timeSlots = generateHealthTimeSlots(health);
 
       set({
         data,
         timelineEvents,
+        timeSlots,
         loading: false,
       });
     } catch (err) {
