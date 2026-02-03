@@ -170,27 +170,44 @@ function SunCurveIndicator({ hour, minute, date, latitude, longitude }: SunCurve
 
 /**
  * Priority order for left side items (higher number = closer to time axis)
- * Layout: [other items] [elevation] [transport] [awake-day/sleep]
+ * Layout: [workout/water] [steps/distance] [transport-summary] [elevation] [transport]
  */
 const LEFT_ITEM_PRIORITY: Record<string, number> = {
+  // Transportation - rightmost (closest to time axis)
+  "transport-walking": 100,
+  "transport-cycling": 100,
+  "transport-driving": 100,
+  "transport-stationary": 100,
+  // Elevation - second position
+  elevation: 90,
+  // Transport summary - third position
+  "transport-summary": 80,
+  // Activity metrics - fourth position
+  steps: 70,
+  distance: 70,
+  // Other items (workout, water) - leftmost
+  workout: 10,
+  water: 10,
+};
+
+/**
+ * Priority order for right side items (higher number = closer to time axis)
+ * Layout: [hrv/respiratory] [oxygen] [heartRate] [sleep/awake]
+ */
+const RIGHT_ITEM_PRIORITY: Record<string, number> = {
   // Sleep states - rightmost (closest to time axis)
   "awake-day": 100,
   "sleep-deep": 100,
   "sleep-core": 100,
   "sleep-rem": 100,
   "sleep-awake": 100,
-  // Transportation - second position
-  "transport-walking": 90,
-  "transport-cycling": 90,
-  "transport-driving": 90,
-  "transport-stationary": 90,
-  // Elevation - third position
-  elevation: 80,
-  // Transport summary - fourth position (left of transport capsules)
-  "transport-summary": 70,
-  // Other items (workout, water) - leftmost
-  workout: 10,
-  water: 10,
+  // Heart rate - second position
+  heartRate: 90,
+  // Oxygen - third position
+  oxygenSaturation: 80,
+  // HRV and respiratory - leftmost
+  hrv: 70,
+  respiratoryRate: 70,
 };
 
 /**
@@ -201,6 +218,18 @@ function sortLeftItems(items: TimelineItem[]): TimelineItem[] {
     const priorityA = LEFT_ITEM_PRIORITY[a.type] ?? 0;
     const priorityB = LEFT_ITEM_PRIORITY[b.type] ?? 0;
     return priorityA - priorityB;
+  });
+}
+
+/**
+ * Sort right items by priority (higher priority = earlier in array = closer to time axis)
+ */
+function sortRightItems(items: TimelineItem[]): TimelineItem[] {
+  return [...items].sort((a, b) => {
+    const priorityA = RIGHT_ITEM_PRIORITY[a.type] ?? 0;
+    const priorityB = RIGHT_ITEM_PRIORITY[b.type] ?? 0;
+    // Reverse order: higher priority items come first (leftmost = closest to time axis)
+    return priorityB - priorityA;
   });
 }
 
@@ -217,7 +246,7 @@ interface TimeSlotRowProps {
  */
 function TimeSlotRow({ slot, date, latitude, longitude }: TimeSlotRowProps) {
   const leftItems = sortLeftItems(slot.items.filter((i) => i.side === "left"));
-  const rightItems = slot.items.filter((i) => i.side === "right");
+  const rightItems = sortRightItems(slot.items.filter((i) => i.side === "right"));
 
   // Alternate background by hour (odd hours get light gray)
   const isOddHour = slot.hour % 2 === 1;

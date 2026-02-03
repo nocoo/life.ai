@@ -60,17 +60,14 @@ describe("timeline-colors", () => {
   });
 
   describe("LEFT_SIDE_TYPES", () => {
-    it("should include sleep stages", () => {
-      expect(LEFT_SIDE_TYPES.has("sleep-deep")).toBe(true);
-      expect(LEFT_SIDE_TYPES.has("sleep-core")).toBe(true);
-      expect(LEFT_SIDE_TYPES.has("sleep-rem")).toBe(true);
-      expect(LEFT_SIDE_TYPES.has("sleep-awake")).toBe(true);
-      expect(LEFT_SIDE_TYPES.has("awake-day")).toBe(true);
-    });
-
-    it("should include workout and water", () => {
+    it("should include activity items (workout and water)", () => {
       expect(LEFT_SIDE_TYPES.has("workout")).toBe(true);
       expect(LEFT_SIDE_TYPES.has("water")).toBe(true);
+    });
+
+    it("should include activity metrics (steps, distance)", () => {
+      expect(LEFT_SIDE_TYPES.has("steps")).toBe(true);
+      expect(LEFT_SIDE_TYPES.has("distance")).toBe(true);
     });
 
     it("should include transportation modes and elevation", () => {
@@ -78,21 +75,32 @@ describe("timeline-colors", () => {
       expect(LEFT_SIDE_TYPES.has("transport-cycling")).toBe(true);
       expect(LEFT_SIDE_TYPES.has("transport-driving")).toBe(true);
       expect(LEFT_SIDE_TYPES.has("transport-stationary")).toBe(true);
+      expect(LEFT_SIDE_TYPES.has("transport-summary")).toBe(true);
       expect(LEFT_SIDE_TYPES.has("elevation")).toBe(true);
     });
 
-    it("should not include metrics", () => {
+    it("should not include sleep stages (now on right side)", () => {
+      expect(LEFT_SIDE_TYPES.has("sleep-deep")).toBe(false);
+      expect(LEFT_SIDE_TYPES.has("sleep-core")).toBe(false);
+      expect(LEFT_SIDE_TYPES.has("sleep-rem")).toBe(false);
+      expect(LEFT_SIDE_TYPES.has("sleep-awake")).toBe(false);
+      expect(LEFT_SIDE_TYPES.has("awake-day")).toBe(false);
+    });
+
+    it("should not include physiological metrics (on right side)", () => {
       expect(LEFT_SIDE_TYPES.has("heartRate")).toBe(false);
-      expect(LEFT_SIDE_TYPES.has("steps")).toBe(false);
+      expect(LEFT_SIDE_TYPES.has("hrv")).toBe(false);
+      expect(LEFT_SIDE_TYPES.has("oxygenSaturation")).toBe(false);
     });
   });
 
   describe("getItemSide", () => {
-    it("should return left for sleep stages", () => {
-      expect(getItemSide("sleep-deep")).toBe("left");
-      expect(getItemSide("sleep-core")).toBe("left");
-      expect(getItemSide("sleep-rem")).toBe("left");
-      expect(getItemSide("sleep-awake")).toBe("left");
+    it("should return right for sleep stages", () => {
+      expect(getItemSide("sleep-deep")).toBe("right");
+      expect(getItemSide("sleep-core")).toBe("right");
+      expect(getItemSide("sleep-rem")).toBe("right");
+      expect(getItemSide("sleep-awake")).toBe("right");
+      expect(getItemSide("awake-day")).toBe("right");
     });
 
     it("should return left for workout and water", () => {
@@ -100,16 +108,22 @@ describe("timeline-colors", () => {
       expect(getItemSide("water")).toBe("left");
     });
 
+    it("should return left for activity metrics (steps, distance)", () => {
+      expect(getItemSide("steps")).toBe("left");
+      expect(getItemSide("distance")).toBe("left");
+    });
+
+    it("should return left for transportation modes", () => {
+      expect(getItemSide("transport-walking")).toBe("left");
+      expect(getItemSide("transport-cycling")).toBe("left");
+      expect(getItemSide("transport-driving")).toBe("left");
+    });
+
     it("should return right for physiological metrics", () => {
       expect(getItemSide("heartRate")).toBe("right");
       expect(getItemSide("hrv")).toBe("right");
       expect(getItemSide("oxygenSaturation")).toBe("right");
       expect(getItemSide("respiratoryRate")).toBe("right");
-    });
-
-    it("should return right for activity metrics", () => {
-      expect(getItemSide("steps")).toBe("right");
-      expect(getItemSide("distance")).toBe("right");
     });
   });
 

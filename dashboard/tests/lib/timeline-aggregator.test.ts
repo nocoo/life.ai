@@ -228,7 +228,7 @@ describe("timeline-aggregator", () => {
       const stepsItem = slot08_00.items.find((i) => i.type === "steps");
       expect(stepsItem).toBeDefined();
       expect(stepsItem?.label).toBe("👣 1000");
-      expect(stepsItem?.side).toBe("right");
+      expect(stepsItem?.side).toBe("left"); // Steps are now on left side (activity metric)
 
       // 08:15 should NOT have steps
       const slot08_15 = slots[8 * 4 + 1];

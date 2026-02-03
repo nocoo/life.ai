@@ -49,28 +49,30 @@ export const TIMELINE_COLORS: Record<TimelineDataType, string> = {
 
 /**
  * Types that should be displayed on the left side of the timeline
- * These are typically duration-based or state-based items
+ * Left side: Activity/movement related items
+ * Right side: State/physiological metrics (sleep, heart rate, etc.)
  */
 export const LEFT_SIDE_TYPES = new Set<TimelineDataType>([
-  "sleep-deep",
-  "sleep-core",
-  "sleep-rem",
-  "sleep-awake",
-  "awake-day",
+  // Activity items
   "workout",
   "water",
+  // Activity metrics (movement related)
+  "steps",
+  "distance",
+  // Transportation modes
   "transport-walking",
   "transport-cycling",
   "transport-driving",
   "transport-stationary",
   "transport-summary",
+  // Elevation
   "elevation",
 ]);
 
 /**
  * Get the display side for a data type
- * Left side: duration/state items (sleep, workout, water)
- * Right side: instant metrics (heart rate, steps, etc.)
+ * Left side: Activity/movement items (workout, steps, transport, etc.)
+ * Right side: State/physiological metrics (sleep, heart rate, oxygen, etc.)
  */
 export function getItemSide(type: TimelineDataType): "left" | "right" {
   return LEFT_SIDE_TYPES.has(type) ? "left" : "right";
