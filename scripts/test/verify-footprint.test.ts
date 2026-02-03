@@ -287,7 +287,7 @@ describe("verify footprint", () => {
     }
 
     expect(errors).toHaveLength(0);
-    expect(logs[0]).toBe("Verify OK");
+    expect(logs[0]).toBe("✅ Verify OK");
     expect(logs.some((line) => line.includes("count: gpx=1 db=1"))).toBe(true);
   });
 
@@ -326,7 +326,7 @@ describe("verify footprint", () => {
       }
     }
 
-    expect(errors[0]).toBe("Verify failed:");
+    expect(errors[0]).toBe("❌ Verify failed:");
     expect(logs.some((line) => line.startsWith("- 2024-01-"))).toBe(true);
     expect(logs.some((line) => line.includes("...and 2 more"))).toBe(true);
   });

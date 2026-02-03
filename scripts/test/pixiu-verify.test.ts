@@ -281,7 +281,7 @@ describe("pixiu verify", () => {
 
     const result = await runCli(["2024", csvFile], io);
     expect(result.exitCode).toBe(1);
-    expect(errors[0]).toBe("Verify failed:");
+    expect(errors[0]).toBe("❌ Verify failed:");
     expect(logs.some((line) => line.startsWith("- 2024-01-"))).toBe(true);
     expect(logs.some((line) => line.includes("...and 1 more"))).toBe(true);
   });
