@@ -4,7 +4,7 @@ import tsPlugin from "@typescript-eslint/eslint-plugin";
 
 export default [
   {
-    ignores: ["dashboard/.next/**", "dashboard/node_modules/**"]
+    ignores: ["dashboard/**"]
   },
   js.configs.recommended,
   {

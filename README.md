@@ -36,9 +36,18 @@ bun run db:agg
 ### 前端开发服务器
 ```bash
 cd dashboard
+bun install
 bun dev
 ```
 默认端口：`7013`
+
+### Dashboard 测试
+```bash
+cd dashboard
+bun run ut      # 运行测试 + 覆盖率检查
+bun run lint    # 代码检查
+bun run build   # 生产构建
+```
 
 ## 🧪 测试与质量门禁
 - UT：`bun run ut`（覆盖率 >= 90%）
