@@ -1,5 +1,5 @@
-import { HelloWorld } from "@/views/home/hello-world";
+import { DayPage } from "@/views/day/day-page";
 
 export default function Home() {
-  return <HelloWorld />;
+  return <DayPage />;
 }
