@@ -34,7 +34,7 @@ const stageLabels: Record<string, string> = {
 
 export function HealthPanel({ data }: HealthPanelProps) {
   return (
-    <div className="flex flex-col gap-4">
+    <>
       {/* Sleep Card */}
       {data.sleep && (
         <Card>
@@ -245,6 +245,6 @@ export function HealthPanel({ data }: HealthPanelProps) {
           </CardContent>
         </Card>
       )}
-    </div>
+    </>
   );
 }

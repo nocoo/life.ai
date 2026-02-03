@@ -26,7 +26,7 @@ export function Timeline({ events, className }: TimelineProps) {
   });
 
   return (
-    <div className={cn("flex flex-col", className)}>
+    <div className={cn("flex flex-col pl-14", className)}>
       {hours.map((hour) => {
         const hourEvents = eventsByHour.get(hour) || [];
         const hasEvents = hourEvents.length > 0;
@@ -40,7 +40,7 @@ export function Timeline({ events, className }: TimelineProps) {
             )}
           >
             {/* Hour label */}
-            <div className="absolute -left-[1px] -translate-x-full pr-2 text-xs text-muted-foreground w-12 text-right">
+            <div className="absolute left-0 -translate-x-full pr-2 text-xs text-muted-foreground w-12 text-right">
               {hour.toString().padStart(2, "0")}:00
             </div>
 

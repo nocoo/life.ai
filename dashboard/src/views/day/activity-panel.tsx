@@ -44,7 +44,7 @@ export function ActivityPanel({
   workouts,
 }: ActivityPanelProps) {
   return (
-    <div className="flex flex-col gap-4">
+    <>
       {/* Workouts Card */}
       {workouts.length > 0 && (
         <Card>
@@ -244,6 +244,6 @@ export function ActivityPanel({
           </CardContent>
         </Card>
       )}
-    </div>
+    </>
   );
 }

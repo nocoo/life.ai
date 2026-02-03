@@ -3,34 +3,31 @@
 import { useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDayStore } from "@/viewmodels/day-store";
 import { DayHeader } from "./day-header";
 import { DayCalendar } from "./day-calendar";
-import { SummaryCards } from "./summary-cards";
 import { Timeline } from "./timeline";
 import { HealthPanel } from "./health-panel";
 import { ActivityPanel } from "./activity-panel";
+import { RawHealthData } from "./raw-health-data";
+import { RawFootprintData } from "./raw-footprint-data";
+import { RawPixiuData } from "./raw-pixiu-data";
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-4 p-6">
-      {/* Summary cards skeleton */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {Array.from({ length: 7 }).map((_, i) => (
-          <Skeleton key={i} className="h-20 w-full" />
-        ))}
-      </div>
-      {/* Main content skeleton */}
-      <div className="grid gap-6 lg:grid-cols-[1fr_200px_1fr]">
-        <div className="space-y-4">
+    <div className="p-6">
+      {/* Two-column layout skeleton: Timeline left, Cards right */}
+      <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
+        {/* Timeline skeleton */}
+        <Skeleton className="h-[800px] w-full" />
+        {/* Cards grid skeleton */}
+        <div className="grid gap-4 sm:grid-cols-2">
           <Skeleton className="h-40 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-48 w-full" />
-        </div>
-        <Skeleton className="h-[600px] w-full" />
-        <div className="space-y-4">
           <Skeleton className="h-36 w-full" />
+          <Skeleton className="h-48 w-full" />
           <Skeleton className="h-44 w-full" />
+          <Skeleton className="h-32 w-full" />
           <Skeleton className="h-56 w-full" />
         </div>
       </div>
@@ -101,35 +98,65 @@ export function DayPage() {
             {/* Error state */}
             {error && <ErrorDisplay message={error} />}
 
-            {/* Data display */}
+            {/* Data display with Tabs */}
             {!loading && !error && data && (
-              <>
-                {/* Summary Cards */}
-                <SummaryCards summary={data.summary} />
+              <Tabs defaultValue="dashboard" className="w-full">
+                <TabsList>
+                  <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+                  <TabsTrigger value="health">苹果健康</TabsTrigger>
+                  <TabsTrigger value="footprint">运动软件</TabsTrigger>
+                  <TabsTrigger value="pixiu">记账软件</TabsTrigger>
+                </TabsList>
 
-                {/* Three-column layout */}
-                <div className="grid gap-6 lg:grid-cols-[1fr_220px_1fr]">
-                  {/* Left: Health Panel */}
-                  <HealthPanel data={data.health} />
+                {/* Dashboard Tab */}
+                <TabsContent value="dashboard">
+                  <div className="grid gap-6 lg:grid-cols-[220px_1fr] mt-4">
+                    {/* Left: Timeline */}
+                    <div className="order-first">
+                      <div className="sticky top-6">
+                        <h2 className="mb-4 text-sm font-medium text-muted-foreground pl-14">
+                          Timeline
+                        </h2>
+                        <Timeline events={timelineEvents} />
+                      </div>
+                    </div>
 
-                  {/* Center: Timeline */}
-                  <div className="order-first lg:order-none">
-                    <div className="sticky top-0">
-                      <h2 className="mb-4 text-sm font-medium text-muted-foreground pl-14">
-                        Timeline
-                      </h2>
-                      <Timeline events={timelineEvents} />
+                    {/* Right: Two-column card grid */}
+                    <div className="grid gap-4 sm:grid-cols-2 auto-rows-min">
+                      {/* Health cards */}
+                      <HealthPanel data={data.health} />
+
+                      {/* Activity cards */}
+                      <ActivityPanel
+                        footprint={data.footprint}
+                        pixiu={data.pixiu}
+                        workouts={data.health.workouts}
+                      />
                     </div>
                   </div>
+                </TabsContent>
 
-                  {/* Right: Activity Panel */}
-                  <ActivityPanel
-                    footprint={data.footprint}
-                    pixiu={data.pixiu}
-                    workouts={data.health.workouts}
-                  />
-                </div>
-              </>
+                {/* Apple Health Raw Data Tab */}
+                <TabsContent value="health">
+                  <div className="mt-4">
+                    <RawHealthData data={data.health} />
+                  </div>
+                </TabsContent>
+
+                {/* Footprint Raw Data Tab */}
+                <TabsContent value="footprint">
+                  <div className="mt-4">
+                    <RawFootprintData data={data.footprint} />
+                  </div>
+                </TabsContent>
+
+                {/* Pixiu Raw Data Tab */}
+                <TabsContent value="pixiu">
+                  <div className="mt-4">
+                    <RawPixiuData data={data.pixiu} />
+                  </div>
+                </TabsContent>
+              </Tabs>
             )}
           </div>
         </ScrollArea>
