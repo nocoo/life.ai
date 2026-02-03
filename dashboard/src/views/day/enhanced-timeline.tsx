@@ -30,7 +30,7 @@ const CHINESE_LABELS: Record<TimelineDataType, { short: string; tooltip: string 
   "sleep-core": { short: "浅睡", tooltip: "浅度睡眠：占睡眠时间最长的阶段" },
   "sleep-rem": { short: "快眼", tooltip: "快速眼动睡眠：梦境发生的阶段，有助于记忆巩固" },
   "sleep-awake": { short: "清醒", tooltip: "睡眠中的清醒时段" },
-  "awake-day": { short: "起床", tooltip: "白天清醒状态" },
+  "awake-day": { short: "活跃", tooltip: "白天活跃状态" },
   workout: { short: "运动", tooltip: "运动锻炼" },
   water: { short: "饮水", tooltip: "饮水记录" },
   "transport-walking": { short: "步行", tooltip: "步行移动" },
