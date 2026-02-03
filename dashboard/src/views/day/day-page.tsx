@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDayStore } from "@/viewmodels/day-store";
 import { DayHeader } from "./day-header";
 import { DayCalendar } from "./day-calendar";
@@ -14,6 +15,7 @@ import { ActivityPanel } from "./activity-panel";
 import { RawHealthData } from "./raw-health-data";
 import { RawFootprintData } from "./raw-footprint-data";
 import { RawPixiuData } from "./raw-pixiu-data";
+import { Clock } from "lucide-react";
 
 function LoadingSkeleton() {
   return (
@@ -129,24 +131,30 @@ export function DayPage() {
 
                 {/* Dashboard Tab */}
                 <TabsContent value="dashboard">
-                  {/* Mobile: Stack layout (cards above timeline) */}
-                  {/* Desktop: Timeline primary (60%) + Cards sidebar (40%) */}
+                  {/* Two-column layout: Timeline (left) + Cards sidebar (right) */}
+                  {/* Use min-w-0 to allow flex children to shrink below content size */}
                   <div className="grid gap-6 lg:grid-cols-[1fr_340px] mt-4">
-                    {/* Left: Enhanced Timeline (primary content) */}
-                    <div className="order-2 lg:order-1">
-                      <h2 className="mb-4 text-sm font-medium text-muted-foreground text-center">
-                        时间线
-                      </h2>
-                      <EnhancedTimeline 
-                        slots={timeSlots} 
-                        date={selectedDate}
-                        latitude={location.latitude}
-                        longitude={location.longitude}
-                      />
-                    </div>
+                    {/* Left: Enhanced Timeline in a Card */}
+                    <Card className="order-2 lg:order-1 min-w-0 overflow-hidden">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                          <Clock className="h-4 w-4 text-indigo-500" />
+                          时间线
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-0">
+                        <EnhancedTimeline 
+                          slots={timeSlots} 
+                          date={selectedDate}
+                          latitude={location.latitude}
+                          longitude={location.longitude}
+                        />
+                      </CardContent>
+                    </Card>
 
                     {/* Right: Single-column cards sidebar */}
-                    <div className="order-1 lg:order-2 grid gap-4 auto-rows-min">
+                    {/* Use min-w-0 and overflow-hidden to prevent content overflow */}
+                    <div className="order-1 lg:order-2 grid gap-4 auto-rows-min min-w-0 overflow-hidden">
                       {/* Day Info Card - Date and Weather */}
                       <DayInfoCard
                         date={selectedDate}

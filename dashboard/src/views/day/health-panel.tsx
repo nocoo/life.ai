@@ -37,14 +37,14 @@ export function HealthPanel({ data }: HealthPanelProps) {
     <>
       {/* Sleep Card */}
       {data.sleep && (
-        <Card>
+        <Card className="min-w-0 overflow-hidden">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Moon className="h-4 w-4 text-indigo-500" />
               睡眠
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 min-w-0">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">时长</span>
               <span className="font-medium">
@@ -102,14 +102,14 @@ export function HealthPanel({ data }: HealthPanelProps) {
 
       {/* Heart Rate Card */}
       {data.heartRate && (
-        <Card>
+        <Card className="min-w-0 overflow-hidden">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Heart className="h-4 w-4 text-red-500" />
               心率
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 min-w-0">
             <div className="grid grid-cols-3 gap-2 text-center">
               <div>
                 <p className="text-xs text-muted-foreground">最低</p>
@@ -145,14 +145,14 @@ export function HealthPanel({ data }: HealthPanelProps) {
 
       {/* Steps Card */}
       {data.steps.length > 0 && (
-        <Card>
+        <Card className="min-w-0 overflow-hidden">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Footprints className="h-4 w-4 text-green-500" />
               步数
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 min-w-0">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">总计</span>
               <span className="text-lg font-semibold text-green-500">
@@ -183,14 +183,14 @@ export function HealthPanel({ data }: HealthPanelProps) {
 
       {/* Water Card */}
       {data.water.length > 0 && (
-        <Card>
+        <Card className="min-w-0 overflow-hidden">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Droplets className="h-4 w-4 text-cyan-500" />
               饮水
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 min-w-0">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">总计</span>
               <span className="text-lg font-semibold text-cyan-500">
@@ -214,14 +214,14 @@ export function HealthPanel({ data }: HealthPanelProps) {
 
       {/* Activity Rings Card */}
       {data.activity && (
-        <Card>
+        <Card className="min-w-0 overflow-hidden">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Activity className="h-4 w-4 text-orange-500" />
               活动圆环
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-2 min-w-0">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">活动</span>
               <span>

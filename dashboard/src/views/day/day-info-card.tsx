@@ -62,8 +62,8 @@ export function DayInfoCard({ date, latitude, longitude }: DayInfoCardProps) {
   const weekday = formatWeekday(date);
 
   return (
-    <Card>
-      <CardContent className="p-4">
+    <Card className="min-w-0 overflow-hidden">
+      <CardContent className="p-4 min-w-0">
         {/* Date Section */}
         <div className="flex items-center gap-3 mb-3">
           <Calendar className="h-5 w-5 text-primary" />

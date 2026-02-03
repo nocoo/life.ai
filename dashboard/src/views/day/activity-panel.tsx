@@ -47,14 +47,14 @@ export function ActivityPanel({
     <>
       {/* Workouts Card */}
       {workouts.length > 0 && (
-        <Card>
+        <Card className="min-w-0 overflow-hidden">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Dumbbell className="h-4 w-4 text-green-500" />
               运动
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 min-w-0">
             {workouts.map((workout, i) => (
               <div key={workout.id}>
                 {i > 0 && <Separator className="my-3" />}
@@ -100,26 +100,26 @@ export function ActivityPanel({
 
       {/* Locations Card */}
       {footprint.locations.length > 0 && (
-        <Card>
+        <Card className="min-w-0 overflow-hidden">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <MapPin className="h-4 w-4 text-blue-500" />
               地点
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-2 min-w-0">
             {footprint.locations
               .filter((loc) => loc.name !== "Commute")
               .map((loc) => (
                 <div
                   key={loc.id}
-                  className="flex items-center justify-between text-sm"
+                  className="flex items-center justify-between text-sm gap-2"
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-blue-500" />
-                    <span>{loc.name}</span>
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0" />
+                    <span className="truncate">{loc.name}</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
                     {loc.startTime} - {loc.endTime}
                   </span>
                 </div>
@@ -130,14 +130,14 @@ export function ActivityPanel({
 
       {/* Track Summary Card */}
       {footprint.summary && (
-        <Card>
+        <Card className="min-w-0 overflow-hidden">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Route className="h-4 w-4 text-cyan-500" />
               移动
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-2 min-w-0">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">总距离</span>
               <span className="font-medium">
@@ -160,28 +160,28 @@ export function ActivityPanel({
 
       {/* Transactions Card */}
       {pixiu.transactions.length > 0 && (
-        <Card>
+        <Card className="min-w-0 overflow-hidden">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Wallet className="h-4 w-4 text-rose-500" />
               交易
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-2 min-w-0">
             {/* Summary */}
             {pixiu.summary && (
               <>
                 <div className="grid grid-cols-2 gap-2 text-center">
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs text-muted-foreground">支出</p>
-                    <p className="text-lg font-semibold text-rose-500">
+                    <p className="text-lg font-semibold text-rose-500 truncate">
                       ¥{pixiu.summary.expense.toFixed(2)}
                     </p>
                   </div>
                   {pixiu.summary.income > 0 && (
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">收入</p>
-                      <p className="text-lg font-semibold text-emerald-500">
+                      <p className="text-lg font-semibold text-emerald-500 truncate">
                         ¥{pixiu.summary.income.toFixed(2)}
                       </p>
                     </div>
@@ -193,15 +193,15 @@ export function ActivityPanel({
 
             {/* Category breakdown */}
             {pixiu.expenseByCategory.length > 0 && (
-              <div className="space-y-1">
+              <div className="space-y-1 min-w-0">
                 <p className="text-xs text-muted-foreground">按分类</p>
                 {pixiu.expenseByCategory.slice(0, 5).map((cat) => (
                   <div
                     key={cat.category}
-                    className="flex items-center justify-between text-sm"
+                    className="flex items-center justify-between text-sm gap-2"
                   >
-                    <span>{cat.category}</span>
-                    <span className="text-muted-foreground">
+                    <span className="truncate flex-shrink min-w-0">{cat.category}</span>
+                    <span className="text-muted-foreground whitespace-nowrap flex-shrink-0">
                       ¥{cat.amount.toFixed(2)} ({cat.count})
                     </span>
                   </div>
@@ -212,18 +212,18 @@ export function ActivityPanel({
             <Separator />
 
             {/* Transaction list */}
-            <div className="space-y-2 max-h-[300px] overflow-y-auto">
+            <div className="space-y-2 max-h-[300px] overflow-y-auto min-w-0">
               {pixiu.transactions.map((tx) => (
                 <div
                   key={tx.id}
-                  className="flex items-center justify-between text-sm"
+                  className="flex items-center justify-between text-sm gap-2"
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-muted-foreground flex-shrink-0">
                         {tx.time}
                       </span>
-                      <span className="truncate">{tx.categoryL2}</span>
+                      <span className="truncate min-w-0">{tx.categoryL2}</span>
                     </div>
                     {tx.note && (
                       <p className="text-xs text-muted-foreground truncate">
@@ -232,9 +232,9 @@ export function ActivityPanel({
                     )}
                   </div>
                   <span
-                    className={
+                    className={`whitespace-nowrap flex-shrink-0 ${
                       tx.isIncome ? "text-emerald-500" : "text-rose-500"
-                    }
+                    }`}
                   >
                     {tx.isIncome ? "+" : "-"}¥{tx.amount.toFixed(2)}
                   </span>
