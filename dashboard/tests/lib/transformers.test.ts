@@ -797,6 +797,47 @@ describe("transformFootprintData", () => {
     expect(result.summary!.totalDistance).toBeGreaterThan(1000);
     expect(result.summary!.totalDistance).toBeLessThan(1200);
   });
+
+  test("transforms track points without day aggregation", () => {
+    const raw: FootprintRawData = {
+      date: "2024-01-15",
+      trackPoints: [
+        {
+          id: 1,
+          source: "footprint",
+          track_date: "2024-01-15",
+          ts: "2024-01-15T08:30:00+08:00",
+          lat: 39.9042,
+          lon: 116.4074,
+          ele: null,
+          speed: 1.2,
+          course: null,
+        },
+        {
+          id: 2,
+          source: "footprint",
+          track_date: "2024-01-15",
+          ts: "2024-01-15T18:45:00+08:00",
+          lat: 39.9142,
+          lon: 116.4074,
+          ele: null,
+          speed: 1.8,
+          course: null,
+        },
+      ],
+      dayAgg: null, // No day aggregation
+    };
+
+    const result = transformFootprintData(raw);
+
+    expect(result.summary).not.toBeNull();
+    expect(result.summary!.pointCount).toBe(2);
+    expect(result.summary!.avgSpeed).toBe(0); // No avg speed without dayAgg
+    expect(result.summary!.minTime).toBe("08:30");
+    expect(result.summary!.maxTime).toBe("18:45");
+    // Distance should be calculated from track points
+    expect(result.summary!.totalDistance).toBeGreaterThan(1000);
+  });
 });
 
 describe("transformPixiuData", () => {
