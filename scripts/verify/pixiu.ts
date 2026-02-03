@@ -19,6 +19,8 @@ type VerifyResult = {
 const usageText =
   "Usage: bun run scripts/verify/pixiu.ts <year> [csvPath] [--json]";
 
+const round2 = (value: number) => Math.round(value * 100) / 100;
+
 const parseNumber = (value: string | undefined) => {
   if (!value) return 0;
   const cleaned = value.replace(/,/g, "").trim();
@@ -73,7 +75,20 @@ export const parseCsvSummary = async (path: string, targetYear: number) => {
     });
   }
 
-  return { total, income, expense, dayTotals };
+  const roundedDays = new Map<string, { income: number; expense: number }>();
+  for (const [day, totals] of dayTotals) {
+    roundedDays.set(day, {
+      income: round2(totals.income),
+      expense: round2(totals.expense)
+    });
+  }
+
+  return {
+    total,
+    income: round2(income),
+    expense: round2(expense),
+    dayTotals: roundedDays
+  };
 };
 
 export const readDbSummary = (targetYear: number, dbPath?: string) => {
@@ -92,12 +107,17 @@ export const readDbSummary = (targetYear: number, dbPath?: string) => {
       .all(`${targetYear}-%`) as { day: string; income: number; expense: number }[];
 
     const dayTotals = new Map<string, { income: number; expense: number }>();
-    for (const row of perDay) dayTotals.set(row.day, { income: row.income, expense: row.expense });
+    for (const row of perDay) {
+      dayTotals.set(row.day, {
+        income: round2(row.income),
+        expense: round2(row.expense)
+      });
+    }
 
     return {
       total: totalRow.count,
-      income: totalRow.income ?? 0,
-      expense: totalRow.expense ?? 0,
+      income: round2(totalRow.income ?? 0),
+      expense: round2(totalRow.expense ?? 0),
       dayTotals
     };
   } finally {

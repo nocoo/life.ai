@@ -153,6 +153,29 @@ describe("pixiu verify", () => {
     expect(summary.expense).toBe(10);
   });
 
+  it("rounds totals to two decimals", async () => {
+    writePixiuCsv(csvFile, [
+      "2024-01-01,日常收入,工资,1.005,0,人民币,现金,,",
+      "2024-01-02,日常收入,工资,0.005,0,人民币,现金,,"
+    ]);
+
+    const summary = await parseCsvSummary(csvFile, 2024);
+    expect(summary.income).toBe(1.01);
+  });
+
+  it("rounds db totals to two decimals", () => {
+    const db = openDb(testDbPath);
+    createSchema(db);
+    seedDb(db, [
+      { date: "2024-01-01", inflow: 1.005, outflow: 0 },
+      { date: "2024-01-02", inflow: 0.005, outflow: 0 }
+    ]);
+    db.close();
+
+    const summary = readDbSummary(2024, testDbPath);
+    expect(summary.income).toBe(1.01);
+  });
+
   it("summarizes csv with blanks", async () => {
     writePixiuCsv(csvFile, [
       "2024-01-01,日常收入,工资,100,,人民币,现金,,",
