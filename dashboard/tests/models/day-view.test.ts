@@ -59,10 +59,14 @@ describe("day-view model", () => {
         totalSteps: 12345,
         heartRate: { avg: 72, min: 52, max: 145, records: [] },
         sleep: {
-          start: "2025-01-14T23:00:00",
-          end: "2025-01-15T07:00:00",
+          start: "23:00",
+          end: "07:00",
           duration: 480,
           stages: [],
+          deepMinutes: 120,
+          coreMinutes: 180,
+          remMinutes: 90,
+          awakeMinutes: 30,
         },
         activity: {
           activeEnergy: 450,

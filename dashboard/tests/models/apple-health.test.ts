@@ -32,15 +32,19 @@ describe("apple-health model", () => {
   describe("type definitions", () => {
     it("should allow valid SleepRecord", () => {
       const sleep: SleepRecord = {
-        start: "2025-01-14T23:00:00",
-        end: "2025-01-15T07:00:00",
+        start: "23:00",
+        end: "07:00",
         duration: 480,
         stages: [
-          { type: "deep", duration: 120 },
-          { type: "light", duration: 180 },
-          { type: "rem", duration: 90 },
-          { type: "awake", duration: 30 },
+          { type: "deep", start: "23:00", end: "01:00", duration: 120 },
+          { type: "core", start: "01:00", end: "04:00", duration: 180 },
+          { type: "rem", start: "04:00", end: "05:30", duration: 90 },
+          { type: "awake", start: "05:30", end: "06:00", duration: 30 },
         ],
+        deepMinutes: 120,
+        coreMinutes: 180,
+        remMinutes: 90,
+        awakeMinutes: 30,
       };
       expect(sleep.duration).toBe(480);
     });
@@ -101,11 +105,16 @@ describe("apple-health model", () => {
         heartRate: null,
         steps: [],
         totalSteps: 0,
+        distance: null,
+        oxygenSaturation: null,
+        respiratoryRate: null,
+        hrv: null,
         water: [],
         totalWater: 0,
         workouts: [],
         activity: null,
         ecgRecords: [],
+        flightsClimbed: 0,
       };
       expect(data.date).toBe("2025-01-15");
     });
