@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -62,6 +62,21 @@ export function DayPage() {
     loadData,
   } = useDayStore();
 
+  // Track which raw data tabs have been visited (for lazy loading)
+  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(new Set());
+
+  // Handle tab change - mark tab as visited for lazy loading
+  const handleTabChange = useCallback((value: string) => {
+    if (!visitedTabs.has(value)) {
+      setVisitedTabs((prev) => new Set(prev).add(value));
+    }
+  }, [visitedTabs]);
+
+  // Reset visited tabs when date changes
+  useEffect(() => {
+    setVisitedTabs(new Set());
+  }, [selectedDate]);
+
   // Load data on mount
   useEffect(() => {
     loadData();
@@ -100,7 +115,11 @@ export function DayPage() {
 
             {/* Data display with Tabs */}
             {!loading && !error && data && (
-              <Tabs defaultValue="dashboard" className="w-full">
+              <Tabs
+                defaultValue="dashboard"
+                className="w-full"
+                onValueChange={handleTabChange}
+              >
                 <TabsList>
                   <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                   <TabsTrigger value="health">苹果健康</TabsTrigger>
@@ -136,24 +155,42 @@ export function DayPage() {
                   </div>
                 </TabsContent>
 
-                {/* Apple Health Raw Data Tab */}
+                {/* Apple Health Raw Data Tab - Lazy loaded */}
                 <TabsContent value="health">
                   <div className="mt-4">
-                    <RawHealthData data={data.health} />
+                    {visitedTabs.has("health") ? (
+                      <RawHealthData data={data.health} />
+                    ) : (
+                      <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+                        点击标签页加载数据...
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
 
-                {/* Footprint Raw Data Tab */}
+                {/* Footprint Raw Data Tab - Lazy loaded */}
                 <TabsContent value="footprint">
                   <div className="mt-4">
-                    <RawFootprintData data={data.footprint} />
+                    {visitedTabs.has("footprint") ? (
+                      <RawFootprintData data={data.footprint} />
+                    ) : (
+                      <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+                        点击标签页加载数据...
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
 
-                {/* Pixiu Raw Data Tab */}
+                {/* Pixiu Raw Data Tab - Lazy loaded */}
                 <TabsContent value="pixiu">
                   <div className="mt-4">
-                    <RawPixiuData data={data.pixiu} />
+                    {visitedTabs.has("pixiu") ? (
+                      <RawPixiuData data={data.pixiu} />
+                    ) : (
+                      <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+                        点击标签页加载数据...
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
               </Tabs>
