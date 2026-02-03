@@ -51,6 +51,7 @@ export function DayPage() {
     error,
     data,
     timeSlots,
+    location,
     calendarOpen,
     setDate,
     goToday,
@@ -133,9 +134,14 @@ export function DayPage() {
                     {/* Left: Enhanced Timeline (primary content) */}
                     <div className="order-2 lg:order-1">
                       <h2 className="mb-4 text-sm font-medium text-muted-foreground text-center">
-                        Timeline
+                        时间线
                       </h2>
-                      <EnhancedTimeline slots={timeSlots} />
+                      <EnhancedTimeline 
+                        slots={timeSlots} 
+                        date={selectedDate}
+                        latitude={location.latitude}
+                        longitude={location.longitude}
+                      />
                     </div>
 
                     {/* Right: Single-column cards sidebar */}

@@ -11,6 +11,16 @@ import { getItemSide } from "./timeline-colors";
 export const SLOTS_PER_DAY = 96;
 
 /**
+ * Chinese labels for sleep stages (2 characters each)
+ */
+const SLEEP_STAGE_LABELS: Record<SleepStageType, string> = {
+  deep: "深睡",
+  core: "浅睡",
+  rem: "快眼",
+  awake: "清醒",
+};
+
+/**
  * Convert HH:mm time string to slot index (0-95)
  * Rounds to the nearest 15-minute boundary
  *
@@ -132,19 +142,29 @@ function createEmptySlots(): TimeSlot[] {
 }
 
 /**
+ * Format heart rate with fixed 3-digit width
+ * Two-digit values get a leading space
+ */
+function formatHeartRate(value: number): string {
+  const rounded = Math.round(value);
+  // Use non-breaking space for padding to ensure consistent width
+  const padded = rounded.toString().padStart(3, " ");
+  return `♥${padded}`;
+}
+
+/**
  * Generate time slots from Apple Health data
  * This only handles Apple Health data for now
  */
 export function generateHealthTimeSlots(health: DayHealthData): TimeSlot[] {
   const slots = createEmptySlots();
 
-  // 1. Fill sleep stages
+  // 1. Fill sleep stages with Chinese labels
   if (health.sleep?.stages) {
     for (const stage of health.sleep.stages) {
       const slotIndices = getSlotsInRange(stage.start, stage.end);
       const type = sleepStageToType(stage.type);
-      const label =
-        stage.type.charAt(0).toUpperCase() + stage.type.slice(1);
+      const label = SLEEP_STAGE_LABELS[stage.type];
 
       for (const idx of slotIndices) {
         // Only add if not already present (avoid duplicates)
@@ -180,7 +200,7 @@ export function generateHealthTimeSlots(health: DayHealthData): TimeSlot[] {
     }
   }
 
-  // 3. Fill heart rate (group by slot and average)
+  // 3. Fill heart rate (group by slot and average, fixed 3-digit width)
   if (health.heartRate?.records) {
     const hrBySlot = new Map<number, number[]>();
     for (const record of health.heartRate.records) {
@@ -191,7 +211,7 @@ export function generateHealthTimeSlots(health: DayHealthData): TimeSlot[] {
 
     for (const [idx, values] of hrBySlot) {
       const avg = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
-      slots[idx].items.push(createItem("heartRate", `♥ ${avg}`, avg));
+      slots[idx].items.push(createItem("heartRate", formatHeartRate(avg), avg));
     }
   }
 
@@ -219,16 +239,19 @@ export function generateHealthTimeSlots(health: DayHealthData): TimeSlot[] {
     }
   }
 
-  // 6. Fill respiratory rate (exact time points)
+  // 6. Fill respiratory rate (group by slot and average, only show one value)
   if (health.respiratoryRate?.records) {
+    const rrBySlot = new Map<number, number[]>();
     for (const record of health.respiratoryRate.records) {
       const idx = timeToSlotIndex(record.time);
+      const existing = rrBySlot.get(idx) || [];
+      rrBySlot.set(idx, [...existing, record.value]);
+    }
+
+    for (const [idx, values] of rrBySlot) {
+      const avg = values.reduce((a, b) => a + b, 0) / values.length;
       slots[idx].items.push(
-        createItem(
-          "respiratoryRate",
-          `🫁 ${record.value.toFixed(1)}`,
-          record.value
-        )
+        createItem("respiratoryRate", `🫁 ${avg.toFixed(1)}`, avg)
       );
     }
   }
@@ -270,5 +293,31 @@ export function generateHealthTimeSlots(health: DayHealthData): TimeSlot[] {
     slot.hasData = slot.items.length > 0;
   }
 
+  // 10. Fill daytime awake slots with "起床" pill
+  // Any slot without sleep data gets the awake-day indicator
+  fillDaytimeAwake(slots);
+
   return slots;
+}
+
+/**
+ * Fill daytime awake slots with "起床" pill
+ * 
+ * Logic:
+ * - Any slot that doesn't have sleep data (sleep-deep, sleep-core, sleep-rem, sleep-awake)
+ *   gets the "起床" (awake-day) indicator
+ * - This shows the user is awake and active during the day
+ */
+function fillDaytimeAwake(slots: TimeSlot[]): void {
+  const sleepTypes = new Set(["sleep-deep", "sleep-core", "sleep-rem", "sleep-awake"]);
+  
+  for (const slot of slots) {
+    const hasSleepData = slot.items.some((item) => sleepTypes.has(item.type));
+    
+    if (!hasSleepData) {
+      // Add "起床" indicator for daytime awake slots
+      slot.items.unshift(createItem("awake-day", "起床"));
+      slot.hasData = true;
+    }
+  }
 }

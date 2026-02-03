@@ -11,6 +11,10 @@ import {
 } from "@/lib/transformers";
 import { generateHealthTimeSlots } from "@/lib/timeline-aggregator";
 
+/** Default coordinates (Beijing) when no location data available */
+const DEFAULT_LAT = 39.9;
+const DEFAULT_LON = 116.4;
+
 export interface DayState {
   /** Currently selected date */
   selectedDate: Date;
@@ -26,6 +30,8 @@ export interface DayState {
   timeSlots: TimeSlot[];
   /** Calendar visibility */
   calendarOpen: boolean;
+  /** Location for sun position calculation (from Footprint) */
+  location: { latitude: number; longitude: number };
 }
 
 export interface DayActions {
@@ -58,6 +64,7 @@ const initialState: DayState = {
   timelineEvents: [],
   timeSlots: [],
   calendarOpen: false,
+  location: { latitude: DEFAULT_LAT, longitude: DEFAULT_LON },
 };
 
 export const useDayStore = create<DayStore>((set, get) => ({
@@ -122,10 +129,18 @@ export const useDayStore = create<DayStore>((set, get) => ({
       const timelineEvents = buildTimelineEvents(data);
       const timeSlots = generateHealthTimeSlots(health);
 
+      // Get location from first Footprint track point, or use default
+      let location = { latitude: DEFAULT_LAT, longitude: DEFAULT_LON };
+      if (footprintData.trackPoints.length > 0) {
+        const firstPoint = footprintData.trackPoints[0];
+        location = { latitude: firstPoint.lat, longitude: firstPoint.lon };
+      }
+
       set({
         data,
         timelineEvents,
         timeSlots,
+        location,
         loading: false,
       });
     } catch (err) {

@@ -19,7 +19,8 @@ export const TIMELINE_COLORS: Record<TimelineDataType, string> = {
   "sleep-deep": "bg-indigo-800", // Deepest sleep = darkest blue
   "sleep-core": "bg-indigo-600", // Core sleep = medium blue
   "sleep-rem": "bg-purple-700", // REM/dreams = purple
-  "sleep-awake": "bg-slate-600", // Awake = neutral gray
+  "sleep-awake": "bg-slate-600", // Awake during sleep = neutral gray
+  "awake-day": "bg-green-600", // Daytime awake = green (起床)
 
   // Activities
   workout: "bg-emerald-700", // Green = energy/activity
@@ -45,6 +46,7 @@ export const LEFT_SIDE_TYPES = new Set<TimelineDataType>([
   "sleep-core",
   "sleep-rem",
   "sleep-awake",
+  "awake-day",
   "workout",
   "water",
 ]);

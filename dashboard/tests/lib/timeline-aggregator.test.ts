@@ -81,16 +81,19 @@ describe("timeline-aggregator", () => {
   });
 
   describe("generateHealthTimeSlots", () => {
-    it("should generate 96 slots for empty data", () => {
+    it("should generate 96 slots for empty data with awake-day indicators", () => {
       const health = createEmptyDayHealthData("2024-01-15");
       const slots = generateHealthTimeSlots(health);
 
       expect(slots).toHaveLength(96);
-      expect(slots.every((s) => s.items.length === 0)).toBe(true);
-      expect(slots.every((s) => s.hasData === false)).toBe(true);
+      // All slots should have awake-day indicator when no sleep data
+      expect(slots.every((s) => s.items.length === 1)).toBe(true);
+      expect(slots.every((s) => s.items[0].type === "awake-day")).toBe(true);
+      expect(slots.every((s) => s.items[0].label === "起床")).toBe(true);
+      expect(slots.every((s) => s.hasData === true)).toBe(true);
     });
 
-    it("should fill sleep stages correctly", () => {
+    it("should fill sleep stages correctly with Chinese labels", () => {
       const health = createEmptyDayHealthData("2024-01-15");
       health.sleep = {
         start: "23:30",
@@ -108,17 +111,28 @@ describe("timeline-aggregator", () => {
 
       const slots = generateHealthTimeSlots(health);
 
-      // 23:30 slot should have core
+      // 23:30 slot should have core with Chinese label, NO awake-day
       const slot23_30 = slots[timeToSlotIndex("23:30")];
-      expect(slot23_30.items.some((i) => i.type === "sleep-core")).toBe(true);
+      const coreItem = slot23_30.items.find((i) => i.type === "sleep-core");
+      expect(coreItem).toBeDefined();
+      expect(coreItem?.label).toBe("浅睡");
       expect(slot23_30.hasData).toBe(true);
+      expect(slot23_30.items.some((i) => i.type === "awake-day")).toBe(false);
 
-      // 00:30 slot should have deep
+      // 00:30 slot should have deep with Chinese label, NO awake-day
       const slot00_30 = slots[timeToSlotIndex("00:30")];
-      expect(slot00_30.items.some((i) => i.type === "sleep-deep")).toBe(true);
+      const deepItem = slot00_30.items.find((i) => i.type === "sleep-deep");
+      expect(deepItem).toBeDefined();
+      expect(deepItem?.label).toBe("深睡");
+      expect(slot00_30.items.some((i) => i.type === "awake-day")).toBe(false);
+
+      // 12:00 slot (no sleep) should have awake-day
+      const slot12_00 = slots[timeToSlotIndex("12:00")];
+      expect(slot12_00.items.some((i) => i.type === "awake-day")).toBe(true);
+      expect(slot12_00.items.find((i) => i.type === "awake-day")?.label).toBe("起床");
     });
 
-    it("should fill heart rate with averaged values", () => {
+    it("should fill heart rate with averaged values and fixed 3-digit width", () => {
       const health = createEmptyDayHealthData("2024-01-15");
       health.heartRate = {
         avg: 70,
@@ -129,22 +143,30 @@ describe("timeline-aggregator", () => {
           { time: "08:05", value: 70 }, // Same slot as 08:00 (rounds to 08:00)
           { time: "08:07", value: 80 }, // Same slot as 08:00 (rounds to 08:00)
           { time: "09:00", value: 75 },
+          { time: "10:00", value: 120 }, // 3-digit value
         ],
       };
 
       const slots = generateHealthTimeSlots(health);
 
-      // 08:00 slot should have averaged heart rate (60+70+80)/3 = 70
+      // 08:00 slot should have averaged heart rate (60+70+80)/3 = 70, padded to 3 digits
       const slot08_00 = slots[timeToSlotIndex("08:00")];
       const hrItem = slot08_00.items.find((i) => i.type === "heartRate");
       expect(hrItem).toBeDefined();
       expect(hrItem?.value).toBe(70);
-      expect(hrItem?.label).toBe("♥ 70");
+      expect(hrItem?.label).toBe("♥ 70"); // Space before 70 for 3-digit width
 
-      // 09:00 slot should have 75
+      // 09:00 slot should have 75, padded to 3 digits
       const slot09_00 = slots[timeToSlotIndex("09:00")];
       const hrItem09 = slot09_00.items.find((i) => i.type === "heartRate");
       expect(hrItem09?.value).toBe(75);
+      expect(hrItem09?.label).toBe("♥ 75");
+
+      // 10:00 slot should have 120, no padding needed
+      const slot10_00 = slots[timeToSlotIndex("10:00")];
+      const hrItem10 = slot10_00.items.find((i) => i.type === "heartRate");
+      expect(hrItem10?.value).toBe(120);
+      expect(hrItem10?.label).toBe("♥120");
     });
 
     it("should fill workouts correctly", () => {
@@ -265,21 +287,30 @@ describe("timeline-aggregator", () => {
       expect(hrvItem?.label).toBe("HRV 46"); // Rounded
     });
 
-    it("should fill respiratory rate correctly", () => {
+    it("should fill respiratory rate correctly with averaging", () => {
       const health = createEmptyDayHealthData("2024-01-15");
       health.respiratoryRate = {
         avg: 16,
         min: 14,
         max: 20,
-        records: [{ time: "03:00", value: 15.5 }],
+        records: [
+          { time: "03:00", value: 14.0 },
+          { time: "03:05", value: 16.0 }, // Same slot, should be averaged
+          { time: "03:07", value: 17.0 }, // Same slot, should be averaged
+        ],
       };
 
       const slots = generateHealthTimeSlots(health);
 
       const slot03_00 = slots[timeToSlotIndex("03:00")];
-      const rrItem = slot03_00.items.find((i) => i.type === "respiratoryRate");
+      // Should only have ONE respiratory rate item (merged)
+      const rrItems = slot03_00.items.filter((i) => i.type === "respiratoryRate");
+      expect(rrItems).toHaveLength(1);
+      // Average of 14, 16, 17 = 15.67
+      const rrItem = rrItems[0];
       expect(rrItem).toBeDefined();
-      expect(rrItem?.label).toBe("🫁 15.5");
+      expect(rrItem?.value).toBeCloseTo(15.67, 1);
+      expect(rrItem?.label).toBe("🫁 15.7");
     });
 
     it("should not add steps with count 0", () => {

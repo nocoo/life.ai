@@ -116,6 +116,7 @@ export type TimelineDataType =
   | "sleep-core"
   | "sleep-rem"
   | "sleep-awake"
+  | "awake-day" // Daytime awake state (green "起床" pill)
   // Activities (left side)
   | "workout"
   | "water"
