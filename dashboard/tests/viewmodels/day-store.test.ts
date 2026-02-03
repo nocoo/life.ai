@@ -106,11 +106,12 @@ describe("day-store", () => {
   };
 
   describe("initial state", () => {
-    it("should have today as selected date", () => {
+    it("should have default date as selected date", () => {
       const state = useDayStore.getState();
-      const today = startOfDay(new Date());
+      // Default date is hardcoded to 2025-12-02 for demo purposes
+      const defaultDate = new Date(2025, 11, 2); // month is 0-indexed
       expect(format(state.selectedDate, "yyyy-MM-dd")).toBe(
-        format(today, "yyyy-MM-dd")
+        format(defaultDate, "yyyy-MM-dd")
       );
     });
 

@@ -2,6 +2,7 @@
  * API client for day data endpoints
  */
 
+import { format } from "date-fns";
 import type { AppleHealthRawData } from "@/services/applehealth-service";
 import type { FootprintRawData } from "@/services/footprint-service";
 import type { PixiuRawData } from "@/services/pixiu-service";
@@ -12,9 +13,9 @@ export interface ApiResponse<T> {
   error?: string;
 }
 
-/** Format date to YYYY-MM-DD string */
+/** Format date to YYYY-MM-DD string (using local timezone) */
 const formatDate = (date: Date): string => {
-  return date.toISOString().split("T")[0];
+  return format(date, "yyyy-MM-dd");
 };
 
 /** Fetch Apple Health data for a specific date */

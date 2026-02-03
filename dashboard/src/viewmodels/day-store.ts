@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { addDays, subDays, startOfDay } from "date-fns";
+import { addDays, subDays, startOfDay, format } from "date-fns";
 import type { DayViewData, TimelineEvent } from "@/models/day-view";
 import { buildDaySummary } from "@/models/day-view";
 import { buildTimelineEvents } from "@/mocks";
@@ -44,8 +44,11 @@ export interface DayActions {
 
 export type DayStore = DayState & DayActions;
 
+/** Default date for the app */
+const DEFAULT_DATE = new Date(2025, 11, 2); // 2025-12-02 (month is 0-indexed)
+
 const initialState: DayState = {
-  selectedDate: startOfDay(new Date()),
+  selectedDate: startOfDay(DEFAULT_DATE),
   loading: false,
   error: null,
   data: null,
@@ -101,7 +104,7 @@ export const useDayStore = create<DayStore>((set, get) => ({
       const pixiuData = transformPixiuData(pixiu);
 
       // Build summary and combined data
-      const dateStr = selectedDate.toISOString().split("T")[0];
+      const dateStr = format(selectedDate, "yyyy-MM-dd");
       const summary = buildDaySummary(dateStr, health, footprintData, pixiuData);
 
       const data: DayViewData = {
