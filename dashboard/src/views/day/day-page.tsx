@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDayStore } from "@/viewmodels/day-store";
 import { DayHeader } from "./day-header";
 import { DayCalendar } from "./day-calendar";
+import { DayInfoCard } from "./day-info-card";
 import { EnhancedTimeline } from "./enhanced-timeline";
 import { HealthPanel } from "./health-panel";
 import { ActivityPanel } from "./activity-panel";
@@ -37,7 +38,7 @@ function ErrorDisplay({ message }: { message: string }) {
   return (
     <div className="flex h-[400px] items-center justify-center">
       <div className="text-center">
-        <p className="text-lg font-medium text-destructive">Error</p>
+        <p className="text-lg font-medium text-destructive">错误</p>
         <p className="text-sm text-muted-foreground">{message}</p>
       </div>
     </div>
@@ -120,10 +121,10 @@ export function DayPage() {
                 onValueChange={handleTabChange}
               >
                 <TabsList>
-                  <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+                  <TabsTrigger value="dashboard">仪表盘</TabsTrigger>
                   <TabsTrigger value="health">苹果健康</TabsTrigger>
-                  <TabsTrigger value="footprint">运动软件</TabsTrigger>
-                  <TabsTrigger value="pixiu">记账软件</TabsTrigger>
+                  <TabsTrigger value="footprint">运动轨迹</TabsTrigger>
+                  <TabsTrigger value="pixiu">记账数据</TabsTrigger>
                 </TabsList>
 
                 {/* Dashboard Tab */}
@@ -146,6 +147,13 @@ export function DayPage() {
 
                     {/* Right: Single-column cards sidebar */}
                     <div className="order-1 lg:order-2 grid gap-4 auto-rows-min">
+                      {/* Day Info Card - Date and Weather */}
+                      <DayInfoCard
+                        date={selectedDate}
+                        latitude={location.latitude}
+                        longitude={location.longitude}
+                      />
+
                       {/* Health cards */}
                       <HealthPanel data={data.health} />
 

@@ -9,7 +9,7 @@ import {
   transformFootprintData,
   transformPixiuData,
 } from "@/lib/transformers";
-import { generateHealthTimeSlots } from "@/lib/timeline-aggregator";
+import { generateTimeSlots } from "@/lib/timeline-aggregator";
 
 /** Default coordinates (Beijing) when no location data available */
 const DEFAULT_LAT = 39.9;
@@ -127,7 +127,7 @@ export const useDayStore = create<DayStore>((set, get) => ({
       };
 
       const timelineEvents = buildTimelineEvents(data);
-      const timeSlots = generateHealthTimeSlots(health);
+      const timeSlots = generateTimeSlots(health, footprintData);
 
       // Get location from first Footprint track point, or use default
       let location = { latitude: DEFAULT_LAT, longitude: DEFAULT_LON };
