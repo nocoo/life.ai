@@ -24,6 +24,14 @@ import type {
   StepsRecord,
   WorkoutRecord,
   ActivitySummary,
+  SleepRecord,
+  SleepStage,
+  SleepStageType,
+  OxygenSaturationSummary,
+  RespiratoryRateSummary,
+  HrvSummary,
+  DistanceSummary,
+  DistanceRecord,
 } from "@/models/apple-health";
 import type {
   DayFootprintData,
@@ -60,6 +68,15 @@ const WORKOUT_TYPE_NAMES: Record<string, string> = {
   HKWorkoutActivityTypeTennis: "Tennis",
   HKWorkoutActivityTypeBadminton: "Badminton",
   HKWorkoutActivityTypeTableTennis: "Table Tennis",
+  HKWorkoutActivityTypeArchery: "Archery",
+};
+
+/** Mapping from HK sleep stage to our type */
+const SLEEP_STAGE_MAP: Record<string, SleepStageType> = {
+  HKCategoryValueSleepAnalysisAsleepDeep: "deep",
+  HKCategoryValueSleepAnalysisAsleepCore: "core",
+  HKCategoryValueSleepAnalysisAsleepREM: "rem",
+  HKCategoryValueSleepAnalysisAwake: "awake",
 };
 
 /** Extract time (HH:mm) from ISO datetime or datetime string */
@@ -68,7 +85,7 @@ export const extractTime = (datetime: string): string => {
   const isoMatch = datetime.match(/T(\d{2}:\d{2})/);
   if (isoMatch) return isoMatch[1];
 
-  // Handle space format: 2024-01-01 12:30
+  // Handle space format: 2024-01-01 12:30:57 +0800
   const spaceMatch = datetime.match(/ (\d{2}:\d{2})/);
   if (spaceMatch) return spaceMatch[1];
 
@@ -78,6 +95,57 @@ export const extractTime = (datetime: string): string => {
 /** Get display name for workout type */
 const getWorkoutTypeName = (type: string): string => {
   return WORKOUT_TYPE_NAMES[type] || type.replace(/HKWorkoutActivityType/, "");
+};
+
+/** Calculate duration in minutes between two datetime strings */
+const calculateDurationMinutes = (start: string, end: string): number => {
+  const startTime = new Date(start.replace(" +", "+").replace(" ", "T"));
+  const endTime = new Date(end.replace(" +", "+").replace(" ", "T"));
+  return Math.round((endTime.getTime() - startTime.getTime()) / 60000);
+};
+
+/** Transform raw Apple Health records to sleep record */
+const transformSleep = (records: AppleRecordRow[]): SleepRecord | null => {
+  const sleepRecords = records.filter(
+    (r) => r.type === "HKCategoryTypeIdentifierSleepAnalysis" && r.value
+  );
+
+  if (sleepRecords.length === 0) return null;
+
+  const stages: SleepStage[] = sleepRecords
+    .map((r) => {
+      const stageType = SLEEP_STAGE_MAP[r.value!];
+      if (!stageType) return null;
+      const duration = calculateDurationMinutes(r.start_date, r.end_date);
+      return {
+        type: stageType,
+        start: extractTime(r.start_date),
+        end: extractTime(r.end_date),
+        duration,
+      };
+    })
+    .filter((s): s is SleepStage => s !== null);
+
+  if (stages.length === 0) return null;
+
+  // Calculate totals by stage type
+  const deepMinutes = stages.filter((s) => s.type === "deep").reduce((sum, s) => sum + s.duration, 0);
+  const coreMinutes = stages.filter((s) => s.type === "core").reduce((sum, s) => sum + s.duration, 0);
+  const remMinutes = stages.filter((s) => s.type === "rem").reduce((sum, s) => sum + s.duration, 0);
+  const awakeMinutes = stages.filter((s) => s.type === "awake").reduce((sum, s) => sum + s.duration, 0);
+
+  const totalDuration = deepMinutes + coreMinutes + remMinutes + awakeMinutes;
+
+  return {
+    start: stages[0].start,
+    end: stages[stages.length - 1].end,
+    duration: totalDuration,
+    stages,
+    deepMinutes,
+    coreMinutes,
+    remMinutes,
+    awakeMinutes,
+  };
 };
 
 /** Transform raw Apple Health records to heart rate summary */
@@ -93,10 +161,20 @@ const transformHeartRate = (records: AppleRecordRow[]): HeartRateSummary | null 
   const min = Math.round(Math.min(...values));
   const max = Math.round(Math.max(...values));
 
+  // Get resting and walking heart rate
+  const restingHr = records.find(
+    (r) => r.type === "HKQuantityTypeIdentifierRestingHeartRate" && r.value
+  );
+  const walkingHr = records.find(
+    (r) => r.type === "HKQuantityTypeIdentifierWalkingHeartRateAverage" && r.value
+  );
+
   return {
     avg,
     min,
     max,
+    restingHeartRate: restingHr ? Math.round(parseFloat(restingHr.value!)) : undefined,
+    walkingAverage: walkingHr ? Math.round(parseFloat(walkingHr.value!)) : undefined,
     records: hrRecords.map((r) => ({
       time: extractTime(r.start_date),
       value: Math.round(parseFloat(r.value!)),
@@ -125,6 +203,122 @@ const transformSteps = (records: AppleRecordRow[]): { steps: StepsRecord[]; tota
   const total = steps.reduce((sum, s) => sum + s.count, 0);
 
   return { steps, total };
+};
+
+/** Transform raw Apple Health records to distance by hour */
+const transformDistance = (records: AppleRecordRow[]): DistanceSummary | null => {
+  const distanceRecords = records.filter(
+    (r) => r.type === "HKQuantityTypeIdentifierDistanceWalkingRunning" && r.value
+  );
+
+  if (distanceRecords.length === 0) return null;
+
+  // Aggregate by hour
+  const hourMap = new Map<number, number>();
+  distanceRecords.forEach((r) => {
+    const hour = parseInt(extractTime(r.start_date).split(":")[0], 10);
+    const distance = parseFloat(r.value!); // already in km
+    hourMap.set(hour, (hourMap.get(hour) || 0) + distance);
+  });
+
+  const distanceByHour: DistanceRecord[] = Array.from(hourMap.entries())
+    .map(([hour, distance]) => ({ hour, distance: Math.round(distance * 1000) / 1000 }))
+    .sort((a, b) => a.hour - b.hour);
+
+  const total = distanceByHour.reduce((sum, d) => sum + d.distance, 0);
+
+  return {
+    total: Math.round(total * 1000) / 1000,
+    records: distanceByHour,
+  };
+};
+
+/** Transform raw Apple Health records to oxygen saturation summary */
+const transformOxygenSaturation = (records: AppleRecordRow[]): OxygenSaturationSummary | null => {
+  const o2Records = records.filter(
+    (r) => r.type === "HKQuantityTypeIdentifierOxygenSaturation" && r.value
+  );
+
+  if (o2Records.length === 0) return null;
+
+  const values = o2Records.map((r) => parseFloat(r.value!) * 100); // Convert to percentage
+  const avg = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+  const min = Math.round(Math.min(...values));
+  const max = Math.round(Math.max(...values));
+
+  return {
+    avg,
+    min,
+    max,
+    records: o2Records.map((r) => ({
+      time: extractTime(r.start_date),
+      value: Math.round(parseFloat(r.value!) * 100),
+    })),
+  };
+};
+
+/** Transform raw Apple Health records to respiratory rate summary */
+const transformRespiratoryRate = (records: AppleRecordRow[]): RespiratoryRateSummary | null => {
+  const rrRecords = records.filter(
+    (r) => r.type === "HKQuantityTypeIdentifierRespiratoryRate" && r.value
+  );
+
+  if (rrRecords.length === 0) return null;
+
+  const values = rrRecords.map((r) => parseFloat(r.value!));
+  const avg = Math.round(values.reduce((a, b) => a + b, 0) / values.length * 10) / 10;
+  const min = Math.round(Math.min(...values) * 10) / 10;
+  const max = Math.round(Math.max(...values) * 10) / 10;
+
+  return {
+    avg,
+    min,
+    max,
+    records: rrRecords.map((r) => ({
+      time: extractTime(r.start_date),
+      value: Math.round(parseFloat(r.value!) * 10) / 10,
+    })),
+  };
+};
+
+/** Transform raw Apple Health records to HRV summary */
+const transformHrv = (records: AppleRecordRow[]): HrvSummary | null => {
+  const hrvRecords = records.filter(
+    (r) => r.type === "HKQuantityTypeIdentifierHeartRateVariabilitySDNN" && r.value
+  );
+
+  if (hrvRecords.length === 0) return null;
+
+  const values = hrvRecords.map((r) => parseFloat(r.value!));
+  const avg = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+  const min = Math.round(Math.min(...values));
+  const max = Math.round(Math.max(...values));
+
+  return {
+    avg,
+    min,
+    max,
+    records: hrvRecords.map((r) => ({
+      time: extractTime(r.start_date),
+      value: Math.round(parseFloat(r.value!)),
+    })),
+  };
+};
+
+/** Get total flights climbed */
+const getFlightsClimbed = (records: AppleRecordRow[]): number => {
+  const flightRecords = records.filter(
+    (r) => r.type === "HKQuantityTypeIdentifierFlightsClimbed" && r.value
+  );
+  return flightRecords.reduce((sum, r) => sum + parseInt(r.value!, 10), 0);
+};
+
+/** Get sleeping wrist temperature */
+const getSleepingWristTemperature = (records: AppleRecordRow[]): number | undefined => {
+  const tempRecord = records.find(
+    (r) => r.type === "HKQuantityTypeIdentifierAppleSleepingWristTemperature" && r.value
+  );
+  return tempRecord ? Math.round(parseFloat(tempRecord.value!) * 10) / 10 : undefined;
 };
 
 /** Transform raw workout rows to workout records */
@@ -156,22 +350,35 @@ const transformActivity = (
 
 /** Transform raw Apple Health data to DayHealthData view model */
 export const transformAppleHealthData = (raw: AppleHealthRawData): DayHealthData => {
+  const sleep = transformSleep(raw.records);
   const heartRate = transformHeartRate(raw.records);
   const { steps, total: totalSteps } = transformSteps(raw.records);
+  const distance = transformDistance(raw.records);
+  const oxygenSaturation = transformOxygenSaturation(raw.records);
+  const respiratoryRate = transformRespiratoryRate(raw.records);
+  const hrv = transformHrv(raw.records);
+  const flightsClimbed = getFlightsClimbed(raw.records);
+  const sleepingWristTemperature = getSleepingWristTemperature(raw.records);
   const workouts = transformWorkouts(raw.workouts);
   const activity = transformActivity(raw.activitySummary);
 
   return {
     date: raw.date,
-    sleep: null, // Sleep data requires special handling (spans multiple days)
+    sleep,
     heartRate,
     steps,
     totalSteps,
+    distance,
+    oxygenSaturation,
+    respiratoryRate,
+    hrv,
     water: [], // Water intake not commonly in Apple Health export
     totalWater: 0,
     workouts,
     activity,
     ecgRecords: [], // ECG files handled separately
+    flightsClimbed,
+    sleepingWristTemperature,
   };
 };
 
