@@ -6,6 +6,8 @@
     "ut": "bun test --coverage --coverage-reporter=text --coverage-reporter=lcov && bun run scripts/coverage-check.ts",
     "ut:scripts": "bun test scripts/test --coverage --coverage-reporter=text --coverage-reporter=lcov && bun run scripts/coverage-check.ts",
     "lint": "eslint . --ext .ts && bun run --cwd dashboard lint",
+    "lint:import": "eslint scripts/import/**/*.ts",
+    "lint:verify": "eslint scripts/verify/**/*.ts",
     "prepare": "husky",
     "db:init": "bun run scripts/import/footprint/init.ts",
     "db:load": "bun run scripts/import/footprint/cli.ts load",

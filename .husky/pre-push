@@ -1,2 +1,4 @@
 bun run ut:scripts
 bun run lint
+bun run lint:import
+bun run lint:verify

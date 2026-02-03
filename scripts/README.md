@@ -36,6 +36,12 @@ scripts/
 
 Place scripts here that verify source files match imported DB data.
 
+### footprint verify
+
+```bash
+bun run scripts/verify/footprint.ts 2024 data/footprint/20260202.gpx
+```
+
 ## Tests
 
 - Tests live under `scripts/test`.

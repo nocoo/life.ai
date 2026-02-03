@@ -36,7 +36,13 @@ export default [
     }
   },
   {
-    files: ["tests/**/*.ts"],
+    files: ["scripts/verify/**/*.ts"],
+    rules: {
+      "no-unused-vars": "off"
+    }
+  },
+  {
+    files: ["tests/**/*.ts", "scripts/test/**/*.ts"],
     languageOptions: {
       globals: {
         describe: "readonly",
