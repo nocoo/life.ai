@@ -19,8 +19,14 @@ describe("timeline-colors", () => {
         "sleep-core",
         "sleep-rem",
         "sleep-awake",
+        "awake-day",
         "workout",
         "water",
+        "transport-walking",
+        "transport-cycling",
+        "transport-driving",
+        "transport-stationary",
+        "elevation",
         "heartRate",
         "hrv",
         "oxygenSaturation",
@@ -35,10 +41,10 @@ describe("timeline-colors", () => {
       }
     });
 
-    it("should use dark color variants (600-800)", () => {
+    it("should use dark color variants (500-800)", () => {
       for (const color of Object.values(TIMELINE_COLORS)) {
-        // All colors should be in 600-800 range for dark backgrounds
-        expect(color).toMatch(/bg-\w+-(6|7|8)00/);
+        // All colors should be in 500-800 range for dark backgrounds
+        expect(color).toMatch(/bg-\w+-(5|6|7|8)00/);
       }
     });
 
@@ -56,11 +62,20 @@ describe("timeline-colors", () => {
       expect(LEFT_SIDE_TYPES.has("sleep-core")).toBe(true);
       expect(LEFT_SIDE_TYPES.has("sleep-rem")).toBe(true);
       expect(LEFT_SIDE_TYPES.has("sleep-awake")).toBe(true);
+      expect(LEFT_SIDE_TYPES.has("awake-day")).toBe(true);
     });
 
     it("should include workout and water", () => {
       expect(LEFT_SIDE_TYPES.has("workout")).toBe(true);
       expect(LEFT_SIDE_TYPES.has("water")).toBe(true);
+    });
+
+    it("should include transportation modes and elevation", () => {
+      expect(LEFT_SIDE_TYPES.has("transport-walking")).toBe(true);
+      expect(LEFT_SIDE_TYPES.has("transport-cycling")).toBe(true);
+      expect(LEFT_SIDE_TYPES.has("transport-driving")).toBe(true);
+      expect(LEFT_SIDE_TYPES.has("transport-stationary")).toBe(true);
+      expect(LEFT_SIDE_TYPES.has("elevation")).toBe(true);
     });
 
     it("should not include metrics", () => {

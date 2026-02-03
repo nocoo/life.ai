@@ -7,9 +7,12 @@ import {
   timeToSlotIndex,
   slotIndexToTime,
   generateHealthTimeSlots,
+  generateTimeSlots,
+  fillFootprintData,
   SLOTS_PER_DAY,
 } from "@/lib/timeline-aggregator";
 import { createEmptyDayHealthData } from "@/models/apple-health";
+import { createEmptyDayFootprintData } from "@/models/footprint";
 import type { DayHealthData } from "@/models/apple-health";
 
 describe("timeline-aggregator", () => {
@@ -381,6 +384,147 @@ describe("timeline-aggregator", () => {
 
       const yogaItem = slots[14 * 4].items.find((i) => i.type === "workout");
       expect(yogaItem?.label).toBe("🏋️ Yoga"); // Default emoji
+    });
+  });
+
+  describe("fillFootprintData", () => {
+    it("should not modify slots when footprint has no trackpoints", () => {
+      const health = createEmptyDayHealthData("2024-01-15");
+      const footprint = createEmptyDayFootprintData("2024-01-15");
+      const slots = generateHealthTimeSlots(health);
+
+      fillFootprintData(slots, footprint);
+
+      // All slots should still have only awake-day
+      expect(slots.every((s) => s.items.length === 1)).toBe(true);
+      expect(slots.every((s) => s.items[0].type === "awake-day")).toBe(true);
+    });
+
+    it("should add transportation mode items to slots", () => {
+      const health = createEmptyDayHealthData("2024-01-15");
+      const footprint = createEmptyDayFootprintData("2024-01-15");
+      footprint.trackPoints = [
+        { ts: "2024-01-15T08:00:00", lat: 39.9, lon: 116.4, speed: 1.2 }, // walking ~4.3km/h
+        { ts: "2024-01-15T09:00:00", lat: 39.91, lon: 116.41, speed: 5.5 }, // cycling ~20km/h
+        { ts: "2024-01-15T10:00:00", lat: 39.92, lon: 116.42, speed: 15.0 }, // driving ~54km/h
+      ];
+
+      const slots = generateHealthTimeSlots(health);
+      fillFootprintData(slots, footprint);
+
+      // 08:00 slot should have walking
+      const slot08 = slots[8 * 4];
+      const walkingItem = slot08.items.find((i) => i.type === "transport-walking");
+      expect(walkingItem).toBeDefined();
+      expect(walkingItem?.label).toContain("🚶");
+      expect(walkingItem?.label).toContain("步行");
+
+      // 09:00 slot should have cycling
+      const slot09 = slots[9 * 4];
+      const cyclingItem = slot09.items.find((i) => i.type === "transport-cycling");
+      expect(cyclingItem).toBeDefined();
+      expect(cyclingItem?.label).toContain("🚴");
+      expect(cyclingItem?.label).toContain("骑行");
+
+      // 10:00 slot should have driving
+      const slot10 = slots[10 * 4];
+      const drivingItem = slot10.items.find((i) => i.type === "transport-driving");
+      expect(drivingItem).toBeDefined();
+      expect(drivingItem?.label).toContain("🚗");
+      expect(drivingItem?.label).toContain("驾车");
+    });
+
+    it("should add elevation reference and delta items", () => {
+      const health = createEmptyDayHealthData("2024-01-15");
+      const footprint = createEmptyDayFootprintData("2024-01-15");
+      footprint.trackPoints = [
+        { ts: "2024-01-15T08:00:00", lat: 39.9, lon: 116.4, ele: 100, speed: 1.5 },
+        { ts: "2024-01-15T09:00:00", lat: 39.91, lon: 116.41, ele: 105, speed: 1.5 }, // +5m, no delta
+        { ts: "2024-01-15T10:00:00", lat: 39.92, lon: 116.42, ele: 115, speed: 1.5 }, // +15m from ref, delta
+      ];
+
+      const slots = generateHealthTimeSlots(health);
+      fillFootprintData(slots, footprint);
+
+      // 08:00 slot should have elevation reference
+      const slot08 = slots[8 * 4];
+      const elevRef = slot08.items.find((i) => i.type === "elevation");
+      expect(elevRef).toBeDefined();
+      expect(elevRef?.label).toBe("⛰100m");
+
+      // 09:00 slot should NOT have elevation (delta < 10m)
+      const slot09 = slots[9 * 4];
+      const elevDelta09 = slot09.items.find((i) => i.type === "elevation");
+      expect(elevDelta09).toBeUndefined();
+
+      // 10:00 slot should have elevation delta
+      const slot10 = slots[10 * 4];
+      const elevDelta10 = slot10.items.find((i) => i.type === "elevation");
+      expect(elevDelta10).toBeDefined();
+      expect(elevDelta10?.label).toBe("⛰+15m");
+    });
+
+    it("should not add stationary mode items", () => {
+      const health = createEmptyDayHealthData("2024-01-15");
+      const footprint = createEmptyDayFootprintData("2024-01-15");
+      footprint.trackPoints = [
+        { ts: "2024-01-15T08:00:00", lat: 39.9, lon: 116.4, speed: 0.1 }, // stationary
+      ];
+
+      const slots = generateHealthTimeSlots(health);
+      fillFootprintData(slots, footprint);
+
+      // 08:00 slot should NOT have transport-stationary
+      const slot08 = slots[8 * 4];
+      const stationaryItem = slot08.items.find((i) => i.type === "transport-stationary");
+      expect(stationaryItem).toBeUndefined();
+    });
+  });
+
+  describe("generateTimeSlots", () => {
+    it("should combine health and footprint data", () => {
+      const health = createEmptyDayHealthData("2024-01-15");
+      health.heartRate = {
+        avg: 70,
+        min: 60,
+        max: 80,
+        records: [{ time: "08:00", value: 70 }],
+      };
+
+      const footprint = createEmptyDayFootprintData("2024-01-15");
+      footprint.trackPoints = [
+        { ts: "2024-01-15T08:00:00", lat: 39.9, lon: 116.4, ele: 100, speed: 1.5 },
+      ];
+
+      const slots = generateTimeSlots(health, footprint);
+
+      // 08:00 slot should have both heart rate and transportation
+      const slot08 = slots[8 * 4];
+      const hrItem = slot08.items.find((i) => i.type === "heartRate");
+      expect(hrItem).toBeDefined();
+
+      const walkingItem = slot08.items.find((i) => i.type === "transport-walking");
+      expect(walkingItem).toBeDefined();
+
+      const elevItem = slot08.items.find((i) => i.type === "elevation");
+      expect(elevItem).toBeDefined();
+    });
+
+    it("should work without footprint data", () => {
+      const health = createEmptyDayHealthData("2024-01-15");
+      health.heartRate = {
+        avg: 70,
+        min: 60,
+        max: 80,
+        records: [{ time: "08:00", value: 70 }],
+      };
+
+      const slots = generateTimeSlots(health);
+
+      // Should still have heart rate
+      const slot08 = slots[8 * 4];
+      const hrItem = slot08.items.find((i) => i.type === "heartRate");
+      expect(hrItem).toBeDefined();
     });
   });
 });

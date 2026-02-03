@@ -33,6 +33,12 @@ const CHINESE_LABELS: Record<TimelineDataType, { short: string; tooltip: string 
   "awake-day": { short: "起床", tooltip: "白天清醒状态" },
   workout: { short: "运动", tooltip: "运动锻炼" },
   water: { short: "饮水", tooltip: "饮水记录" },
+  "transport-walking": { short: "步行", tooltip: "步行移动" },
+  "transport-cycling": { short: "骑行", tooltip: "骑自行车移动" },
+  "transport-driving": { short: "驾车", tooltip: "驾驶汽车移动" },
+  "transport-stationary": { short: "停留", tooltip: "原地停留" },
+  "transport-summary": { short: "行程", tooltip: "行程总结：连续移动超过30分钟的统计" },
+  elevation: { short: "海拔", tooltip: "海拔高度" },
   heartRate: { short: "心率", tooltip: "心率" },
   hrv: { short: "心率变异", tooltip: "心率变异性：反映自主神经系统调节能力" },
   oxygenSaturation: { short: "血氧", tooltip: "血氧饱和度" },
@@ -65,6 +71,12 @@ function getTooltipText(item: TimelineItem): string {
           : `${base}：${Math.round(item.value * 1000)} 米`;
       case "water":
         return `${base}：${item.value} 毫升`;
+      case "transport-walking":
+      case "transport-cycling":
+      case "transport-driving":
+        return `${base}：平均速度 ${item.value.toFixed(1)} km/h`;
+      case "elevation":
+        return `${base}：${Math.round(item.value)} 米`;
       default:
         return `${base}：${item.value}`;
     }
@@ -153,6 +165,42 @@ function SunCurveIndicator({ hour, minute, date, latitude, longitude }: SunCurve
   );
 }
 
+/**
+ * Priority order for left side items (higher number = closer to time axis)
+ * Layout: [other items] [elevation] [transport] [awake-day/sleep]
+ */
+const LEFT_ITEM_PRIORITY: Record<string, number> = {
+  // Sleep states - rightmost (closest to time axis)
+  "awake-day": 100,
+  "sleep-deep": 100,
+  "sleep-core": 100,
+  "sleep-rem": 100,
+  "sleep-awake": 100,
+  // Transportation - second position
+  "transport-walking": 90,
+  "transport-cycling": 90,
+  "transport-driving": 90,
+  "transport-stationary": 90,
+  // Elevation - third position
+  elevation: 80,
+  // Transport summary - fourth position (left of transport capsules)
+  "transport-summary": 70,
+  // Other items (workout, water) - leftmost
+  workout: 10,
+  water: 10,
+};
+
+/**
+ * Sort left items by priority (higher priority = later in array = closer to time axis)
+ */
+function sortLeftItems(items: TimelineItem[]): TimelineItem[] {
+  return [...items].sort((a, b) => {
+    const priorityA = LEFT_ITEM_PRIORITY[a.type] ?? 0;
+    const priorityB = LEFT_ITEM_PRIORITY[b.type] ?? 0;
+    return priorityA - priorityB;
+  });
+}
+
 interface TimeSlotRowProps {
   slot: TimeSlot;
   date: Date;
@@ -165,7 +213,7 @@ interface TimeSlotRowProps {
  * Background alternates by hour for visual grouping
  */
 function TimeSlotRow({ slot, date, latitude, longitude }: TimeSlotRowProps) {
-  const leftItems = slot.items.filter((i) => i.side === "left");
+  const leftItems = sortLeftItems(slot.items.filter((i) => i.side === "left"));
   const rightItems = slot.items.filter((i) => i.side === "right");
 
   // Alternate background by hour (odd hours get light gray)

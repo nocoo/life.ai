@@ -26,6 +26,16 @@ export const TIMELINE_COLORS: Record<TimelineDataType, string> = {
   workout: "bg-emerald-700", // Green = energy/activity
   water: "bg-blue-700", // Blue = water
 
+  // Transportation modes (from GPS trackpoints)
+  "transport-walking": "bg-teal-600", // Teal = walking
+  "transport-cycling": "bg-yellow-600", // Yellow = cycling
+  "transport-driving": "bg-violet-600", // Violet = driving
+  "transport-stationary": "bg-stone-500", // Stone = stationary
+  "transport-summary": "bg-violet-700", // Violet darker = summary capsule
+
+  // Elevation
+  elevation: "bg-emerald-600", // Emerald = mountain/elevation
+
   // Physiological metrics
   heartRate: "bg-rose-700", // Red = heart/blood
   hrv: "bg-orange-700", // Orange = heart rate variability
@@ -49,6 +59,12 @@ export const LEFT_SIDE_TYPES = new Set<TimelineDataType>([
   "awake-day",
   "workout",
   "water",
+  "transport-walking",
+  "transport-cycling",
+  "transport-driving",
+  "transport-stationary",
+  "transport-summary",
+  "elevation",
 ]);
 
 /**

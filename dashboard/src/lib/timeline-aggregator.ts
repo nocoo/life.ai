@@ -1,11 +1,20 @@
 /**
  * Timeline aggregator for 15-minute time slots
- * Aggregates Apple Health data into 96 slots (24 hours × 4 quarters)
+ * Aggregates Apple Health and Footprint data into 96 slots (24 hours × 4 quarters)
  */
 
 import type { DayHealthData, SleepStageType } from "@/models/apple-health";
+import type { DayFootprintData } from "@/models/footprint";
 import type { TimeSlot, TimelineItem, TimelineDataType } from "@/models/day-view";
 import { getItemSide } from "./timeline-colors";
+import {
+  aggregateFootprintData,
+  formatElevation,
+  formatMovementSummary,
+  getTransportModeDisplay,
+  type TransportMode,
+  type MovementSegment,
+} from "./footprint-aggregator";
 
 /** Total number of 15-minute slots in a day */
 export const SLOTS_PER_DAY = 96;
@@ -320,4 +329,122 @@ function fillDaytimeAwake(slots: TimeSlot[]): void {
       slot.hasData = true;
     }
   }
+}
+
+/**
+ * Map TransportMode to TimelineDataType
+ */
+function transportModeToType(mode: TransportMode): TimelineDataType {
+  switch (mode) {
+    case "walking":
+      return "transport-walking";
+    case "cycling":
+      return "transport-cycling";
+    case "driving":
+      return "transport-driving";
+    case "stationary":
+      return "transport-stationary";
+  }
+}
+
+/**
+ * Fill slots with Footprint (GPS trackpoint) data
+ * 
+ * Logic improvements:
+ * 1. Merge continuous movement segments (even with speed variations like traffic)
+ * 2. Use dominant mode for each segment instead of per-slot mode
+ * 3. Add summary capsule at the end of 30+ minute movements
+ * 
+ * @param slots - The 96 time slots to fill
+ * @param footprint - Footprint data for the day
+ */
+export function fillFootprintData(
+  slots: TimeSlot[],
+  footprint: DayFootprintData
+): void {
+  if (!footprint.trackPoints || footprint.trackPoints.length === 0) {
+    return;
+  }
+
+  const aggregation = aggregateFootprintData(footprint.trackPoints);
+
+  // Create a set of slot indices that are part of a movement segment
+  const segmentSlotMap = new Map<number, MovementSegment>();
+  for (const segment of aggregation.movementSegments) {
+    for (let i = segment.startSlotIndex; i <= segment.endSlotIndex; i++) {
+      segmentSlotMap.set(i, segment);
+    }
+  }
+
+  for (const trackData of aggregation.slots) {
+    const slot = slots[trackData.slotIndex];
+    if (!slot) continue;
+
+    // 1. Add transportation mode
+    // If part of a segment, use segment's dominant mode; otherwise use slot's mode
+    const segment = segmentSlotMap.get(trackData.slotIndex);
+    const modeToUse = segment ? segment.mode : trackData.mode;
+    
+    if (modeToUse !== "stationary") {
+      const { emoji, label } = getTransportModeDisplay(modeToUse);
+      const speedLabel = trackData.avgSpeedKmh >= 1 
+        ? `${emoji}${label} ${trackData.avgSpeedKmh.toFixed(1)}km/h`
+        : `${emoji}${label}`;
+      
+      const type = transportModeToType(modeToUse);
+      if (!slot.items.some((item) => item.type === type)) {
+        slot.items.push(createItem(type, speedLabel, trackData.avgSpeedKmh));
+      }
+    }
+
+    // 2. Add elevation (reference or delta)
+    const elevationLabel = formatElevation(trackData);
+    if (elevationLabel) {
+      if (!slot.items.some((item) => item.type === "elevation")) {
+        slot.items.push(
+          createItem("elevation", elevationLabel, trackData.avgElevation ?? undefined)
+        );
+      }
+    }
+
+    slot.hasData = true;
+  }
+
+  // 3. Add summary capsules at the last slot of each movement segment
+  for (const segment of aggregation.movementSegments) {
+    // Add summary to the SAME slot as the last movement capsule
+    const summarySlotIndex = segment.endSlotIndex;
+    if (summarySlotIndex >= 0 && summarySlotIndex < slots.length) {
+      const slot = slots[summarySlotIndex];
+      const summaryLabel = formatMovementSummary(segment);
+      
+      // Add summary item if not already present
+      if (!slot.items.some((item) => item.type === "transport-summary")) {
+        slot.items.push(createItem("transport-summary", summaryLabel));
+        slot.hasData = true;
+      }
+    }
+  }
+}
+
+/**
+ * Generate time slots from Apple Health and Footprint data
+ * 
+ * @param health - Apple Health data for the day
+ * @param footprint - Optional Footprint data for the day
+ * @returns Array of 96 time slots with combined data
+ */
+export function generateTimeSlots(
+  health: DayHealthData,
+  footprint?: DayFootprintData
+): TimeSlot[] {
+  // Generate base slots from health data
+  const slots = generateHealthTimeSlots(health);
+
+  // Overlay footprint data if available
+  if (footprint) {
+    fillFootprintData(slots, footprint);
+  }
+
+  return slots;
 }

@@ -120,6 +120,15 @@ export type TimelineDataType =
   // Activities (left side)
   | "workout"
   | "water"
+  // Transportation modes (left side, from GPS trackpoints)
+  | "transport-walking"
+  | "transport-cycling"
+  | "transport-driving"
+  | "transport-stationary"
+  // Transportation summary capsule (left side, for 30+ min movements)
+  | "transport-summary"
+  // Elevation (left side)
+  | "elevation"
   // Physiological metrics (right side)
   | "heartRate"
   | "hrv"
