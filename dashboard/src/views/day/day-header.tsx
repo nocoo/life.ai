@@ -56,16 +56,17 @@ export function DayHeader({
           <ChevronLeft className="h-4 w-4" />
         </Button>
 
-        {/* Current Date Display */}
-        <button
+        {/* Current Date Display - Use Button component for consistency */}
+        <Button
+          variant="ghost"
           onClick={onToggleCalendar}
-          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
+          className="gap-2"
         >
           <span>{format(selectedDate, "yyyy年M月d日 EEEE", { locale: zhCN })}</span>
           {onToggleCalendar && (
             <CalendarIcon className="h-4 w-4 text-muted-foreground" />
           )}
-        </button>
+        </Button>
 
         {/* Next Day */}
         <Button
