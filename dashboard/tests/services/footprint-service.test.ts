@@ -4,6 +4,8 @@ import { mkdirSync, rmSync } from "fs";
 import {
   FootprintService,
   type FootprintRawData,
+  type FootprintMonthRawData,
+  type FootprintYearRawData,
 } from "@/services/footprint-service";
 
 const TEST_DB_DIR = "tests/.tmp";
@@ -42,9 +44,39 @@ describe("FootprintService", () => {
         max_lon real,
         primary key (source, day)
       );
+
+      create table if not exists track_month_agg (
+        source text not null,
+        month text not null,
+        point_count integer not null,
+        min_ts text,
+        max_ts text,
+        avg_speed real,
+        min_lat real,
+        max_lat real,
+        min_lon real,
+        max_lon real,
+        primary key (source, month)
+      );
+
+      create table if not exists track_year_agg (
+        source text not null,
+        year integer not null,
+        point_count integer not null,
+        min_ts text,
+        max_ts text,
+        avg_speed real,
+        min_lat real,
+        max_lat real,
+        min_lon real,
+        max_lon real,
+        primary key (source, year)
+      );
     `);
 
     const testDay = "2025-01-15";
+    const testDay2 = "2025-01-20";
+    const testDay3 = "2025-02-10";
 
     // Track points
     db.exec(`
@@ -61,6 +93,45 @@ describe("FootprintService", () => {
     db.exec(`
       insert into track_day_agg (source, day, point_count, min_ts, max_ts, avg_speed, min_lat, max_lat, min_lon, max_lon)
       values ('footprint', '${testDay}', 5, '2025-01-15T08:00:00Z', '2025-01-15T12:01:00Z', 1.78, 31.2304, 31.2401, 121.4737, 121.4801);
+    `);
+
+    // Add data for 2025-01-20
+    db.exec(`
+      insert into track_point (source, track_date, ts, lat, lon, ele, speed)
+      values 
+        ('footprint', '${testDay2}', '2025-01-20T10:00:00Z', 31.2500, 121.5000, 20.0, 3.0),
+        ('footprint', '${testDay2}', '2025-01-20T10:05:00Z', 31.2510, 121.5010, 21.0, 3.5);
+    `);
+
+    db.exec(`
+      insert into track_day_agg (source, day, point_count, min_ts, max_ts, avg_speed, min_lat, max_lat, min_lon, max_lon)
+      values ('footprint', '${testDay2}', 2, '2025-01-20T10:00:00Z', '2025-01-20T10:05:00Z', 3.25, 31.2500, 31.2510, 121.5000, 121.5010);
+    `);
+
+    // Add data for 2025-02-10
+    db.exec(`
+      insert into track_point (source, track_date, ts, lat, lon, ele, speed)
+      values 
+        ('footprint', '${testDay3}', '2025-02-10T14:00:00Z', 31.3000, 121.6000, 5.0, 1.0);
+    `);
+
+    db.exec(`
+      insert into track_day_agg (source, day, point_count, min_ts, max_ts, avg_speed, min_lat, max_lat, min_lon, max_lon)
+      values ('footprint', '${testDay3}', 1, '2025-02-10T14:00:00Z', '2025-02-10T14:00:00Z', 1.0, 31.3000, 31.3000, 121.6000, 121.6000);
+    `);
+
+    // Month aggregation
+    db.exec(`
+      insert into track_month_agg (source, month, point_count, min_ts, max_ts, avg_speed, min_lat, max_lat, min_lon, max_lon)
+      values 
+        ('footprint', '2025-01', 7, '2025-01-15T08:00:00Z', '2025-01-20T10:05:00Z', 2.1, 31.2304, 31.2510, 121.4737, 121.5010),
+        ('footprint', '2025-02', 1, '2025-02-10T14:00:00Z', '2025-02-10T14:00:00Z', 1.0, 31.3000, 31.3000, 121.6000, 121.6000);
+    `);
+
+    // Year aggregation
+    db.exec(`
+      insert into track_year_agg (source, year, point_count, min_ts, max_ts, avg_speed, min_lat, max_lat, min_lon, max_lon)
+      values ('footprint', 2025, 8, '2025-01-15T08:00:00Z', '2025-02-10T14:00:00Z', 1.9, 31.2304, 31.3000, 121.4737, 121.6000);
     `);
 
     db.close();
@@ -122,6 +193,102 @@ describe("FootprintService", () => {
 
       expect(typeof data.date).toBe("string");
       expect(Array.isArray(data.trackPoints)).toBe(true);
+    });
+  });
+
+  describe("getMonthData", () => {
+    it("should return aggregated data for a specific month", () => {
+      const service = new FootprintService(TEST_DB_PATH);
+      const data = service.getMonthData("2025-01");
+
+      expect(data).toBeDefined();
+      expect(data.month).toBe("2025-01");
+      expect(data.dayAggs.length).toBe(2); // 2025-01-15 and 2025-01-20
+    });
+
+    it("should return month aggregation", () => {
+      const service = new FootprintService(TEST_DB_PATH);
+      const data = service.getMonthData("2025-01");
+
+      expect(data.monthAgg).not.toBeNull();
+      expect(data.monthAgg?.point_count).toBe(7);
+      expect(data.monthAgg?.avg_speed).toBe(2.1);
+    });
+
+    it("should not include data from other months", () => {
+      const service = new FootprintService(TEST_DB_PATH);
+      const data = service.getMonthData("2025-01");
+
+      const febDays = data.dayAggs.filter((d) => d.day.startsWith("2025-02"));
+      expect(febDays.length).toBe(0);
+    });
+
+    it("should return empty data for month with no records", () => {
+      const service = new FootprintService(TEST_DB_PATH);
+      const data = service.getMonthData("2020-01");
+
+      expect(data.month).toBe("2020-01");
+      expect(data.dayAggs).toEqual([]);
+      expect(data.monthAgg).toBeNull();
+    });
+
+    it("should match FootprintMonthRawData type structure", () => {
+      const service = new FootprintService(TEST_DB_PATH);
+      const data: FootprintMonthRawData = service.getMonthData("2025-01");
+
+      expect(typeof data.month).toBe("string");
+      expect(Array.isArray(data.dayAggs)).toBe(true);
+    });
+  });
+
+  describe("getYearData", () => {
+    it("should return aggregated data for a specific year", () => {
+      const service = new FootprintService(TEST_DB_PATH);
+      const data = service.getYearData(2025);
+
+      expect(data).toBeDefined();
+      expect(data.year).toBe(2025);
+      expect(data.dayAggs.length).toBe(3); // All 3 days
+      expect(data.monthAggs.length).toBe(2); // Jan and Feb
+    });
+
+    it("should return year aggregation", () => {
+      const service = new FootprintService(TEST_DB_PATH);
+      const data = service.getYearData(2025);
+
+      expect(data.yearAgg).not.toBeNull();
+      expect(data.yearAgg?.point_count).toBe(8);
+      expect(data.yearAgg?.avg_speed).toBe(1.9);
+    });
+
+    it("should include data from multiple months", () => {
+      const service = new FootprintService(TEST_DB_PATH);
+      const data = service.getYearData(2025);
+
+      const janDays = data.dayAggs.filter((d) => d.day.startsWith("2025-01"));
+      const febDays = data.dayAggs.filter((d) => d.day.startsWith("2025-02"));
+
+      expect(janDays.length).toBe(2);
+      expect(febDays.length).toBe(1);
+    });
+
+    it("should return empty data for year with no records", () => {
+      const service = new FootprintService(TEST_DB_PATH);
+      const data = service.getYearData(2020);
+
+      expect(data.year).toBe(2020);
+      expect(data.dayAggs).toEqual([]);
+      expect(data.monthAggs).toEqual([]);
+      expect(data.yearAgg).toBeNull();
+    });
+
+    it("should match FootprintYearRawData type structure", () => {
+      const service = new FootprintService(TEST_DB_PATH);
+      const data: FootprintYearRawData = service.getYearData(2025);
+
+      expect(typeof data.year).toBe("number");
+      expect(Array.isArray(data.dayAggs)).toBe(true);
+      expect(Array.isArray(data.monthAggs)).toBe(true);
     });
   });
 });

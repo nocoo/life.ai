@@ -34,6 +34,49 @@ export interface FootprintRawData {
   dayAgg: TrackDayAggRow | null;
 }
 
+/** Raw month aggregation from track_month_agg table */
+export interface TrackMonthAggRow {
+  source: string;
+  month: string;
+  point_count: number;
+  min_ts: string | null;
+  max_ts: string | null;
+  avg_speed: number | null;
+  min_lat: number | null;
+  max_lat: number | null;
+  min_lon: number | null;
+  max_lon: number | null;
+}
+
+/** Raw year aggregation from track_year_agg table */
+export interface TrackYearAggRow {
+  source: string;
+  year: number;
+  point_count: number;
+  min_ts: string | null;
+  max_ts: string | null;
+  avg_speed: number | null;
+  min_lat: number | null;
+  max_lat: number | null;
+  min_lon: number | null;
+  max_lon: number | null;
+}
+
+/** Raw data response for a month */
+export interface FootprintMonthRawData {
+  month: string; // YYYY-MM
+  dayAggs: TrackDayAggRow[];
+  monthAgg: TrackMonthAggRow | null;
+}
+
+/** Raw data response for a year */
+export interface FootprintYearRawData {
+  year: number;
+  dayAggs: TrackDayAggRow[];
+  monthAggs: TrackMonthAggRow[];
+  yearAgg: TrackYearAggRow | null;
+}
+
 /** Service for querying Footprint data from SQLite */
 export class FootprintService {
   private dbPath: string;
@@ -68,6 +111,90 @@ export class FootprintService {
         date,
         trackPoints,
         dayAgg: dayAgg ?? null,
+      };
+    } finally {
+      db.close();
+    }
+  }
+
+  /** Get aggregated data for a specific month (YYYY-MM format) */
+  getMonthData(month: string): FootprintMonthRawData {
+    const db = openDbByPath(this.dbPath);
+    try {
+      // Get daily aggregations for the month
+      const dayAggs = db
+        .prepare(
+          `SELECT source, day, point_count, min_ts, max_ts, avg_speed,
+                  min_lat, max_lat, min_lon, max_lon
+           FROM track_day_agg 
+           WHERE source = 'footprint' AND day LIKE ?
+           ORDER BY day`
+        )
+        .all(`${month}%`) as TrackDayAggRow[];
+
+      // Get month aggregation
+      const monthAgg = db
+        .prepare(
+          `SELECT source, month, point_count, min_ts, max_ts, avg_speed,
+                  min_lat, max_lat, min_lon, max_lon
+           FROM track_month_agg 
+           WHERE source = 'footprint' AND month = ?`
+        )
+        .get(month) as TrackMonthAggRow | undefined;
+
+      return {
+        month,
+        dayAggs,
+        monthAgg: monthAgg ?? null,
+      };
+    } finally {
+      db.close();
+    }
+  }
+
+  /** Get aggregated data for a specific year */
+  getYearData(year: number): FootprintYearRawData {
+    const db = openDbByPath(this.dbPath);
+    try {
+      const yearPrefix = `${year}-%`;
+
+      // Get daily aggregations for the year (for heatmap)
+      const dayAggs = db
+        .prepare(
+          `SELECT source, day, point_count, min_ts, max_ts, avg_speed,
+                  min_lat, max_lat, min_lon, max_lon
+           FROM track_day_agg 
+           WHERE source = 'footprint' AND day LIKE ?
+           ORDER BY day`
+        )
+        .all(yearPrefix) as TrackDayAggRow[];
+
+      // Get monthly aggregations for the year
+      const monthAggs = db
+        .prepare(
+          `SELECT source, month, point_count, min_ts, max_ts, avg_speed,
+                  min_lat, max_lat, min_lon, max_lon
+           FROM track_month_agg 
+           WHERE source = 'footprint' AND month LIKE ?
+           ORDER BY month`
+        )
+        .all(yearPrefix) as TrackMonthAggRow[];
+
+      // Get year aggregation
+      const yearAgg = db
+        .prepare(
+          `SELECT source, year, point_count, min_ts, max_ts, avg_speed,
+                  min_lat, max_lat, min_lon, max_lon
+           FROM track_year_agg 
+           WHERE source = 'footprint' AND year = ?`
+        )
+        .get(year) as TrackYearAggRow | undefined;
+
+      return {
+        year,
+        dayAggs,
+        monthAggs,
+        yearAgg: yearAgg ?? null,
       };
     } finally {
       db.close();

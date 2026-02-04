@@ -4,6 +4,8 @@ import { mkdirSync, rmSync } from "fs";
 import {
   AppleHealthService,
   type AppleHealthRawData,
+  type AppleHealthMonthRawData,
+  type AppleHealthYearRawData,
 } from "@/services/applehealth-service";
 
 const TEST_DB_DIR = "tests/.tmp";
@@ -61,6 +63,8 @@ describe("AppleHealthService", () => {
 
     // Insert test data for 2025-01-15
     const testDay = "2025-01-15";
+    const testDay2 = "2025-01-20";
+    const testDay3 = "2025-02-10";
 
     // Heart rate records
     db.exec(`
@@ -89,6 +93,37 @@ describe("AppleHealthService", () => {
     db.exec(`
       insert into apple_activity_summary (date_components, active_energy, exercise_time, stand_hours, day)
       values ('${testDay}', 450.5, 35, 10, '${testDay}');
+    `);
+
+    // Add more data for month/year tests
+    // Data for 2025-01-20
+    db.exec(`
+      insert into apple_record (type, unit, value, start_date, end_date, day, source_name)
+      values 
+        ('HKQuantityTypeIdentifierHeartRate', 'count/min', '70', '${testDay2} 09:00:00', '${testDay2} 09:00:00', '${testDay2}', 'Apple Watch'),
+        ('HKQuantityTypeIdentifierStepCount', 'count', '3000', '${testDay2} 10:00:00', '${testDay2} 11:00:00', '${testDay2}', 'iPhone');
+    `);
+
+    db.exec(`
+      insert into apple_workout (workout_type, duration, total_distance, total_energy, start_date, end_date, day, source_name)
+      values ('HKWorkoutActivityTypeSwimming', 45, 1000, 250, '${testDay2} 18:00:00', '${testDay2} 18:45:00', '${testDay2}', 'Apple Watch');
+    `);
+
+    db.exec(`
+      insert into apple_activity_summary (date_components, active_energy, exercise_time, stand_hours, day)
+      values ('${testDay2}', 380, 45, 12, '${testDay2}');
+    `);
+
+    // Data for 2025-02-10 (different month)
+    db.exec(`
+      insert into apple_record (type, unit, value, start_date, end_date, day, source_name)
+      values 
+        ('HKQuantityTypeIdentifierHeartRate', 'count/min', '68', '${testDay3} 08:00:00', '${testDay3} 08:00:00', '${testDay3}', 'Apple Watch');
+    `);
+
+    db.exec(`
+      insert into apple_activity_summary (date_components, active_energy, exercise_time, stand_hours, day)
+      values ('${testDay3}', 400, 30, 11, '${testDay3}');
     `);
 
     db.close();
@@ -173,6 +208,126 @@ describe("AppleHealthService", () => {
       expect(typeof data.date).toBe("string");
       expect(Array.isArray(data.records)).toBe(true);
       expect(Array.isArray(data.workouts)).toBe(true);
+    });
+  });
+
+  describe("getMonthData", () => {
+    it("should return all records for a specific month", () => {
+      const service = new AppleHealthService(TEST_DB_PATH);
+      const data = service.getMonthData("2025-01");
+
+      expect(data).toBeDefined();
+      expect(data.month).toBe("2025-01");
+      // Should include records from both 2025-01-15 and 2025-01-20
+      expect(data.records.length).toBeGreaterThan(3);
+    });
+
+    it("should return workouts for the month", () => {
+      const service = new AppleHealthService(TEST_DB_PATH);
+      const data = service.getMonthData("2025-01");
+
+      // Should include both running and swimming workouts
+      expect(data.workouts.length).toBe(2);
+      const workoutTypes = data.workouts.map((w) => w.workout_type);
+      expect(workoutTypes).toContain("HKWorkoutActivityTypeRunning");
+      expect(workoutTypes).toContain("HKWorkoutActivityTypeSwimming");
+    });
+
+    it("should return activity summaries for the month", () => {
+      const service = new AppleHealthService(TEST_DB_PATH);
+      const data = service.getMonthData("2025-01");
+
+      expect(data.activitySummaries.length).toBe(2);
+      expect(data.activitySummaries[0].day).toBe("2025-01-15");
+      expect(data.activitySummaries[1].day).toBe("2025-01-20");
+    });
+
+    it("should not include data from other months", () => {
+      const service = new AppleHealthService(TEST_DB_PATH);
+      const data = service.getMonthData("2025-01");
+
+      // Should not include February data
+      const febRecords = data.records.filter((r) => r.day.startsWith("2025-02"));
+      expect(febRecords.length).toBe(0);
+    });
+
+    it("should return empty data for month with no records", () => {
+      const service = new AppleHealthService(TEST_DB_PATH);
+      const data = service.getMonthData("2020-01");
+
+      expect(data.month).toBe("2020-01");
+      expect(data.records).toEqual([]);
+      expect(data.workouts).toEqual([]);
+      expect(data.activitySummaries).toEqual([]);
+    });
+
+    it("should match AppleHealthMonthRawData type structure", () => {
+      const service = new AppleHealthService(TEST_DB_PATH);
+      const data: AppleHealthMonthRawData = service.getMonthData("2025-01");
+
+      expect(typeof data.month).toBe("string");
+      expect(Array.isArray(data.records)).toBe(true);
+      expect(Array.isArray(data.workouts)).toBe(true);
+      expect(Array.isArray(data.activitySummaries)).toBe(true);
+    });
+  });
+
+  describe("getYearData", () => {
+    it("should return all records for a specific year", () => {
+      const service = new AppleHealthService(TEST_DB_PATH);
+      const data = service.getYearData(2025);
+
+      expect(data).toBeDefined();
+      expect(data.year).toBe(2025);
+      // Should include records from all months in 2025
+      expect(data.records.length).toBeGreaterThan(5);
+    });
+
+    it("should include data from multiple months", () => {
+      const service = new AppleHealthService(TEST_DB_PATH);
+      const data = service.getYearData(2025);
+
+      // Check that we have data from both January and February
+      const janRecords = data.records.filter((r) => r.day.startsWith("2025-01"));
+      const febRecords = data.records.filter((r) => r.day.startsWith("2025-02"));
+
+      expect(janRecords.length).toBeGreaterThan(0);
+      expect(febRecords.length).toBeGreaterThan(0);
+    });
+
+    it("should return all workouts for the year", () => {
+      const service = new AppleHealthService(TEST_DB_PATH);
+      const data = service.getYearData(2025);
+
+      expect(data.workouts.length).toBe(2);
+    });
+
+    it("should return all activity summaries for the year", () => {
+      const service = new AppleHealthService(TEST_DB_PATH);
+      const data = service.getYearData(2025);
+
+      // Should have summaries for all 3 days with data
+      expect(data.activitySummaries.length).toBe(3);
+    });
+
+    it("should return empty data for year with no records", () => {
+      const service = new AppleHealthService(TEST_DB_PATH);
+      const data = service.getYearData(2020);
+
+      expect(data.year).toBe(2020);
+      expect(data.records).toEqual([]);
+      expect(data.workouts).toEqual([]);
+      expect(data.activitySummaries).toEqual([]);
+    });
+
+    it("should match AppleHealthYearRawData type structure", () => {
+      const service = new AppleHealthService(TEST_DB_PATH);
+      const data: AppleHealthYearRawData = service.getYearData(2025);
+
+      expect(typeof data.year).toBe("number");
+      expect(Array.isArray(data.records)).toBe(true);
+      expect(Array.isArray(data.workouts)).toBe(true);
+      expect(Array.isArray(data.activitySummaries)).toBe(true);
     });
   });
 });

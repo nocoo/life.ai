@@ -50,6 +50,22 @@ export interface AppleHealthRawData {
   activitySummary: AppleActivitySummaryRow | null;
 }
 
+/** Raw data response for a month */
+export interface AppleHealthMonthRawData {
+  month: string; // YYYY-MM
+  records: AppleRecordRow[];
+  workouts: AppleWorkoutRow[];
+  activitySummaries: AppleActivitySummaryRow[];
+}
+
+/** Raw data response for a year */
+export interface AppleHealthYearRawData {
+  year: number;
+  records: AppleRecordRow[];
+  workouts: AppleWorkoutRow[];
+  activitySummaries: AppleActivitySummaryRow[];
+}
+
 /** Calculate previous day in YYYY-MM-DD format */
 const getPreviousDay = (date: string): string => {
   const d = new Date(date + "T00:00:00");
@@ -123,6 +139,100 @@ export class AppleHealthService {
         records: allRecords,
         workouts,
         activitySummary: activitySummary ?? null,
+      };
+    } finally {
+      db.close();
+    }
+  }
+
+  /** Get all raw data for a specific month (YYYY-MM format) */
+  getMonthData(month: string): AppleHealthMonthRawData {
+    const db = openDbByPath(this.dbPath);
+    try {
+      // Query records for the entire month using day LIKE 'YYYY-MM%'
+      const records = db
+        .prepare(
+          `SELECT id, type, unit, value, source_name, source_version, device, 
+                  creation_date, start_date, end_date, day, timezone
+           FROM apple_record 
+           WHERE day LIKE ? 
+           ORDER BY start_date`
+        )
+        .all(`${month}%`) as AppleRecordRow[];
+
+      const workouts = db
+        .prepare(
+          `SELECT id, workout_type, duration, total_distance, total_energy,
+                  source_name, device, creation_date, start_date, end_date, day
+           FROM apple_workout 
+           WHERE day LIKE ? 
+           ORDER BY start_date`
+        )
+        .all(`${month}%`) as AppleWorkoutRow[];
+
+      const activitySummaries = db
+        .prepare(
+          `SELECT id, date_components, active_energy, exercise_time, 
+                  stand_hours, movement_energy, day
+           FROM apple_activity_summary 
+           WHERE day LIKE ?
+           ORDER BY day`
+        )
+        .all(`${month}%`) as AppleActivitySummaryRow[];
+
+      return {
+        month,
+        records,
+        workouts,
+        activitySummaries,
+      };
+    } finally {
+      db.close();
+    }
+  }
+
+  /** Get all raw data for a specific year */
+  getYearData(year: number): AppleHealthYearRawData {
+    const db = openDbByPath(this.dbPath);
+    try {
+      const yearPrefix = `${year}-%`;
+
+      // Query records for the entire year using day LIKE 'YYYY-%'
+      const records = db
+        .prepare(
+          `SELECT id, type, unit, value, source_name, source_version, device, 
+                  creation_date, start_date, end_date, day, timezone
+           FROM apple_record 
+           WHERE day LIKE ? 
+           ORDER BY start_date`
+        )
+        .all(yearPrefix) as AppleRecordRow[];
+
+      const workouts = db
+        .prepare(
+          `SELECT id, workout_type, duration, total_distance, total_energy,
+                  source_name, device, creation_date, start_date, end_date, day
+           FROM apple_workout 
+           WHERE day LIKE ? 
+           ORDER BY start_date`
+        )
+        .all(yearPrefix) as AppleWorkoutRow[];
+
+      const activitySummaries = db
+        .prepare(
+          `SELECT id, date_components, active_energy, exercise_time, 
+                  stand_hours, movement_energy, day
+           FROM apple_activity_summary 
+           WHERE day LIKE ?
+           ORDER BY day`
+        )
+        .all(yearPrefix) as AppleActivitySummaryRow[];
+
+      return {
+        year,
+        records,
+        workouts,
+        activitySummaries,
       };
     } finally {
       db.close();
