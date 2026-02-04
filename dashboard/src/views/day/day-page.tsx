@@ -19,17 +19,55 @@ import { Clock } from "lucide-react";
 
 function LoadingSkeleton() {
   return (
-    <div className="p-6">
+    <div>
       {/* Two-column layout skeleton: Timeline primary, Cards sidebar */}
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-        {/* Timeline skeleton */}
-        <Skeleton className="h-[600px] w-full" />
+        {/* Timeline Card skeleton */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-4 w-24" />
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <Skeleton key={i} className="h-8 w-full" />
+            ))}
+          </CardContent>
+        </Card>
         {/* Cards sidebar skeleton */}
-        <div className="grid gap-4">
-          <Skeleton className="h-40 w-full" />
-          <Skeleton className="h-36 w-full" />
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-44 w-full" />
+        <div className="grid gap-4 auto-rows-min">
+          {/* DayInfoCard skeleton */}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-4 w-48" />
+            </CardHeader>
+          </Card>
+          {/* HealthPanel skeletons */}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-4 w-20" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-16 w-full" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-4 w-20" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-24 w-full" />
+            </CardContent>
+          </Card>
+          {/* ActivityPanel skeleton */}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-4 w-20" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-20 w-full" />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
