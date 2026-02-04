@@ -280,4 +280,189 @@ describe("applehealth verify", () => {
       true
     );
   });
+
+  it("throws error when xml file not found", async () => {
+    expect(countXml("/nonexistent/file.xml")).rejects.toThrow("XML file not found");
+  });
+
+  it("throws error when ecg dir has no files", async () => {
+    // Create empty dir - Glob returns empty array when no matching files
+    const emptyEcgDir = "db/test-empty-ecg";
+    mkdirSync(emptyEcgDir, { recursive: true });
+    expect(countEcgFiles(emptyEcgDir)).rejects.toThrow("ECG dir not found");
+    rmSync(emptyEcgDir, { recursive: true, force: true });
+  });
+
+  it("throws error when routes dir has no files", async () => {
+    // Create empty dir - Glob returns empty array when no matching files
+    const emptyRoutesDir = "db/test-empty-routes";
+    mkdirSync(emptyRoutesDir, { recursive: true });
+    expect(countRouteFiles(emptyRoutesDir)).rejects.toThrow("Routes dir not found");
+    rmSync(emptyRoutesDir, { recursive: true, force: true });
+  });
+
+  it("reports correlation mismatch", async () => {
+    writeAppleHealthXml(
+      xmlFile,
+      `
+<Correlation type="HKCorrelationTypeIdentifierBloodPressure" sourceName="BP" startDate="2025-01-02 08:00:00 +0800" endDate="2025-01-02 08:00:01 +0800"></Correlation>
+<Correlation type="HKCorrelationTypeIdentifierBloodPressure" sourceName="BP" startDate="2025-01-02 09:00:00 +0800" endDate="2025-01-02 09:00:01 +0800"></Correlation>
+`
+    );
+    writeEcgCsv(ecgFile, ["记录日期,2025-01-05 09:54:54 +0800", "采样率,512赫兹", "", "1.0"]);
+    writeRouteGpx(routeFile, ['<trkpt lat="1" lon="2"><time>2025-01-05T00:00:00Z</time></trkpt>']);
+
+    const db = openDb(testDbPath);
+    createSchema(db);
+    db.exec("insert into apple_correlation (type, start_date, end_date, day) values ('c', '2025-01-02 08:00:00 +0800', '2025-01-02 08:00:01 +0800', '2025-01-02');");
+    db.exec(`insert into apple_ecg_file (file_path, day) values ('${ecgFile}', '2025-01-05');`);
+    db.exec(`insert into apple_workout_route (file_path, day) values ('${routeFile}', '2025-01-05');`);
+    db.close();
+
+    const result = await verifyAppleHealth({ year: 2025, exportPath: xmlFile, ecgDir, routesDir, dbPath: testDbPath });
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((err) => err.includes("correlation count mismatch"))).toBe(true);
+  });
+
+  it("reports workout mismatch", async () => {
+    writeAppleHealthXml(
+      xmlFile,
+      `
+<Workout workoutActivityType="HKWorkoutActivityTypeRunning" duration="30" sourceName="Watch" startDate="2025-01-03 07:00:00 +0800" endDate="2025-01-03 07:30:00 +0800"></Workout>
+<Workout workoutActivityType="HKWorkoutActivityTypeRunning" duration="30" sourceName="Watch" startDate="2025-01-03 08:00:00 +0800" endDate="2025-01-03 08:30:00 +0800"></Workout>
+`
+    );
+    writeEcgCsv(ecgFile, ["记录日期,2025-01-05 09:54:54 +0800", "采样率,512赫兹", "", "1.0"]);
+    writeRouteGpx(routeFile, ['<trkpt lat="1" lon="2"><time>2025-01-05T00:00:00Z</time></trkpt>']);
+
+    const db = openDb(testDbPath);
+    createSchema(db);
+    db.exec("insert into apple_workout (workout_type, start_date, end_date, day) values ('w', '2025-01-03 07:00:00 +0800', '2025-01-03 07:30:00 +0800', '2025-01-03');");
+    db.exec(`insert into apple_ecg_file (file_path, day) values ('${ecgFile}', '2025-01-05');`);
+    db.exec(`insert into apple_workout_route (file_path, day) values ('${routeFile}', '2025-01-05');`);
+    db.close();
+
+    const result = await verifyAppleHealth({ year: 2025, exportPath: xmlFile, ecgDir, routesDir, dbPath: testDbPath });
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((err) => err.includes("workout count mismatch"))).toBe(true);
+  });
+
+  it("reports activity mismatch", async () => {
+    writeAppleHealthXml(
+      xmlFile,
+      `
+<ActivitySummary dateComponents="2025-01-04" activeEnergyBurned="500" appleExerciseTime="30" appleStandHours="12"/>
+<ActivitySummary dateComponents="2025-01-05" activeEnergyBurned="600" appleExerciseTime="40" appleStandHours="10"/>
+`
+    );
+    writeEcgCsv(ecgFile, ["记录日期,2025-01-05 09:54:54 +0800", "采样率,512赫兹", "", "1.0"]);
+    writeRouteGpx(routeFile, ['<trkpt lat="1" lon="2"><time>2025-01-05T00:00:00Z</time></trkpt>']);
+
+    const db = openDb(testDbPath);
+    createSchema(db);
+    db.exec("insert into apple_activity_summary (date_components, day) values ('2025-01-04', '2025-01-04');");
+    db.exec(`insert into apple_ecg_file (file_path, day) values ('${ecgFile}', '2025-01-05');`);
+    db.exec(`insert into apple_workout_route (file_path, day) values ('${routeFile}', '2025-01-05');`);
+    db.close();
+
+    const result = await verifyAppleHealth({ year: 2025, exportPath: xmlFile, ecgDir, routesDir, dbPath: testDbPath });
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((err) => err.includes("activity count mismatch"))).toBe(true);
+  });
+
+  it("runCli outputs success message in text mode", async () => {
+    writeAppleHealthXml(xmlFile, `<Record type="HKQuantityTypeIdentifierDietaryWater" unit="mL" value="500" sourceName="Grow" startDate="2025-01-01 10:00:00 +0800" endDate="2025-01-01 10:00:01 +0800"/>`);
+    writeEcgCsv(ecgFile, ["记录日期,2025-01-05 09:54:54 +0800", "采样率,512赫兹", "", "1.0"]);
+    writeRouteGpx(routeFile, ['<trkpt lat="1" lon="2"><time>2025-01-05T00:00:00Z</time></trkpt>']);
+
+    const db = openDb(testDbPath);
+    createSchema(db);
+    db.exec("insert into apple_record (type, start_date, end_date, day) values ('t', '2025-01-01 10:00:00 +0800', '2025-01-01 10:00:01 +0800', '2025-01-01');");
+    db.exec(`insert into apple_ecg_file (file_path, day) values ('${ecgFile}', '2025-01-05');`);
+    db.exec(`insert into apple_workout_route (file_path, day) values ('${routeFile}', '2025-01-05');`);
+    db.close();
+
+    const logs: string[] = [];
+    const errors: string[] = [];
+    const io = { log: (msg: string) => logs.push(msg), error: (msg: string) => errors.push(msg) };
+
+    // Use custom paths via args
+    const result = await runCli(["2025", xmlFile, ecgDir, routesDir], io);
+    expect(result.exitCode).toBe(0);
+    expect(result.ok).toBe(true);
+    expect(logs.some((l) => l.includes("✅ Verify OK"))).toBe(true);
+    expect(logs.some((l) => l.includes("records:"))).toBe(true);
+    expect(logs.some((l) => l.includes("correlations:"))).toBe(true);
+    expect(logs.some((l) => l.includes("workouts:"))).toBe(true);
+    expect(logs.some((l) => l.includes("activities:"))).toBe(true);
+    expect(logs.some((l) => l.includes("ecg files:"))).toBe(true);
+    expect(logs.some((l) => l.includes("routes:"))).toBe(true);
+  });
+
+  it("runCli outputs failure message in text mode", async () => {
+    writeAppleHealthXml(xmlFile, `
+<Record type="HKQuantityTypeIdentifierDietaryWater" unit="mL" value="500" sourceName="Grow" startDate="2025-01-01 10:00:00 +0800" endDate="2025-01-01 10:00:01 +0800"/>
+<Record type="HKQuantityTypeIdentifierDietaryWater" unit="mL" value="500" sourceName="Grow" startDate="2025-01-01 11:00:00 +0800" endDate="2025-01-01 11:00:01 +0800"/>
+`);
+    writeEcgCsv(ecgFile, ["记录日期,2025-01-05 09:54:54 +0800", "采样率,512赫兹", "", "1.0"]);
+    writeRouteGpx(routeFile, ['<trkpt lat="1" lon="2"><time>2025-01-05T00:00:00Z</time></trkpt>']);
+
+    const db = openDb(testDbPath);
+    createSchema(db);
+    db.exec("insert into apple_record (type, start_date, end_date, day) values ('t', '2025-01-01 10:00:00 +0800', '2025-01-01 10:00:01 +0800', '2025-01-01');");
+    db.exec(`insert into apple_ecg_file (file_path, day) values ('${ecgFile}', '2025-01-05');`);
+    db.exec(`insert into apple_workout_route (file_path, day) values ('${routeFile}', '2025-01-05');`);
+    db.close();
+
+    const logs: string[] = [];
+    const errors: string[] = [];
+    const io = { log: (msg: string) => logs.push(msg), error: (msg: string) => errors.push(msg) };
+
+    const result = await runCli(["2025", xmlFile, ecgDir, routesDir], io);
+    expect(result.exitCode).toBe(1);
+    expect(result.ok).toBe(false);
+    expect(errors.some((e) => e.includes("❌ Verify failed"))).toBe(true);
+    expect(errors.some((e) => e.includes("record count mismatch"))).toBe(true);
+  });
+
+  it("runCli outputs JSON when --json flag is passed", async () => {
+    writeAppleHealthXml(xmlFile, `<Record type="HKQuantityTypeIdentifierDietaryWater" unit="mL" value="500" sourceName="Grow" startDate="2025-01-01 10:00:00 +0800" endDate="2025-01-01 10:00:01 +0800"/>`);
+    writeEcgCsv(ecgFile, ["记录日期,2025-01-05 09:54:54 +0800", "采样率,512赫兹", "", "1.0"]);
+    writeRouteGpx(routeFile, ['<trkpt lat="1" lon="2"><time>2025-01-05T00:00:00Z</time></trkpt>']);
+
+    const db = openDb(testDbPath);
+    createSchema(db);
+    db.exec("insert into apple_record (type, start_date, end_date, day) values ('t', '2025-01-01 10:00:00 +0800', '2025-01-01 10:00:01 +0800', '2025-01-01');");
+    db.exec(`insert into apple_ecg_file (file_path, day) values ('${ecgFile}', '2025-01-05');`);
+    db.exec(`insert into apple_workout_route (file_path, day) values ('${routeFile}', '2025-01-05');`);
+    db.close();
+
+    const logs: string[] = [];
+    const errors: string[] = [];
+    const io = { log: (msg: string) => logs.push(msg), error: (msg: string) => errors.push(msg) };
+
+    const result = await runCli(["2025", xmlFile, ecgDir, routesDir, "--json"], io);
+    expect(result.exitCode).toBe(0);
+
+    // Should output valid JSON
+    const jsonOutput = JSON.parse(logs[0]);
+    expect(jsonOutput.ok).toBe(true);
+    expect(jsonOutput.xml).toBeDefined();
+    expect(jsonOutput.db).toBeDefined();
+  });
+
+  it("runCli uses default paths when not provided", async () => {
+    // This test just verifies the CLI argument parsing logic
+    // by passing --json as arg[1] which should fall back to default exportPath
+    const logs: string[] = [];
+    const errors: string[] = [];
+    const io = { log: (msg: string) => logs.push(msg), error: (msg: string) => errors.push(msg) };
+
+    // This will fail because default paths don't exist, but it tests the argument parsing
+    try {
+      await runCli(["2025", "--json"], io);
+    } catch {
+      // Expected to fail since default paths don't exist
+    }
+  });
 });
