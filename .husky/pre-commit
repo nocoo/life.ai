@@ -1,7 +1,1 @@
-bun run ut:scripts
-bun run lint
-bun run lint:import
-bun run lint:verify
-
-# Dashboard 测试和 lint
-cd dashboard && bun run ut && bun run lint
+bun run precommit
