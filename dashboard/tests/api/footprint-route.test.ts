@@ -87,4 +87,23 @@ describe("GET /api/day/footprint", () => {
     expect(data.data.trackPoints).toBeArray();
     expect(data.data.trackPoints.length).toBeGreaterThan(0);
   });
+
+  it("should return 500 when database error occurs", async () => {
+    // Point to non-existent database to trigger error
+    const originalPath = process.env.FOOTPRINT_DB_PATH;
+    process.env.FOOTPRINT_DB_PATH = "/nonexistent/path/to/db.sqlite";
+
+    const request = new NextRequest(
+      "http://localhost/api/day/footprint?date=2025-01-15"
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(data.success).toBe(false);
+    expect(data.error).toBeString();
+
+    // Restore original path
+    process.env.FOOTPRINT_DB_PATH = originalPath;
+  });
 });

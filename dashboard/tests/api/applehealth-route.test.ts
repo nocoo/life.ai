@@ -114,4 +114,23 @@ describe("GET /api/day/applehealth", () => {
     expect(data.success).toBe(true);
     expect(data.data.records).toEqual([]);
   });
+
+  it("should return 500 when database error occurs", async () => {
+    // Point to non-existent database to trigger error
+    const originalPath = process.env.APPLEHEALTH_DB_PATH;
+    process.env.APPLEHEALTH_DB_PATH = "/nonexistent/path/to/db.sqlite";
+
+    const request = new NextRequest(
+      "http://localhost/api/day/applehealth?date=2025-01-15"
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(data.success).toBe(false);
+    expect(data.error).toBeString();
+
+    // Restore original path
+    process.env.APPLEHEALTH_DB_PATH = originalPath;
+  });
 });
