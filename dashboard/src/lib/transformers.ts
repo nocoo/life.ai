@@ -104,41 +104,103 @@ const calculateDurationMinutes = (start: string, end: string): number => {
   return Math.round((endTime.getTime() - startTime.getTime()) / 60000);
 };
 
-/** Transform raw Apple Health records to sleep record */
-const transformSleep = (records: AppleRecordRow[]): SleepRecord | null => {
+/** Transform raw Apple Health records to sleep record
+ * Only includes the "overnight sleep" - the first continuous sleep session
+ * that spans from the previous evening to this morning.
+ * 
+ * Logic:
+ * 1. Get all sleep stages sorted by start time
+ * 2. Find stages that are part of the overnight sleep (ends before noon)
+ * 3. Only include the first continuous sleep session (gap > 2 hours = new session)
+ */
+const transformSleep = (records: AppleRecordRow[], date: string): SleepRecord | null => {
   const sleepRecords = records.filter(
     (r) => r.type === "HKCategoryTypeIdentifierSleepAnalysis" && r.value
   );
 
   if (sleepRecords.length === 0) return null;
 
-  const stages: SleepStage[] = sleepRecords
+  // Define cutoff: noon of the target date
+  const noonCutoff = new Date(`${date}T12:00:00`);
+  
+  // Maximum gap between sleep stages to be considered same session (2 hours)
+  const MAX_GAP_MS = 2 * 60 * 60 * 1000;
+
+  // Internal type with original datetime for sorting
+  type StageWithDateTime = SleepStage & { 
+    _startDate: string; 
+    _endDate: string;
+    _startMs: number;
+    _endMs: number;
+  };
+
+  // Parse and filter sleep stages
+  const allStages: StageWithDateTime[] = sleepRecords
     .map((r) => {
       const stageType = SLEEP_STAGE_MAP[r.value!];
       if (!stageType) return null;
+      
+      const startDateTime = new Date(r.start_date.replace(" +", "+").replace(" ", "T"));
+      const endDateTime = new Date(r.end_date.replace(" +", "+").replace(" ", "T"));
+      
+      // Only include sleep stages that end before noon (morning sleep)
+      if (endDateTime >= noonCutoff) return null;
+      
       const duration = calculateDurationMinutes(r.start_date, r.end_date);
       return {
         type: stageType,
         start: extractTime(r.start_date),
         end: extractTime(r.end_date),
         duration,
+        _startDate: r.start_date,
+        _endDate: r.end_date,
+        _startMs: startDateTime.getTime(),
+        _endMs: endDateTime.getTime(),
       };
     })
-    .filter((s): s is SleepStage => s !== null);
+    .filter((s): s is StageWithDateTime => s !== null)
+    .sort((a, b) => a._startMs - b._startMs);
 
-  if (stages.length === 0) return null;
+  if (allStages.length === 0) return null;
 
-  // Calculate totals by stage type
-  const deepMinutes = stages.filter((s) => s.type === "deep").reduce((sum, s) => sum + s.duration, 0);
-  const coreMinutes = stages.filter((s) => s.type === "core").reduce((sum, s) => sum + s.duration, 0);
-  const remMinutes = stages.filter((s) => s.type === "rem").reduce((sum, s) => sum + s.duration, 0);
-  const awakeMinutes = stages.filter((s) => s.type === "awake").reduce((sum, s) => sum + s.duration, 0);
+  // Find the first continuous sleep session
+  // Start from the first stage and include all stages until we find a gap > 2 hours
+  const firstSession: StageWithDateTime[] = [allStages[0]];
+  
+  for (let i = 1; i < allStages.length; i++) {
+    const prevStage = allStages[i - 1];
+    const currStage = allStages[i];
+    
+    // Calculate gap between previous stage end and current stage start
+    const gap = currStage._startMs - prevStage._endMs;
+    
+    // If gap is too large, this is a new sleep session - stop here
+    if (gap > MAX_GAP_MS) {
+      break;
+    }
+    
+    firstSession.push(currStage);
+  }
+
+  // Calculate totals by stage type for the first session only
+  const deepMinutes = firstSession.filter((s) => s.type === "deep").reduce((sum, s) => sum + s.duration, 0);
+  const coreMinutes = firstSession.filter((s) => s.type === "core").reduce((sum, s) => sum + s.duration, 0);
+  const remMinutes = firstSession.filter((s) => s.type === "rem").reduce((sum, s) => sum + s.duration, 0);
+  const awakeMinutes = firstSession.filter((s) => s.type === "awake").reduce((sum, s) => sum + s.duration, 0);
 
   const totalDuration = deepMinutes + coreMinutes + remMinutes + awakeMinutes;
 
+  // Get sleep start (first stage's start) and end (last stage's end)
+  const sleepStart = extractTime(firstSession[0]._startDate);
+  const sleepEnd = extractTime(firstSession[firstSession.length - 1]._endDate);
+
+  // Clean up internal properties before returning
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const stages: SleepStage[] = firstSession.map(({ _startDate, _endDate, _startMs, _endMs, ...stage }) => stage);
+
   return {
-    start: stages[0].start,
-    end: stages[stages.length - 1].end,
+    start: sleepStart,
+    end: sleepEnd,
     duration: totalDuration,
     stages,
     deepMinutes,
@@ -350,7 +412,7 @@ const transformActivity = (
 
 /** Transform raw Apple Health data to DayHealthData view model */
 export const transformAppleHealthData = (raw: AppleHealthRawData): DayHealthData => {
-  const sleep = transformSleep(raw.records);
+  const sleep = transformSleep(raw.records, raw.date);
   const heartRate = transformHeartRate(raw.records);
   const { steps, total: totalSteps } = transformSteps(raw.records);
   const distance = transformDistance(raw.records);

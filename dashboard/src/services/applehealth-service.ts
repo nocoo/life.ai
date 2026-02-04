@@ -50,6 +50,13 @@ export interface AppleHealthRawData {
   activitySummary: AppleActivitySummaryRow | null;
 }
 
+/** Calculate previous day in YYYY-MM-DD format */
+const getPreviousDay = (date: string): string => {
+  const d = new Date(date + "T00:00:00");
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0, 10);
+};
+
 /** Service for querying Apple Health data from SQLite */
 export class AppleHealthService {
   private dbPath: string;
@@ -62,6 +69,7 @@ export class AppleHealthService {
   getDayData(date: string): AppleHealthRawData {
     const db = openDbByPath(this.dbPath);
     try {
+      // Get regular records for the specified date
       const records = db
         .prepare(
           `SELECT id, type, unit, value, source_name, source_version, device, 
@@ -71,6 +79,25 @@ export class AppleHealthService {
            ORDER BY start_date`
         )
         .all(date) as AppleRecordRow[];
+
+      // Get sleep records from previous day that ended on this date
+      // Sleep starting at 23:00 on day N-1 belongs to day N-1 in the 'day' column,
+      // but we want to include it when viewing day N
+      const prevDay = getPreviousDay(date);
+      const prevDaySleepRecords = db
+        .prepare(
+          `SELECT id, type, unit, value, source_name, source_version, device, 
+                  creation_date, start_date, end_date, day, timezone
+           FROM apple_record 
+           WHERE day = ? 
+             AND type = 'HKCategoryTypeIdentifierSleepAnalysis'
+           ORDER BY start_date`
+        )
+        .all(prevDay) as AppleRecordRow[];
+
+      // Merge previous day's sleep records with current day's records
+      // Keep all current day records, add only previous day's sleep records
+      const allRecords = [...prevDaySleepRecords, ...records];
 
       const workouts = db
         .prepare(
@@ -93,7 +120,7 @@ export class AppleHealthService {
 
       return {
         date,
-        records,
+        records: allRecords,
         workouts,
         activitySummary: activitySummary ?? null,
       };
