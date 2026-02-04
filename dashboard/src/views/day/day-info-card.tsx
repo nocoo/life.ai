@@ -28,7 +28,7 @@ export function DateCard({ date }: { date: Date }) {
 
   return (
     <Card className="min-w-0 overflow-hidden">
-      <CardContent className="py-3 flex items-center justify-between">
+      <CardContent className="py-2 flex items-center justify-between">
         <span className="font-medium">{dateStr}</span>
         <span className="text-sm text-muted-foreground">{weekday}</span>
       </CardContent>
@@ -74,7 +74,7 @@ export function WeatherCard({ date, latitude, longitude }: DayInfoCardProps) {
 
   return (
     <Card className="min-w-0 overflow-hidden">
-      <CardContent className="py-3">
+      <CardContent className="py-2">
         {/* Loading state */}
         {loading && (
           <div className="flex items-center justify-center text-muted-foreground">
@@ -93,44 +93,41 @@ export function WeatherCard({ date, latitude, longitude }: DayInfoCardProps) {
         {/* Weather content - Left/Right layout */}
         {weather && !loading && (
           <div className="flex gap-3 items-center">
-            {/* Left: Weather icon */}
+            {/* Left: Large weather icon with description */}
             <div className="flex-shrink-0 text-center">
-              <span className="text-4xl">{getWeatherIcon(weather.weatherCode)}</span>
+              <span className="text-5xl">{getWeatherIcon(weather.weatherCode)}</span>
               <p className="text-xs text-muted-foreground">{getWeatherDescription(weather.weatherCode)}</p>
             </div>
 
-            {/* Right: Weather details */}
-            <div className="flex-1 min-w-0">
-              {/* Temperature row */}
-              <div className="flex items-baseline justify-between">
-                <span className="text-xl font-bold">{Math.round(weather.tempAvg)}°C</span>
-                <span className="text-sm text-muted-foreground">
-                  {Math.round(weather.tempMin)}° ~ {Math.round(weather.tempMax)}°
+            {/* Right: Weather details - all right-aligned */}
+            <div className="flex-1 min-w-0 text-right">
+              {/* Temperature range */}
+              <div className="text-lg font-medium">
+                {Math.round(weather.tempMin)}° ~ {Math.round(weather.tempMax)}°C
+              </div>
+
+              {/* Row 1: Sunrise & Sunset */}
+              <div className="flex justify-end gap-3 text-xs text-muted-foreground mt-1">
+                <span className="flex items-center gap-0.5">
+                  <Sunrise className="h-3 w-3" />
+                  {weather.sunrise}
+                </span>
+                <span className="flex items-center gap-0.5">
+                  <Sunset className="h-3 w-3" />
+                  {weather.sunset}
                 </span>
               </div>
 
-              {/* Details row */}
-              <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                <div className="flex gap-2">
-                  <span className="flex items-center gap-0.5">
-                    <Sunrise className="h-3 w-3" />
-                    {weather.sunrise}
-                  </span>
-                  <span className="flex items-center gap-0.5">
-                    <Sunset className="h-3 w-3" />
-                    {weather.sunset}
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  <span className="flex items-center gap-0.5">
-                    <Droplets className="h-3 w-3" />
-                    {weather.precipitation.toFixed(1)}mm
-                  </span>
-                  <span className="flex items-center gap-0.5">
-                    <Wind className="h-3 w-3" />
-                    {Math.round(weather.windSpeedMax)}km/h
-                  </span>
-                </div>
+              {/* Row 2: Precipitation & Wind */}
+              <div className="flex justify-end gap-3 text-xs text-muted-foreground mt-0.5">
+                <span className="flex items-center gap-0.5">
+                  <Droplets className="h-3 w-3" />
+                  {weather.precipitation.toFixed(1)}mm
+                </span>
+                <span className="flex items-center gap-0.5">
+                  <Wind className="h-3 w-3" />
+                  {Math.round(weather.windSpeedMax)}km/h
+                </span>
               </div>
             </div>
           </div>

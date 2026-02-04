@@ -1,5 +1,5 @@
-import { DayPage } from "@/views/day/day-page";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return <DayPage />;
+  redirect("/day");
 }

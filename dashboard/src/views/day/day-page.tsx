@@ -6,12 +6,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDayStore } from "@/viewmodels/day-store";
-import { DayHeader } from "./day-header";
+import { DateNavigation } from "./date-navigation";
 import { DayCalendar } from "./day-calendar";
 import { DayInfoCard } from "./day-info-card";
 import { EnhancedTimeline } from "./enhanced-timeline";
 import { HealthPanel } from "./health-panel";
-import { ActivityPanel } from "./activity-panel";
+import { ActivityPanel, TrackMapCard } from "./activity-panel";
 import { RawHealthData } from "./raw-health-data";
 import { RawFootprintData } from "./raw-footprint-data";
 import { RawPixiuData } from "./raw-pixiu-data";
@@ -123,139 +123,142 @@ export function DayPage() {
   }, [loadData]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      {/* Header */}
-      <DayHeader
-        selectedDate={selectedDate}
-        onPrevDay={goPrevDay}
-        onNextDay={goNextDay}
-        onToday={goToday}
-        onToggleCalendar={toggleCalendar}
-      />
+    <ScrollArea className="h-[calc(100vh-57px)]">
+      <div className="p-6 space-y-6">
+        {/* Date Navigation */}
+        <DateNavigation
+          selectedDate={selectedDate}
+          onPrevDay={goPrevDay}
+          onNextDay={goNextDay}
+          onToday={goToday}
+          onToggleCalendar={toggleCalendar}
+        />
 
-      {/* Main content */}
-      <main className="flex-1 overflow-hidden">
-        <ScrollArea className="h-[calc(100vh-65px)]">
-          <div className="p-6 space-y-6">
-            {/* Calendar (collapsible) */}
-            {calendarOpen && (
-              <div className="flex justify-center">
-                <DayCalendar
-                  selectedDate={selectedDate}
-                  onSelectDate={setDate}
-                />
-              </div>
-            )}
+        {/* Calendar (collapsible) */}
+        {calendarOpen && (
+          <div className="flex justify-center">
+            <DayCalendar
+              selectedDate={selectedDate}
+              onSelectDate={setDate}
+            />
+          </div>
+        )}
 
-            {/* Loading state */}
-            {loading && <LoadingSkeleton />}
+        {/* Loading state */}
+        {loading && <LoadingSkeleton />}
 
-            {/* Error state */}
-            {error && <ErrorDisplay message={error} />}
+        {/* Error state */}
+        {error && <ErrorDisplay message={error} />}
 
-            {/* Data display with Tabs */}
-            {!loading && !error && data && (
-              <Tabs
-                defaultValue="dashboard"
-                className="w-full"
-                onValueChange={handleTabChange}
-              >
-                <TabsList>
-                  <TabsTrigger value="dashboard">仪表盘</TabsTrigger>
-                  <TabsTrigger value="health">苹果健康</TabsTrigger>
-                  <TabsTrigger value="footprint">运动轨迹</TabsTrigger>
-                  <TabsTrigger value="pixiu">记账数据</TabsTrigger>
-                </TabsList>
+        {/* Data display with Tabs */}
+        {!loading && !error && data && (
+          <Tabs
+            defaultValue="dashboard"
+            className="w-full"
+            onValueChange={handleTabChange}
+          >
+            <TabsList>
+              <TabsTrigger value="dashboard">仪表盘</TabsTrigger>
+              <TabsTrigger value="health">苹果健康</TabsTrigger>
+              <TabsTrigger value="footprint">运动轨迹</TabsTrigger>
+              <TabsTrigger value="pixiu">记账数据</TabsTrigger>
+            </TabsList>
 
-                {/* Dashboard Tab */}
-                <TabsContent value="dashboard">
-                  {/* Two-column layout: Timeline (left) + Cards sidebar (right) */}
-                  {/* Use min-w-0 to allow flex children to shrink below content size */}
-                  <div className="grid gap-6 lg:grid-cols-[1fr_340px] mt-4">
-                    {/* Left: Enhanced Timeline in a Card */}
-                    <Card className="order-2 lg:order-1 min-w-0 overflow-hidden">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-sm font-medium">
-                          <Clock className="h-4 w-4 text-indigo-500" />
-                          时间线
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <EnhancedTimeline 
-                          slots={timeSlots} 
-                          date={selectedDate}
-                          latitude={location.latitude}
-                          longitude={location.longitude}
-                        />
-                      </CardContent>
-                    </Card>
+            {/* Dashboard Tab */}
+            <TabsContent value="dashboard">
+              {/* Two-column layout: Timeline (left) + Cards sidebar (right) */}
+              {/* Use min-w-0 to allow flex children to shrink below content size */}
+              <div className="grid gap-6 lg:grid-cols-[1fr_340px] mt-4">
+                {/* Left column: Map + Timeline */}
+                <div className="order-2 lg:order-1 space-y-6 min-w-0 overflow-hidden">
+                  {/* Track Map Card - Large map showing daily trajectory */}
+                  <TrackMapCard 
+                    trackPoints={data.footprint.trackPoints} 
+                  />
 
-                    {/* Right: Single-column cards sidebar */}
-                    {/* Use min-w-0 and overflow-hidden to prevent content overflow */}
-                    <div className="order-1 lg:order-2 grid gap-4 auto-rows-min min-w-0 overflow-hidden">
-                      {/* Day Info Card - Date and Weather */}
-                      <DayInfoCard
+                  {/* Enhanced Timeline in a Card */}
+                  <Card className="min-w-0 overflow-hidden">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                        <Clock className="h-4 w-4 text-indigo-500" />
+                        时间线
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <EnhancedTimeline 
+                        slots={timeSlots} 
                         date={selectedDate}
                         latitude={location.latitude}
                         longitude={location.longitude}
                       />
+                    </CardContent>
+                  </Card>
+                </div>
 
-                      {/* Health cards */}
-                      <HealthPanel data={data.health} />
+                {/* Right: Single-column cards sidebar */}
+                {/* Use min-w-0 and overflow-hidden to prevent content overflow */}
+                <div className="order-1 lg:order-2 grid gap-4 auto-rows-min min-w-0 overflow-hidden">
+                  {/* Day Info Card - Date and Weather */}
+                  <DayInfoCard
+                    date={selectedDate}
+                    latitude={location.latitude}
+                    longitude={location.longitude}
+                  />
 
-                      {/* Activity cards */}
-                      <ActivityPanel
-                        footprint={data.footprint}
-                        pixiu={data.pixiu}
-                        workouts={data.health.workouts}
-                      />
-                    </div>
+                  {/* Health cards */}
+                  <HealthPanel data={data.health} />
+
+                  {/* Activity cards */}
+                  <ActivityPanel
+                    footprint={data.footprint}
+                    pixiu={data.pixiu}
+                    workouts={data.health.workouts}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Apple Health Raw Data Tab - Lazy loaded */}
+            <TabsContent value="health">
+              <div className="mt-4">
+                {visitedTabs.has("health") ? (
+                  <RawHealthData data={data.health} />
+                ) : (
+                  <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+                    点击标签页加载数据...
                   </div>
-                </TabsContent>
+                )}
+              </div>
+            </TabsContent>
 
-                {/* Apple Health Raw Data Tab - Lazy loaded */}
-                <TabsContent value="health">
-                  <div className="mt-4">
-                    {visitedTabs.has("health") ? (
-                      <RawHealthData data={data.health} />
-                    ) : (
-                      <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-                        点击标签页加载数据...
-                      </div>
-                    )}
+            {/* Footprint Raw Data Tab - Lazy loaded */}
+            <TabsContent value="footprint">
+              <div className="mt-4">
+                {visitedTabs.has("footprint") ? (
+                  <RawFootprintData data={data.footprint} />
+                ) : (
+                  <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+                    点击标签页加载数据...
                   </div>
-                </TabsContent>
+                )}
+              </div>
+            </TabsContent>
 
-                {/* Footprint Raw Data Tab - Lazy loaded */}
-                <TabsContent value="footprint">
-                  <div className="mt-4">
-                    {visitedTabs.has("footprint") ? (
-                      <RawFootprintData data={data.footprint} />
-                    ) : (
-                      <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-                        点击标签页加载数据...
-                      </div>
-                    )}
+            {/* Pixiu Raw Data Tab - Lazy loaded */}
+            <TabsContent value="pixiu">
+              <div className="mt-4">
+                {visitedTabs.has("pixiu") ? (
+                  <RawPixiuData data={data.pixiu} />
+                ) : (
+                  <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+                    点击标签页加载数据...
                   </div>
-                </TabsContent>
-
-                {/* Pixiu Raw Data Tab - Lazy loaded */}
-                <TabsContent value="pixiu">
-                  <div className="mt-4">
-                    {visitedTabs.has("pixiu") ? (
-                      <RawPixiuData data={data.pixiu} />
-                    ) : (
-                      <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-                        点击标签页加载数据...
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-              </Tabs>
-            )}
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        )}
           </div>
         </ScrollArea>
-      </main>
-    </div>
   );
 }
