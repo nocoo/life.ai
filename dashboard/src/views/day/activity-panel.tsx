@@ -1,10 +1,19 @@
 "use client";
 
+import { useMemo, useEffect, useState } from "react";
 import { MapPin, Dumbbell, Wallet, Route } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import type { DayFootprintData } from "@/models/footprint";
+import {
+  Map as LeafletMap,
+  MapTileLayer,
+  MapPolyline,
+  MapZoomControl,
+} from "@/components/ui/map";
+import { useMap } from "react-leaflet";
+import type { LatLngExpression, LatLngBoundsExpression } from "leaflet";
+import type { DayFootprintData, TrackPoint } from "@/models/footprint";
 import type { DayPixiuData } from "@/models/pixiu";
 import type { WorkoutRecord } from "@/models/apple-health";
 
@@ -37,6 +46,95 @@ const formatTime = (datetime: string): string => {
   const match = datetime.match(/T(\d{2}:\d{2})/);
   return match ? match[1] : datetime;
 };
+
+/** Convert track points to Leaflet coordinates */
+const trackPointsToPositions = (points: TrackPoint[]): LatLngExpression[] => {
+  return points.map((p) => [p.lat, p.lon] as LatLngExpression);
+};
+
+/** Calculate bounds from track points */
+const calculateBounds = (points: TrackPoint[]): LatLngBoundsExpression | null => {
+  if (points.length === 0) return null;
+  
+  let minLat = points[0].lat;
+  let maxLat = points[0].lat;
+  let minLon = points[0].lon;
+  let maxLon = points[0].lon;
+  
+  for (const p of points) {
+    if (p.lat < minLat) minLat = p.lat;
+    if (p.lat > maxLat) maxLat = p.lat;
+    if (p.lon < minLon) minLon = p.lon;
+    if (p.lon > maxLon) maxLon = p.lon;
+  }
+  
+  return [[minLat, minLon], [maxLat, maxLon]];
+};
+
+/** Calculate center from track points */
+const calculateCenter = (points: TrackPoint[]): LatLngExpression => {
+  if (points.length === 0) return [39.9042, 116.4074]; // Beijing default
+  
+  const sum = points.reduce(
+    (acc, p) => ({ lat: acc.lat + p.lat, lon: acc.lon + p.lon }),
+    { lat: 0, lon: 0 }
+  );
+  
+  return [sum.lat / points.length, sum.lon / points.length];
+};
+
+/** Component to fit map bounds after mount */
+function FitBounds({ bounds }: { bounds: LatLngBoundsExpression }) {
+  const map = useMap();
+  const [fitted, setFitted] = useState(false);
+  
+  useEffect(() => {
+    if (!fitted && bounds) {
+      // Use setTimeout to ensure the map container is fully rendered
+      const timer = setTimeout(() => {
+        map.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 });
+        setFitted(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [map, bounds, fitted]);
+  
+  return null;
+}
+
+/** Track Map Card - Displays daily movement trajectory
+ * No padding or title, just a clean map with 4:3 aspect ratio
+ */
+export function TrackMapCard({ trackPoints, className }: { trackPoints: TrackPoint[]; className?: string }) {
+  const positions = useMemo(() => trackPointsToPositions(trackPoints), [trackPoints]);
+  const center = useMemo(() => calculateCenter(trackPoints), [trackPoints]);
+  const bounds = useMemo(() => calculateBounds(trackPoints), [trackPoints]);
+  
+  if (trackPoints.length === 0) {
+    return null;
+  }
+
+  return (
+    <Card className={`min-w-0 overflow-hidden p-0 ${className ?? ""}`}>
+      {/* 4:3 aspect ratio container */}
+      <div className="aspect-[4/3] w-full">
+        <LeafletMap 
+          center={center} 
+          zoom={12}
+          className="h-full w-full rounded-lg"
+        >
+          <MapTileLayer />
+          <MapZoomControl position="top-1 right-1" />
+          {bounds && <FitBounds bounds={bounds} />}
+          <MapPolyline 
+            positions={positions}
+            className="fill-none stroke-blue-500 stroke-2"
+          />
+        </LeafletMap>
+      </div>
+    </Card>
+  );
+}
 
 export function ActivityPanel({
   footprint,
