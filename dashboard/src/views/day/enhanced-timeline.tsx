@@ -107,7 +107,7 @@ function Pill({ item }: { item: TimelineItem }) {
           {item.label}
         </span>
       </TooltipTrigger>
-      <TooltipContent>
+      <TooltipContent sideOffset={4}>
         <p>{tooltipText}</p>
       </TooltipContent>
     </Tooltip>
