@@ -135,24 +135,82 @@ export function ActivityPanel({
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Route className="h-4 w-4 text-cyan-500" />
               移动
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">总距离</span>
-              <span className="font-medium">
+              <span className="ml-auto text-base font-semibold text-cyan-500">
                 {formatDistance(footprint.summary.totalDistance)}
               </span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">平均速度</span>
-              <span>
-                {(footprint.summary.avgSpeed * 3.6).toFixed(1)} km/h
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">轨迹点</span>
-              <span>{footprint.summary.pointCount.toLocaleString()}</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {/* Bar Chart - Speed distribution from track points */}
+            {(() => {
+              // Group track points by hour and calculate average speed
+              const hourlySpeed = new Map<number, { totalSpeed: number; count: number }>();
+              footprint.trackPoints.forEach((p) => {
+                if (p.speed !== undefined && p.speed >= 0) {
+                  const hour = parseInt(p.ts.match(/T(\d{2}):/)?.[1] ?? "0", 10);
+                  const existing = hourlySpeed.get(hour) || { totalSpeed: 0, count: 0 };
+                  hourlySpeed.set(hour, {
+                    totalSpeed: existing.totalSpeed + p.speed,
+                    count: existing.count + 1,
+                  });
+                }
+              });
+              
+              if (hourlySpeed.size === 0) {
+                // No speed data, show placeholder
+                return (
+                  <div className="flex h-6 w-full items-end gap-px">
+                    <div className="flex-1 rounded-sm bg-muted h-full" />
+                  </div>
+                );
+              }
+
+              const sortedHours = Array.from(hourlySpeed.entries()).sort((a, b) => a[0] - b[0]);
+              const minHour = sortedHours[0][0];
+              const maxHour = sortedHours[sortedHours.length - 1][0];
+              
+              // Calculate average speeds and find max
+              const bars: { hour: number; avgSpeed: number }[] = [];
+              for (let h = minHour; h <= maxHour; h++) {
+                const data = hourlySpeed.get(h);
+                bars.push({
+                  hour: h,
+                  avgSpeed: data ? data.totalSpeed / data.count : 0,
+                });
+              }
+              const maxSpeed = Math.max(...bars.map((b) => b.avgSpeed));
+
+              return (
+                <div className="flex h-6 w-full items-end gap-px">
+                  {bars.map((bar, i) => {
+                    const height = maxSpeed > 0 ? (bar.avgSpeed / maxSpeed) * 100 : 0;
+                    return (
+                      <div
+                        key={i}
+                        className={`flex-1 rounded-sm ${bar.avgSpeed > 0 ? "bg-cyan-500" : "bg-muted"}`}
+                        style={{ height: bar.avgSpeed > 0 ? `${Math.max(height, 10)}%` : "100%" }}
+                        title={bar.avgSpeed > 0 ? `${bar.hour}:00 - ${(bar.avgSpeed * 3.6).toFixed(1)} km/h` : `${bar.hour}:00 - 无数据`}
+                      />
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
+            {/* Stats Row */}
+            <div className="grid grid-cols-3 gap-2 text-center text-sm">
+              <div>
+                <p className="text-xs text-muted-foreground">距离</p>
+                <p className="font-medium">{formatDistance(footprint.summary.totalDistance)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">速度</p>
+                <p className="font-medium">{(footprint.summary.avgSpeed * 3.6).toFixed(1)} km/h</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">轨迹点</p>
+                <p className="font-medium">{footprint.summary.pointCount.toLocaleString()}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -163,68 +221,84 @@ export function ActivityPanel({
         <Card className="min-w-0 overflow-hidden">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Wallet className="h-4 w-4 text-rose-500" />
+              <Wallet className="h-4 w-4 text-green-500" />
               交易
+              <span className="ml-auto text-base font-semibold text-green-500">
+                ¥{pixiu.summary?.expense.toFixed(0) ?? 0}
+              </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {/* Summary */}
-            {pixiu.summary && (
-              <>
-                <div className="grid grid-cols-2 gap-2 text-center">
-                  <div className="min-w-0">
-                    <p className="text-xs text-muted-foreground">支出</p>
-                    <p className="text-lg font-semibold text-rose-500 truncate">
-                      ¥{pixiu.summary.expense.toFixed(2)}
-                    </p>
+          <CardContent className="space-y-3">
+            {/* Bar Chart - Category breakdown as horizontal segments */}
+            {(() => {
+              const categories = pixiu.expenseByCategory.slice(0, 6);
+              const totalExpense = pixiu.summary?.expense ?? 0;
+              
+              if (categories.length === 0 || totalExpense === 0) {
+                return (
+                  <div className="flex h-6 w-full items-end gap-px">
+                    <div className="flex-1 rounded-sm bg-muted h-full" />
                   </div>
-                  {pixiu.summary.income > 0 && (
-                    <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground">收入</p>
-                      <p className="text-lg font-semibold text-emerald-500 truncate">
-                        ¥{pixiu.summary.income.toFixed(2)}
-                      </p>
-                    </div>
-                  )}
+                );
+              }
+
+              // Color palette for expense categories (green spectrum)
+              const colors = [
+                "bg-green-600",
+                "bg-green-500",
+                "bg-green-400",
+                "bg-emerald-500",
+                "bg-emerald-400",
+                "bg-teal-500",
+              ];
+
+              return (
+                <div className="flex h-6 w-full gap-px rounded-sm overflow-hidden">
+                  {categories.map((cat, i) => {
+                    const width = (cat.amount / totalExpense) * 100;
+                    return (
+                      <div
+                        key={cat.category}
+                        className={`${colors[i % colors.length]} rounded-sm`}
+                        style={{ width: `${width}%`, minWidth: width > 0 ? "4px" : "0" }}
+                        title={`${cat.category}: ¥${cat.amount.toFixed(2)} (${cat.percentage.toFixed(0)}%)`}
+                      />
+                    );
+                  })}
                 </div>
-                <Separator />
-              </>
-            )}
+              );
+            })()}
 
-            {/* Category breakdown */}
-            {pixiu.expenseByCategory.length > 0 && (
-              <div className="space-y-1 min-w-0">
-                <p className="text-xs text-muted-foreground">按分类</p>
-                {pixiu.expenseByCategory.slice(0, 5).map((cat) => (
-                  <div
-                    key={cat.category}
-                    className="flex items-center justify-between text-sm gap-2"
-                  >
-                    <span className="truncate flex-shrink min-w-0">{cat.category}</span>
-                    <span className="text-muted-foreground whitespace-nowrap flex-shrink-0">
-                      ¥{cat.amount.toFixed(2)} ({cat.count})
-                    </span>
-                  </div>
-                ))}
+            {/* Stats Row */}
+            <div className="grid grid-cols-3 gap-2 text-center text-sm">
+              <div>
+                <p className="text-xs text-muted-foreground">支出</p>
+                <p className="font-medium text-green-500">
+                  ¥{pixiu.summary?.expense.toFixed(0) ?? 0}
+                </p>
               </div>
-            )}
+              <div>
+                <p className="text-xs text-muted-foreground">收入</p>
+                <p className="font-medium text-red-500">
+                  ¥{pixiu.summary?.income.toFixed(0) ?? 0}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">笔数</p>
+                <p className="font-medium">{pixiu.transactions.length}</p>
+              </div>
+            </div>
 
+            {/* Transaction List */}
             <Separator />
-
-            {/* Transaction list */}
-            <div className="space-y-2 max-h-[300px] overflow-y-auto min-w-0">
+            <div className="space-y-2">
               {pixiu.transactions.map((tx) => (
                 <div
                   key={tx.id}
                   className="flex items-center justify-between text-sm gap-2"
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground flex-shrink-0">
-                        {tx.time}
-                      </span>
-                      <span className="truncate min-w-0">{tx.categoryL2}</span>
-                    </div>
+                    <span className="truncate">{tx.categoryL2}</span>
                     {tx.note && (
                       <p className="text-xs text-muted-foreground truncate">
                         {tx.note}
@@ -232,8 +306,8 @@ export function ActivityPanel({
                     )}
                   </div>
                   <span
-                    className={`whitespace-nowrap flex-shrink-0 ${
-                      tx.isIncome ? "text-emerald-500" : "text-rose-500"
+                    className={`whitespace-nowrap flex-shrink-0 font-medium ${
+                      tx.isIncome ? "text-red-500" : "text-green-500"
                     }`}
                   >
                     {tx.isIncome ? "+" : "-"}¥{tx.amount.toFixed(2)}

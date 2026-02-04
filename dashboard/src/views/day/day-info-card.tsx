@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { Calendar, Thermometer, Droplets, Wind, Sunrise, Sunset, Loader2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Droplets, Wind, Sunrise, Sunset, Loader2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { fetchHistoricalWeather } from "@/services/weather-service";
 import { getWeatherDescription, getWeatherIcon, type DayWeather } from "@/models/weather";
 
@@ -21,7 +21,23 @@ const formatWeekday = (date: Date): string => {
   return weekdays[date.getDay()];
 };
 
-export function DayInfoCard({ date, latitude, longitude }: DayInfoCardProps) {
+/** Date Card - Simple date display */
+export function DateCard({ date }: { date: Date }) {
+  const dateStr = format(date, "yyyy年M月d日", { locale: zhCN });
+  const weekday = formatWeekday(date);
+
+  return (
+    <Card className="min-w-0 overflow-hidden">
+      <CardContent className="py-3 flex items-center justify-between">
+        <span className="font-medium">{dateStr}</span>
+        <span className="text-sm text-muted-foreground">{weekday}</span>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Weather Card - Left-right layout with icon and details */
+export function WeatherCard({ date, latitude, longitude }: DayInfoCardProps) {
   const [weather, setWeather] = useState<DayWeather | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,83 +72,64 @@ export function DayInfoCard({ date, latitude, longitude }: DayInfoCardProps) {
     };
   }, [date, latitude, longitude]);
 
-  // Format date parts
-  const year = format(date, "yyyy");
-  const monthDay = format(date, "M月d日", { locale: zhCN });
-  const weekday = formatWeekday(date);
-
   return (
     <Card className="min-w-0 overflow-hidden">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-primary" />
-          {monthDay} {weekday}
-        </CardTitle>
-        <CardDescription>{year}年</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {/* Weather Section */}
+      <CardContent className="py-3">
+        {/* Loading state */}
         {loading && (
-          <div className="flex items-center justify-center py-2 text-muted-foreground">
+          <div className="flex items-center justify-center text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            <span className="text-sm">加载天气数据...</span>
+            <span className="text-sm">加载中...</span>
           </div>
         )}
 
-        {error && (
-          <div className="text-center py-2 text-sm text-muted-foreground">
+        {/* Error state */}
+        {error && !loading && (
+          <div className="text-center text-sm text-muted-foreground">
             {error}
           </div>
         )}
 
+        {/* Weather content - Left/Right layout */}
         {weather && !loading && (
-          <div className="space-y-2">
-            {/* Weather condition */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">{getWeatherIcon(weather.weatherCode)}</span>
-                <span className="font-medium">{getWeatherDescription(weather.weatherCode)}</span>
-              </div>
-              <div className="text-right">
-                <span className="text-lg font-bold text-primary">
-                  {Math.round(weather.tempAvg)}°C
+          <div className="flex gap-3 items-center">
+            {/* Left: Weather icon */}
+            <div className="flex-shrink-0 text-center">
+              <span className="text-4xl">{getWeatherIcon(weather.weatherCode)}</span>
+              <p className="text-xs text-muted-foreground">{getWeatherDescription(weather.weatherCode)}</p>
+            </div>
+
+            {/* Right: Weather details */}
+            <div className="flex-1 min-w-0">
+              {/* Temperature row */}
+              <div className="flex items-baseline justify-between">
+                <span className="text-xl font-bold">{Math.round(weather.tempAvg)}°C</span>
+                <span className="text-sm text-muted-foreground">
+                  {Math.round(weather.tempMin)}° ~ {Math.round(weather.tempMax)}°
                 </span>
               </div>
-            </div>
 
-            {/* Temperature range */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Thermometer className="h-4 w-4" />
-              <span>
-                {Math.round(weather.tempMin)}°C ~ {Math.round(weather.tempMax)}°C
-              </span>
-            </div>
-
-            {/* Additional info row */}
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              {/* Sunrise/Sunset */}
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1">
-                  <Sunrise className="h-3 w-3" />
-                  <span>{weather.sunrise}</span>
+              {/* Details row */}
+              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                <div className="flex gap-2">
+                  <span className="flex items-center gap-0.5">
+                    <Sunrise className="h-3 w-3" />
+                    {weather.sunrise}
+                  </span>
+                  <span className="flex items-center gap-0.5">
+                    <Sunset className="h-3 w-3" />
+                    {weather.sunset}
+                  </span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Sunset className="h-3 w-3" />
-                  <span>{weather.sunset}</span>
-                </div>
-              </div>
-
-              {/* Precipitation & Wind */}
-              <div className="flex items-center gap-3">
-                {weather.precipitation > 0 && (
-                  <div className="flex items-center gap-1">
+                <div className="flex gap-2">
+                  <span className="flex items-center gap-0.5">
                     <Droplets className="h-3 w-3" />
-                    <span>{weather.precipitation.toFixed(1)}mm</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-1">
-                  <Wind className="h-3 w-3" />
-                  <span>{Math.round(weather.windSpeedMax)}km/h</span>
+                    {weather.precipitation.toFixed(1)}mm
+                  </span>
+                  <span className="flex items-center gap-0.5">
+                    <Wind className="h-3 w-3" />
+                    {Math.round(weather.windSpeedMax)}km/h
+                  </span>
                 </div>
               </div>
             </div>
@@ -140,5 +137,15 @@ export function DayInfoCard({ date, latitude, longitude }: DayInfoCardProps) {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/** Combined Day Info Cards - Date and Weather */
+export function DayInfoCard({ date, latitude, longitude }: DayInfoCardProps) {
+  return (
+    <>
+      <DateCard date={date} />
+      <WeatherCard date={date} latitude={latitude} longitude={longitude} />
+    </>
   );
 }

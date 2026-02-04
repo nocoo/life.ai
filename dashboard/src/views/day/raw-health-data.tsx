@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { DayHealthData, SleepStageType } from "@/models/apple-health";
+import { SLEEP_STAGE_COLORS, SLEEP_STAGE_LABELS } from "@/lib/timeline-colors";
 
 export interface RawHealthDataProps {
   data: DayHealthData;
@@ -37,18 +38,10 @@ const formatDistance = (meters: number): string => {
 
 /** Get sleep stage display name and color */
 const getSleepStageInfo = (type: SleepStageType): { name: string; color: string } => {
-  switch (type) {
-    case "deep":
-      return { name: "深睡", color: "bg-indigo-500" };
-    case "core":
-      return { name: "核心", color: "bg-blue-500" };
-    case "rem":
-      return { name: "REM", color: "bg-purple-500" };
-    case "awake":
-      return { name: "清醒", color: "bg-orange-400" };
-    default:
-      return { name: type, color: "bg-gray-500" };
-  }
+  return {
+    name: SLEEP_STAGE_LABELS[type] ?? type,
+    color: SLEEP_STAGE_COLORS[type] ?? "bg-gray-500",
+  };
 };
 
 export function RawHealthData({ data }: RawHealthDataProps) {
