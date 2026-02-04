@@ -214,30 +214,47 @@ const transformYearHeartRate = (
   const restingByMonth = groupByMonth(restingRecords);
   const monthlyAvg: MonthlyDataPoint[] = [];
   const monthlyResting: MonthlyDataPoint[] = [];
-  let allValues: number[] = [];
-  let allRestingValues: number[] = [];
+  
+  // Track running stats to avoid large array operations that can overflow the stack
+  let totalSum = 0;
+  let totalCount = 0;
+  let minValue = Infinity;
+  let maxValue = -Infinity;
+  let restingSum = 0;
+  let restingCount = 0;
 
   byMonth.forEach((monthRecords, month) => {
     const values = monthRecords.map((r) => parseFloat(r.value!));
     const avg = values.reduce((a, b) => a + b, 0) / values.length;
     monthlyAvg.push({ month, value: Math.round(avg) });
-    allValues = allValues.concat(values);
+    
+    // Accumulate stats iteratively instead of building large arrays
+    values.forEach((v) => {
+      totalSum += v;
+      totalCount++;
+      if (v < minValue) minValue = v;
+      if (v > maxValue) maxValue = v;
+    });
   });
 
   restingByMonth.forEach((monthRecords, month) => {
     const values = monthRecords.map((r) => parseFloat(r.value!));
     const avg = values.reduce((a, b) => a + b, 0) / values.length;
     monthlyResting.push({ month, value: Math.round(avg) });
-    allRestingValues = allRestingValues.concat(values);
+    
+    values.forEach((v) => {
+      restingSum += v;
+      restingCount++;
+    });
   });
 
   return {
-    avgHeartRate: Math.round(allValues.reduce((a, b) => a + b, 0) / allValues.length),
-    minHeartRate: Math.round(Math.min(...allValues)),
-    maxHeartRate: Math.round(Math.max(...allValues)),
+    avgHeartRate: Math.round(totalSum / totalCount),
+    minHeartRate: Math.round(minValue),
+    maxHeartRate: Math.round(maxValue),
     avgRestingHeartRate:
-      allRestingValues.length > 0
-        ? Math.round(allRestingValues.reduce((a, b) => a + b, 0) / allRestingValues.length)
+      restingCount > 0
+        ? Math.round(restingSum / restingCount)
         : 0,
     daysWithData: groupByDay(hrRecords).size,
     monthlyAvg: monthlyAvg.sort((a, b) => a.month.localeCompare(b.month)),
@@ -546,19 +563,31 @@ const transformYearHrv = (
 
   const byMonth = groupByMonth(hrvRecords);
   const monthlyHrv: MonthlyDataPoint[] = [];
-  const allValues: number[] = [];
+  
+  // Track running stats to avoid large array operations that can overflow the stack
+  let totalSum = 0;
+  let totalCount = 0;
+  let minValue = Infinity;
+  let maxValue = -Infinity;
 
   byMonth.forEach((monthRecords, month) => {
     const values = monthRecords.map((r) => parseFloat(r.value!));
     const avg = values.reduce((a, b) => a + b, 0) / values.length;
     monthlyHrv.push({ month, value: Math.round(avg) });
-    allValues.push(...values);
+    
+    // Accumulate stats iteratively instead of building large arrays
+    values.forEach((v) => {
+      totalSum += v;
+      totalCount++;
+      if (v < minValue) minValue = v;
+      if (v > maxValue) maxValue = v;
+    });
   });
 
   return {
-    avgHrv: Math.round(allValues.reduce((a, b) => a + b, 0) / allValues.length),
-    minHrv: Math.round(Math.min(...allValues)),
-    maxHrv: Math.round(Math.max(...allValues)),
+    avgHrv: Math.round(totalSum / totalCount),
+    minHrv: Math.round(minValue),
+    maxHrv: Math.round(maxValue),
     daysWithData: groupByDay(hrvRecords).size,
     monthlyHrv: monthlyHrv.sort((a, b) => a.month.localeCompare(b.month)),
   };
@@ -581,19 +610,31 @@ const transformYearOxygen = (
 
   const byMonth = groupByMonth(o2Records);
   const monthlyOxygen: MonthlyDataPoint[] = [];
-  const allValues: number[] = [];
+  
+  // Track running stats to avoid large array operations that can overflow the stack
+  let totalSum = 0;
+  let totalCount = 0;
+  let minValue = Infinity;
+  let maxValue = -Infinity;
 
   byMonth.forEach((monthRecords, month) => {
     const values = monthRecords.map((r) => parseFloat(r.value!) * 100);
     const avg = values.reduce((a, b) => a + b, 0) / values.length;
     monthlyOxygen.push({ month, value: Math.round(avg) });
-    allValues.push(...values);
+    
+    // Accumulate stats iteratively instead of building large arrays
+    values.forEach((v) => {
+      totalSum += v;
+      totalCount++;
+      if (v < minValue) minValue = v;
+      if (v > maxValue) maxValue = v;
+    });
   });
 
   return {
-    avgOxygen: Math.round(allValues.reduce((a, b) => a + b, 0) / allValues.length),
-    minOxygen: Math.round(Math.min(...allValues)),
-    maxOxygen: Math.round(Math.max(...allValues)),
+    avgOxygen: Math.round(totalSum / totalCount),
+    minOxygen: Math.round(minValue),
+    maxOxygen: Math.round(maxValue),
     daysWithData: groupByDay(o2Records).size,
     monthlyOxygen: monthlyOxygen.sort((a, b) => a.month.localeCompare(b.month)),
   };
