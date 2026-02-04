@@ -48,13 +48,13 @@ export function ActivityPanel({
       {/* Workouts Card */}
       {workouts.length > 0 && (
         <Card className="min-w-0 overflow-hidden">
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Dumbbell className="h-4 w-4 text-green-500" />
               运动
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 min-w-0">
+          <CardContent className="space-y-3">
             {workouts.map((workout, i) => (
               <div key={workout.id}>
                 {i > 0 && <Separator className="my-3" />}
@@ -101,13 +101,13 @@ export function ActivityPanel({
       {/* Locations Card */}
       {footprint.locations.length > 0 && (
         <Card className="min-w-0 overflow-hidden">
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <MapPin className="h-4 w-4 text-blue-500" />
               地点
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 min-w-0">
+          <CardContent className="space-y-2">
             {footprint.locations
               .filter((loc) => loc.name !== "Commute")
               .map((loc) => (
@@ -131,13 +131,13 @@ export function ActivityPanel({
       {/* Track Summary Card */}
       {footprint.summary && (
         <Card className="min-w-0 overflow-hidden">
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Route className="h-4 w-4 text-cyan-500" />
               移动
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 min-w-0">
+          <CardContent className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">总距离</span>
               <span className="font-medium">
@@ -161,13 +161,13 @@ export function ActivityPanel({
       {/* Transactions Card */}
       {pixiu.transactions.length > 0 && (
         <Card className="min-w-0 overflow-hidden">
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <Wallet className="h-4 w-4 text-rose-500" />
               交易
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 min-w-0">
+          <CardContent className="space-y-2">
             {/* Summary */}
             {pixiu.summary && (
               <>

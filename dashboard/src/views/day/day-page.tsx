@@ -136,13 +136,13 @@ export function DayPage() {
                   <div className="grid gap-6 lg:grid-cols-[1fr_340px] mt-4">
                     {/* Left: Enhanced Timeline in a Card */}
                     <Card className="order-2 lg:order-1 min-w-0 overflow-hidden">
-                      <CardHeader className="pb-2">
+                      <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-sm font-medium">
                           <Clock className="h-4 w-4 text-indigo-500" />
                           时间线
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="p-0">
+                      <CardContent>
                         <EnhancedTimeline 
                           slots={timeSlots} 
                           date={selectedDate}

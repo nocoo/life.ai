@@ -54,7 +54,7 @@ const getSleepStageInfo = (type: SleepStageType): { name: string; color: string 
 export function RawHealthData({ data }: RawHealthDataProps) {
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader>
         <CardTitle className="text-sm font-medium">
           Apple Health 原始数据
         </CardTitle>

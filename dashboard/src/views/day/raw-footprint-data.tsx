@@ -56,7 +56,7 @@ const formatCoord = (value: number, decimals = 6): string => {
 export function RawFootprintData({ data }: RawFootprintDataProps) {
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader>
         <CardTitle className="text-sm font-medium">
           Footprint 原始数据
         </CardTitle>

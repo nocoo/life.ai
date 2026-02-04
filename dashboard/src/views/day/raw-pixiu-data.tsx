@@ -26,7 +26,7 @@ const formatAmount = (amount: number, isIncome: boolean): string => {
 export function RawPixiuData({ data }: RawPixiuDataProps) {
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader>
         <CardTitle className="text-sm font-medium">
           貔貅记账原始数据
         </CardTitle>
