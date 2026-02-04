@@ -634,52 +634,98 @@ export const transformYearFootprintData = (
   const monthlyDistance: MonthlyDataPoint[] = [];
   const monthlyTrackPoints: MonthlyDataPoint[] = [];
 
-  // Calculate daily distances from dayAggs
+  let minLat: number | null = null;
+  let maxLat: number | null = null;
+  let minLon: number | null = null;
+  let maxLon: number | null = null;
+  let totalSpeed = 0;
+  let speedCount = 0;
+
+  // Calculate daily distances from dayAggs and accumulate bounds
   raw.dayAggs.forEach((agg) => {
     const points = agg.point_count;
     const speed = agg.avg_speed ?? 0;
     const estimatedDuration = points * 5;
     const estimatedDistance = speed * estimatedDuration;
     dailyDistance.push({ date: agg.day, value: estimatedDistance });
+
+    // Accumulate speed for average
+    if (agg.avg_speed !== null) {
+      totalSpeed += agg.avg_speed;
+      speedCount++;
+    }
+
+    // Calculate bounds from day aggregations
+    if (agg.min_lat !== null) {
+      minLat = minLat === null ? agg.min_lat : Math.min(minLat, agg.min_lat);
+    }
+    if (agg.max_lat !== null) {
+      maxLat = maxLat === null ? agg.max_lat : Math.max(maxLat, agg.max_lat);
+    }
+    if (agg.min_lon !== null) {
+      minLon = minLon === null ? agg.min_lon : Math.min(minLon, agg.min_lon);
+    }
+    if (agg.max_lon !== null) {
+      maxLon = maxLon === null ? agg.max_lon : Math.max(maxLon, agg.max_lon);
+    }
   });
 
-  // Get monthly data from monthAggs
-  raw.monthAggs.forEach((agg) => {
-    const points = agg.point_count;
+  // Group daily data by month to calculate monthly aggregations
+  const monthlyData = new Map<string, { points: number; distance: number }>();
+  raw.dayAggs.forEach((agg) => {
+    const month = agg.day.slice(0, 7);
+    const existing = monthlyData.get(month) || { points: 0, distance: 0 };
     const speed = agg.avg_speed ?? 0;
-    const estimatedDuration = points * 5;
+    const estimatedDuration = agg.point_count * 5;
     const estimatedDistance = speed * estimatedDuration;
-    monthlyDistance.push({ month: agg.month, value: estimatedDistance });
-    monthlyTrackPoints.push({ month: agg.month, value: points });
+    monthlyData.set(month, {
+      points: existing.points + agg.point_count,
+      distance: existing.distance + estimatedDistance,
+    });
+  });
+
+  // Also use monthAggs if available for more accurate point counts
+  raw.monthAggs.forEach((agg) => {
+    const existing = monthlyData.get(agg.month);
+    if (existing) {
+      // Use the point_count from month aggregation (more accurate)
+      monthlyData.set(agg.month, {
+        ...existing,
+        points: agg.point_count,
+      });
+    } else {
+      monthlyData.set(agg.month, {
+        points: agg.point_count,
+        distance: 0,
+      });
+    }
+  });
+
+  monthlyData.forEach((data, month) => {
+    monthlyDistance.push({ month, value: data.distance });
+    monthlyTrackPoints.push({ month, value: data.points });
   });
 
   const yearAgg = raw.yearAgg;
+  const avgSpeed = speedCount > 0 ? totalSpeed / speedCount : 0;
+  const totalDistance = dailyDistance.reduce((sum, d) => sum + d.value, 0);
 
   return {
     year: raw.year,
     daysInYear,
     daysWithData: raw.dayAggs.length,
     totalDistance: yearAgg
-      ? yearAgg.point_count * 5 * (yearAgg.avg_speed ?? 0)
-      : dailyDistance.reduce((sum, d) => sum + d.value, 0),
+      ? yearAgg.point_count * 5 * avgSpeed
+      : totalDistance,
     totalTrackPoints: yearAgg?.point_count ?? 0,
-    avgSpeed: yearAgg?.avg_speed ?? 0,
+    avgSpeed,
     byTransportMode: [],
     monthlyDistance: monthlyDistance.sort((a, b) => a.month.localeCompare(b.month)),
     monthlyTrackPoints: monthlyTrackPoints.sort((a, b) => a.month.localeCompare(b.month)),
     dailyDistance: dailyDistance.sort((a, b) => a.date.localeCompare(b.date)),
     bounds:
-      yearAgg &&
-      yearAgg.min_lat !== null &&
-      yearAgg.max_lat !== null &&
-      yearAgg.min_lon !== null &&
-      yearAgg.max_lon !== null
-        ? {
-            minLat: yearAgg.min_lat,
-            maxLat: yearAgg.max_lat,
-            minLon: yearAgg.min_lon,
-            maxLon: yearAgg.max_lon,
-          }
+      minLat !== null && maxLat !== null && minLon !== null && maxLon !== null
+        ? { minLat, maxLat, minLon, maxLon }
         : null,
   };
 };

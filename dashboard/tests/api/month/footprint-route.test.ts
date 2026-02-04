@@ -30,13 +30,6 @@ describe("GET /api/month/footprint", () => {
         source text not null,
         month text not null,
         point_count integer not null,
-        min_ts text,
-        max_ts text,
-        avg_speed real,
-        min_lat real,
-        max_lat real,
-        min_lon real,
-        max_lon real,
         primary key (source, month)
       );
     `);
@@ -48,8 +41,8 @@ describe("GET /api/month/footprint", () => {
         ('footprint', '2025-01-15', 100, '2025-01-15T08:00:00+08:00', '2025-01-15T18:00:00+08:00', 1.5, 39.9, 39.95, 116.4, 116.45),
         ('footprint', '2025-01-16', 80, '2025-01-16T09:00:00+08:00', '2025-01-16T17:00:00+08:00', 1.2, 39.85, 39.9, 116.35, 116.4);
       
-      insert into track_month_agg (source, month, point_count, min_ts, max_ts, avg_speed, min_lat, max_lat, min_lon, max_lon)
-      values ('footprint', '2025-01', 180, '2025-01-15T08:00:00+08:00', '2025-01-16T17:00:00+08:00', 1.35, 39.85, 39.95, 116.35, 116.45);
+      insert into track_month_agg (source, month, point_count)
+      values ('footprint', '2025-01', 180);
     `);
 
     db.close();

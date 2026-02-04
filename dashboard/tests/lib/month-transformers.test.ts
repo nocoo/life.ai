@@ -591,18 +591,36 @@ describe("transformMonthFootprintData", () => {
   test("transforms with month aggregation", () => {
     const raw: FootprintMonthRawData = {
       month: "2024-01",
-      dayAggs: [],
+      dayAggs: [
+        {
+          source: "footprint",
+          day: "2024-01-15",
+          point_count: 500,
+          min_ts: "2024-01-15T08:00:00+08:00",
+          max_ts: "2024-01-15T18:00:00+08:00",
+          avg_speed: 1.5,
+          min_lat: 39.8,
+          max_lat: 39.9,
+          min_lon: 116.3,
+          max_lon: 116.4,
+        },
+        {
+          source: "footprint",
+          day: "2024-01-16",
+          point_count: 500,
+          min_ts: "2024-01-16T08:00:00+08:00",
+          max_ts: "2024-01-16T18:00:00+08:00",
+          avg_speed: 1.5,
+          min_lat: 39.9,
+          max_lat: 40.0,
+          min_lon: 116.4,
+          max_lon: 116.5,
+        },
+      ],
       monthAgg: {
         source: "footprint",
         month: "2024-01",
         point_count: 1000,
-        min_ts: "2024-01-01T08:00:00+08:00",
-        max_ts: "2024-01-31T18:00:00+08:00",
-        avg_speed: 1.5,
-        min_lat: 39.8,
-        max_lat: 40.0,
-        min_lon: 116.3,
-        max_lon: 116.5,
       },
     };
 

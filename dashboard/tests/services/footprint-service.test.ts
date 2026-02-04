@@ -49,13 +49,6 @@ describe("FootprintService", () => {
         source text not null,
         month text not null,
         point_count integer not null,
-        min_ts text,
-        max_ts text,
-        avg_speed real,
-        min_lat real,
-        max_lat real,
-        min_lon real,
-        max_lon real,
         primary key (source, month)
       );
 
@@ -63,13 +56,6 @@ describe("FootprintService", () => {
         source text not null,
         year integer not null,
         point_count integer not null,
-        min_ts text,
-        max_ts text,
-        avg_speed real,
-        min_lat real,
-        max_lat real,
-        min_lon real,
-        max_lon real,
         primary key (source, year)
       );
     `);
@@ -122,16 +108,16 @@ describe("FootprintService", () => {
 
     // Month aggregation
     db.exec(`
-      insert into track_month_agg (source, month, point_count, min_ts, max_ts, avg_speed, min_lat, max_lat, min_lon, max_lon)
+      insert into track_month_agg (source, month, point_count)
       values 
-        ('footprint', '2025-01', 7, '2025-01-15T08:00:00Z', '2025-01-20T10:05:00Z', 2.1, 31.2304, 31.2510, 121.4737, 121.5010),
-        ('footprint', '2025-02', 1, '2025-02-10T14:00:00Z', '2025-02-10T14:00:00Z', 1.0, 31.3000, 31.3000, 121.6000, 121.6000);
+        ('footprint', '2025-01', 7),
+        ('footprint', '2025-02', 1);
     `);
 
     // Year aggregation
     db.exec(`
-      insert into track_year_agg (source, year, point_count, min_ts, max_ts, avg_speed, min_lat, max_lat, min_lon, max_lon)
-      values ('footprint', 2025, 8, '2025-01-15T08:00:00Z', '2025-02-10T14:00:00Z', 1.9, 31.2304, 31.3000, 121.4737, 121.6000);
+      insert into track_year_agg (source, year, point_count)
+      values ('footprint', 2025, 8);
     `);
 
     db.close();
@@ -212,7 +198,6 @@ describe("FootprintService", () => {
 
       expect(data.monthAgg).not.toBeNull();
       expect(data.monthAgg?.point_count).toBe(7);
-      expect(data.monthAgg?.avg_speed).toBe(2.1);
     });
 
     it("should not include data from other months", () => {
@@ -258,7 +243,6 @@ describe("FootprintService", () => {
 
       expect(data.yearAgg).not.toBeNull();
       expect(data.yearAgg?.point_count).toBe(8);
-      expect(data.yearAgg?.avg_speed).toBe(1.9);
     });
 
     it("should include data from multiple months", () => {

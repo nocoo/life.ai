@@ -561,6 +561,12 @@ export const transformMonthFootprintData = (
 
   let totalDistance = 0;
   let totalPoints = 0;
+  let minLat: number | null = null;
+  let maxLat: number | null = null;
+  let minLon: number | null = null;
+  let maxLon: number | null = null;
+  let totalSpeed = 0;
+  let speedCount = 0;
 
   raw.dayAggs.forEach((agg) => {
     // Estimate distance from avg_speed and time range
@@ -575,6 +581,26 @@ export const transformMonthFootprintData = (
     dailyTrackPoints.push({ date: agg.day, value: points });
     totalDistance += estimatedDistance;
     totalPoints += points;
+
+    // Accumulate speed for average
+    if (agg.avg_speed !== null) {
+      totalSpeed += agg.avg_speed;
+      speedCount++;
+    }
+
+    // Calculate bounds from day aggregations
+    if (agg.min_lat !== null) {
+      minLat = minLat === null ? agg.min_lat : Math.min(minLat, agg.min_lat);
+    }
+    if (agg.max_lat !== null) {
+      maxLat = maxLat === null ? agg.max_lat : Math.max(maxLat, agg.max_lat);
+    }
+    if (agg.min_lon !== null) {
+      minLon = minLon === null ? agg.min_lon : Math.min(minLon, agg.min_lon);
+    }
+    if (agg.max_lon !== null) {
+      maxLon = maxLon === null ? agg.max_lon : Math.max(maxLon, agg.max_lon);
+    }
   });
 
   // Use month aggregation if available
@@ -583,28 +609,21 @@ export const transformMonthFootprintData = (
     totalPoints = monthAgg.point_count;
   }
 
+  const avgSpeed = speedCount > 0 ? totalSpeed / speedCount : 0;
+
   return {
     month: raw.month,
     daysInMonth,
     daysWithData: raw.dayAggs.length,
     totalDistance: Math.round(totalDistance),
     totalTrackPoints: totalPoints,
-    avgSpeed: monthAgg?.avg_speed ?? 0,
+    avgSpeed,
     byTransportMode: [], // Would need detailed track analysis
     dailyDistance: dailyDistance.sort((a, b) => a.date.localeCompare(b.date)),
     dailyTrackPoints: dailyTrackPoints.sort((a, b) => a.date.localeCompare(b.date)),
     bounds:
-      monthAgg &&
-      monthAgg.min_lat !== null &&
-      monthAgg.max_lat !== null &&
-      monthAgg.min_lon !== null &&
-      monthAgg.max_lon !== null
-        ? {
-            minLat: monthAgg.min_lat,
-            maxLat: monthAgg.max_lat,
-            minLon: monthAgg.min_lon,
-            maxLon: monthAgg.max_lon,
-          }
+      minLat !== null && maxLat !== null && minLon !== null && maxLon !== null
+        ? { minLat, maxLat, minLon, maxLon }
         : null,
   };
 };

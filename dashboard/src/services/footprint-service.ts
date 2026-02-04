@@ -39,13 +39,6 @@ export interface TrackMonthAggRow {
   source: string;
   month: string;
   point_count: number;
-  min_ts: string | null;
-  max_ts: string | null;
-  avg_speed: number | null;
-  min_lat: number | null;
-  max_lat: number | null;
-  min_lon: number | null;
-  max_lon: number | null;
 }
 
 /** Raw year aggregation from track_year_agg table */
@@ -53,13 +46,6 @@ export interface TrackYearAggRow {
   source: string;
   year: number;
   point_count: number;
-  min_ts: string | null;
-  max_ts: string | null;
-  avg_speed: number | null;
-  min_lat: number | null;
-  max_lat: number | null;
-  min_lon: number | null;
-  max_lon: number | null;
 }
 
 /** Raw data response for a month */
@@ -135,8 +121,7 @@ export class FootprintService {
       // Get month aggregation
       const monthAgg = db
         .prepare(
-          `SELECT source, month, point_count, min_ts, max_ts, avg_speed,
-                  min_lat, max_lat, min_lon, max_lon
+          `SELECT source, month, point_count
            FROM track_month_agg 
            WHERE source = 'footprint' AND month = ?`
         )
@@ -172,8 +157,7 @@ export class FootprintService {
       // Get monthly aggregations for the year
       const monthAggs = db
         .prepare(
-          `SELECT source, month, point_count, min_ts, max_ts, avg_speed,
-                  min_lat, max_lat, min_lon, max_lon
+          `SELECT source, month, point_count
            FROM track_month_agg 
            WHERE source = 'footprint' AND month LIKE ?
            ORDER BY month`
@@ -183,8 +167,7 @@ export class FootprintService {
       // Get year aggregation
       const yearAgg = db
         .prepare(
-          `SELECT source, year, point_count, min_ts, max_ts, avg_speed,
-                  min_lat, max_lat, min_lon, max_lon
+          `SELECT source, year, point_count
            FROM track_year_agg 
            WHERE source = 'footprint' AND year = ?`
         )
