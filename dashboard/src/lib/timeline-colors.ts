@@ -1,26 +1,72 @@
 /**
- * Timeline color mapping with stable hash
- * All colors use dark backgrounds with white text for consistency
+ * Unified color and label definitions for the application
+ * All colors use Tailwind CSS classes for consistency
  */
 
 import type { TimelineDataType } from "@/models/day-view";
+import type { SleepStageType } from "@/models/apple-health";
+
+// ============================================================================
+// Sleep Stage Colors & Labels
+// ============================================================================
+
+/**
+ * Sleep stage colors - used in sleep cards and timeline
+ * Maps SleepStageType to Tailwind background color classes
+ */
+export const SLEEP_STAGE_COLORS: Record<SleepStageType, string> = {
+  deep: "bg-indigo-800",    // Deep sleep = darkest indigo
+  core: "bg-indigo-500",    // Core/light sleep = medium indigo
+  rem: "bg-green-600",      // REM = green (active brain state)
+  awake: "bg-orange-500",   // Awake during sleep = orange (alert)
+};
+
+/**
+ * Sleep stage Chinese labels
+ */
+export const SLEEP_STAGE_LABELS: Record<SleepStageType, string> = {
+  deep: "深睡",
+  core: "浅睡",
+  rem: "快速眼动",
+  awake: "清醒",
+};
+
+/**
+ * Get sleep stage color
+ */
+export function getSleepStageColor(type: SleepStageType): string {
+  return SLEEP_STAGE_COLORS[type];
+}
+
+/**
+ * Get sleep stage label
+ */
+export function getSleepStageLabel(type: SleepStageType): string {
+  return SLEEP_STAGE_LABELS[type];
+}
+
+// ============================================================================
+// Timeline Colors
+// ============================================================================
 
 /**
  * Stable color mapping for timeline data types
  * Colors are chosen with semantic meaning where possible:
- * - Sleep stages: indigo/purple spectrum (deep = darkest)
+ * - Sleep stages: indigo spectrum (deep = darkest)
+ * - REM: green (active brain)
+ * - Awake: orange (alert state)
  * - Workout: emerald (activity/energy)
  * - Heart rate: rose (blood/heart)
- * - Oxygen: sky blue (oxygen)
+ * - Oxygen: sky blue
  * - Water: blue
  */
 export const TIMELINE_COLORS: Record<TimelineDataType, string> = {
-  // Sleep stages - intuitive depth mapping
-  "sleep-deep": "bg-indigo-800", // Deepest sleep = darkest blue
-  "sleep-core": "bg-indigo-600", // Core sleep = medium blue
-  "sleep-rem": "bg-purple-700", // REM/dreams = purple
-  "sleep-awake": "bg-slate-600", // Awake during sleep = neutral gray
-  "awake-day": "bg-green-600", // Daytime awake = green (起床)
+  // Sleep stages - matching SLEEP_STAGE_COLORS
+  "sleep-deep": SLEEP_STAGE_COLORS.deep,
+  "sleep-core": SLEEP_STAGE_COLORS.core,
+  "sleep-rem": SLEEP_STAGE_COLORS.rem,
+  "sleep-awake": SLEEP_STAGE_COLORS.awake,
+  "awake-day": "bg-yellow-500", // Daytime awake = yellow (起床/清醒)
 
   // Activities
   workout: "bg-emerald-700", // Green = energy/activity

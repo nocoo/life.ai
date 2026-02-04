@@ -54,8 +54,12 @@ describe("timeline-colors", () => {
     it("should have intuitive sleep stage colors", () => {
       // Deep should be darkest (800)
       expect(TIMELINE_COLORS["sleep-deep"]).toContain("800");
-      // Core should be medium (600)
-      expect(TIMELINE_COLORS["sleep-core"]).toContain("600");
+      // Core should be medium (500)
+      expect(TIMELINE_COLORS["sleep-core"]).toContain("500");
+      // REM should be green
+      expect(TIMELINE_COLORS["sleep-rem"]).toContain("green");
+      // Awake should be orange
+      expect(TIMELINE_COLORS["sleep-awake"]).toContain("orange");
     });
   });
 
