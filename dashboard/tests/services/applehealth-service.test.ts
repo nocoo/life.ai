@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from "bun:test";
+import { describe, it, expect, beforeAll, afterAll, spyOn } from "bun:test";
 import { Database } from "bun:sqlite";
 import { mkdirSync, rmSync } from "fs";
 import {
@@ -7,6 +7,7 @@ import {
   type AppleHealthMonthRawData,
   type AppleHealthYearRawData,
 } from "@/services/applehealth-service";
+import * as dbModule from "@/lib/db";
 
 const TEST_DB_DIR = "tests/.tmp";
 const TEST_DB_PATH = `${TEST_DB_DIR}/applehealth.test.sqlite`;
@@ -328,6 +329,97 @@ describe("AppleHealthService", () => {
       expect(Array.isArray(data.records)).toBe(true);
       expect(Array.isArray(data.workouts)).toBe(true);
       expect(Array.isArray(data.activitySummaries)).toBe(true);
+    });
+  });
+
+  describe("caching behavior", () => {
+    it("should cache historical month data on second call", () => {
+      const service = new AppleHealthService(TEST_DB_PATH);
+      const openDbSpy = spyOn(dbModule, "openDbByPath");
+
+      // First call - should hit database
+      const data1 = service.getMonthData("2025-01");
+      expect(openDbSpy).toHaveBeenCalledTimes(1);
+
+      // Second call - should use cache (no additional DB call)
+      const data2 = service.getMonthData("2025-01");
+      expect(openDbSpy).toHaveBeenCalledTimes(1); // Still 1, not 2
+
+      // Data should be identical
+      expect(data1).toEqual(data2);
+
+      openDbSpy.mockRestore();
+    });
+
+    it("should cache historical year data on second call", () => {
+      const service = new AppleHealthService(TEST_DB_PATH);
+      const openDbSpy = spyOn(dbModule, "openDbByPath");
+
+      // First call - should hit database
+      const data1 = service.getYearData(2025);
+      expect(openDbSpy).toHaveBeenCalledTimes(1);
+
+      // Second call - should use cache
+      const data2 = service.getYearData(2025);
+      expect(openDbSpy).toHaveBeenCalledTimes(1); // Still 1
+
+      expect(data1).toEqual(data2);
+
+      openDbSpy.mockRestore();
+    });
+
+    it("should NOT cache current month data", () => {
+      const service = new AppleHealthService(TEST_DB_PATH);
+      const openDbSpy = spyOn(dbModule, "openDbByPath");
+
+      // Get current month
+      const now = new Date();
+      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+      // First call
+      service.getMonthData(currentMonth);
+      expect(openDbSpy).toHaveBeenCalledTimes(1);
+
+      // Second call - should hit database again (not cached)
+      service.getMonthData(currentMonth);
+      expect(openDbSpy).toHaveBeenCalledTimes(2);
+
+      openDbSpy.mockRestore();
+    });
+
+    it("should NOT cache current year data", () => {
+      const service = new AppleHealthService(TEST_DB_PATH);
+      const openDbSpy = spyOn(dbModule, "openDbByPath");
+
+      const currentYear = new Date().getFullYear();
+
+      // First call
+      service.getYearData(currentYear);
+      expect(openDbSpy).toHaveBeenCalledTimes(1);
+
+      // Second call - should hit database again
+      service.getYearData(currentYear);
+      expect(openDbSpy).toHaveBeenCalledTimes(2);
+
+      openDbSpy.mockRestore();
+    });
+
+    it("should allow clearing the cache", () => {
+      const service = new AppleHealthService(TEST_DB_PATH);
+      const openDbSpy = spyOn(dbModule, "openDbByPath");
+
+      // First call - cache it
+      service.getMonthData("2025-01");
+      expect(openDbSpy).toHaveBeenCalledTimes(1);
+
+      // Clear cache
+      service.clearCache();
+
+      // Should hit database again
+      service.getMonthData("2025-01");
+      expect(openDbSpy).toHaveBeenCalledTimes(2);
+
+      openDbSpy.mockRestore();
     });
   });
 });

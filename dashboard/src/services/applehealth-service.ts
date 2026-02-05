@@ -1,4 +1,9 @@
 import { getDbPath, openDbByPath } from "@/lib/db";
+import {
+  MemoryCache,
+  isHistoricalMonth,
+  isHistoricalYear,
+} from "@/lib/cache";
 
 /** Raw record from apple_record table */
 export interface AppleRecordRow {
@@ -110,9 +115,17 @@ const AGGREGATION_RECORD_TYPES = [
 /** Service for querying Apple Health data from SQLite */
 export class AppleHealthService {
   private dbPath: string;
+  private monthCache = new MemoryCache<AppleHealthMonthRawData>();
+  private yearCache = new MemoryCache<AppleHealthYearRawData>();
 
   constructor(dbPath?: string) {
     this.dbPath = dbPath ?? getDbPath("applehealth");
+  }
+
+  /** Clear all cached data */
+  clearCache(): void {
+    this.monthCache.clear();
+    this.yearCache.clear();
   }
 
   /** Get all raw data for a specific date */
@@ -181,6 +194,24 @@ export class AppleHealthService {
 
   /** Get all raw data for a specific month (YYYY-MM format) */
   getMonthData(month: string): AppleHealthMonthRawData {
+    // Return cached data for historical months
+    if (isHistoricalMonth(month)) {
+      const cached = this.monthCache.get(month);
+      if (cached) return cached;
+    }
+
+    const data = this.fetchMonthData(month);
+
+    // Cache historical months (immutable data)
+    if (isHistoricalMonth(month)) {
+      this.monthCache.set(month, data);
+    }
+
+    return data;
+  }
+
+  /** Fetch month data from database */
+  private fetchMonthData(month: string): AppleHealthMonthRawData {
     const db = openDbByPath(this.dbPath);
     try {
       const { startDate, endDate } = getMonthDateRange(month);
@@ -230,6 +261,24 @@ export class AppleHealthService {
 
   /** Get all raw data for a specific year */
   getYearData(year: number): AppleHealthYearRawData {
+    // Return cached data for historical years
+    if (isHistoricalYear(year)) {
+      const cached = this.yearCache.get(String(year));
+      if (cached) return cached;
+    }
+
+    const data = this.fetchYearData(year);
+
+    // Cache historical years (immutable data)
+    if (isHistoricalYear(year)) {
+      this.yearCache.set(String(year), data);
+    }
+
+    return data;
+  }
+
+  /** Fetch year data from database */
+  private fetchYearData(year: number): AppleHealthYearRawData {
     const db = openDbByPath(this.dbPath);
     try {
       const { startDate, endDate } = getYearDateRange(year);
