@@ -1,5 +1,27 @@
 import { getDbPath, openDbByPath } from "@/lib/db";
 
+/** Get date range for a month (YYYY-MM format) */
+const getMonthDateRange = (
+  month: string
+): { startDate: string; endDate: string } => {
+  const [year, mon] = month.split("-").map(Number);
+  const startDate = `${year}-${String(mon).padStart(2, "0")}-01`;
+  // Get last day of month
+  const lastDay = new Date(year, mon, 0).getDate();
+  const endDate = `${year}-${String(mon).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  return { startDate, endDate };
+};
+
+/** Get date range for a year */
+const getYearDateRange = (
+  year: number
+): { startDate: string; endDate: string } => {
+  return {
+    startDate: `${year}-01-01`,
+    endDate: `${year}-12-31`,
+  };
+};
+
 /** Raw transaction from pixiu_transaction table */
 export interface PixiuTransactionRow {
   id: number;
@@ -115,26 +137,31 @@ export class PixiuService {
   getMonthData(month: string): PixiuMonthRawData {
     const db = openDbByPath(this.dbPath);
     try {
-      // Get all transactions for the month
+      const { startDate, endDate } = getMonthDateRange(month);
+      // tx_date format is "YYYY-MM-DD HH:mm", need range from startDate to endDate+1day
+      const txStartDate = startDate;
+      const txEndDate = endDate + " 23:59";
+
+      // Get all transactions for the month using range query
       const transactions = db
         .prepare(
           `SELECT id, source, tx_date, category_l1, category_l2, 
                   inflow, outflow, currency, account, tags, note, year
            FROM pixiu_transaction 
-           WHERE source = 'pixiu' AND tx_date LIKE ? 
+           WHERE source = 'pixiu' AND tx_date >= ? AND tx_date <= ?
            ORDER BY tx_date`
         )
-        .all(`${month}%`) as PixiuTransactionRow[];
+        .all(txStartDate, txEndDate) as PixiuTransactionRow[];
 
-      // Get daily aggregations for the month
+      // Get daily aggregations for the month using range query
       const dayAggs = db
         .prepare(
           `SELECT source, day, income, expense, net, tx_count
            FROM pixiu_day_agg 
-           WHERE source = 'pixiu' AND day LIKE ?
+           WHERE source = 'pixiu' AND day >= ? AND day <= ?
            ORDER BY day`
         )
-        .all(`${month}%`) as PixiuDayAggRow[];
+        .all(startDate, endDate) as PixiuDayAggRow[];
 
       // Get month aggregation
       const monthAgg = db
@@ -160,9 +187,12 @@ export class PixiuService {
   getYearData(year: number): PixiuYearRawData {
     const db = openDbByPath(this.dbPath);
     try {
-      const yearPrefix = `${year}-%`;
+      const { startDate, endDate } = getYearDateRange(year);
+      const yearMonthStart = `${year}-01`;
+      const yearMonthEnd = `${year}-12`;
 
       // Get all transactions for the year (for category breakdown)
+      // Using year column which has index
       const transactions = db
         .prepare(
           `SELECT id, source, tx_date, category_l1, category_l2, 
@@ -173,25 +203,25 @@ export class PixiuService {
         )
         .all(year) as PixiuTransactionRow[];
 
-      // Get daily aggregations for the year (for heatmap)
+      // Get daily aggregations for the year (for heatmap) using range query
       const dayAggs = db
         .prepare(
           `SELECT source, day, income, expense, net, tx_count
            FROM pixiu_day_agg 
-           WHERE source = 'pixiu' AND day LIKE ?
+           WHERE source = 'pixiu' AND day >= ? AND day <= ?
            ORDER BY day`
         )
-        .all(yearPrefix) as PixiuDayAggRow[];
+        .all(startDate, endDate) as PixiuDayAggRow[];
 
-      // Get monthly aggregations for the year
+      // Get monthly aggregations for the year using range query
       const monthAggs = db
         .prepare(
           `SELECT source, month, income, expense, net, tx_count
            FROM pixiu_month_agg 
-           WHERE source = 'pixiu' AND month LIKE ?
+           WHERE source = 'pixiu' AND month >= ? AND month <= ?
            ORDER BY month`
         )
-        .all(yearPrefix) as PixiuMonthAggRow[];
+        .all(yearMonthStart, yearMonthEnd) as PixiuMonthAggRow[];
 
       // Get year aggregation
       const yearAgg = db

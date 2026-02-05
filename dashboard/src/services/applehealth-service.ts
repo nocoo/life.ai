@@ -73,6 +73,28 @@ const getPreviousDay = (date: string): string => {
   return d.toISOString().slice(0, 10);
 };
 
+/** Get date range for a month (YYYY-MM format) */
+const getMonthDateRange = (
+  month: string
+): { startDate: string; endDate: string } => {
+  const [year, mon] = month.split("-").map(Number);
+  const startDate = `${year}-${String(mon).padStart(2, "0")}-01`;
+  // Get last day of month
+  const lastDay = new Date(year, mon, 0).getDate();
+  const endDate = `${year}-${String(mon).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  return { startDate, endDate };
+};
+
+/** Get date range for a year */
+const getYearDateRange = (
+  year: number
+): { startDate: string; endDate: string } => {
+  return {
+    startDate: `${year}-01-01`,
+    endDate: `${year}-12-31`,
+  };
+};
+
 /** Service for querying Apple Health data from SQLite */
 export class AppleHealthService {
   private dbPath: string;
@@ -149,36 +171,38 @@ export class AppleHealthService {
   getMonthData(month: string): AppleHealthMonthRawData {
     const db = openDbByPath(this.dbPath);
     try {
-      // Query records for the entire month using day LIKE 'YYYY-MM%'
+      const { startDate, endDate } = getMonthDateRange(month);
+
+      // Query records for the entire month using range query for index usage
       const records = db
         .prepare(
           `SELECT id, type, unit, value, source_name, source_version, device, 
                   creation_date, start_date, end_date, day, timezone
            FROM apple_record 
-           WHERE day LIKE ? 
+           WHERE day >= ? AND day <= ?
            ORDER BY start_date`
         )
-        .all(`${month}%`) as AppleRecordRow[];
+        .all(startDate, endDate) as AppleRecordRow[];
 
       const workouts = db
         .prepare(
           `SELECT id, workout_type, duration, total_distance, total_energy,
                   source_name, device, creation_date, start_date, end_date, day
            FROM apple_workout 
-           WHERE day LIKE ? 
+           WHERE day >= ? AND day <= ?
            ORDER BY start_date`
         )
-        .all(`${month}%`) as AppleWorkoutRow[];
+        .all(startDate, endDate) as AppleWorkoutRow[];
 
       const activitySummaries = db
         .prepare(
           `SELECT id, date_components, active_energy, exercise_time, 
                   stand_hours, movement_energy, day
            FROM apple_activity_summary 
-           WHERE day LIKE ?
+           WHERE day >= ? AND day <= ?
            ORDER BY day`
         )
-        .all(`${month}%`) as AppleActivitySummaryRow[];
+        .all(startDate, endDate) as AppleActivitySummaryRow[];
 
       return {
         month,
@@ -195,38 +219,38 @@ export class AppleHealthService {
   getYearData(year: number): AppleHealthYearRawData {
     const db = openDbByPath(this.dbPath);
     try {
-      const yearPrefix = `${year}-%`;
+      const { startDate, endDate } = getYearDateRange(year);
 
-      // Query records for the entire year using day LIKE 'YYYY-%'
+      // Query records for the entire year using range query for index usage
       const records = db
         .prepare(
           `SELECT id, type, unit, value, source_name, source_version, device, 
                   creation_date, start_date, end_date, day, timezone
            FROM apple_record 
-           WHERE day LIKE ? 
+           WHERE day >= ? AND day <= ?
            ORDER BY start_date`
         )
-        .all(yearPrefix) as AppleRecordRow[];
+        .all(startDate, endDate) as AppleRecordRow[];
 
       const workouts = db
         .prepare(
           `SELECT id, workout_type, duration, total_distance, total_energy,
                   source_name, device, creation_date, start_date, end_date, day
            FROM apple_workout 
-           WHERE day LIKE ? 
+           WHERE day >= ? AND day <= ?
            ORDER BY start_date`
         )
-        .all(yearPrefix) as AppleWorkoutRow[];
+        .all(startDate, endDate) as AppleWorkoutRow[];
 
       const activitySummaries = db
         .prepare(
           `SELECT id, date_components, active_energy, exercise_time, 
                   stand_hours, movement_energy, day
            FROM apple_activity_summary 
-           WHERE day LIKE ?
+           WHERE day >= ? AND day <= ?
            ORDER BY day`
         )
-        .all(yearPrefix) as AppleActivitySummaryRow[];
+        .all(startDate, endDate) as AppleActivitySummaryRow[];
 
       return {
         year,

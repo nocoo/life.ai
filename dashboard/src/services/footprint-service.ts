@@ -1,5 +1,27 @@
 import { getDbPath, openDbByPath } from "@/lib/db";
 
+/** Get date range for a month (YYYY-MM format) */
+const getMonthDateRange = (
+  month: string
+): { startDate: string; endDate: string } => {
+  const [year, mon] = month.split("-").map(Number);
+  const startDate = `${year}-${String(mon).padStart(2, "0")}-01`;
+  // Get last day of month
+  const lastDay = new Date(year, mon, 0).getDate();
+  const endDate = `${year}-${String(mon).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  return { startDate, endDate };
+};
+
+/** Get date range for a year */
+const getYearDateRange = (
+  year: number
+): { startDate: string; endDate: string } => {
+  return {
+    startDate: `${year}-01-01`,
+    endDate: `${year}-12-31`,
+  };
+};
+
 /** Raw track point from track_point table */
 export interface TrackPointRow {
   id: number;
@@ -107,16 +129,18 @@ export class FootprintService {
   getMonthData(month: string): FootprintMonthRawData {
     const db = openDbByPath(this.dbPath);
     try {
-      // Get daily aggregations for the month
+      const { startDate, endDate } = getMonthDateRange(month);
+
+      // Get daily aggregations for the month using range query for index usage
       const dayAggs = db
         .prepare(
           `SELECT source, day, point_count, min_ts, max_ts, avg_speed,
                   min_lat, max_lat, min_lon, max_lon
            FROM track_day_agg 
-           WHERE source = 'footprint' AND day LIKE ?
+           WHERE source = 'footprint' AND day >= ? AND day <= ?
            ORDER BY day`
         )
-        .all(`${month}%`) as TrackDayAggRow[];
+        .all(startDate, endDate) as TrackDayAggRow[];
 
       // Get month aggregation
       const monthAgg = db
@@ -141,28 +165,30 @@ export class FootprintService {
   getYearData(year: number): FootprintYearRawData {
     const db = openDbByPath(this.dbPath);
     try {
-      const yearPrefix = `${year}-%`;
+      const { startDate, endDate } = getYearDateRange(year);
+      const yearMonthStart = `${year}-01`;
+      const yearMonthEnd = `${year}-12`;
 
-      // Get daily aggregations for the year (for heatmap)
+      // Get daily aggregations for the year (for heatmap) using range query
       const dayAggs = db
         .prepare(
           `SELECT source, day, point_count, min_ts, max_ts, avg_speed,
                   min_lat, max_lat, min_lon, max_lon
            FROM track_day_agg 
-           WHERE source = 'footprint' AND day LIKE ?
+           WHERE source = 'footprint' AND day >= ? AND day <= ?
            ORDER BY day`
         )
-        .all(yearPrefix) as TrackDayAggRow[];
+        .all(startDate, endDate) as TrackDayAggRow[];
 
-      // Get monthly aggregations for the year
+      // Get monthly aggregations for the year using range query
       const monthAggs = db
         .prepare(
           `SELECT source, month, point_count
            FROM track_month_agg 
-           WHERE source = 'footprint' AND month LIKE ?
+           WHERE source = 'footprint' AND month >= ? AND month <= ?
            ORDER BY month`
         )
-        .all(yearPrefix) as TrackMonthAggRow[];
+        .all(yearMonthStart, yearMonthEnd) as TrackMonthAggRow[];
 
       // Get year aggregation
       const yearAgg = db
