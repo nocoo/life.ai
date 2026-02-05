@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const navItems = [
   { href: "/day", label: "日" },
@@ -44,8 +45,10 @@ export function AppHeader() {
         })}
       </nav>
 
-      {/* Placeholder for future actions (settings, user, etc.) */}
-      <div className="w-32" />
+      {/* Theme Toggle */}
+      <div className="flex items-center justify-end w-32">
+        <ThemeToggle />
+      </div>
     </header>
   );
 }
