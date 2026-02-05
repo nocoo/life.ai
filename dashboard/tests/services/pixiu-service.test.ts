@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from "bun:test";
+import { describe, it, expect, beforeAll, afterAll, spyOn } from "bun:test";
 import { Database } from "bun:sqlite";
 import { mkdirSync, rmSync } from "fs";
 import {
@@ -7,6 +7,7 @@ import {
   type PixiuMonthRawData,
   type PixiuYearRawData,
 } from "@/services/pixiu-service";
+import * as dbModule from "@/lib/db";
 
 const TEST_DB_DIR = "tests/.tmp";
 const TEST_DB_PATH = `${TEST_DB_DIR}/pixiu.test.sqlite`;
@@ -304,6 +305,88 @@ describe("PixiuService", () => {
       expect(Array.isArray(data.transactions)).toBe(true);
       expect(Array.isArray(data.dayAggs)).toBe(true);
       expect(Array.isArray(data.monthAggs)).toBe(true);
+    });
+  });
+
+  describe("caching behavior", () => {
+    it("should cache historical month data on second call", () => {
+      const service = new PixiuService(TEST_DB_PATH);
+      const openDbSpy = spyOn(dbModule, "openDbByPath");
+
+      // First call - should hit database
+      const data1 = service.getMonthData("2025-01");
+      expect(openDbSpy).toHaveBeenCalledTimes(1);
+
+      // Second call - should use cache
+      const data2 = service.getMonthData("2025-01");
+      expect(openDbSpy).toHaveBeenCalledTimes(1);
+
+      expect(data1).toEqual(data2);
+
+      openDbSpy.mockRestore();
+    });
+
+    it("should cache historical year data on second call", () => {
+      const service = new PixiuService(TEST_DB_PATH);
+      const openDbSpy = spyOn(dbModule, "openDbByPath");
+
+      // First call - should hit database
+      const data1 = service.getYearData(2025);
+      expect(openDbSpy).toHaveBeenCalledTimes(1);
+
+      // Second call - should use cache
+      const data2 = service.getYearData(2025);
+      expect(openDbSpy).toHaveBeenCalledTimes(1);
+
+      expect(data1).toEqual(data2);
+
+      openDbSpy.mockRestore();
+    });
+
+    it("should NOT cache current month data", () => {
+      const service = new PixiuService(TEST_DB_PATH);
+      const openDbSpy = spyOn(dbModule, "openDbByPath");
+
+      const now = new Date();
+      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+      service.getMonthData(currentMonth);
+      expect(openDbSpy).toHaveBeenCalledTimes(1);
+
+      service.getMonthData(currentMonth);
+      expect(openDbSpy).toHaveBeenCalledTimes(2);
+
+      openDbSpy.mockRestore();
+    });
+
+    it("should NOT cache current year data", () => {
+      const service = new PixiuService(TEST_DB_PATH);
+      const openDbSpy = spyOn(dbModule, "openDbByPath");
+
+      const currentYear = new Date().getFullYear();
+
+      service.getYearData(currentYear);
+      expect(openDbSpy).toHaveBeenCalledTimes(1);
+
+      service.getYearData(currentYear);
+      expect(openDbSpy).toHaveBeenCalledTimes(2);
+
+      openDbSpy.mockRestore();
+    });
+
+    it("should allow clearing the cache", () => {
+      const service = new PixiuService(TEST_DB_PATH);
+      const openDbSpy = spyOn(dbModule, "openDbByPath");
+
+      service.getMonthData("2025-01");
+      expect(openDbSpy).toHaveBeenCalledTimes(1);
+
+      service.clearCache();
+
+      service.getMonthData("2025-01");
+      expect(openDbSpy).toHaveBeenCalledTimes(2);
+
+      openDbSpy.mockRestore();
     });
   });
 });
