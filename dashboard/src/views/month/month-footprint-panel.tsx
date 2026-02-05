@@ -121,7 +121,7 @@ export function MonthFootprintPanel({ data }: MonthFootprintPanelProps) {
               <LineChart
                 data={toChartData(dailyDistance)}
                 height={200}
-                color="hsl(var(--chart-1))"
+                color="oklch(var(--chart-1))"
                 valueFormatter={(v) => formatDistance(v)}
                 referenceLine={avgDailyDistance}
                 referenceLineLabel="平均"
@@ -205,7 +205,7 @@ export function MonthFootprintPanel({ data }: MonthFootprintPanelProps) {
               }))}
               height={200}
               horizontal
-              color="hsl(var(--chart-2))"
+              color="oklch(var(--chart-2))"
               valueFormatter={(v) => formatDistance(v)}
             />
           </CardContent>

@@ -172,7 +172,7 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
               <BarChart
                 data={toMonthlyChartData(steps.monthlySteps)}
                 height={200}
-                color="hsl(var(--chart-1))"
+                color="oklch(var(--chart-1))"
                 valueFormatter={formatNumber}
               />
             </CardContent>
@@ -193,12 +193,12 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
                 series={[
                   {
                     data: toMonthlyChartData(heartRate.monthlyAvg),
-                    color: "hsl(var(--chart-1))",
+                    color: "oklch(var(--chart-1))",
                     name: "平均心率",
                   },
                   {
                     data: toMonthlyChartData(heartRate.monthlyResting),
-                    color: "hsl(var(--chart-2))",
+                    color: "oklch(var(--chart-2))",
                     name: "静息心率",
                   },
                 ]}
@@ -246,7 +246,7 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
               <BarChart
                 data={toMonthlyChartData(activity.monthlyActiveEnergy)}
                 height={200}
-                color="hsl(var(--chart-4))"
+                color="oklch(var(--chart-4))"
                 valueFormatter={(v) => `${formatNumber(Math.round(v))} kcal`}
               />
             </CardContent>
@@ -266,7 +266,7 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
               <BarChart
                 data={toMonthlyChartData(activity.monthlyExerciseMinutes)}
                 height={200}
-                color="hsl(var(--chart-2))"
+                color="oklch(var(--chart-2))"
                 valueFormatter={(v) => formatDuration(v)}
               />
             </CardContent>
@@ -291,7 +291,7 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
               }))}
               height={250}
               horizontal
-              color="hsl(var(--chart-5))"
+              color="oklch(var(--chart-5))"
               valueFormatter={(v) => `${v}次`}
             />
           </CardContent>
@@ -311,7 +311,7 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
             <LineChart
               data={toMonthlyChartData(workouts.monthlyWorkouts)}
               height={200}
-              color="hsl(var(--chart-3))"
+              color="oklch(var(--chart-3))"
               valueFormatter={(v) => `${v}次`}
               showDots
             />

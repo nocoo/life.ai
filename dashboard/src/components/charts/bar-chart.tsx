@@ -39,7 +39,7 @@ export interface BarChartProps {
   className?: string;
 }
 
-const defaultColor = "hsl(var(--chart-1))";
+const defaultColor = "oklch(var(--chart-1))";
 
 export function BarChart({
   data,

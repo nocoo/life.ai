@@ -55,11 +55,11 @@ export interface LineChartProps {
 }
 
 const defaultColors = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
+  "oklch(var(--chart-1))",
+  "oklch(var(--chart-2))",
+  "oklch(var(--chart-3))",
+  "oklch(var(--chart-4))",
+  "oklch(var(--chart-5))",
 ];
 
 export function LineChart({
@@ -153,7 +153,7 @@ export function LineChart({
           {referenceLine !== undefined && (
             <ReferenceLine
               y={referenceLine}
-              stroke="hsl(var(--muted-foreground))"
+              stroke="oklch(var(--muted-foreground))"
               strokeDasharray="3 3"
               label={
                 referenceLineLabel

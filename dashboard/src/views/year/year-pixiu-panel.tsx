@@ -155,7 +155,7 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
                     ? [
                         {
                           data: toMonthlyChartData(monthlyIncome),
-                          color: "hsl(var(--chart-1))",
+                          color: "oklch(var(--chart-1))",
                           name: "收入",
                         },
                       ]
@@ -164,7 +164,7 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
                     ? [
                         {
                           data: toMonthlyChartData(monthlyExpense),
-                          color: "hsl(var(--chart-2))",
+                          color: "oklch(var(--chart-2))",
                           name: "支出",
                         },
                       ]
@@ -244,7 +244,7 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
                 }))}
                 height={250}
                 horizontal
-                color="hsl(var(--chart-3))"
+                color="oklch(var(--chart-3))"
                 valueFormatter={formatCurrencyCompact}
               />
             </CardContent>
@@ -265,7 +265,7 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
             <BarChart
               data={toMonthlyChartData(monthlyExpense)}
               height={200}
-              color="hsl(var(--chart-2))"
+              color="oklch(var(--chart-2))"
               valueFormatter={formatCurrencyCompact}
             />
           </CardContent>

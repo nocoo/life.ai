@@ -132,7 +132,7 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
               <LineChart
                 data={toChartData(steps.dailySteps)}
                 height={200}
-                color="hsl(var(--chart-1))"
+                color="oklch(var(--chart-1))"
                 valueFormatter={formatNumber}
                 referenceLine={steps.avgSteps}
                 referenceLineLabel="平均"
@@ -155,12 +155,12 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
                 series={[
                   {
                     data: toChartData(heartRate.dailyAvg),
-                    color: "hsl(var(--chart-1))",
+                    color: "oklch(var(--chart-1))",
                     name: "平均心率",
                   },
                   {
                     data: toChartData(heartRate.dailyResting),
-                    color: "hsl(var(--chart-2))",
+                    color: "oklch(var(--chart-2))",
                     name: "静息心率",
                   },
                 ]}
@@ -184,7 +184,7 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
               <BarChart
                 data={toChartData(sleep.dailyDuration)}
                 height={200}
-                color="hsl(var(--chart-3))"
+                color="oklch(var(--chart-3))"
                 valueFormatter={(v) => `${v.toFixed(1)}小时`}
               />
             </CardContent>
@@ -204,7 +204,7 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
               <LineChart
                 data={toChartData(activity.dailyActiveEnergy)}
                 height={200}
-                color="hsl(var(--chart-4))"
+                color="oklch(var(--chart-4))"
                 valueFormatter={(v) => `${Math.round(v)} kcal`}
                 referenceLine={activity.avgActiveEnergy}
                 referenceLineLabel="平均"
@@ -231,7 +231,7 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
               }))}
               height={200}
               horizontal
-              color="hsl(var(--chart-5))"
+              color="oklch(var(--chart-5))"
               valueFormatter={(v) => `${v}次`}
             />
           </CardContent>

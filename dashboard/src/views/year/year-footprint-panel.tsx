@@ -156,7 +156,7 @@ export function YearFootprintPanel({ data, year }: YearFootprintPanelProps) {
               <BarChart
                 data={toMonthlyChartData(monthlyDistance)}
                 height={200}
-                color="hsl(var(--chart-1))"
+                color="oklch(var(--chart-1))"
                 valueFormatter={formatDistance}
               />
             </CardContent>
@@ -238,7 +238,7 @@ export function YearFootprintPanel({ data, year }: YearFootprintPanelProps) {
               }))}
               height={200}
               horizontal
-              color="hsl(var(--chart-2))"
+              color="oklch(var(--chart-2))"
               valueFormatter={formatDistance}
             />
           </CardContent>

@@ -120,7 +120,7 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
                     ? [
                         {
                           data: toChartData(dailyIncome),
-                          color: "hsl(var(--chart-1))",
+                          color: "oklch(var(--chart-1))",
                           name: "收入",
                         },
                       ]
@@ -129,7 +129,7 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
                     ? [
                         {
                           data: toChartData(dailyExpense),
-                          color: "hsl(var(--chart-2))",
+                          color: "oklch(var(--chart-2))",
                           name: "支出",
                         },
                       ]
@@ -208,7 +208,7 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
                 }))}
                 height={200}
                 horizontal
-                color="hsl(var(--chart-3))"
+                color="oklch(var(--chart-3))"
                 valueFormatter={formatCurrencyCompact}
               />
             </CardContent>
