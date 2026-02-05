@@ -156,12 +156,12 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
                 series={[
                   {
                     data: toChartData(heartRate.dailyAvg),
-                    color: "chartColors.chart1",
+                    color: chartColors.chart1,
                     name: "平均心率",
                   },
                   {
                     data: toChartData(heartRate.dailyResting),
-                    color: "chartColors.chart2",
+                    color: chartColors.chart2,
                     name: "静息心率",
                   },
                 ]}

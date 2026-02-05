@@ -194,12 +194,12 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
                 series={[
                   {
                     data: toMonthlyChartData(heartRate.monthlyAvg),
-                    color: "chartColors.chart1",
+                    color: chartColors.chart1,
                     name: "平均心率",
                   },
                   {
                     data: toMonthlyChartData(heartRate.monthlyResting),
-                    color: "chartColors.chart2",
+                    color: chartColors.chart2,
                     name: "静息心率",
                   },
                 ]}

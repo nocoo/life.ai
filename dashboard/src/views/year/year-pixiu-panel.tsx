@@ -156,7 +156,7 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
                     ? [
                         {
                           data: toMonthlyChartData(monthlyIncome),
-                          color: "chartColors.chart1",
+                          color: chartColors.chart1,
                           name: "收入",
                         },
                       ]
@@ -165,7 +165,7 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
                     ? [
                         {
                           data: toMonthlyChartData(monthlyExpense),
-                          color: "chartColors.chart2",
+                          color: chartColors.chart2,
                           name: "支出",
                         },
                       ]
