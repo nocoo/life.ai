@@ -1,4 +1,9 @@
 import { getDbPath, openDbByPath } from "@/lib/db";
+import {
+  MemoryCache,
+  isHistoricalMonth,
+  isHistoricalYear,
+} from "@/lib/cache";
 
 /** Get date range for a month (YYYY-MM format) */
 const getMonthDateRange = (
@@ -88,9 +93,17 @@ export interface FootprintYearRawData {
 /** Service for querying Footprint data from SQLite */
 export class FootprintService {
   private dbPath: string;
+  private monthCache = new MemoryCache<FootprintMonthRawData>();
+  private yearCache = new MemoryCache<FootprintYearRawData>();
 
   constructor(dbPath?: string) {
     this.dbPath = dbPath ?? getDbPath("footprint");
+  }
+
+  /** Clear all cached data */
+  clearCache(): void {
+    this.monthCache.clear();
+    this.yearCache.clear();
   }
 
   /** Get all raw data for a specific date */
@@ -127,6 +140,24 @@ export class FootprintService {
 
   /** Get aggregated data for a specific month (YYYY-MM format) */
   getMonthData(month: string): FootprintMonthRawData {
+    // Return cached data for historical months
+    if (isHistoricalMonth(month)) {
+      const cached = this.monthCache.get(month);
+      if (cached) return cached;
+    }
+
+    const data = this.fetchMonthData(month);
+
+    // Cache historical months (immutable data)
+    if (isHistoricalMonth(month)) {
+      this.monthCache.set(month, data);
+    }
+
+    return data;
+  }
+
+  /** Fetch month data from database */
+  private fetchMonthData(month: string): FootprintMonthRawData {
     const db = openDbByPath(this.dbPath);
     try {
       const { startDate, endDate } = getMonthDateRange(month);
@@ -163,6 +194,24 @@ export class FootprintService {
 
   /** Get aggregated data for a specific year */
   getYearData(year: number): FootprintYearRawData {
+    // Return cached data for historical years
+    if (isHistoricalYear(year)) {
+      const cached = this.yearCache.get(String(year));
+      if (cached) return cached;
+    }
+
+    const data = this.fetchYearData(year);
+
+    // Cache historical years (immutable data)
+    if (isHistoricalYear(year)) {
+      this.yearCache.set(String(year), data);
+    }
+
+    return data;
+  }
+
+  /** Fetch year data from database */
+  private fetchYearData(year: number): FootprintYearRawData {
     const db = openDbByPath(this.dbPath);
     try {
       const { startDate, endDate } = getYearDateRange(year);
