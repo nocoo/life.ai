@@ -1,5 +1,3 @@
-"use client";
-
 import {
   BarChart as RechartsBarChart,
   Bar,
@@ -8,8 +6,9 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell,
+  Rectangle,
 } from "recharts";
+import type { BarShapeProps } from "recharts";
 import { cn } from "@/lib/utils";
 import { chartColors } from "@/lib/chart-colors";
 
@@ -42,6 +41,15 @@ export interface BarChartProps {
 
 const defaultColor = chartColors.chart1;
 
+const createBarShape = (chartData: Array<{ fill: string }>) => {
+  const BarShape = (props: BarShapeProps) => {
+    const fill = chartData[props.index]?.fill ?? defaultColor;
+    return <Rectangle {...props} fill={fill} radius={[4, 4, 0, 0]} />;
+  };
+  BarShape.displayName = "BarShape";
+  return BarShape;
+};
+
 export function BarChart({
   data,
   height = 200,
@@ -59,9 +67,11 @@ export function BarChart({
     fill: d.color || color,
   }));
 
+  const barShape = createBarShape(chartData);
+
   return (
     <div className={cn("w-full", className)} style={{ height }}>
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
         <RechartsBarChart
           data={chartData}
           layout={horizontal ? "vertical" : "horizontal"}
@@ -135,11 +145,7 @@ export function BarChart({
               );
             }}
           />
-          <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-            {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.fill} />
-            ))}
-          </Bar>
+          <Bar dataKey="value" shape={barShape} />
         </RechartsBarChart>
       </ResponsiveContainer>
     </div>

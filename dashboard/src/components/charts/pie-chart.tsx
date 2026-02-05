@@ -1,13 +1,12 @@
-"use client";
-
 import {
   PieChart as RechartsPieChart,
   Pie,
-  Cell,
+  Sector,
   Tooltip,
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import type { PieSectorShapeProps } from "recharts";
 import { cn } from "@/lib/utils";
 import { chartColorArray } from "@/lib/chart-colors";
 
@@ -38,6 +37,15 @@ export interface PieChartProps {
 
 const defaultColors = chartColorArray;
 
+const createPieSectorShape = (chartData: Array<{ fill: string }>) => {
+  const PieSectorShape = (props: PieSectorShapeProps) => {
+    const fill = chartData[props.index]?.fill ?? defaultColors[props.index % defaultColors.length];
+    return <Sector {...props} fill={fill} />;
+  };
+  PieSectorShape.displayName = "PieSectorShape";
+  return PieSectorShape;
+};
+
 export function PieChart({
   data,
   height = 200,
@@ -55,10 +63,11 @@ export function PieChart({
   }));
 
   const total = data.reduce((sum, d) => sum + d.value, 0);
+  const sectorShape = createPieSectorShape(chartData);
 
   return (
     <div className={cn("w-full", className)} style={{ height }}>
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
         <RechartsPieChart>
           <Pie
             data={chartData}
@@ -68,6 +77,7 @@ export function PieChart({
             outerRadius={outerRadius}
             paddingAngle={2}
             dataKey="value"
+            shape={sectorShape}
             label={
               showLabels
                 ? ({ name, percent }) =>
@@ -75,11 +85,7 @@ export function PieChart({
                 : false
             }
             labelLine={showLabels}
-          >
-            {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.fill} />
-            ))}
-          </Pie>
+          />
           <Tooltip
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null;
