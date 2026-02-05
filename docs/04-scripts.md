@@ -5,10 +5,20 @@
 scripts/
 ├── import/
 │   ├── applehealth/
+│   │   ├── init.ts
+│   │   ├── db.ts
+│   │   ├── load-xml.ts
+│   │   ├── load-ecg.ts
+│   │   ├── load-routes.ts
+│   │   ├── cli.ts
+│   │   └── refresh.ts
 │   ├── footprint/
 │   └── pixiu/
 ├── verify/
-│   └── footprint.ts
+│   ├── applehealth.ts
+│   ├── footprint.ts
+│   └── pixiu.ts
+├── test/
 └── coverage-check.ts
 ```
 
@@ -37,7 +47,34 @@ scripts/
 - 执行：`bun run scripts/import/footprint/explore-gpx.ts`
 
 ### scripts/import/applehealth/
-- 说明：预留用于 Apple Health 导入脚本
+
+#### scripts/import/applehealth/init.ts
+- 作用：初始化 applehealth 数据库并写入 schema
+- 执行：`bun run scripts/import/applehealth/init.ts`
+
+#### scripts/import/applehealth/db.ts
+- 作用：数据库连接与表操作封装
+
+#### scripts/import/applehealth/load-xml.ts
+- 作用：解析 `导出.xml` 并写入 `record`、`correlation`、`workout`、`activity_summary` 表
+
+#### scripts/import/applehealth/load-ecg.ts
+- 作用：解析 `electrocardiograms/*.csv` 并写入 `ecg` 表
+
+#### scripts/import/applehealth/load-routes.ts
+- 作用：解析 `workout-routes/*.gpx` 并写入 `workout_route` 表
+
+#### scripts/import/applehealth/cli.ts
+- 作用：统一入口（load/ecg/routes/refresh）
+- 执行：
+  - `bun run scripts/import/applehealth/cli.ts load [year] [xmlPath]`
+  - `bun run scripts/import/applehealth/cli.ts ecg [year] [ecgDir]`
+  - `bun run scripts/import/applehealth/cli.ts routes [year] [routesDir]`
+  - `bun run scripts/import/applehealth/cli.ts refresh [year] [xmlPath] [ecgDir] [routesDir]`
+
+#### scripts/import/applehealth/refresh.ts
+- 作用：初始化 + 导入全部数据（xml + ecg + routes）
+- 执行：`bun run scripts/import/applehealth/refresh.ts [year] [xmlPath] [ecgDir] [routesDir]`
 
 ### scripts/import/pixiu/
 - 说明：pixiu CSV 导入脚本
@@ -61,6 +98,10 @@ scripts/
 - 执行：`bun run scripts/import/pixiu/refresh.ts <year> [csvPath]`
 
 ## 校验脚本（verify）
+
+### scripts/verify/applehealth.ts
+- 作用：校验 Apple Health 导出数据与数据库写入结果的一致性
+- 执行：`bun run scripts/verify/applehealth.ts [year] [exportPath] [ecgDir] [routesDir] [--json]`
 
 ### scripts/verify/footprint.ts
 - 作用：校验 GPX 与数据库写入结果的一致性
