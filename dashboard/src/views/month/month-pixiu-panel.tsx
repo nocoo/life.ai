@@ -5,6 +5,7 @@ import { StatCard, StatGrid } from "@/components/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
 import { DonutChart } from "@/components/charts/pie-chart";
+import { chartColors } from "@/lib/chart-colors";
 import type { MonthPixiuData } from "@/models/month-view";
 import {
   TrendingUp,
@@ -120,7 +121,7 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
                     ? [
                         {
                           data: toChartData(dailyIncome),
-                          color: "oklch(var(--chart-1))",
+                          color: "chartColors.chart1",
                           name: "收入",
                         },
                       ]
@@ -129,7 +130,7 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
                     ? [
                         {
                           data: toChartData(dailyExpense),
-                          color: "oklch(var(--chart-2))",
+                          color: "chartColors.chart2",
                           name: "支出",
                         },
                       ]
@@ -208,7 +209,7 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
                 }))}
                 height={200}
                 horizontal
-                color="oklch(var(--chart-3))"
+                color={chartColors.chart3}
                 valueFormatter={formatCurrencyCompact}
               />
             </CardContent>

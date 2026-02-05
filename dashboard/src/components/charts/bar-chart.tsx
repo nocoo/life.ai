@@ -11,6 +11,7 @@ import {
   Cell,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { chartColors } from "@/lib/chart-colors";
 
 export interface BarChartDataPoint {
   label: string;
@@ -39,7 +40,7 @@ export interface BarChartProps {
   className?: string;
 }
 
-const defaultColor = "oklch(var(--chart-1))";
+const defaultColor = chartColors.chart1;
 
 export function BarChart({
   data,

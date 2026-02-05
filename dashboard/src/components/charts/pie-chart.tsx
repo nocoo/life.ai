@@ -9,6 +9,7 @@ import {
   Legend,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { chartColorArray } from "@/lib/chart-colors";
 
 export interface PieChartDataPoint {
   label: string;
@@ -35,16 +36,7 @@ export interface PieChartProps {
   className?: string;
 }
 
-const defaultColors = [
-  "oklch(var(--chart-1))",
-  "oklch(var(--chart-2))",
-  "oklch(var(--chart-3))",
-  "oklch(var(--chart-4))",
-  "oklch(var(--chart-5))",
-  "oklch(var(--chart-6))",
-  "oklch(var(--chart-7))",
-  "oklch(var(--chart-8))",
-];
+const defaultColors = chartColorArray;
 
 export function PieChart({
   data,

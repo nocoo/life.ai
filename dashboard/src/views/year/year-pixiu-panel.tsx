@@ -6,6 +6,7 @@ import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
 import { DonutChart } from "@/components/charts/pie-chart";
 import { HeatmapCalendar, heatmapColorScales } from "@/components/charts/heatmap-calendar";
+import { chartColors } from "@/lib/chart-colors";
 import type { YearPixiuData } from "@/models/year-view";
 import {
   TrendingUp,
@@ -155,7 +156,7 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
                     ? [
                         {
                           data: toMonthlyChartData(monthlyIncome),
-                          color: "oklch(var(--chart-1))",
+                          color: "chartColors.chart1",
                           name: "收入",
                         },
                       ]
@@ -164,7 +165,7 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
                     ? [
                         {
                           data: toMonthlyChartData(monthlyExpense),
-                          color: "oklch(var(--chart-2))",
+                          color: "chartColors.chart2",
                           name: "支出",
                         },
                       ]
@@ -244,7 +245,7 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
                 }))}
                 height={250}
                 horizontal
-                color="oklch(var(--chart-3))"
+                color={chartColors.chart3}
                 valueFormatter={formatCurrencyCompact}
               />
             </CardContent>
@@ -265,7 +266,7 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
             <BarChart
               data={toMonthlyChartData(monthlyExpense)}
               height={200}
-              color="oklch(var(--chart-2))"
+              color={chartColors.chart2}
               valueFormatter={formatCurrencyCompact}
             />
           </CardContent>

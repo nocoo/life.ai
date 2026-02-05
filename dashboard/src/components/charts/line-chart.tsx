@@ -11,6 +11,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { chartColorArray } from "@/lib/chart-colors";
 
 export interface LineChartDataPoint {
   label: string;
@@ -54,13 +55,7 @@ export interface LineChartProps {
   className?: string;
 }
 
-const defaultColors = [
-  "oklch(var(--chart-1))",
-  "oklch(var(--chart-2))",
-  "oklch(var(--chart-3))",
-  "oklch(var(--chart-4))",
-  "oklch(var(--chart-5))",
-];
+const defaultColors = chartColorArray;
 
 export function LineChart({
   data,
@@ -153,7 +148,7 @@ export function LineChart({
           {referenceLine !== undefined && (
             <ReferenceLine
               y={referenceLine}
-              stroke="oklch(var(--muted-foreground))"
+              stroke="oklch(0.5 0 0)"
               strokeDasharray="3 3"
               label={
                 referenceLineLabel

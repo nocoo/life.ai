@@ -5,6 +5,7 @@ import { StatCard, StatGrid } from "@/components/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
 import { DonutChart } from "@/components/charts/pie-chart";
+import { chartColors } from "@/lib/chart-colors";
 import type { MonthFootprintData } from "@/models/month-view";
 import {
   MapPin,
@@ -121,7 +122,7 @@ export function MonthFootprintPanel({ data }: MonthFootprintPanelProps) {
               <LineChart
                 data={toChartData(dailyDistance)}
                 height={200}
-                color="oklch(var(--chart-1))"
+                color={chartColors.chart1}
                 valueFormatter={(v) => formatDistance(v)}
                 referenceLine={avgDailyDistance}
                 referenceLineLabel="平均"
@@ -205,7 +206,7 @@ export function MonthFootprintPanel({ data }: MonthFootprintPanelProps) {
               }))}
               height={200}
               horizontal
-              color="oklch(var(--chart-2))"
+              color={chartColors.chart2}
               valueFormatter={(v) => formatDistance(v)}
             />
           </CardContent>
