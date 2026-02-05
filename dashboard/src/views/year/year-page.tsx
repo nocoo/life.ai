@@ -22,14 +22,14 @@ import {
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Stats skeleton */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-2 grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i}>
-            <CardContent className="pt-6">
-              <Skeleton className="h-4 w-24 mb-2" />
-              <Skeleton className="h-8 w-32" />
+            <CardContent className="pt-4 px-3 pb-3">
+              <Skeleton className="h-3 w-20 mb-1.5" />
+              <Skeleton className="h-6 w-28" />
             </CardContent>
           </Card>
         ))}
@@ -37,23 +37,23 @@ function LoadingSkeleton() {
 
       {/* Heatmap skeleton */}
       <Card>
-        <CardHeader>
-          <Skeleton className="h-4 w-32" />
+        <CardHeader className="py-2 px-3">
+          <Skeleton className="h-4 w-28" />
         </CardHeader>
-        <CardContent>
-          <Skeleton className="h-32 w-full" />
+        <CardContent className="px-3 pb-3">
+          <Skeleton className="h-28 w-full" />
         </CardContent>
       </Card>
 
       {/* Charts skeleton */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i}>
-            <CardHeader>
-              <Skeleton className="h-4 w-32" />
+            <CardHeader className="py-2 px-3">
+              <Skeleton className="h-4 w-28" />
             </CardHeader>
-            <CardContent>
-              <Skeleton className="h-48 w-full" />
+            <CardContent className="px-3 pb-3">
+              <Skeleton className="h-40 w-full" />
             </CardContent>
           </Card>
         ))}
@@ -113,7 +113,7 @@ function YearSummaryPanel() {
   const { summary } = data;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Overview Stats */}
       <StatGrid columns={4}>
         <StatCard
@@ -193,7 +193,7 @@ export function YearPage() {
 
   return (
     <ScrollArea className="h-[calc(100vh-57px)]">
-      <div className="p-6 space-y-6">
+      <div className="p-4 space-y-4">
         {/* Year Navigation */}
         <YearNavigation
           selectedYear={selectedYear}
@@ -222,22 +222,22 @@ export function YearPage() {
             </TabsList>
 
             {/* Overview Tab */}
-            <TabsContent value="overview" className="mt-4">
+            <TabsContent value="overview" className="mt-3">
               <YearSummaryPanel />
             </TabsContent>
 
             {/* Health Tab */}
-            <TabsContent value="health" className="mt-4">
+            <TabsContent value="health" className="mt-3">
               <YearHealthPanel data={data.health} year={selectedYear} />
             </TabsContent>
 
             {/* Footprint Tab */}
-            <TabsContent value="footprint" className="mt-4">
+            <TabsContent value="footprint" className="mt-3">
               <YearFootprintPanel data={data.footprint} year={selectedYear} />
             </TabsContent>
 
             {/* Finance Tab */}
-            <TabsContent value="finance" className="mt-4">
+            <TabsContent value="finance" className="mt-3">
               <YearPixiuPanel data={data.pixiu} year={selectedYear} />
             </TabsContent>
           </Tabs>

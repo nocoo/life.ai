@@ -89,7 +89,7 @@ export function YearFootprintPanel({ data, year }: YearFootprintPanelProps) {
   const avgDailyDistance = daysWithData > 0 ? totalDistance / daysWithData : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Summary Stats Grid */}
       <StatGrid columns={4}>
         <StatCard
@@ -124,13 +124,13 @@ export function YearFootprintPanel({ data, year }: YearFootprintPanelProps) {
       {/* Distance Heatmap */}
       {dailyDistance.length > 0 && (
         <Card>
-          <CardHeader>
+          <CardHeader className="py-2 px-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Route className="h-4 w-4 text-blue-500" />
+              <Route className="h-4 w-4 text-blue-500" aria-hidden="true" />
               年度距离分布
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 pb-3 pt-0">
             <HeatmapCalendar
               data={toHeatmapData(dailyDistance)}
               year={year}
@@ -143,20 +143,20 @@ export function YearFootprintPanel({ data, year }: YearFootprintPanelProps) {
       )}
 
       {/* Charts Row */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         {/* Monthly Distance Chart */}
         {monthlyDistance.length > 0 && (
           <Card>
-            <CardHeader>
+            <CardHeader className="py-2 px-3">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Route className="h-4 w-4 text-blue-500" />
+                <Route className="h-4 w-4 text-blue-500" aria-hidden="true" />
                 月度距离趋势
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3 pb-3 pt-0">
               <BarChart
                 data={toMonthlyChartData(monthlyDistance)}
-                height={200}
+                height={180}
                 color={chartColors.chart1}
                 valueFormatter={formatDistance}
               />
@@ -167,19 +167,19 @@ export function YearFootprintPanel({ data, year }: YearFootprintPanelProps) {
         {/* Transport Mode Breakdown */}
         {byTransportMode.length > 0 && (
           <Card>
-            <CardHeader>
+            <CardHeader className="py-2 px-3">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Car className="h-4 w-4 text-cyan-500" />
+                <Car className="h-4 w-4 text-cyan-500" aria-hidden="true" />
                 年度出行方式分布
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3 pb-3 pt-0">
               <DonutChart
                 data={byTransportMode.map((m) => ({
                   label: m.modeName,
                   value: m.totalDistance,
                 }))}
-                height={200}
+                height={180}
                 showLegend
                 valueFormatter={formatDistance}
               />
@@ -191,26 +191,26 @@ export function YearFootprintPanel({ data, year }: YearFootprintPanelProps) {
       {/* Transport Mode Details */}
       {byTransportMode.length > 0 && (
         <Card>
-          <CardHeader>
+          <CardHeader className="py-2 px-3">
             <CardTitle className="text-sm font-medium">年度出行方式详情</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <CardContent className="px-3 pb-3 pt-0">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {byTransportMode.map((mode) => {
                 const Icon = getTransportIcon(mode.mode);
                 return (
                   <div
                     key={mode.mode}
-                    className="flex items-center gap-3 rounded-lg border p-3"
+                    className="flex items-center gap-2.5 rounded-lg border p-2.5"
                   >
-                    <div className="rounded-md bg-muted p-2">
-                      <Icon className="h-5 w-5 text-muted-foreground" />
+                    <div className="rounded-md bg-muted p-1.5">
+                      <Icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
+                      <p className="text-xs font-medium truncate">
                         {mode.modeName}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-[10px] text-muted-foreground tabular-nums">
                         {formatDistance(mode.totalDistance)} · {mode.percentage.toFixed(0)}%
                       </p>
                     </div>
@@ -225,19 +225,19 @@ export function YearFootprintPanel({ data, year }: YearFootprintPanelProps) {
       {/* Distance by Transport Mode Bar Chart */}
       {byTransportMode.length > 0 && (
         <Card>
-          <CardHeader>
+          <CardHeader className="py-2 px-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Route className="h-4 w-4 text-indigo-500" />
+              <Route className="h-4 w-4 text-indigo-500" aria-hidden="true" />
               各出行方式距离
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 pb-3 pt-0">
             <BarChart
               data={byTransportMode.map((m) => ({
                 label: m.modeName,
                 value: m.totalDistance,
               }))}
-              height={200}
+              height={180}
               horizontal
               color={chartColors.chart2}
               valueFormatter={formatDistance}

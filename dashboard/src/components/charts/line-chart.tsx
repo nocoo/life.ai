@@ -110,7 +110,7 @@ export function LineChart({
               dataKey="name"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 10 }}
               className="fill-muted-foreground"
             />
           )}
@@ -118,7 +118,7 @@ export function LineChart({
             <YAxis
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 10 }}
               className="fill-muted-foreground"
               tickFormatter={valueFormatter}
             />
@@ -127,18 +127,19 @@ export function LineChart({
             content={({ active, payload, label }) => {
               if (!active || !payload?.length) return null;
               return (
-                <div className="rounded-lg border bg-background p-2 shadow-sm">
-                  <div className="text-sm font-medium">{label}</div>
+                <div className="rounded-lg border bg-background px-2 py-1.5 shadow-sm">
+                  <div className="text-xs font-medium">{label}</div>
                   {payload.map((item, i) => (
                     <div
                       key={i}
-                      className="text-sm text-muted-foreground flex items-center gap-2"
+                      className="text-xs text-muted-foreground flex items-center gap-1.5"
                     >
                       <div
-                        className="w-2 h-2 rounded-full"
+                        className="w-1.5 h-1.5 rounded-full"
                         style={{ backgroundColor: item.color }}
+                        aria-hidden="true"
                       />
-                      <span>{valueFormatter(item.value as number)}</span>
+                      <span className="tabular-nums">{valueFormatter(item.value as number)}</span>
                     </div>
                   ))}
                 </div>

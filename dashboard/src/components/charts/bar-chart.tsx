@@ -83,7 +83,7 @@ export function BarChart({
                   type="category"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 10 }}
                   className="fill-muted-foreground"
                   width={80}
                 />
@@ -93,7 +93,7 @@ export function BarChart({
                   type="number"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 10 }}
                   className="fill-muted-foreground"
                   tickFormatter={valueFormatter}
                 />
@@ -106,7 +106,7 @@ export function BarChart({
                   dataKey="name"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 10 }}
                   className="fill-muted-foreground"
                 />
               )}
@@ -114,7 +114,7 @@ export function BarChart({
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 10 }}
                   className="fill-muted-foreground"
                   tickFormatter={valueFormatter}
                 />
@@ -126,9 +126,9 @@ export function BarChart({
               if (!active || !payload?.length) return null;
               const item = payload[0];
               return (
-                <div className="rounded-lg border bg-background p-2 shadow-sm">
-                  <div className="text-sm font-medium">{item.payload.name}</div>
-                  <div className="text-sm text-muted-foreground">
+                <div className="rounded-lg border bg-background px-2 py-1.5 shadow-sm">
+                  <div className="text-xs font-medium">{item.payload.name}</div>
+                  <div className="text-xs text-muted-foreground tabular-nums">
                     {valueFormatter(item.value as number)}
                   </div>
                 </div>

@@ -36,14 +36,14 @@ export function MonthNavigation({
   const isCurrent = isCurrentMonth(selectedMonth);
 
   return (
-    <div className="flex items-center justify-center gap-2">
+    <div className="flex items-center justify-center gap-1">
       {/* Current Month Button */}
       <Button
         variant="outline"
         size="sm"
         onClick={onCurrentMonth}
         disabled={isCurrent}
-        className="mr-2"
+        className="mr-1 h-8 px-2.5 text-xs"
       >
         本月
       </Button>
@@ -54,6 +54,7 @@ export function MonthNavigation({
         size="icon"
         onClick={onPrevMonth}
         aria-label="上一月"
+        className="h-8 w-8"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
@@ -62,11 +63,11 @@ export function MonthNavigation({
       <Button
         variant="ghost"
         onClick={onToggleCalendar}
-        className="gap-2 text-lg font-medium"
+        className="gap-1.5 text-base font-medium h-8 px-2"
       >
         <span>{formatMonthDisplay(selectedMonth)}</span>
         {onToggleCalendar && (
-          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+          <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
         )}
       </Button>
 
@@ -76,6 +77,7 @@ export function MonthNavigation({
         size="icon"
         onClick={onNextMonth}
         aria-label="下一月"
+        className="h-8 w-8"
       >
         <ChevronRight className="h-4 w-4" />
       </Button>

@@ -21,51 +21,51 @@ function LoadingSkeleton() {
   return (
     <div>
       {/* Two-column layout skeleton: Timeline primary, Cards sidebar */}
-      <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         {/* Timeline Card skeleton */}
         <Card>
-          <CardHeader>
+          <CardHeader className="py-2 px-3">
             <Skeleton className="h-4 w-24" />
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-2 px-3 pb-3">
             {Array.from({ length: 12 }).map((_, i) => (
-              <Skeleton key={i} className="h-8 w-full" />
+              <Skeleton key={i} className="h-7 w-full" />
             ))}
           </CardContent>
         </Card>
         {/* Cards sidebar skeleton */}
-        <div className="grid gap-4 auto-rows-min">
+        <div className="grid gap-3 auto-rows-min">
           {/* DayInfoCard skeleton */}
           <Card>
-            <CardHeader>
+            <CardHeader className="py-2 px-3">
               <Skeleton className="h-5 w-32" />
               <Skeleton className="h-4 w-48" />
             </CardHeader>
           </Card>
           {/* HealthPanel skeletons */}
           <Card>
-            <CardHeader>
+            <CardHeader className="py-2 px-3">
               <Skeleton className="h-4 w-20" />
             </CardHeader>
-            <CardContent>
-              <Skeleton className="h-16 w-full" />
+            <CardContent className="px-3 pb-3">
+              <Skeleton className="h-14 w-full" />
             </CardContent>
           </Card>
           <Card>
-            <CardHeader>
+            <CardHeader className="py-2 px-3">
               <Skeleton className="h-4 w-20" />
             </CardHeader>
-            <CardContent>
-              <Skeleton className="h-24 w-full" />
+            <CardContent className="px-3 pb-3">
+              <Skeleton className="h-20 w-full" />
             </CardContent>
           </Card>
           {/* ActivityPanel skeleton */}
           <Card>
-            <CardHeader>
+            <CardHeader className="py-2 px-3">
               <Skeleton className="h-4 w-20" />
             </CardHeader>
-            <CardContent>
-              <Skeleton className="h-20 w-full" />
+            <CardContent className="px-3 pb-3">
+              <Skeleton className="h-16 w-full" />
             </CardContent>
           </Card>
         </div>
@@ -124,7 +124,7 @@ export function DayPage() {
 
   return (
     <ScrollArea className="h-[calc(100vh-57px)]">
-      <div className="p-6 space-y-6">
+      <div className="p-4 space-y-4">
         {/* Date Navigation */}
         <DateNavigation
           selectedDate={selectedDate}
@@ -168,9 +168,9 @@ export function DayPage() {
             <TabsContent value="dashboard">
               {/* Two-column layout: Timeline (left) + Cards sidebar (right) */}
               {/* Use min-w-0 to allow flex children to shrink below content size */}
-              <div className="grid gap-6 lg:grid-cols-[1fr_340px] mt-4">
+              <div className="grid gap-4 lg:grid-cols-[1fr_320px] mt-3">
                 {/* Left column: Map + Timeline */}
-                <div className="order-2 lg:order-1 space-y-6 min-w-0 overflow-hidden">
+                <div className="order-2 lg:order-1 space-y-4 min-w-0 overflow-hidden">
                   {/* Track Map Card - Large map showing daily trajectory */}
                   <TrackMapCard 
                     trackPoints={data.footprint.trackPoints} 
@@ -178,13 +178,13 @@ export function DayPage() {
 
                   {/* Enhanced Timeline in a Card */}
                   <Card className="min-w-0 overflow-hidden">
-                    <CardHeader>
+                    <CardHeader className="py-2 px-3">
                       <CardTitle className="flex items-center gap-2 text-sm font-medium">
-                        <Clock className="h-4 w-4 text-indigo-500" />
+                        <Clock className="h-4 w-4 text-indigo-500" aria-hidden="true" />
                         时间线
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="px-3 pb-3 pt-0">
                       <EnhancedTimeline 
                         slots={timeSlots} 
                         date={selectedDate}
@@ -197,7 +197,7 @@ export function DayPage() {
 
                 {/* Right: Single-column cards sidebar */}
                 {/* Use min-w-0 and overflow-hidden to prevent content overflow */}
-                <div className="order-1 lg:order-2 grid gap-4 auto-rows-min min-w-0 overflow-hidden">
+                <div className="order-1 lg:order-2 grid gap-3 auto-rows-min min-w-0 overflow-hidden">
                   {/* Day Info Card - Date and Weather */}
                   <DayInfoCard
                     date={selectedDate}
@@ -220,12 +220,12 @@ export function DayPage() {
 
             {/* Apple Health Raw Data Tab - Lazy loaded */}
             <TabsContent value="health">
-              <div className="mt-4">
+              <div className="mt-3">
                 {visitedTabs.has("health") ? (
                   <RawHealthData data={data.health} />
                 ) : (
                   <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-                    点击标签页加载数据...
+                    点击标签页加载数据…
                   </div>
                 )}
               </div>
@@ -233,12 +233,12 @@ export function DayPage() {
 
             {/* Footprint Raw Data Tab - Lazy loaded */}
             <TabsContent value="footprint">
-              <div className="mt-4">
+              <div className="mt-3">
                 {visitedTabs.has("footprint") ? (
                   <RawFootprintData data={data.footprint} />
                 ) : (
                   <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-                    点击标签页加载数据...
+                    点击标签页加载数据…
                   </div>
                 )}
               </div>
@@ -246,12 +246,12 @@ export function DayPage() {
 
             {/* Pixiu Raw Data Tab - Lazy loaded */}
             <TabsContent value="pixiu">
-              <div className="mt-4">
+              <div className="mt-3">
                 {visitedTabs.has("pixiu") ? (
                   <RawPixiuData data={data.pixiu} />
                 ) : (
                   <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-                    点击标签页加载数据...
+                    点击标签页加载数据…
                   </div>
                 )}
               </div>

@@ -259,9 +259,9 @@ export function HeatmapCalendar({
                           />
                         </TooltipTrigger>
                         <TooltipContent>
-                          <div className="text-sm">
+                          <div className="text-xs">
                             <div className="font-medium">{dateStr}</div>
-                            <div className="text-muted-foreground">
+                            <div className="text-muted-foreground tabular-nums">
                               {metricLabel}: {valueFormatter(value, dateStr)}
                             </div>
                           </div>
@@ -275,7 +275,7 @@ export function HeatmapCalendar({
           </div>
 
           {/* Legend */}
-          <div className="flex items-center justify-end gap-1 mt-2 text-xs text-muted-foreground">
+          <div className="flex items-center justify-end gap-1 mt-1.5 text-[10px] text-muted-foreground">
             <span>Less</span>
             {colorScale.map((color, i) => (
               <div
