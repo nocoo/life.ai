@@ -20,7 +20,7 @@ export interface HeatmapCalendarProps {
   /** Year to display */
   year: number;
   /** Color scale (from low to high intensity) */
-  colorScale?: string[];
+  colorScale?: readonly string[];
   /** Value formatter for tooltip */
   valueFormatter?: (value: number, date: string) => string;
   /** Label for the metric */
@@ -33,13 +33,39 @@ export interface HeatmapCalendarProps {
   className?: string;
 }
 
-const defaultColorScale = [
-  "hsl(var(--muted))",
-  "hsl(142, 43%, 80%)",
-  "hsl(142, 43%, 60%)",
-  "hsl(142, 43%, 40%)",
-  "hsl(142, 43%, 25%)",
-];
+/** Predefined color scale presets using CSS variables */
+export const heatmapColorScales = {
+  green: [
+    "oklch(var(--muted))",
+    "oklch(var(--heatmap-green-1))",
+    "oklch(var(--heatmap-green-2))",
+    "oklch(var(--heatmap-green-3))",
+    "oklch(var(--heatmap-green-4))",
+  ],
+  red: [
+    "oklch(var(--muted))",
+    "oklch(var(--heatmap-red-1))",
+    "oklch(var(--heatmap-red-2))",
+    "oklch(var(--heatmap-red-3))",
+    "oklch(var(--heatmap-red-4))",
+  ],
+  blue: [
+    "oklch(var(--muted))",
+    "oklch(var(--heatmap-blue-1))",
+    "oklch(var(--heatmap-blue-2))",
+    "oklch(var(--heatmap-blue-3))",
+    "oklch(var(--heatmap-blue-4))",
+  ],
+  orange: [
+    "oklch(var(--muted))",
+    "oklch(var(--heatmap-orange-1))",
+    "oklch(var(--heatmap-orange-2))",
+    "oklch(var(--heatmap-orange-3))",
+    "oklch(var(--heatmap-orange-4))",
+  ],
+} as const;
+
+const defaultColorScale = heatmapColorScales.green;
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
@@ -103,7 +129,7 @@ function formatDate(date: Date): string {
 function getColorIndex(
   value: number,
   maxValue: number,
-  colorScale: string[]
+  colorScale: readonly string[]
 ): number {
   if (value === 0) return 0;
   const levels = colorScale.length - 1;

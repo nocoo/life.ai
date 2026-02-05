@@ -27,6 +27,22 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-heatmap-green-1: var(--heatmap-green-1);
+  --color-heatmap-green-2: var(--heatmap-green-2);
+  --color-heatmap-green-3: var(--heatmap-green-3);
+  --color-heatmap-green-4: var(--heatmap-green-4);
+  --color-heatmap-red-1: var(--heatmap-red-1);
+  --color-heatmap-red-2: var(--heatmap-red-2);
+  --color-heatmap-red-3: var(--heatmap-red-3);
+  --color-heatmap-red-4: var(--heatmap-red-4);
+  --color-heatmap-blue-1: var(--heatmap-blue-1);
+  --color-heatmap-blue-2: var(--heatmap-blue-2);
+  --color-heatmap-blue-3: var(--heatmap-blue-3);
+  --color-heatmap-blue-4: var(--heatmap-blue-4);
+  --color-heatmap-orange-1: var(--heatmap-orange-1);
+  --color-heatmap-orange-2: var(--heatmap-orange-2);
+  --color-heatmap-orange-3: var(--heatmap-orange-3);
+  --color-heatmap-orange-4: var(--heatmap-orange-4);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -71,6 +87,26 @@
     --chart-3: oklch(0.398 0.07 227.392);
     --chart-4: oklch(0.828 0.189 84.429);
     --chart-5: oklch(0.769 0.188 70.08);
+    /* Heatmap color scales - green (default) */
+    --heatmap-green-1: oklch(0.9 0.05 145);
+    --heatmap-green-2: oklch(0.75 0.12 145);
+    --heatmap-green-3: oklch(0.6 0.15 145);
+    --heatmap-green-4: oklch(0.45 0.12 145);
+    /* Heatmap color scales - red (expenses) */
+    --heatmap-red-1: oklch(0.9 0.06 25);
+    --heatmap-red-2: oklch(0.75 0.14 25);
+    --heatmap-red-3: oklch(0.6 0.18 25);
+    --heatmap-red-4: oklch(0.5 0.16 25);
+    /* Heatmap color scales - blue (footprint) */
+    --heatmap-blue-1: oklch(0.9 0.05 250);
+    --heatmap-blue-2: oklch(0.75 0.12 250);
+    --heatmap-blue-3: oklch(0.6 0.15 250);
+    --heatmap-blue-4: oklch(0.45 0.12 250);
+    /* Heatmap color scales - orange (health metrics) */
+    --heatmap-orange-1: oklch(0.9 0.06 70);
+    --heatmap-orange-2: oklch(0.75 0.14 70);
+    --heatmap-orange-3: oklch(0.6 0.16 70);
+    --heatmap-orange-4: oklch(0.5 0.14 70);
     --sidebar: oklch(0.985 0 0);
     --sidebar-foreground: oklch(0.145 0 0);
     --sidebar-primary: oklch(0.205 0 0);
@@ -162,6 +198,26 @@
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
+  /* Heatmap color scales - green (default) - darker for dark mode */
+  --heatmap-green-1: oklch(0.35 0.06 145);
+  --heatmap-green-2: oklch(0.45 0.1 145);
+  --heatmap-green-3: oklch(0.55 0.14 145);
+  --heatmap-green-4: oklch(0.7 0.16 145);
+  /* Heatmap color scales - red (expenses) */
+  --heatmap-red-1: oklch(0.35 0.06 25);
+  --heatmap-red-2: oklch(0.45 0.12 25);
+  --heatmap-red-3: oklch(0.55 0.16 25);
+  --heatmap-red-4: oklch(0.7 0.18 25);
+  /* Heatmap color scales - blue (footprint) */
+  --heatmap-blue-1: oklch(0.35 0.06 250);
+  --heatmap-blue-2: oklch(0.45 0.1 250);
+  --heatmap-blue-3: oklch(0.55 0.14 250);
+  --heatmap-blue-4: oklch(0.7 0.16 250);
+  /* Heatmap color scales - orange (health metrics) */
+  --heatmap-orange-1: oklch(0.35 0.06 70);
+  --heatmap-orange-2: oklch(0.45 0.12 70);
+  --heatmap-orange-3: oklch(0.55 0.14 70);
+  --heatmap-orange-4: oklch(0.7 0.16 70);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);

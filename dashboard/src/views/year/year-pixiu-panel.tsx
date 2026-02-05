@@ -5,7 +5,7 @@ import { StatCard, StatGrid } from "@/components/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
 import { DonutChart } from "@/components/charts/pie-chart";
-import { HeatmapCalendar } from "@/components/charts/heatmap-calendar";
+import { HeatmapCalendar, heatmapColorScales } from "@/components/charts/heatmap-calendar";
 import type { YearPixiuData } from "@/models/year-view";
 import {
   TrendingUp,
@@ -131,13 +131,7 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
               year={year}
               metricLabel="支出"
               valueFormatter={formatCurrencyCompact}
-              colorScale={[
-                "hsl(var(--muted))",
-                "hsl(0, 70%, 85%)",
-                "hsl(0, 70%, 70%)",
-                "hsl(0, 70%, 55%)",
-                "hsl(0, 70%, 40%)",
-              ]}
+              colorScale={heatmapColorScales.red}
             />
           </CardContent>
         </Card>

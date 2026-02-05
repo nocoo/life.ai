@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard, StatGrid } from "@/components/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
-import { HeatmapCalendar } from "@/components/charts/heatmap-calendar";
+import { HeatmapCalendar, heatmapColorScales } from "@/components/charts/heatmap-calendar";
 import type { YearHealthData } from "@/models/year-view";
 import {
   Footprints,
@@ -225,13 +225,7 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
               year={year}
               metricLabel="活动能量"
               valueFormatter={(v) => `${Math.round(v)} kcal`}
-              colorScale={[
-                "hsl(var(--muted))",
-                "hsl(30, 80%, 80%)",
-                "hsl(30, 80%, 60%)",
-                "hsl(30, 80%, 40%)",
-                "hsl(30, 80%, 25%)",
-              ]}
+              colorScale={heatmapColorScales.orange}
             />
           </CardContent>
         </Card>

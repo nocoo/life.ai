@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard, StatGrid } from "@/components/charts/stat-card";
 import { BarChart } from "@/components/charts/bar-chart";
 import { DonutChart } from "@/components/charts/pie-chart";
-import { HeatmapCalendar } from "@/components/charts/heatmap-calendar";
+import { HeatmapCalendar, heatmapColorScales } from "@/components/charts/heatmap-calendar";
 import type { YearFootprintData } from "@/models/year-view";
 import {
   MapPin,
@@ -135,13 +135,7 @@ export function YearFootprintPanel({ data, year }: YearFootprintPanelProps) {
               year={year}
               metricLabel="距离"
               valueFormatter={formatDistance}
-              colorScale={[
-                "hsl(var(--muted))",
-                "hsl(210, 80%, 80%)",
-                "hsl(210, 80%, 60%)",
-                "hsl(210, 80%, 40%)",
-                "hsl(210, 80%, 25%)",
-              ]}
+              colorScale={heatmapColorScales.blue}
             />
           </CardContent>
         </Card>
