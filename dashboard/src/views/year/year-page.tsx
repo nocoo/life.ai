@@ -3,15 +3,13 @@
 import { useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useYearStore } from "@/viewmodels/year-store";
 import { YearNavigation } from "./year-navigation";
+import { YearHealthPanel } from "./year-health-panel";
+import { YearFootprintPanel } from "./year-footprint-panel";
+import { YearPixiuPanel } from "./year-pixiu-panel";
 import { StatCard, StatGrid } from "@/components/charts/stat-card";
-import { LineChart } from "@/components/charts/line-chart";
-import { BarChart } from "@/components/charts/bar-chart";
-import { DonutChart } from "@/components/charts/pie-chart";
-import { HeatmapCalendar, heatmapColorScales } from "@/components/charts/heatmap-calendar";
-import { chartColors } from "@/lib/chart-colors";
 import {
   Footprints,
   Heart,
@@ -21,18 +19,11 @@ import {
   Flame,
   Activity,
   Dumbbell,
-  Car,
-  CreditCard,
-  ArrowDownCircle,
-  ArrowUpCircle,
-  TrendingDown,
-  Calendar,
 } from "lucide-react";
 
 function LoadingSkeleton() {
   return (
     <div className="space-y-4">
-      {/* Stats skeleton */}
       <div className="grid gap-2 grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
           <Card key={i}>
@@ -44,7 +35,6 @@ function LoadingSkeleton() {
         ))}
       </div>
 
-      {/* Heatmap skeleton */}
       <Card>
         <CardHeader>
           <Skeleton className="h-4 w-28" />
@@ -54,7 +44,6 @@ function LoadingSkeleton() {
         </CardContent>
       </Card>
 
-      {/* Charts skeleton */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
           <Card key={i}>
@@ -82,7 +71,6 @@ function ErrorDisplay({ message }: { message: string }) {
   );
 }
 
-/** Format number with K/M suffix */
 const formatNumber = (value: number): string => {
   if (value >= 1000000) {
     return `${(value / 1000000).toFixed(1)}M`;
@@ -93,7 +81,6 @@ const formatNumber = (value: number): string => {
   return value.toLocaleString();
 };
 
-/** Format currency compact */
 const formatCurrency = (value: number): string => {
   const absValue = Math.abs(value);
   const prefix = value < 0 ? "-" : "";
@@ -103,7 +90,6 @@ const formatCurrency = (value: number): string => {
   return `${prefix}¥${absValue.toFixed(0)}`;
 };
 
-/** Format distance */
 const formatDistance = (meters: number): string => {
   if (meters < 1000) {
     return `${Math.round(meters)} 米`;
@@ -114,7 +100,6 @@ const formatDistance = (meters: number): string => {
   return `${(meters / 1000).toFixed(1)} 公里`;
 };
 
-/** Format duration in minutes */
 const formatDuration = (minutes: number): string => {
   if (minutes < 60) {
     return `${Math.round(minutes)}分钟`;
@@ -127,26 +112,6 @@ const formatDuration = (minutes: number): string => {
   return `${days}天`;
 };
 
-/** Convert MonthlyDataPoint to chart format */
-const toMonthlyChartData = (
-  data: { month: string; value: number }[]
-): { label: string; value: number }[] => {
-  return data.map((d) => ({
-    label: d.month.split("-")[1],
-    value: d.value,
-  }));
-};
-
-/** Convert DailyDataPoint to heatmap format */
-const toHeatmapData = (
-  data: { date: string; value: number }[]
-): { date: string; value: number }[] => {
-  return data.map((d) => ({
-    date: d.date,
-    value: d.value,
-  }));
-};
-
 function YearContent() {
   const { data, selectedYear } = useYearStore();
 
@@ -157,7 +122,7 @@ function YearContent() {
 
   return (
     <div className="space-y-6">
-      {/* ===== Section 1: Overview Stats ===== */}
+      {/* Section 1: Overview Stats */}
       <section>
         <h2 className="text-sm font-medium text-muted-foreground mb-2">年度总览</h2>
         <StatGrid columns={4}>
@@ -224,435 +189,24 @@ function YearContent() {
         </div>
       </section>
 
-      {/* ===== Section 2: Steps Heatmap ===== */}
-      {steps && steps.dailySteps.length > 0 && (
-        <section>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Footprints className="h-4 w-4 text-green-500" aria-hidden="true" />
-                年度步数分布
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <HeatmapCalendar
-                data={toHeatmapData(steps.dailySteps)}
-                year={selectedYear}
-                metricLabel="步数"
-                valueFormatter={formatNumber}
-              />
-            </CardContent>
-          </Card>
-        </section>
-      )}
-
-      {/* ===== Section 3: Health Charts ===== */}
+      {/* Section 2: Health Data */}
       <section>
         <h2 className="text-sm font-medium text-muted-foreground mb-2">健康数据</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {/* Monthly Steps */}
-          {steps && steps.monthlySteps.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Footprints className="h-4 w-4 text-green-500" aria-hidden="true" />
-                  月度步数
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <BarChart
-                  data={toMonthlyChartData(steps.monthlySteps)}
-                  height={160}
-                  color={chartColors.chart1}
-                  valueFormatter={formatNumber}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Monthly Heart Rate */}
-          {heartRate && heartRate.monthlyAvg.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Heart className="h-4 w-4 text-red-500" aria-hidden="true" />
-                  月度心率
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <LineChart
-                  series={[
-                    { data: toMonthlyChartData(heartRate.monthlyAvg), color: chartColors.chart1, name: "平均" },
-                    { data: toMonthlyChartData(heartRate.monthlyResting), color: chartColors.chart2, name: "静息" },
-                  ]}
-                  height={160}
-                  valueFormatter={(v) => `${Math.round(v)} bpm`}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Monthly Active Energy */}
-          {activity && activity.monthlyActiveEnergy.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Flame className="h-4 w-4 text-orange-500" aria-hidden="true" />
-                  月度活动能量
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <BarChart
-                  data={toMonthlyChartData(activity.monthlyActiveEnergy)}
-                  height={160}
-                  color={chartColors.chart4}
-                  valueFormatter={(v) => `${formatNumber(Math.round(v))} kcal`}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Monthly Exercise */}
-          {activity && activity.monthlyExerciseMinutes.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-blue-500" aria-hidden="true" />
-                  月度运动时长
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <BarChart
-                  data={toMonthlyChartData(activity.monthlyExerciseMinutes)}
-                  height={160}
-                  color={chartColors.chart2}
-                  valueFormatter={formatDuration}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Workout Types */}
-          {workouts && workouts.byType.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Dumbbell className="h-4 w-4 text-purple-500" aria-hidden="true" />
-                  锻炼类型
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <BarChart
-                  data={workouts.byType.slice(0, 6).map((w) => ({
-                    label: w.typeName,
-                    value: w.count,
-                  }))}
-                  height={160}
-                  horizontal
-                  color={chartColors.chart5}
-                  valueFormatter={(v) => `${v}次`}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Monthly Workouts */}
-          {workouts && workouts.monthlyWorkouts.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Dumbbell className="h-4 w-4 text-purple-500" aria-hidden="true" />
-                  月度锻炼次数
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <LineChart
-                  data={toMonthlyChartData(workouts.monthlyWorkouts)}
-                  height={160}
-                  color={chartColors.chart3}
-                  valueFormatter={(v) => `${v}次`}
-                  showDots
-                />
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        <YearHealthPanel data={health} year={selectedYear} />
       </section>
 
-      {/* ===== Section 4: Distance Heatmap ===== */}
-      {footprint.dailyDistance.length > 0 && (
-        <section>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Route className="h-4 w-4 text-blue-500" aria-hidden="true" />
-                年度距离分布
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <HeatmapCalendar
-                data={toHeatmapData(footprint.dailyDistance)}
-                year={selectedYear}
-                metricLabel="距离"
-                valueFormatter={formatDistance}
-                colorScale={heatmapColorScales.blue}
-              />
-            </CardContent>
-          </Card>
-        </section>
-      )}
-
-      {/* ===== Section 5: Footprint Charts ===== */}
-      {(footprint.monthlyDistance.length > 0 || footprint.byTransportMode.length > 0) && (
+      {/* Section 3: Footprint Data */}
+      {(footprint.dailyDistance.length > 0 || footprint.byTransportMode.length > 0) && (
         <section>
           <h2 className="text-sm font-medium text-muted-foreground mb-2">轨迹数据</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {/* Monthly Distance */}
-            {footprint.monthlyDistance.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Route className="h-4 w-4 text-blue-500" aria-hidden="true" />
-                    月度距离
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <BarChart
-                    data={toMonthlyChartData(footprint.monthlyDistance)}
-                    height={160}
-                    color={chartColors.chart1}
-                    valueFormatter={formatDistance}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Transport Mode Distribution */}
-            {footprint.byTransportMode.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Car className="h-4 w-4 text-cyan-500" aria-hidden="true" />
-                    出行方式
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <DonutChart
-                    data={footprint.byTransportMode.map((m) => ({
-                      label: m.modeName,
-                      value: m.totalDistance,
-                    }))}
-                    height={160}
-                    showLegend
-                    valueFormatter={formatDistance}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Transport Mode Bar */}
-            {footprint.byTransportMode.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Route className="h-4 w-4 text-indigo-500" aria-hidden="true" />
-                    各方式距离
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <BarChart
-                    data={footprint.byTransportMode.map((m) => ({
-                      label: m.modeName,
-                      value: m.totalDistance,
-                    }))}
-                    height={160}
-                    horizontal
-                    color={chartColors.chart2}
-                    valueFormatter={formatDistance}
-                  />
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          <YearFootprintPanel data={footprint} year={selectedYear} />
         </section>
       )}
 
-      {/* ===== Section 6: Expense Heatmap ===== */}
-      {pixiu.dailyExpense.length > 0 && (
-        <section>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <TrendingDown className="h-4 w-4 text-red-500" aria-hidden="true" />
-                年度支出分布
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <HeatmapCalendar
-                data={toHeatmapData(pixiu.dailyExpense)}
-                year={selectedYear}
-                metricLabel="支出"
-                valueFormatter={formatCurrency}
-                colorScale={heatmapColorScales.red}
-              />
-            </CardContent>
-          </Card>
-        </section>
-      )}
-
-      {/* ===== Section 7: Finance Charts ===== */}
+      {/* Section 4: Finance Data */}
       <section>
         <h2 className="text-sm font-medium text-muted-foreground mb-2">财务数据</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {/* Monthly Income/Expense Trend */}
-          {(pixiu.monthlyIncome.length > 0 || pixiu.monthlyExpense.length > 0) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <CreditCard className="h-4 w-4 text-blue-500" aria-hidden="true" />
-                  月度收支
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <LineChart
-                  series={[
-                    ...(pixiu.monthlyIncome.length > 0
-                      ? [{ data: toMonthlyChartData(pixiu.monthlyIncome), color: chartColors.chart1, name: "收入" }]
-                      : []),
-                    ...(pixiu.monthlyExpense.length > 0
-                      ? [{ data: toMonthlyChartData(pixiu.monthlyExpense), color: chartColors.chart2, name: "支出" }]
-                      : []),
-                  ]}
-                  height={160}
-                  valueFormatter={formatCurrency}
-                  showDots
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Monthly Expense Bar */}
-          {pixiu.monthlyExpense.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-indigo-500" aria-hidden="true" />
-                  月度支出
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <BarChart
-                  data={toMonthlyChartData(pixiu.monthlyExpense)}
-                  height={160}
-                  color={chartColors.chart2}
-                  valueFormatter={formatCurrency}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Expense by Category */}
-          {pixiu.expenseByCategory.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <ArrowDownCircle className="h-4 w-4 text-red-500" aria-hidden="true" />
-                  支出分类
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <DonutChart
-                  data={pixiu.expenseByCategory.slice(0, 8).map((c) => ({
-                    label: c.category,
-                    value: c.amount,
-                  }))}
-                  height={160}
-                  showLegend
-                  valueFormatter={formatCurrency}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Income by Category */}
-          {pixiu.incomeByCategory.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <ArrowUpCircle className="h-4 w-4 text-green-500" aria-hidden="true" />
-                  收入分类
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <DonutChart
-                  data={pixiu.incomeByCategory.map((c) => ({
-                    label: c.category,
-                    value: c.amount,
-                  }))}
-                  height={160}
-                  showLegend
-                  valueFormatter={formatCurrency}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Expense Category Bar */}
-          {pixiu.expenseByCategory.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <TrendingDown className="h-4 w-4 text-red-500" aria-hidden="true" />
-                  分类支出明细
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <BarChart
-                  data={pixiu.expenseByCategory.slice(0, 8).map((c) => ({
-                    label: c.category,
-                    value: c.amount,
-                  }))}
-                  height={160}
-                  horizontal
-                  color={chartColors.chart3}
-                  valueFormatter={formatCurrency}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Top Expense Months */}
-          {pixiu.topExpenseMonths.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <TrendingDown className="h-4 w-4 text-red-500" aria-hidden="true" />
-                  支出最高月份
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-1.5">
-                  {pixiu.topExpenseMonths.slice(0, 5).map((month, index) => (
-                    <div
-                      key={month.month}
-                      className="flex items-center justify-between py-1.5 px-2 rounded-md bg-muted/50"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-muted-foreground w-4 tabular-nums">
-                          {index + 1}
-                        </span>
-                        <span className="text-sm font-medium">{month.month}</span>
-                      </div>
-                      <p className="text-red-600 font-medium tabular-nums text-sm">
-                        {formatCurrency(month.amount)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        <YearPixiuPanel data={pixiu} year={selectedYear} />
       </section>
     </div>
   );
@@ -678,7 +232,6 @@ export function YearPage() {
   return (
     <ScrollArea className="h-[calc(100vh-57px)]">
       <div className="p-4 space-y-4">
-        {/* Year Navigation */}
         <YearNavigation
           selectedYear={selectedYear}
           onPrevYear={goPrevYear}
@@ -687,13 +240,8 @@ export function YearPage() {
           onToggleCalendar={toggleCalendar}
         />
 
-        {/* Loading state */}
         {loading && <LoadingSkeleton />}
-
-        {/* Error state */}
         {error && <ErrorDisplay message={error} />}
-
-        {/* Main content */}
         {!loading && !error && data && <YearContent />}
       </div>
     </ScrollArea>

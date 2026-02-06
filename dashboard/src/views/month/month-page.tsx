@@ -3,14 +3,13 @@
 import { useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useMonthStore } from "@/viewmodels/month-store";
 import { MonthNavigation } from "./month-navigation";
+import { MonthHealthPanel } from "./month-health-panel";
+import { MonthFootprintPanel } from "./month-footprint-panel";
+import { MonthPixiuPanel } from "./month-pixiu-panel";
 import { StatCard, StatGrid } from "@/components/charts/stat-card";
-import { LineChart } from "@/components/charts/line-chart";
-import { BarChart } from "@/components/charts/bar-chart";
-import { DonutChart } from "@/components/charts/pie-chart";
-import { chartColors } from "@/lib/chart-colors";
 import {
   Footprints,
   Heart,
@@ -20,11 +19,6 @@ import {
   Flame,
   Activity,
   Dumbbell,
-  Car,
-  CreditCard,
-  ArrowDownCircle,
-  ArrowUpCircle,
-  TrendingDown,
 } from "lucide-react";
 
 function LoadingSkeleton() {
@@ -106,23 +100,13 @@ const formatDuration = (minutes: number): string => {
   return mins > 0 ? `${hours}小时${mins}分` : `${hours}小时`;
 };
 
-/** Convert DailyDataPoint to chart format */
-const toChartData = (
-  data: { date: string; value: number }[]
-): { label: string; value: number }[] => {
-  return data.map((d) => ({
-    label: d.date.split("-")[2],
-    value: d.value,
-  }));
-};
-
 function MonthContent() {
   const { data } = useMonthStore();
 
   if (!data) return null;
 
   const { summary, health, footprint, pixiu } = data;
-  const { steps, heartRate, sleep, activity, workouts } = health;
+  const { steps, heartRate, activity, workouts } = health;
 
   return (
     <div className="space-y-6">
@@ -196,326 +180,21 @@ function MonthContent() {
       {/* ===== Section 2: Health Charts ===== */}
       <section>
         <h2 className="text-sm font-medium text-muted-foreground mb-2">健康数据</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {/* Daily Steps */}
-          {steps && steps.dailySteps.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Footprints className="h-4 w-4 text-green-500" aria-hidden="true" />
-                  每日步数
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <LineChart
-                  data={toChartData(steps.dailySteps)}
-                  height={160}
-                  color={chartColors.chart1}
-                  valueFormatter={formatNumber}
-                  referenceLine={steps.avgSteps}
-                  referenceLineLabel="平均"
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Daily Heart Rate */}
-          {heartRate && heartRate.dailyAvg.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Heart className="h-4 w-4 text-red-500" aria-hidden="true" />
-                  每日心率
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <LineChart
-                  series={[
-                    { data: toChartData(heartRate.dailyAvg), color: chartColors.chart1, name: "平均" },
-                    { data: toChartData(heartRate.dailyResting), color: chartColors.chart2, name: "静息" },
-                  ]}
-                  height={160}
-                  valueFormatter={(v) => `${Math.round(v)} bpm`}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Daily Sleep */}
-          {sleep && sleep.dailyDuration.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Moon className="h-4 w-4 text-indigo-500" aria-hidden="true" />
-                  每日睡眠
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <BarChart
-                  data={toChartData(sleep.dailyDuration)}
-                  height={160}
-                  color={chartColors.chart3}
-                  valueFormatter={(v) => `${v.toFixed(1)}h`}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Daily Active Energy */}
-          {activity && activity.dailyActiveEnergy.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Flame className="h-4 w-4 text-orange-500" aria-hidden="true" />
-                  每日活动能量
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <LineChart
-                  data={toChartData(activity.dailyActiveEnergy)}
-                  height={160}
-                  color={chartColors.chart4}
-                  valueFormatter={(v) => `${Math.round(v)} kcal`}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Workout Types */}
-          {workouts && workouts.byType.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Dumbbell className="h-4 w-4 text-purple-500" aria-hidden="true" />
-                  锻炼类型
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <BarChart
-                  data={workouts.byType.slice(0, 6).map((w) => ({
-                    label: w.typeName,
-                    value: w.count,
-                  }))}
-                  height={160}
-                  horizontal
-                  color={chartColors.chart5}
-                  valueFormatter={(v) => `${v}次`}
-                />
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        <MonthHealthPanel data={health} />
       </section>
 
       {/* ===== Section 3: Footprint Charts ===== */}
       {(footprint.dailyDistance.length > 0 || footprint.byTransportMode.length > 0) && (
         <section>
           <h2 className="text-sm font-medium text-muted-foreground mb-2">轨迹数据</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {/* Daily Distance */}
-            {footprint.dailyDistance.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Route className="h-4 w-4 text-blue-500" aria-hidden="true" />
-                    每日距离
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <LineChart
-                    data={toChartData(footprint.dailyDistance)}
-                    height={160}
-                    color={chartColors.chart1}
-                    valueFormatter={formatDistance}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Transport Mode Distribution */}
-            {footprint.byTransportMode.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Car className="h-4 w-4 text-cyan-500" aria-hidden="true" />
-                    出行方式
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <DonutChart
-                    data={footprint.byTransportMode.map((m) => ({
-                      label: m.modeName,
-                      value: m.totalDistance,
-                    }))}
-                    height={160}
-                    showLegend
-                    valueFormatter={formatDistance}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Transport Mode Bar */}
-            {footprint.byTransportMode.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Route className="h-4 w-4 text-indigo-500" aria-hidden="true" />
-                    各方式距离
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <BarChart
-                    data={footprint.byTransportMode.map((m) => ({
-                      label: m.modeName,
-                      value: m.totalDistance,
-                    }))}
-                    height={160}
-                    horizontal
-                    color={chartColors.chart2}
-                    valueFormatter={formatDistance}
-                  />
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          <MonthFootprintPanel data={footprint} />
         </section>
       )}
 
       {/* ===== Section 4: Finance Charts ===== */}
       <section>
         <h2 className="text-sm font-medium text-muted-foreground mb-2">财务数据</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {/* Daily Income/Expense Trend */}
-          {(pixiu.dailyIncome.length > 0 || pixiu.dailyExpense.length > 0) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <CreditCard className="h-4 w-4 text-blue-500" aria-hidden="true" />
-                  每日收支
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <LineChart
-                  series={[
-                    ...(pixiu.dailyIncome.length > 0
-                      ? [{ data: toChartData(pixiu.dailyIncome), color: chartColors.chart1, name: "收入" }]
-                      : []),
-                    ...(pixiu.dailyExpense.length > 0
-                      ? [{ data: toChartData(pixiu.dailyExpense), color: chartColors.chart2, name: "支出" }]
-                      : []),
-                  ]}
-                  height={160}
-                  valueFormatter={formatCurrency}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Expense by Category */}
-          {pixiu.expenseByCategory.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <ArrowDownCircle className="h-4 w-4 text-red-500" aria-hidden="true" />
-                  支出分类
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <DonutChart
-                  data={pixiu.expenseByCategory.slice(0, 8).map((c) => ({
-                    label: c.category,
-                    value: c.amount,
-                  }))}
-                  height={160}
-                  showLegend
-                  valueFormatter={formatCurrency}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Income by Category */}
-          {pixiu.incomeByCategory.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <ArrowUpCircle className="h-4 w-4 text-green-500" aria-hidden="true" />
-                  收入分类
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <DonutChart
-                  data={pixiu.incomeByCategory.map((c) => ({
-                    label: c.category,
-                    value: c.amount,
-                  }))}
-                  height={160}
-                  showLegend
-                  valueFormatter={formatCurrency}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Expense Category Bar */}
-          {pixiu.expenseByCategory.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <TrendingDown className="h-4 w-4 text-red-500" aria-hidden="true" />
-                  分类支出明细
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <BarChart
-                  data={pixiu.expenseByCategory.slice(0, 8).map((c) => ({
-                    label: c.category,
-                    value: c.amount,
-                  }))}
-                  height={160}
-                  horizontal
-                  color={chartColors.chart3}
-                  valueFormatter={formatCurrency}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Top Expenses List */}
-          {pixiu.topExpenses.length > 0 && (
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <TrendingDown className="h-4 w-4 text-red-500" aria-hidden="true" />
-                  最大支出
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {pixiu.topExpenses.slice(0, 6).map((expense, index) => (
-                    <div
-                      key={`${expense.date}-${index}`}
-                      className="flex items-center justify-between py-1.5 px-2 rounded-md bg-muted/50"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {expense.note || expense.category}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {expense.date} · {expense.category}
-                        </p>
-                      </div>
-                      <p className="text-red-600 font-medium tabular-nums ml-3 text-sm">
-                        {formatCurrency(expense.amount)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        <MonthPixiuPanel data={pixiu} />
       </section>
     </div>
   );
