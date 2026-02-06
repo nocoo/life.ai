@@ -5,24 +5,22 @@ import { StatCard, StatGrid } from "@/components/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
 import { DonutChart } from "@/components/charts/pie-chart";
-import { chartColors } from "@/lib/chart-colors";
 import type { MonthPixiuData } from "@/models/month-view";
 import {
   TrendingUp,
   TrendingDown,
   Wallet,
   Receipt,
-  CreditCard,
   PiggyBank,
   ArrowUpCircle,
   ArrowDownCircle,
+  Calendar,
 } from "lucide-react";
 
 export interface MonthPixiuPanelProps {
   data: MonthPixiuData;
 }
 
-/** Format currency */
 const formatCurrency = (value: number): string => {
   const absValue = Math.abs(value);
   const prefix = value < 0 ? "-" : "";
@@ -32,7 +30,6 @@ const formatCurrency = (value: number): string => {
   return `${prefix}¥${absValue.toFixed(2)}`;
 };
 
-/** Format currency compact */
 const formatCurrencyCompact = (value: number): string => {
   const absValue = Math.abs(value);
   const prefix = value < 0 ? "-" : "";
@@ -42,14 +39,41 @@ const formatCurrencyCompact = (value: number): string => {
   return `${prefix}¥${absValue.toFixed(0)}`;
 };
 
-/** Convert DailyDataPoint to chart format */
-const toChartData = (
+const toDailyChartData = (
   data: { date: string; value: number }[]
 ): { label: string; value: number }[] => {
   return data.map((d) => ({
-    label: d.date.split("-")[2], // Extract day from YYYY-MM-DD
+    label: d.date.split("-")[2],
     value: d.value,
   }));
+};
+
+const aggregateCategoryData = (
+  data: { category: string; amount: number }[],
+  topN: number = 4
+): { label: string; value: number }[] => {
+  if (data.length <= topN) {
+    return data
+      .slice()
+      .sort((a, b) => b.amount - a.amount)
+      .map((c) => ({ label: c.category, value: c.amount }));
+  }
+
+  const sorted = data.slice().sort((a, b) => b.amount - a.amount);
+  const top = sorted.slice(0, topN);
+  const rest = sorted.slice(topN);
+  const othersTotal = rest.reduce((sum, c) => sum + c.amount, 0);
+
+  return [
+    ...top.map((c) => ({ label: c.category, value: c.amount })),
+    { label: "其他", value: othersTotal },
+  ];
+};
+
+const COLORS = {
+  income: "oklch(0.723 0.219 142.136)",
+  expense: "oklch(0.577 0.245 27.325)",
+  net: "oklch(0.623 0.214 259.815)",
 };
 
 export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
@@ -65,26 +89,37 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
     byAccount,
     dailyIncome,
     dailyExpense,
+    dailyNet,
     topExpenses,
   } = data;
 
   const isPositiveNet = totalNet >= 0;
 
+  const incomeByAccountData = byAccount
+    .filter((a) => a.income > 0)
+    .sort((a, b) => b.income - a.income)
+    .slice(0, 6)
+    .map((a) => ({ label: a.account, value: a.income }));
+
+  const expenseByAccountData = byAccount
+    .filter((a) => a.expense > 0)
+    .sort((a, b) => b.expense - a.expense)
+    .slice(0, 6)
+    .map((a) => ({ label: a.account, value: a.expense }));
+
   return (
     <div className="space-y-4">
-      {/* Summary Stats Grid */}
+      {/* A. Summary - Core Metrics */}
       <StatGrid columns={4}>
         <StatCard
           title="总收入"
           value={formatCurrency(totalIncome)}
-          subtitle={`日均 ${formatCurrencyCompact(avgDailyIncome)}`}
           icon={TrendingUp}
           iconColor="text-green-500"
         />
         <StatCard
           title="总支出"
           value={formatCurrency(totalExpense)}
-          subtitle={`日均 ${formatCurrencyCompact(avgDailyExpense)}`}
           icon={TrendingDown}
           iconColor="text-red-500"
         />
@@ -97,181 +132,161 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
         <StatCard
           title="交易笔数"
           value={transactionCount}
-          subtitle="本月交易"
           icon={Receipt}
           iconColor="text-blue-500"
         />
       </StatGrid>
 
-      {/* Charts Row */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Daily Income/Expense Trend */}
-        {(dailyIncome.length > 0 || dailyExpense.length > 0) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-blue-500" aria-hidden="true" />
-                每日收支趋势
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <LineChart
-                series={[
-                  ...(dailyIncome.length > 0
-                    ? [
-                        {
-                          data: toChartData(dailyIncome),
-                          color: chartColors.chart1,
-                          name: "收入",
-                        },
-                      ]
-                    : []),
-                  ...(dailyExpense.length > 0
-                    ? [
-                        {
-                          data: toChartData(dailyExpense),
-                          color: chartColors.chart2,
-                          name: "支出",
-                        },
-                      ]
-                    : []),
-                ]}
-                height={180}
-                valueFormatter={formatCurrencyCompact}
-              />
-            </CardContent>
-          </Card>
-        )}
+      {/* A. Summary - Daily Averages (symmetric) */}
+      <StatGrid columns={2}>
+        <StatCard
+          title="日均收入"
+          value={formatCurrency(avgDailyIncome)}
+          icon={ArrowUpCircle}
+          iconColor="text-green-500"
+        />
+        <StatCard
+          title="日均支出"
+          value={formatCurrency(avgDailyExpense)}
+          icon={ArrowDownCircle}
+          iconColor="text-red-500"
+        />
+      </StatGrid>
 
-        {/* Expense by Category */}
-        {expenseByCategory.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <ArrowDownCircle className="h-4 w-4 text-red-500" aria-hidden="true" />
-                支出分类
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DonutChart
-                data={expenseByCategory.map((c) => ({
-                  label: c.category,
-                  value: c.amount,
-                }))}
-                height={180}
-                showLegend
-                valueFormatter={formatCurrencyCompact}
-              />
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Second Row Charts */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Income by Category */}
-        {incomeByCategory.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <ArrowUpCircle className="h-4 w-4 text-green-500" aria-hidden="true" />
-                收入分类
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DonutChart
-                data={incomeByCategory.map((c) => ({
-                  label: c.category,
-                  value: c.amount,
-                }))}
-                height={180}
-                showLegend
-                valueFormatter={formatCurrencyCompact}
-              />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Expense by Category Bar Chart */}
-        {expenseByCategory.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Receipt className="h-4 w-4 text-purple-500" aria-hidden="true" />
-                分类支出明细
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <BarChart
-                data={expenseByCategory.slice(0, 8).map((c) => ({
-                  label: c.category,
-                  value: c.amount,
-                }))}
-                height={180}
-                horizontal
-                color={chartColors.chart3}
-                valueFormatter={formatCurrencyCompact}
-              />
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Account Breakdown */}
-      {byAccount.length > 0 && (
+      {/* B. Trends - Daily Income/Expense/Net */}
+      {(dailyIncome.length > 0 || dailyExpense.length > 0) && (
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-cyan-500" aria-hidden="true" />
-              账户收支
+              <Calendar className="h-4 w-4 text-blue-500" aria-hidden="true" />
+              每日收支趋势
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {byAccount.map((account) => (
-                <div
-                  key={account.account}
-                  className="rounded-lg border p-3 space-y-1.5"
-                >
-                  <p className="text-sm font-medium truncate">{account.account}</p>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <p className="text-muted-foreground">收入</p>
-                      <p className="text-green-600 font-medium tabular-nums">
-                        {formatCurrencyCompact(account.income)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">支出</p>
-                      <p className="text-red-600 font-medium tabular-nums">
-                        {formatCurrencyCompact(account.expense)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="pt-1.5 border-t">
-                    <p className="text-muted-foreground text-[10px]">净额</p>
-                    <p
-                      className={`text-sm font-medium tabular-nums ${
-                        account.net >= 0 ? "text-emerald-600" : "text-orange-600"
-                      }`}
-                    >
-                      {formatCurrencyCompact(account.net)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <LineChart
+              series={[
+                ...(dailyIncome.length > 0
+                  ? [{ data: toDailyChartData(dailyIncome), color: COLORS.income, name: "收入" }]
+                  : []),
+                ...(dailyExpense.length > 0
+                  ? [{ data: toDailyChartData(dailyExpense), color: COLORS.expense, name: "支出" }]
+                  : []),
+                ...(dailyNet.length > 0
+                  ? [{ data: toDailyChartData(dailyNet), color: COLORS.net, name: "净收支" }]
+                  : []),
+              ]}
+              height={200}
+              valueFormatter={formatCurrencyCompact}
+            />
           </CardContent>
         </Card>
       )}
 
-      {/* Top Expenses */}
+      {/* C. Breakdown - Category Distribution (symmetric: left=income, right=expense) */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <ArrowUpCircle className="h-4 w-4 text-green-500" aria-hidden="true" />
+              收入 | 分类占比
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {incomeByCategory.length > 0 ? (
+              <DonutChart
+                data={aggregateCategoryData(incomeByCategory)}
+                height={180}
+                showLegend
+                valueFormatter={formatCurrencyCompact}
+              />
+            ) : (
+              <div className="h-[180px] flex items-center justify-center text-sm text-muted-foreground">
+                暂无收入数据
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <ArrowDownCircle className="h-4 w-4 text-red-500" aria-hidden="true" />
+              支出 | 分类占比
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {expenseByCategory.length > 0 ? (
+              <DonutChart
+                data={aggregateCategoryData(expenseByCategory)}
+                height={180}
+                showLegend
+                valueFormatter={formatCurrencyCompact}
+              />
+            ) : (
+              <div className="h-[180px] flex items-center justify-center text-sm text-muted-foreground">
+                暂无支出数据
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* C. Breakdown - Account Distribution (symmetric: left=income, right=expense) */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <ArrowUpCircle className="h-4 w-4 text-green-500" aria-hidden="true" />
+              收入 | 按账户
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {incomeByAccountData.length > 0 ? (
+              <BarChart
+                data={incomeByAccountData}
+                height={180}
+                horizontal
+                color={COLORS.income}
+                valueFormatter={formatCurrencyCompact}
+              />
+            ) : (
+              <div className="h-[180px] flex items-center justify-center text-sm text-muted-foreground">
+                暂无收入数据
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <ArrowDownCircle className="h-4 w-4 text-red-500" aria-hidden="true" />
+              支出 | 按账户
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {expenseByAccountData.length > 0 ? (
+              <BarChart
+                data={expenseByAccountData}
+                height={180}
+                horizontal
+                color={COLORS.expense}
+                valueFormatter={formatCurrencyCompact}
+              />
+            ) : (
+              <div className="h-[180px] flex items-center justify-center text-sm text-muted-foreground">
+                暂无支出数据
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* D. Details - Top Expenses */}
       {topExpenses.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <TrendingDown className="h-4 w-4 text-red-500" aria-hidden="true" />
-              最大支出
+              大额支出
             </CardTitle>
           </CardHeader>
           <CardContent>
