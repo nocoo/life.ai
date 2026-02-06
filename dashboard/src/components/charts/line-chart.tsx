@@ -1,5 +1,3 @@
-"use client";
-
 import {
   LineChart as RechartsLineChart,
   Line,
@@ -97,7 +95,7 @@ export function LineChart({
 
   return (
     <div className={cn("w-full", className)} style={{ height }}>
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
         <RechartsLineChart
           data={chartData}
           margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
