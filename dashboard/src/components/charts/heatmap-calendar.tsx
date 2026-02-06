@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -36,32 +34,32 @@ export interface HeatmapCalendarProps {
 /** Predefined color scale presets using CSS variables */
 export const heatmapColorScales = {
   green: [
-    "oklch(var(--muted))",
-    "oklch(var(--heatmap-green-1))",
-    "oklch(var(--heatmap-green-2))",
-    "oklch(var(--heatmap-green-3))",
-    "oklch(var(--heatmap-green-4))",
+    "var(--muted)",
+    "var(--heatmap-green-1)",
+    "var(--heatmap-green-2)",
+    "var(--heatmap-green-3)",
+    "var(--heatmap-green-4)",
   ],
   red: [
-    "oklch(var(--muted))",
-    "oklch(var(--heatmap-red-1))",
-    "oklch(var(--heatmap-red-2))",
-    "oklch(var(--heatmap-red-3))",
-    "oklch(var(--heatmap-red-4))",
+    "var(--muted)",
+    "var(--heatmap-red-1)",
+    "var(--heatmap-red-2)",
+    "var(--heatmap-red-3)",
+    "var(--heatmap-red-4)",
   ],
   blue: [
-    "oklch(var(--muted))",
-    "oklch(var(--heatmap-blue-1))",
-    "oklch(var(--heatmap-blue-2))",
-    "oklch(var(--heatmap-blue-3))",
-    "oklch(var(--heatmap-blue-4))",
+    "var(--muted)",
+    "var(--heatmap-blue-1)",
+    "var(--heatmap-blue-2)",
+    "var(--heatmap-blue-3)",
+    "var(--heatmap-blue-4)",
   ],
   orange: [
-    "oklch(var(--muted))",
-    "oklch(var(--heatmap-orange-1))",
-    "oklch(var(--heatmap-orange-2))",
-    "oklch(var(--heatmap-orange-3))",
-    "oklch(var(--heatmap-orange-4))",
+    "var(--muted)",
+    "var(--heatmap-orange-1)",
+    "var(--heatmap-orange-2)",
+    "var(--heatmap-orange-3)",
+    "var(--heatmap-orange-4)",
   ],
 } as const;
 
@@ -183,7 +181,7 @@ export function HeatmapCalendar({
         <div className="inline-block">
           {/* Month labels */}
           <div
-            className="flex text-xs text-muted-foreground mb-1"
+            className="relative h-4 text-xs text-muted-foreground mb-1"
             style={{ marginLeft: labelWidth }}
           >
             {monthLabels.map((label, i) => (
@@ -191,7 +189,7 @@ export function HeatmapCalendar({
                 key={i}
                 className="absolute"
                 style={{
-                  left: labelWidth + label.weekIndex * (cellSize + cellGap),
+                  left: label.weekIndex * (cellSize + cellGap),
                 }}
               >
                 {label.month}
