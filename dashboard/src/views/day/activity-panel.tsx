@@ -146,42 +146,46 @@ export function ActivityPanel({
       {/* Workouts Card */}
       {workouts.length > 0 && (
         <Card className="min-w-0 overflow-hidden">
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Dumbbell className="h-4 w-4 text-green-500" aria-hidden="true" />
+              <Dumbbell className="h-4 w-4 text-green-500" />
               运动
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 px-3 pb-3 pt-0">
+          <CardContent className="space-y-3">
             {workouts.map((workout, i) => (
               <div key={workout.id}>
-                {i > 0 && <Separator className="my-2" />}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium text-sm truncate">{workout.typeName}</span>
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 flex-shrink-0 tabular-nums">
+                {i > 0 && <Separator className="my-3" />}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{workout.typeName}</span>
+                    <Badge variant="secondary" className="text-xs">
                       {formatTime(workout.start)} - {formatTime(workout.end)}
                     </Badge>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="grid grid-cols-3 gap-2 text-center text-sm">
                     <div>
-                      <p className="text-[10px] text-muted-foreground">时长</p>
-                      <p className="font-medium tabular-nums">
+                      <p className="text-xs text-muted-foreground">时长</p>
+                      <p className="font-medium">
                         {formatDuration(workout.duration)}
                       </p>
                     </div>
                     {workout.distance && (
                       <div>
-                        <p className="text-[10px] text-muted-foreground">距离</p>
-                        <p className="font-medium tabular-nums">
+                        <p className="text-xs text-muted-foreground">
+                          距离
+                        </p>
+                        <p className="font-medium">
                           {formatDistance(workout.distance)}
                         </p>
                       </div>
                     )}
                     {workout.calories && (
                       <div>
-                        <p className="text-[10px] text-muted-foreground">消耗</p>
-                        <p className="font-medium tabular-nums">{workout.calories} 千卡</p>
+                        <p className="text-xs text-muted-foreground">
+                          消耗
+                        </p>
+                        <p className="font-medium">{workout.calories} 千卡</p>
                       </div>
                     )}
                   </div>
@@ -195,25 +199,25 @@ export function ActivityPanel({
       {/* Locations Card */}
       {footprint.locations.length > 0 && (
         <Card className="min-w-0 overflow-hidden">
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <MapPin className="h-4 w-4 text-blue-500" aria-hidden="true" />
+              <MapPin className="h-4 w-4 text-blue-500" />
               地点
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-1.5 px-3 pb-3 pt-0">
+          <CardContent className="space-y-2">
             {footprint.locations
               .filter((loc) => loc.name !== "Commute")
               .map((loc) => (
                 <div
                   key={loc.id}
-                  className="flex items-center justify-between text-xs gap-2"
+                  className="flex items-center justify-between text-sm gap-2"
                 >
-                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                    <div className="h-1.5 w-1.5 rounded-full bg-blue-500 flex-shrink-0" />
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0" />
                     <span className="truncate">{loc.name}</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground whitespace-nowrap flex-shrink-0 tabular-nums">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
                     {loc.startTime} - {loc.endTime}
                   </span>
                 </div>
@@ -225,16 +229,16 @@ export function ActivityPanel({
       {/* Track Summary Card */}
       {footprint.summary && (
         <Card className="min-w-0 overflow-hidden">
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Route className="h-4 w-4 text-cyan-500" aria-hidden="true" />
+              <Route className="h-4 w-4 text-cyan-500" />
               移动
-              <span className="ml-auto text-base font-semibold text-cyan-500 tabular-nums">
+              <span className="ml-auto text-base font-semibold text-cyan-500">
                 {formatDistance(footprint.summary.totalDistance)}
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 px-3 pb-3 pt-0">
+          <CardContent className="space-y-3">
             {/* Bar Chart - Speed distribution from track points */}
             {(() => {
               // Group track points by hour and calculate average speed
@@ -253,7 +257,7 @@ export function ActivityPanel({
               if (hourlySpeed.size === 0) {
                 // No speed data, show placeholder
                 return (
-                  <div className="flex h-5 w-full items-end gap-px">
+                  <div className="flex h-6 w-full items-end gap-px">
                     <div className="flex-1 rounded-sm bg-muted h-full" />
                   </div>
                 );
@@ -275,7 +279,7 @@ export function ActivityPanel({
               const maxSpeed = Math.max(...bars.map((b) => b.avgSpeed));
 
               return (
-                <div className="flex h-5 w-full items-end gap-px">
+                <div className="flex h-6 w-full items-end gap-px">
                   {bars.map((bar, i) => {
                     const height = maxSpeed > 0 ? (bar.avgSpeed / maxSpeed) * 100 : 0;
                     return (
@@ -292,18 +296,18 @@ export function ActivityPanel({
             })()}
 
             {/* Stats Row */}
-            <div className="grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="grid grid-cols-3 gap-2 text-center text-sm">
               <div>
-                <p className="text-[10px] text-muted-foreground">距离</p>
-                <p className="font-medium tabular-nums">{formatDistance(footprint.summary.totalDistance)}</p>
+                <p className="text-xs text-muted-foreground">距离</p>
+                <p className="font-medium">{formatDistance(footprint.summary.totalDistance)}</p>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground">速度</p>
-                <p className="font-medium tabular-nums">{(footprint.summary.avgSpeed * 3.6).toFixed(1)} km/h</p>
+                <p className="text-xs text-muted-foreground">速度</p>
+                <p className="font-medium">{(footprint.summary.avgSpeed * 3.6).toFixed(1)} km/h</p>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground">轨迹点</p>
-                <p className="font-medium tabular-nums">{footprint.summary.pointCount.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">轨迹点</p>
+                <p className="font-medium">{footprint.summary.pointCount.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -313,16 +317,16 @@ export function ActivityPanel({
       {/* Transactions Card */}
       {pixiu.transactions.length > 0 && (
         <Card className="min-w-0 overflow-hidden">
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Wallet className="h-4 w-4 text-green-500" aria-hidden="true" />
+              <Wallet className="h-4 w-4 text-green-500" />
               交易
-              <span className="ml-auto text-base font-semibold text-green-500 tabular-nums">
+              <span className="ml-auto text-base font-semibold text-green-500">
                 ¥{pixiu.summary?.expense.toFixed(0) ?? 0}
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 px-3 pb-3 pt-0">
+          <CardContent className="space-y-3">
             {/* Bar Chart - Category breakdown as horizontal segments */}
             {(() => {
               const categories = pixiu.expenseByCategory.slice(0, 6);
@@ -330,7 +334,7 @@ export function ActivityPanel({
               
               if (categories.length === 0 || totalExpense === 0) {
                 return (
-                  <div className="flex h-5 w-full items-end gap-px">
+                  <div className="flex h-6 w-full items-end gap-px">
                     <div className="flex-1 rounded-sm bg-muted h-full" />
                   </div>
                 );
@@ -347,7 +351,7 @@ export function ActivityPanel({
               ];
 
               return (
-                <div className="flex h-5 w-full gap-px rounded-sm overflow-hidden">
+                <div className="flex h-6 w-full gap-px rounded-sm overflow-hidden">
                   {categories.map((cat, i) => {
                     const width = (cat.amount / totalExpense) * 100;
                     return (
@@ -364,43 +368,43 @@ export function ActivityPanel({
             })()}
 
             {/* Stats Row */}
-            <div className="grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="grid grid-cols-3 gap-2 text-center text-sm">
               <div>
-                <p className="text-[10px] text-muted-foreground">支出</p>
-                <p className="font-medium text-green-500 tabular-nums">
+                <p className="text-xs text-muted-foreground">支出</p>
+                <p className="font-medium text-green-500">
                   ¥{pixiu.summary?.expense.toFixed(0) ?? 0}
                 </p>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground">收入</p>
-                <p className="font-medium text-red-500 tabular-nums">
+                <p className="text-xs text-muted-foreground">收入</p>
+                <p className="font-medium text-red-500">
                   ¥{pixiu.summary?.income.toFixed(0) ?? 0}
                 </p>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground">笔数</p>
-                <p className="font-medium tabular-nums">{pixiu.transactions.length}</p>
+                <p className="text-xs text-muted-foreground">笔数</p>
+                <p className="font-medium">{pixiu.transactions.length}</p>
               </div>
             </div>
 
             {/* Transaction List */}
             <Separator />
-            <div className="space-y-1">
+            <div className="space-y-2">
               {pixiu.transactions.map((tx) => (
                 <div
                   key={tx.id}
-                  className="flex items-center justify-between text-xs gap-2"
+                  className="flex items-center justify-between text-sm gap-2"
                 >
                   <div className="flex-1 min-w-0">
                     <span className="truncate">{tx.categoryL2}</span>
                     {tx.note && (
-                      <p className="text-[10px] text-muted-foreground truncate">
+                      <p className="text-xs text-muted-foreground truncate">
                         {tx.note}
                       </p>
                     )}
                   </div>
                   <span
-                    className={`whitespace-nowrap flex-shrink-0 font-medium tabular-nums ${
+                    className={`whitespace-nowrap flex-shrink-0 font-medium ${
                       tx.isIncome ? "text-red-500" : "text-green-500"
                     }`}
                   >

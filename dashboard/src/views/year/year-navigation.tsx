@@ -28,14 +28,14 @@ export function YearNavigation({
   const isCurrent = isCurrentYear(selectedYear);
 
   return (
-    <div className="flex items-center justify-center gap-1">
+    <div className="flex items-center justify-center gap-2">
       {/* Current Year Button */}
       <Button
         variant="outline"
         size="sm"
         onClick={onCurrentYear}
         disabled={isCurrent}
-        className="mr-1 h-8 px-2.5 text-xs"
+        className="mr-2"
       >
         今年
       </Button>
@@ -46,7 +46,6 @@ export function YearNavigation({
         size="icon"
         onClick={onPrevYear}
         aria-label="上一年"
-        className="h-8 w-8"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
@@ -55,11 +54,11 @@ export function YearNavigation({
       <Button
         variant="ghost"
         onClick={onToggleCalendar}
-        className="gap-1.5 text-base font-medium h-8 px-2 tabular-nums"
+        className="gap-2 text-lg font-medium"
       >
         <span>{selectedYear}年</span>
         {onToggleCalendar && (
-          <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
         )}
       </Button>
 
@@ -69,7 +68,6 @@ export function YearNavigation({
         size="icon"
         onClick={onNextYear}
         aria-label="下一年"
-        className="h-8 w-8"
       >
         <ChevronRight className="h-4 w-4" />
       </Button>

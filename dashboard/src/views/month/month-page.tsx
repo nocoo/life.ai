@@ -46,7 +46,7 @@ function LoadingSkeleton() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
           <Card key={i}>
-            <CardHeader className="py-2 px-3">
+            <CardHeader>
               <Skeleton className="h-4 w-28" />
             </CardHeader>
             <CardContent className="px-3 pb-3">
@@ -200,13 +200,13 @@ function MonthContent() {
           {/* Daily Steps */}
           {steps && steps.dailySteps.length > 0 && (
             <Card>
-              <CardHeader className="py-2 px-3">
+              <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Footprints className="h-4 w-4 text-green-500" aria-hidden="true" />
                   每日步数
                 </CardTitle>
               </CardHeader>
-              <CardContent className="px-3 pb-3 pt-0">
+              <CardContent>
                 <LineChart
                   data={toChartData(steps.dailySteps)}
                   height={160}
@@ -222,13 +222,13 @@ function MonthContent() {
           {/* Daily Heart Rate */}
           {heartRate && heartRate.dailyAvg.length > 0 && (
             <Card>
-              <CardHeader className="py-2 px-3">
+              <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Heart className="h-4 w-4 text-red-500" aria-hidden="true" />
                   每日心率
                 </CardTitle>
               </CardHeader>
-              <CardContent className="px-3 pb-3 pt-0">
+              <CardContent>
                 <LineChart
                   series={[
                     { data: toChartData(heartRate.dailyAvg), color: chartColors.chart1, name: "平均" },
@@ -244,13 +244,13 @@ function MonthContent() {
           {/* Daily Sleep */}
           {sleep && sleep.dailyDuration.length > 0 && (
             <Card>
-              <CardHeader className="py-2 px-3">
+              <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Moon className="h-4 w-4 text-indigo-500" aria-hidden="true" />
                   每日睡眠
                 </CardTitle>
               </CardHeader>
-              <CardContent className="px-3 pb-3 pt-0">
+              <CardContent>
                 <BarChart
                   data={toChartData(sleep.dailyDuration)}
                   height={160}
@@ -264,13 +264,13 @@ function MonthContent() {
           {/* Daily Active Energy */}
           {activity && activity.dailyActiveEnergy.length > 0 && (
             <Card>
-              <CardHeader className="py-2 px-3">
+              <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Flame className="h-4 w-4 text-orange-500" aria-hidden="true" />
                   每日活动能量
                 </CardTitle>
               </CardHeader>
-              <CardContent className="px-3 pb-3 pt-0">
+              <CardContent>
                 <LineChart
                   data={toChartData(activity.dailyActiveEnergy)}
                   height={160}
@@ -284,13 +284,13 @@ function MonthContent() {
           {/* Workout Types */}
           {workouts && workouts.byType.length > 0 && (
             <Card>
-              <CardHeader className="py-2 px-3">
+              <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Dumbbell className="h-4 w-4 text-purple-500" aria-hidden="true" />
                   锻炼类型
                 </CardTitle>
               </CardHeader>
-              <CardContent className="px-3 pb-3 pt-0">
+              <CardContent>
                 <BarChart
                   data={workouts.byType.slice(0, 6).map((w) => ({
                     label: w.typeName,
@@ -315,13 +315,13 @@ function MonthContent() {
             {/* Daily Distance */}
             {footprint.dailyDistance.length > 0 && (
               <Card>
-                <CardHeader className="py-2 px-3">
+                <CardHeader>
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
                     <Route className="h-4 w-4 text-blue-500" aria-hidden="true" />
                     每日距离
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-3 pb-3 pt-0">
+                <CardContent>
                   <LineChart
                     data={toChartData(footprint.dailyDistance)}
                     height={160}
@@ -335,13 +335,13 @@ function MonthContent() {
             {/* Transport Mode Distribution */}
             {footprint.byTransportMode.length > 0 && (
               <Card>
-                <CardHeader className="py-2 px-3">
+                <CardHeader>
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
                     <Car className="h-4 w-4 text-cyan-500" aria-hidden="true" />
                     出行方式
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-3 pb-3 pt-0">
+                <CardContent>
                   <DonutChart
                     data={footprint.byTransportMode.map((m) => ({
                       label: m.modeName,
@@ -358,13 +358,13 @@ function MonthContent() {
             {/* Transport Mode Bar */}
             {footprint.byTransportMode.length > 0 && (
               <Card>
-                <CardHeader className="py-2 px-3">
+                <CardHeader>
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
                     <Route className="h-4 w-4 text-indigo-500" aria-hidden="true" />
                     各方式距离
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-3 pb-3 pt-0">
+                <CardContent>
                   <BarChart
                     data={footprint.byTransportMode.map((m) => ({
                       label: m.modeName,
@@ -389,13 +389,13 @@ function MonthContent() {
           {/* Daily Income/Expense Trend */}
           {(pixiu.dailyIncome.length > 0 || pixiu.dailyExpense.length > 0) && (
             <Card>
-              <CardHeader className="py-2 px-3">
+              <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <CreditCard className="h-4 w-4 text-blue-500" aria-hidden="true" />
                   每日收支
                 </CardTitle>
               </CardHeader>
-              <CardContent className="px-3 pb-3 pt-0">
+              <CardContent>
                 <LineChart
                   series={[
                     ...(pixiu.dailyIncome.length > 0
@@ -415,13 +415,13 @@ function MonthContent() {
           {/* Expense by Category */}
           {pixiu.expenseByCategory.length > 0 && (
             <Card>
-              <CardHeader className="py-2 px-3">
+              <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <ArrowDownCircle className="h-4 w-4 text-red-500" aria-hidden="true" />
                   支出分类
                 </CardTitle>
               </CardHeader>
-              <CardContent className="px-3 pb-3 pt-0">
+              <CardContent>
                 <DonutChart
                   data={pixiu.expenseByCategory.slice(0, 8).map((c) => ({
                     label: c.category,
@@ -438,13 +438,13 @@ function MonthContent() {
           {/* Income by Category */}
           {pixiu.incomeByCategory.length > 0 && (
             <Card>
-              <CardHeader className="py-2 px-3">
+              <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <ArrowUpCircle className="h-4 w-4 text-green-500" aria-hidden="true" />
                   收入分类
                 </CardTitle>
               </CardHeader>
-              <CardContent className="px-3 pb-3 pt-0">
+              <CardContent>
                 <DonutChart
                   data={pixiu.incomeByCategory.map((c) => ({
                     label: c.category,
@@ -461,13 +461,13 @@ function MonthContent() {
           {/* Expense Category Bar */}
           {pixiu.expenseByCategory.length > 0 && (
             <Card>
-              <CardHeader className="py-2 px-3">
+              <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <TrendingDown className="h-4 w-4 text-red-500" aria-hidden="true" />
                   分类支出明细
                 </CardTitle>
               </CardHeader>
-              <CardContent className="px-3 pb-3 pt-0">
+              <CardContent>
                 <BarChart
                   data={pixiu.expenseByCategory.slice(0, 8).map((c) => ({
                     label: c.category,
@@ -485,13 +485,13 @@ function MonthContent() {
           {/* Top Expenses List */}
           {pixiu.topExpenses.length > 0 && (
             <Card className="lg:col-span-2">
-              <CardHeader className="py-2 px-3">
+              <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <TrendingDown className="h-4 w-4 text-red-500" aria-hidden="true" />
                   最大支出
                 </CardTitle>
               </CardHeader>
-              <CardContent className="px-3 pb-3 pt-0">
+              <CardContent>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {pixiu.topExpenses.slice(0, 6).map((expense, index) => (
                     <div

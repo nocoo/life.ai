@@ -28,9 +28,9 @@ export function DateCard({ date }: { date: Date }) {
 
   return (
     <Card className="min-w-0 overflow-hidden">
-      <CardContent className="py-1.5 px-3 flex items-center justify-between">
-        <span className="font-medium text-sm">{dateStr}</span>
-        <span className="text-xs text-muted-foreground">{weekday}</span>
+      <CardContent className="py-2 flex items-center justify-between">
+        <span className="font-medium">{dateStr}</span>
+        <span className="text-sm text-muted-foreground">{weekday}</span>
       </CardContent>
     </Card>
   );
@@ -74,58 +74,58 @@ export function WeatherCard({ date, latitude, longitude }: DayInfoCardProps) {
 
   return (
     <Card className="min-w-0 overflow-hidden">
-      <CardContent className="py-1.5 px-3">
+      <CardContent className="py-2">
         {/* Loading state */}
         {loading && (
-          <div className="flex items-center justify-center text-muted-foreground py-1">
-            <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" aria-label="加载中" />
-            <span className="text-xs">加载中…</span>
+          <div className="flex items-center justify-center text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            <span className="text-sm">加载中...</span>
           </div>
         )}
 
         {/* Error state */}
         {error && !loading && (
-          <div className="text-center text-xs text-muted-foreground py-1">
+          <div className="text-center text-sm text-muted-foreground">
             {error}
           </div>
         )}
 
         {/* Weather content - Left/Right layout */}
         {weather && !loading && (
-          <div className="flex gap-2.5 items-center">
+          <div className="flex gap-3 items-center">
             {/* Left: Large weather icon with description */}
             <div className="flex-shrink-0 text-center">
-              <span className="text-4xl" role="img" aria-label={getWeatherDescription(weather.weatherCode)}>{getWeatherIcon(weather.weatherCode)}</span>
-              <p className="text-[10px] text-muted-foreground">{getWeatherDescription(weather.weatherCode)}</p>
+              <span className="text-5xl">{getWeatherIcon(weather.weatherCode)}</span>
+              <p className="text-xs text-muted-foreground">{getWeatherDescription(weather.weatherCode)}</p>
             </div>
 
             {/* Right: Weather details - all right-aligned */}
             <div className="flex-1 min-w-0 text-right">
               {/* Temperature range */}
-              <div className="text-base font-medium tabular-nums">
+              <div className="text-lg font-medium">
                 {Math.round(weather.tempMin)}° ~ {Math.round(weather.tempMax)}°C
               </div>
 
               {/* Row 1: Sunrise & Sunset */}
-              <div className="flex justify-end gap-2.5 text-[10px] text-muted-foreground mt-0.5">
-                <span className="flex items-center gap-0.5 tabular-nums">
-                  <Sunrise className="h-2.5 w-2.5" aria-hidden="true" />
+              <div className="flex justify-end gap-3 text-xs text-muted-foreground mt-1">
+                <span className="flex items-center gap-0.5">
+                  <Sunrise className="h-3 w-3" />
                   {weather.sunrise}
                 </span>
-                <span className="flex items-center gap-0.5 tabular-nums">
-                  <Sunset className="h-2.5 w-2.5" aria-hidden="true" />
+                <span className="flex items-center gap-0.5">
+                  <Sunset className="h-3 w-3" />
                   {weather.sunset}
                 </span>
               </div>
 
               {/* Row 2: Precipitation & Wind */}
-              <div className="flex justify-end gap-2.5 text-[10px] text-muted-foreground mt-0.5">
-                <span className="flex items-center gap-0.5 tabular-nums">
-                  <Droplets className="h-2.5 w-2.5" aria-hidden="true" />
+              <div className="flex justify-end gap-3 text-xs text-muted-foreground mt-0.5">
+                <span className="flex items-center gap-0.5">
+                  <Droplets className="h-3 w-3" />
                   {weather.precipitation.toFixed(1)}mm
                 </span>
-                <span className="flex items-center gap-0.5 tabular-nums">
-                  <Wind className="h-2.5 w-2.5" aria-hidden="true" />
+                <span className="flex items-center gap-0.5">
+                  <Wind className="h-3 w-3" />
                   {Math.round(weather.windSpeedMax)}km/h
                 </span>
               </div>

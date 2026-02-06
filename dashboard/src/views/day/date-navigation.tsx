@@ -25,14 +25,14 @@ export function DateNavigation({
     format(selectedDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
 
   return (
-    <div className="flex items-center justify-center gap-1">
+    <div className="flex items-center justify-center gap-2">
       {/* Today Button */}
       <Button
         variant="outline"
         size="sm"
         onClick={onToday}
         disabled={isToday}
-        className="mr-1 h-8 px-2.5 text-xs"
+        className="mr-2"
       >
         今天
       </Button>
@@ -43,7 +43,6 @@ export function DateNavigation({
         size="icon"
         onClick={onPrevDay}
         aria-label="前一天"
-        className="h-8 w-8"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
@@ -52,11 +51,11 @@ export function DateNavigation({
       <Button
         variant="ghost"
         onClick={onToggleCalendar}
-        className="gap-1.5 text-base font-medium h-8 px-2"
+        className="gap-2 text-lg font-medium"
       >
         <span>{format(selectedDate, "yyyy年M月d日 EEEE", { locale: zhCN })}</span>
         {onToggleCalendar && (
-          <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
         )}
       </Button>
 
@@ -66,7 +65,6 @@ export function DateNavigation({
         size="icon"
         onClick={onNextDay}
         aria-label="后一天"
-        className="h-8 w-8"
       >
         <ChevronRight className="h-4 w-4" />
       </Button>

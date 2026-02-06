@@ -123,13 +123,13 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
         {/* Daily Steps Chart */}
         {steps && steps.dailySteps.length > 0 && (
           <Card>
-            <CardHeader className="py-2 px-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Footprints className="h-4 w-4 text-green-500" aria-hidden="true" />
                 每日步数
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3">
+            <CardContent>
               <LineChart
                 data={toChartData(steps.dailySteps)}
                 height={180}
@@ -145,13 +145,13 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
         {/* Daily Heart Rate Chart */}
         {heartRate && heartRate.dailyAvg.length > 0 && (
           <Card>
-            <CardHeader className="py-2 px-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Heart className="h-4 w-4 text-red-500" aria-hidden="true" />
                 每日心率
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3">
+            <CardContent>
               <LineChart
                 series={[
                   {
@@ -175,13 +175,13 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
         {/* Daily Sleep Chart */}
         {sleep && sleep.dailyDuration.length > 0 && (
           <Card>
-            <CardHeader className="py-2 px-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Moon className="h-4 w-4 text-indigo-500" aria-hidden="true" />
                 每日睡眠
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3">
+            <CardContent>
               <BarChart
                 data={toChartData(sleep.dailyDuration)}
                 height={180}
@@ -195,13 +195,13 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
         {/* Daily Active Energy Chart */}
         {activity && activity.dailyActiveEnergy.length > 0 && (
           <Card>
-            <CardHeader className="py-2 px-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Flame className="h-4 w-4 text-orange-500" aria-hidden="true" />
                 每日活动能量
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3">
+            <CardContent>
               <LineChart
                 data={toChartData(activity.dailyActiveEnergy)}
                 height={180}
@@ -218,13 +218,13 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
       {/* Workout Breakdown */}
       {workouts && workouts.byType.length > 0 && (
         <Card>
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Dumbbell className="h-4 w-4 text-purple-500" aria-hidden="true" />
               锻炼类型分布
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-3 pb-3">
+          <CardContent>
             <BarChart
               data={workouts.byType.map((w) => ({
                 label: w.typeName,

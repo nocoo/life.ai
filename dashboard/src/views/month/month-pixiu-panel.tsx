@@ -108,13 +108,13 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
         {/* Daily Income/Expense Trend */}
         {(dailyIncome.length > 0 || dailyExpense.length > 0) && (
           <Card>
-            <CardHeader className="py-2 px-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <CreditCard className="h-4 w-4 text-blue-500" aria-hidden="true" />
                 每日收支趋势
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3 pt-0">
+            <CardContent>
               <LineChart
                 series={[
                   ...(dailyIncome.length > 0
@@ -146,13 +146,13 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
         {/* Expense by Category */}
         {expenseByCategory.length > 0 && (
           <Card>
-            <CardHeader className="py-2 px-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <ArrowDownCircle className="h-4 w-4 text-red-500" aria-hidden="true" />
                 支出分类
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3 pt-0">
+            <CardContent>
               <DonutChart
                 data={expenseByCategory.map((c) => ({
                   label: c.category,
@@ -172,13 +172,13 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
         {/* Income by Category */}
         {incomeByCategory.length > 0 && (
           <Card>
-            <CardHeader className="py-2 px-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <ArrowUpCircle className="h-4 w-4 text-green-500" aria-hidden="true" />
                 收入分类
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3 pt-0">
+            <CardContent>
               <DonutChart
                 data={incomeByCategory.map((c) => ({
                   label: c.category,
@@ -195,13 +195,13 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
         {/* Expense by Category Bar Chart */}
         {expenseByCategory.length > 0 && (
           <Card>
-            <CardHeader className="py-2 px-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Receipt className="h-4 w-4 text-purple-500" aria-hidden="true" />
                 分类支出明细
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3 pt-0">
+            <CardContent>
               <BarChart
                 data={expenseByCategory.slice(0, 8).map((c) => ({
                   label: c.category,
@@ -220,13 +220,13 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
       {/* Account Breakdown */}
       {byAccount.length > 0 && (
         <Card>
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <CreditCard className="h-4 w-4 text-cyan-500" aria-hidden="true" />
               账户收支
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-3 pb-3 pt-0">
+          <CardContent>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {byAccount.map((account) => (
                 <div
@@ -268,13 +268,13 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
       {/* Top Expenses */}
       {topExpenses.length > 0 && (
         <Card>
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <TrendingDown className="h-4 w-4 text-red-500" aria-hidden="true" />
               最大支出
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-3 pb-3 pt-0">
+          <CardContent>
             <div className="space-y-2">
               {topExpenses.slice(0, 5).map((expense, index) => (
                 <div

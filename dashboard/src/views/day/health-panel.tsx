@@ -97,18 +97,18 @@ export function HealthPanel({ data }: HealthPanelProps) {
       {/* Sleep Card */}
       {data.sleep && (
         <Card className="min-w-0 overflow-hidden">
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Moon className="h-4 w-4 text-indigo-500" aria-hidden="true" />
+              <Moon className="h-4 w-4 text-indigo-500" />
               睡眠
-              <span className="ml-auto text-base font-semibold text-indigo-500 tabular-nums">
+              <span className="ml-auto text-base font-semibold text-indigo-500">
                 {(data.sleep.duration / 60).toFixed(1)}h
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 px-3 pb-3 pt-0">
+          <CardContent className="space-y-3">
             {/* Bar Chart - Vertical bars representing 15-minute slots */}
-            <div className="flex h-5 w-full items-end gap-px">
+            <div className="flex h-6 w-full items-end gap-px">
               {sleepBars.map((bar, i) => (
                 <div
                   key={i}
@@ -119,44 +119,44 @@ export function HealthPanel({ data }: HealthPanelProps) {
             </div>
 
             {/* Row 1: Start time, End time, Efficiency */}
-            <div className="grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="grid grid-cols-3 gap-2 text-center text-sm">
               <div>
-                <p className="text-[10px] text-muted-foreground">入睡</p>
-                <p className="font-medium tabular-nums">{formatTime(data.sleep.start)}</p>
+                <p className="text-xs text-muted-foreground">入睡</p>
+                <p className="font-medium">{formatTime(data.sleep.start)}</p>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground">醒来</p>
-                <p className="font-medium tabular-nums">{formatTime(data.sleep.end)}</p>
+                <p className="text-xs text-muted-foreground">醒来</p>
+                <p className="font-medium">{formatTime(data.sleep.end)}</p>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground">效率</p>
-                <p className="font-medium text-indigo-500 tabular-nums">
+                <p className="text-xs text-muted-foreground">效率</p>
+                <p className="font-medium text-indigo-500">
                   {Math.round(((data.sleep.duration - data.sleep.awakeMinutes) / data.sleep.duration) * 100)}%
                 </p>
               </div>
             </div>
 
             {/* Row 2: Sleep stage durations */}
-            <div className="grid grid-cols-4 gap-1 text-center text-[10px]">
-              <div className="flex flex-col items-center gap-0.5">
-                <div className={`h-1.5 w-1.5 rounded-sm ${SLEEP_STAGE_COLORS.deep}`} />
+            <div className="grid grid-cols-4 gap-1 text-center text-xs">
+              <div className="flex flex-col items-center gap-1">
+                <div className={`h-2 w-2 rounded-sm ${SLEEP_STAGE_COLORS.deep}`} />
                 <span className="text-muted-foreground">{SLEEP_STAGE_LABELS.deep}</span>
-                <span className="font-medium tabular-nums">{data.sleep.deepMinutes}m</span>
+                <span className="font-medium">{data.sleep.deepMinutes}m</span>
               </div>
-              <div className="flex flex-col items-center gap-0.5">
-                <div className={`h-1.5 w-1.5 rounded-sm ${SLEEP_STAGE_COLORS.core}`} />
+              <div className="flex flex-col items-center gap-1">
+                <div className={`h-2 w-2 rounded-sm ${SLEEP_STAGE_COLORS.core}`} />
                 <span className="text-muted-foreground">{SLEEP_STAGE_LABELS.core}</span>
-                <span className="font-medium tabular-nums">{data.sleep.coreMinutes}m</span>
+                <span className="font-medium">{data.sleep.coreMinutes}m</span>
               </div>
-              <div className="flex flex-col items-center gap-0.5">
-                <div className={`h-1.5 w-1.5 rounded-sm ${SLEEP_STAGE_COLORS.rem}`} />
+              <div className="flex flex-col items-center gap-1">
+                <div className={`h-2 w-2 rounded-sm ${SLEEP_STAGE_COLORS.rem}`} />
                 <span className="text-muted-foreground">{SLEEP_STAGE_LABELS.rem}</span>
-                <span className="font-medium tabular-nums">{data.sleep.remMinutes}m</span>
+                <span className="font-medium">{data.sleep.remMinutes}m</span>
               </div>
-              <div className="flex flex-col items-center gap-0.5">
-                <div className={`h-1.5 w-1.5 rounded-sm ${SLEEP_STAGE_COLORS.awake}`} />
+              <div className="flex flex-col items-center gap-1">
+                <div className={`h-2 w-2 rounded-sm ${SLEEP_STAGE_COLORS.awake}`} />
                 <span className="text-muted-foreground">{SLEEP_STAGE_LABELS.awake}</span>
-                <span className="font-medium tabular-nums">{data.sleep.awakeMinutes}m</span>
+                <span className="font-medium">{data.sleep.awakeMinutes}m</span>
               </div>
             </div>
           </CardContent>
@@ -166,21 +166,21 @@ export function HealthPanel({ data }: HealthPanelProps) {
       {/* Heart Rate Card */}
       {data.heartRate && (
         <Card className="min-w-0 overflow-hidden">
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Heart className="h-4 w-4 text-red-500" aria-hidden="true" />
+              <Heart className="h-4 w-4 text-red-500" />
               心率
-              <span className="ml-auto text-base font-semibold text-red-500 tabular-nums">
+              <span className="ml-auto text-base font-semibold text-red-500">
                 {data.heartRate.avg} bpm
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 px-3 pb-3 pt-0">
+          <CardContent className="space-y-3">
             {/* Bar Chart - Vertical bars representing 15-minute slots */}
             {(() => {
               const heartRateBars = getHeartRateBars(data.heartRate!.records);
               return (
-                <div className="flex h-5 w-full items-end gap-px">
+                <div className="flex h-6 w-full items-end gap-px">
                   {heartRateBars.map((bar, i) => (
                     <div
                       key={i}
@@ -194,18 +194,18 @@ export function HealthPanel({ data }: HealthPanelProps) {
             })()}
 
             {/* Row: Min, Avg, Max */}
-            <div className="grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="grid grid-cols-3 gap-2 text-center text-sm">
               <div>
-                <p className="text-[10px] text-muted-foreground">最低</p>
-                <p className="font-medium tabular-nums">{data.heartRate.min}</p>
+                <p className="text-xs text-muted-foreground">最低</p>
+                <p className="font-medium">{data.heartRate.min}</p>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground">平均</p>
-                <p className="font-medium text-red-500 tabular-nums">{data.heartRate.avg}</p>
+                <p className="text-xs text-muted-foreground">平均</p>
+                <p className="font-medium text-red-500">{data.heartRate.avg}</p>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground">最高</p>
-                <p className="font-medium tabular-nums">{data.heartRate.max}</p>
+                <p className="text-xs text-muted-foreground">最高</p>
+                <p className="font-medium">{data.heartRate.max}</p>
               </div>
             </div>
           </CardContent>
@@ -215,21 +215,21 @@ export function HealthPanel({ data }: HealthPanelProps) {
       {/* Steps Card */}
       {data.steps.length > 0 && (
         <Card className="min-w-0 overflow-hidden">
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Footprints className="h-4 w-4 text-green-500" aria-hidden="true" />
+              <Footprints className="h-4 w-4 text-green-500" />
               步数
-              <span className="ml-auto text-base font-semibold text-green-500 tabular-nums">
+              <span className="ml-auto text-base font-semibold text-green-500">
                 {data.totalSteps.toLocaleString()}
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 px-3 pb-3 pt-0">
+          <CardContent className="space-y-3">
             {/* Bar Chart - Vertical bars representing hourly steps */}
             {(() => {
               const maxSteps = Math.max(...data.steps.map((x) => x.count));
               return (
-                <div className="flex h-5 w-full items-end gap-px">
+                <div className="flex h-6 w-full items-end gap-px">
                   {data.steps.map((s, i) => {
                     const height = maxSteps > 0 ? (s.count / maxSteps) * 100 : 0;
                     return (
@@ -246,20 +246,20 @@ export function HealthPanel({ data }: HealthPanelProps) {
             })()}
 
             {/* Stats Row */}
-            <div className="grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="grid grid-cols-3 gap-2 text-center text-sm">
               <div>
-                <p className="text-[10px] text-muted-foreground">总计</p>
-                <p className="font-medium tabular-nums">{data.totalSteps.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">总计</p>
+                <p className="font-medium">{data.totalSteps.toLocaleString()}</p>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground">距离</p>
-                <p className="font-medium tabular-nums">
+                <p className="text-xs text-muted-foreground">距离</p>
+                <p className="font-medium">
                   {data.distance ? `${data.distance.total.toFixed(1)} km` : "-"}
                 </p>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground">楼层</p>
-                <p className="font-medium tabular-nums">{data.flightsClimbed || "-"}</p>
+                <p className="text-xs text-muted-foreground">楼层</p>
+                <p className="font-medium">{data.flightsClimbed || "-"}</p>
               </div>
             </div>
           </CardContent>
@@ -269,23 +269,23 @@ export function HealthPanel({ data }: HealthPanelProps) {
       {/* Water Card */}
       {data.water.length > 0 && (
         <Card className="min-w-0 overflow-hidden">
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Droplets className="h-4 w-4 text-cyan-500" aria-hidden="true" />
+              <Droplets className="h-4 w-4 text-cyan-500" />
               饮水
-              <span className="ml-auto text-base font-semibold text-cyan-500 tabular-nums">
+              <span className="ml-auto text-base font-semibold text-cyan-500">
                 {(data.totalWater / 1000).toFixed(1)}L
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-1.5 px-3 pb-3 pt-0">
+          <CardContent className="space-y-2">
             {data.water.map((w, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between text-xs"
+                className="flex items-center justify-between text-sm"
               >
-                <span className="text-muted-foreground tabular-nums">{w.time}</span>
-                <span className="tabular-nums">{w.amount}ml</span>
+                <span className="text-muted-foreground">{w.time}</span>
+                <span>{w.amount}ml</span>
               </div>
             ))}
           </CardContent>
@@ -295,13 +295,13 @@ export function HealthPanel({ data }: HealthPanelProps) {
       {/* Activity Rings Card */}
       {data.activity && (
         <Card className="min-w-0 overflow-hidden">
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Activity className="h-4 w-4 text-orange-500" aria-hidden="true" />
+              <Activity className="h-4 w-4 text-orange-500" />
               活动圆环
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 px-3 pb-3 pt-0">
+          <CardContent className="space-y-3">
             {/* Progress Bars - 3 horizontal bars for Move/Exercise/Stand */}
             {(() => {
               const moveGoal = data.activity!.activeEnergyGoal ?? 500;
@@ -311,7 +311,7 @@ export function HealthPanel({ data }: HealthPanelProps) {
               const exerciseProgress = Math.min((data.activity!.exerciseMinutes / exerciseGoal) * 100, 100);
               const standProgress = Math.min((data.activity!.standHours / standGoal) * 100, 100);
               return (
-                <div className="flex h-5 w-full gap-1">
+                <div className="flex h-6 w-full gap-1">
                   {/* Move bar */}
                   <div className="flex-1 rounded-sm bg-muted overflow-hidden" title={`活动 ${Math.round(data.activity!.activeEnergy)}/${moveGoal} 千卡`}>
                     <div className="h-full bg-red-500" style={{ width: `${moveProgress}%` }} />
@@ -329,22 +329,22 @@ export function HealthPanel({ data }: HealthPanelProps) {
             })()}
 
             {/* Stats Row */}
-            <div className="grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="grid grid-cols-3 gap-2 text-center text-sm">
               <div>
-                <p className="text-[10px] text-muted-foreground">活动</p>
-                <p className="font-medium text-red-500 tabular-nums">
+                <p className="text-xs text-muted-foreground">活动</p>
+                <p className="font-medium text-red-500">
                   {Math.round(data.activity.activeEnergy)} 千卡
                 </p>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground">运动</p>
-                <p className="font-medium text-green-500 tabular-nums">
+                <p className="text-xs text-muted-foreground">运动</p>
+                <p className="font-medium text-green-500">
                   {data.activity.exerciseMinutes} 分钟
                 </p>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground">站立</p>
-                <p className="font-medium text-cyan-500 tabular-nums">
+                <p className="text-xs text-muted-foreground">站立</p>
+                <p className="font-medium text-cyan-500">
                   {data.activity.standHours} 小时
                 </p>
               </div>

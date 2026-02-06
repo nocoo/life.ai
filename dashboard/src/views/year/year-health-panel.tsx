@@ -141,13 +141,13 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
       {/* Steps Heatmap */}
       {steps && steps.dailySteps.length > 0 && (
         <Card>
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Footprints className="h-4 w-4 text-green-500" aria-hidden="true" />
               年度步数分布
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-3 pb-3">
+          <CardContent>
             <HeatmapCalendar
               data={toHeatmapData(steps.dailySteps)}
               year={year}
@@ -163,13 +163,13 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
         {/* Monthly Steps Chart */}
         {steps && steps.monthlySteps.length > 0 && (
           <Card>
-            <CardHeader className="py-2 px-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Footprints className="h-4 w-4 text-green-500" aria-hidden="true" />
                 月度步数趋势
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3">
+            <CardContent>
               <BarChart
                 data={toMonthlyChartData(steps.monthlySteps)}
                 height={180}
@@ -183,13 +183,13 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
         {/* Monthly Heart Rate Chart */}
         {heartRate && heartRate.monthlyAvg.length > 0 && (
           <Card>
-            <CardHeader className="py-2 px-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Heart className="h-4 w-4 text-red-500" aria-hidden="true" />
                 月度心率趋势
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3">
+            <CardContent>
               <LineChart
                 series={[
                   {
@@ -214,13 +214,13 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
       {/* Activity Heatmap */}
       {activity && activity.dailyActiveEnergy.length > 0 && (
         <Card>
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Flame className="h-4 w-4 text-orange-500" aria-hidden="true" />
               年度活动能量分布
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-3 pb-3">
+          <CardContent>
             <HeatmapCalendar
               data={toHeatmapData(activity.dailyActiveEnergy)}
               year={year}
@@ -237,13 +237,13 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
         {/* Monthly Active Energy Chart */}
         {activity && activity.monthlyActiveEnergy.length > 0 && (
           <Card>
-            <CardHeader className="py-2 px-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Flame className="h-4 w-4 text-orange-500" aria-hidden="true" />
                 月度活动能量
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3">
+            <CardContent>
               <BarChart
                 data={toMonthlyChartData(activity.monthlyActiveEnergy)}
                 height={180}
@@ -257,13 +257,13 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
         {/* Monthly Exercise Minutes Chart */}
         {activity && activity.monthlyExerciseMinutes.length > 0 && (
           <Card>
-            <CardHeader className="py-2 px-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Timer className="h-4 w-4 text-blue-500" aria-hidden="true" />
                 月度运动时长
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3">
+            <CardContent>
               <BarChart
                 data={toMonthlyChartData(activity.monthlyExerciseMinutes)}
                 height={180}
@@ -278,13 +278,13 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
       {/* Workout Breakdown */}
       {workouts && workouts.byType.length > 0 && (
         <Card>
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Dumbbell className="h-4 w-4 text-purple-500" aria-hidden="true" />
               年度锻炼类型分布
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-3 pb-3">
+          <CardContent>
             <BarChart
               data={workouts.byType.map((w) => ({
                 label: w.typeName,
@@ -302,13 +302,13 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
       {/* Monthly Workout Trends */}
       {workouts && workouts.monthlyWorkouts.length > 0 && (
         <Card>
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Dumbbell className="h-4 w-4 text-purple-500" aria-hidden="true" />
               月度锻炼次数
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-3 pb-3">
+          <CardContent>
             <LineChart
               data={toMonthlyChartData(workouts.monthlyWorkouts)}
               height={180}

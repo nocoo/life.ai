@@ -1,3 +1,5 @@
+"use client";
+
 import {
   BarChart as RechartsBarChart,
   Bar,
@@ -6,9 +8,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Rectangle,
+  Cell,
 } from "recharts";
-import type { BarShapeProps } from "recharts";
 import { cn } from "@/lib/utils";
 import { chartColors } from "@/lib/chart-colors";
 
@@ -41,15 +42,6 @@ export interface BarChartProps {
 
 const defaultColor = chartColors.chart1;
 
-const createBarShape = (chartData: Array<{ fill: string }>) => {
-  const BarShape = (props: BarShapeProps) => {
-    const fill = chartData[props.index]?.fill ?? defaultColor;
-    return <Rectangle {...props} fill={fill} radius={[4, 4, 0, 0]} />;
-  };
-  BarShape.displayName = "BarShape";
-  return BarShape;
-};
-
 export function BarChart({
   data,
   height = 200,
@@ -67,11 +59,9 @@ export function BarChart({
     fill: d.color || color,
   }));
 
-  const barShape = createBarShape(chartData);
-
   return (
     <div className={cn("w-full", className)} style={{ height }}>
-      <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+      <ResponsiveContainer width="100%" height="100%">
         <RechartsBarChart
           data={chartData}
           layout={horizontal ? "vertical" : "horizontal"}
@@ -93,7 +83,7 @@ export function BarChart({
                   type="category"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 10 }}
+                  tick={{ fontSize: 12 }}
                   className="fill-muted-foreground"
                   width={80}
                 />
@@ -103,7 +93,7 @@ export function BarChart({
                   type="number"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 10 }}
+                  tick={{ fontSize: 12 }}
                   className="fill-muted-foreground"
                   tickFormatter={valueFormatter}
                 />
@@ -116,7 +106,7 @@ export function BarChart({
                   dataKey="name"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 10 }}
+                  tick={{ fontSize: 12 }}
                   className="fill-muted-foreground"
                 />
               )}
@@ -124,7 +114,7 @@ export function BarChart({
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 10 }}
+                  tick={{ fontSize: 12 }}
                   className="fill-muted-foreground"
                   tickFormatter={valueFormatter}
                 />
@@ -136,16 +126,20 @@ export function BarChart({
               if (!active || !payload?.length) return null;
               const item = payload[0];
               return (
-                <div className="rounded-lg border bg-background px-2 py-1.5 shadow-sm">
-                  <div className="text-xs font-medium">{item.payload.name}</div>
-                  <div className="text-xs text-muted-foreground tabular-nums">
+                <div className="rounded-lg border bg-background p-2 shadow-sm">
+                  <div className="text-sm font-medium">{item.payload.name}</div>
+                  <div className="text-sm text-muted-foreground">
                     {valueFormatter(item.value as number)}
                   </div>
                 </div>
               );
             }}
           />
-          <Bar dataKey="value" shape={barShape} />
+          <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+            {chartData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.fill} />
+            ))}
+          </Bar>
         </RechartsBarChart>
       </ResponsiveContainer>
     </div>

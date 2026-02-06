@@ -112,13 +112,13 @@ export function MonthFootprintPanel({ data }: MonthFootprintPanelProps) {
         {/* Daily Distance Chart */}
         {dailyDistance.length > 0 && (
           <Card>
-            <CardHeader className="py-2 px-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Route className="h-4 w-4 text-blue-500" aria-hidden="true" />
                 每日距离
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3 pt-0">
+            <CardContent>
               <LineChart
                 data={toChartData(dailyDistance)}
                 height={180}
@@ -134,13 +134,13 @@ export function MonthFootprintPanel({ data }: MonthFootprintPanelProps) {
         {/* Transport Mode Breakdown */}
         {byTransportMode.length > 0 && (
           <Card>
-            <CardHeader className="py-2 px-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Car className="h-4 w-4 text-cyan-500" aria-hidden="true" />
                 出行方式分布
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3 pt-0">
+            <CardContent>
               <DonutChart
                 data={byTransportMode.map((m) => ({
                   label: m.modeName,
@@ -158,10 +158,10 @@ export function MonthFootprintPanel({ data }: MonthFootprintPanelProps) {
       {/* Transport Mode Details */}
       {byTransportMode.length > 0 && (
         <Card>
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="text-sm font-medium">出行方式详情</CardTitle>
           </CardHeader>
-          <CardContent className="px-3 pb-3 pt-0">
+          <CardContent>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {byTransportMode.map((mode) => {
                 const Icon = getTransportIcon(mode.mode);
@@ -192,13 +192,13 @@ export function MonthFootprintPanel({ data }: MonthFootprintPanelProps) {
       {/* Distance by Transport Mode Bar Chart */}
       {byTransportMode.length > 0 && (
         <Card>
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-indigo-500" aria-hidden="true" />
               各出行方式距离
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-3 pb-3 pt-0">
+          <CardContent>
             <BarChart
               data={byTransportMode.map((m) => ({
                 label: m.modeName,

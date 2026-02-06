@@ -120,13 +120,13 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
       {/* Expense Heatmap */}
       {dailyExpense.length > 0 && (
         <Card>
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <TrendingDown className="h-4 w-4 text-red-500" aria-hidden="true" />
               年度支出分布
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-3 pb-3 pt-0">
+          <CardContent>
             <HeatmapCalendar
               data={toHeatmapData(dailyExpense)}
               year={year}
@@ -143,13 +143,13 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
         {/* Monthly Income/Expense Trend */}
         {(monthlyIncome.length > 0 || monthlyExpense.length > 0) && (
           <Card>
-            <CardHeader className="py-2 px-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <CreditCard className="h-4 w-4 text-blue-500" aria-hidden="true" />
                 月度收支趋势
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3 pt-0">
+            <CardContent>
               <LineChart
                 series={[
                   ...(monthlyIncome.length > 0
@@ -182,13 +182,13 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
         {/* Expense by Category */}
         {expenseByCategory.length > 0 && (
           <Card>
-            <CardHeader className="py-2 px-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <ArrowDownCircle className="h-4 w-4 text-red-500" aria-hidden="true" />
                 年度支出分类
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3 pt-0">
+            <CardContent>
               <DonutChart
                 data={expenseByCategory.map((c) => ({
                   label: c.category,
@@ -208,13 +208,13 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
         {/* Income by Category */}
         {incomeByCategory.length > 0 && (
           <Card>
-            <CardHeader className="py-2 px-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <ArrowUpCircle className="h-4 w-4 text-green-500" aria-hidden="true" />
                 年度收入分类
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3 pt-0">
+            <CardContent>
               <DonutChart
                 data={incomeByCategory.map((c) => ({
                   label: c.category,
@@ -231,13 +231,13 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
         {/* Expense by Category Bar Chart */}
         {expenseByCategory.length > 0 && (
           <Card>
-            <CardHeader className="py-2 px-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Receipt className="h-4 w-4 text-purple-500" aria-hidden="true" />
                 分类支出明细
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3 pt-0">
+            <CardContent>
               <BarChart
                 data={expenseByCategory.slice(0, 10).map((c) => ({
                   label: c.category,
@@ -256,13 +256,13 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
       {/* Monthly Expense Bar Chart */}
       {monthlyExpense.length > 0 && (
         <Card>
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Calendar className="h-4 w-4 text-indigo-500" aria-hidden="true" />
               月度支出
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-3 pb-3 pt-0">
+          <CardContent>
             <BarChart
               data={toMonthlyChartData(monthlyExpense)}
               height={180}
@@ -276,13 +276,13 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
       {/* Account Breakdown */}
       {byAccount.length > 0 && (
         <Card>
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <CreditCard className="h-4 w-4 text-cyan-500" aria-hidden="true" />
               账户年度收支
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-3 pb-3 pt-0">
+          <CardContent>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {byAccount.map((account) => (
                 <div
@@ -324,13 +324,13 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
       {/* Top Expense Months */}
       {topExpenseMonths.length > 0 && (
         <Card>
-          <CardHeader className="py-2 px-3">
+          <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <TrendingDown className="h-4 w-4 text-red-500" aria-hidden="true" />
               支出最高月份
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-3 pb-3 pt-0">
+          <CardContent>
             <div className="space-y-2">
               {topExpenseMonths.slice(0, 5).map((month, index) => (
                 <div
