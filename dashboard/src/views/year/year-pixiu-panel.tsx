@@ -65,6 +65,29 @@ const toHeatmapData = (
   }));
 };
 
+/** Aggregate category data: sort by amount desc, take top N, rest as "Others" */
+const aggregateCategoryData = (
+  data: { category: string; amount: number }[],
+  topN: number = 4
+): { label: string; value: number }[] => {
+  if (data.length <= topN) {
+    return data
+      .slice()
+      .sort((a, b) => b.amount - a.amount)
+      .map((c) => ({ label: c.category, value: c.amount }));
+  }
+
+  const sorted = data.slice().sort((a, b) => b.amount - a.amount);
+  const top = sorted.slice(0, topN);
+  const rest = sorted.slice(topN);
+  const othersTotal = rest.reduce((sum, c) => sum + c.amount, 0);
+
+  return [
+    ...top.map((c) => ({ label: c.category, value: c.amount })),
+    { label: "其他", value: othersTotal },
+  ];
+};
+
 export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
   const {
     totalIncome,
@@ -190,10 +213,7 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
             </CardHeader>
             <CardContent>
               <DonutChart
-                data={expenseByCategory.map((c) => ({
-                  label: c.category,
-                  value: c.amount,
-                }))}
+                data={aggregateCategoryData(expenseByCategory)}
                 height={180}
                 showLegend
                 valueFormatter={formatCurrencyCompact}
@@ -216,10 +236,7 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
             </CardHeader>
             <CardContent>
               <DonutChart
-                data={incomeByCategory.map((c) => ({
-                  label: c.category,
-                  value: c.amount,
-                }))}
+                data={aggregateCategoryData(incomeByCategory)}
                 height={180}
                 showLegend
                 valueFormatter={formatCurrencyCompact}
