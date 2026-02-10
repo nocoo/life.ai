@@ -4,7 +4,10 @@
   "type": "module",
   "scripts": {
     "ut": "bun test scripts/test --coverage --coverage-reporter=text --coverage-reporter=lcov && bun run scripts/coverage-check.ts && cd dashboard && bun run ut",
+    "ut:scripts": "bun test scripts/test --coverage --coverage-reporter=text --coverage-reporter=lcov && bun run scripts/coverage-check.ts",
     "lint": "eslint . --ext .ts && cd dashboard && bun run lint",
+    "lint:import": "eslint scripts/import --ext .ts",
+    "lint:verify": "eslint scripts/verify --ext .ts",
     "precommit": "bun run ut && bun run lint",
     "prepare": "husky",
     "db:init": "bun run scripts/import/footprint/init.ts",
