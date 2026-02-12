@@ -8,7 +8,7 @@ import {
 } from "recharts";
 import type { PieSectorShapeProps } from "recharts";
 import { cn } from "@/lib/utils";
-import { chartColorArray } from "@/lib/chart-colors";
+import { CHART_COLORS } from "@/lib/palette";
 
 export interface PieChartDataPoint {
   label: string;
@@ -27,7 +27,7 @@ export interface PieChartProps {
   className?: string;
 }
 
-const defaultColors = chartColorArray;
+const defaultColors = CHART_COLORS;
 
 const createPieSectorShape = (chartData: Array<{ fill: string }>) => {
   const PieSectorShape = (props: PieSectorShapeProps) => {

@@ -82,9 +82,9 @@ const aggregateCategoryData = (
 };
 
 const COLORS = {
-  income: "oklch(0.723 0.219 142.136)",
-  expense: "oklch(0.577 0.245 27.325)",
-  net: "oklch(0.623 0.214 259.815)",
+  income: "hsl(var(--chart-5))",
+  expense: "hsl(var(--destructive))",
+  net: "hsl(var(--chart-1))",
 };
 
 export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {

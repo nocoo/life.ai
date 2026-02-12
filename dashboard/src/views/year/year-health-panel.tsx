@@ -5,7 +5,7 @@ import { StatCard, StatGrid } from "@/components/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
 import { HeatmapCalendar, heatmapColorScales } from "@/components/charts/heatmap-calendar";
-import { chartColors } from "@/lib/chart-colors";
+import { chart } from "@/lib/palette";
 import type { YearHealthData } from "@/models/year-view";
 import {
   Footprints,
@@ -173,7 +173,7 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
               <BarChart
                 data={toMonthlyChartData(steps.monthlySteps)}
                 height={180}
-                color={chartColors.chart1}
+                color={chart.primary}
                 valueFormatter={formatNumber}
               />
             </CardContent>
@@ -194,12 +194,12 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
                 series={[
                   {
                     data: toMonthlyChartData(heartRate.monthlyAvg),
-                    color: chartColors.chart1,
+                    color: chart.primary,
                     name: "平均心率",
                   },
                   {
                     data: toMonthlyChartData(heartRate.monthlyResting),
-                    color: chartColors.chart2,
+                    color: chart.sky,
                     name: "静息心率",
                   },
                 ]}
@@ -247,7 +247,7 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
               <BarChart
                 data={toMonthlyChartData(activity.monthlyActiveEnergy)}
                 height={180}
-                color={chartColors.chart4}
+                color={chart.jade}
                 valueFormatter={(v) => `${formatNumber(Math.round(v))} kcal`}
               />
             </CardContent>
@@ -267,7 +267,7 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
               <BarChart
                 data={toMonthlyChartData(activity.monthlyExerciseMinutes)}
                 height={180}
-                color={chartColors.chart2}
+                color={chart.sky}
                 valueFormatter={(v) => formatDuration(v)}
               />
             </CardContent>
@@ -292,7 +292,7 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
               }))}
               height={220}
               horizontal
-              color={chartColors.chart5}
+              color={chart.green}
               valueFormatter={(v) => `${v}次`}
             />
           </CardContent>
@@ -312,7 +312,7 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
             <LineChart
               data={toMonthlyChartData(workouts.monthlyWorkouts)}
               height={180}
-              color={chartColors.chart3}
+              color={chart.teal}
               valueFormatter={(v) => `${v}次`}
               showDots
             />

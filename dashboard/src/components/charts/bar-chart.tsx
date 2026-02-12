@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import type { BarShapeProps } from "recharts";
 import { cn } from "@/lib/utils";
-import { chartColors } from "@/lib/chart-colors";
+import { chart } from "@/lib/palette";
 
 export interface BarChartDataPoint {
   label: string;
@@ -30,7 +30,7 @@ export interface BarChartProps {
   className?: string;
 }
 
-const defaultColor = chartColors.chart1;
+const defaultColor = chart.primary;
 
 const createBarShape = (chartData: Array<{ fill: string }>) => {
   const BarShape = (props: BarShapeProps) => {

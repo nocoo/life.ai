@@ -9,7 +9,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { cn } from "@/lib/utils";
-import { chartColorArray } from "@/lib/chart-colors";
+import { CHART_COLORS } from "@/lib/palette";
 
 export interface LineChartDataPoint {
   label: string;
@@ -53,7 +53,7 @@ export interface LineChartProps {
   className?: string;
 }
 
-const defaultColors = chartColorArray;
+const defaultColors = CHART_COLORS;
 
 export function LineChart({
   data,
@@ -146,7 +146,7 @@ export function LineChart({
           {referenceLine !== undefined && (
             <ReferenceLine
               y={referenceLine}
-              stroke="oklch(0.5 0 0)"
+              stroke="hsl(var(--chart-muted))"
               strokeDasharray="3 3"
               label={
                 referenceLineLabel

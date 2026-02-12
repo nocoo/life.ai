@@ -5,7 +5,7 @@ import { StatCard, StatGrid } from "@/components/charts/stat-card";
 import { BarChart } from "@/components/charts/bar-chart";
 import { DonutChart } from "@/components/charts/pie-chart";
 import { HeatmapCalendar, heatmapColorScales } from "@/components/charts/heatmap-calendar";
-import { chartColors } from "@/lib/chart-colors";
+import { chart } from "@/lib/palette";
 import type { YearFootprintData } from "@/models/year-view";
 import {
   MapPin,
@@ -157,7 +157,7 @@ export function YearFootprintPanel({ data, year }: YearFootprintPanelProps) {
               <BarChart
                 data={toMonthlyChartData(monthlyDistance)}
                 height={180}
-                color={chartColors.chart1}
+                color={chart.primary}
                 valueFormatter={formatDistance}
               />
             </CardContent>
@@ -239,7 +239,7 @@ export function YearFootprintPanel({ data, year }: YearFootprintPanelProps) {
               }))}
               height={180}
               horizontal
-              color={chartColors.chart2}
+              color={chart.sky}
               valueFormatter={formatDistance}
             />
           </CardContent>

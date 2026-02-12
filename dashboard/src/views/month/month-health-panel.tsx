@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard, StatGrid } from "@/components/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
-import { chartColors } from "@/lib/chart-colors";
+import { chart } from "@/lib/palette";
 import type { MonthHealthData } from "@/models/month-view";
 import {
   Footprints,
@@ -133,7 +133,7 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
               <LineChart
                 data={toChartData(steps.dailySteps)}
                 height={180}
-                color={chartColors.chart1}
+                color={chart.primary}
                 valueFormatter={formatNumber}
                 referenceLine={steps.avgSteps}
                 referenceLineLabel="平均"
@@ -156,12 +156,12 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
                 series={[
                   {
                     data: toChartData(heartRate.dailyAvg),
-                    color: chartColors.chart1,
+                    color: chart.primary,
                     name: "平均心率",
                   },
                   {
                     data: toChartData(heartRate.dailyResting),
-                    color: chartColors.chart2,
+                    color: chart.sky,
                     name: "静息心率",
                   },
                 ]}
@@ -185,7 +185,7 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
               <BarChart
                 data={toChartData(sleep.dailyDuration)}
                 height={180}
-                color={chartColors.chart3}
+                color={chart.teal}
                 valueFormatter={(v) => `${v.toFixed(1)}小时`}
               />
             </CardContent>
@@ -205,7 +205,7 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
               <LineChart
                 data={toChartData(activity.dailyActiveEnergy)}
                 height={180}
-                color={chartColors.chart4}
+                color={chart.jade}
                 valueFormatter={(v) => `${Math.round(v)} kcal`}
                 referenceLine={activity.avgActiveEnergy}
                 referenceLineLabel="平均"
@@ -232,7 +232,7 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
               }))}
               height={180}
               horizontal
-              color={chartColors.chart5}
+              color={chart.green}
               valueFormatter={(v) => `${v}次`}
             />
           </CardContent>
