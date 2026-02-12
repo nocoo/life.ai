@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -123,8 +123,7 @@ export function DayPage() {
   }, [loadData]);
 
   return (
-    <ScrollArea className="h-[calc(100vh-57px)]">
-      <div className="p-4 space-y-4">
+    <div className="space-y-4">
         {/* Date Navigation */}
         <DateNavigation
           selectedDate={selectedDate}
@@ -258,7 +257,6 @@ export function DayPage() {
             </TabsContent>
           </Tabs>
         )}
-          </div>
-        </ScrollArea>
+    </div>
   );
 }

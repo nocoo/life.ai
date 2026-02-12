@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
-import { AppHeader } from "@/components/app-header";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -22,10 +22,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex min-h-screen flex-col bg-background">
-            <AppHeader />
-            <main className="flex-1">{children}</main>
-          </div>
+          <DashboardLayout>{children}</DashboardLayout>
         </ThemeProvider>
       </body>
     </html>

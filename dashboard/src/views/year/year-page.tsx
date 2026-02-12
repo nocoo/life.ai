@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useYearStore } from "@/viewmodels/year-store";
@@ -230,8 +230,7 @@ export function YearPage() {
   }, [loadData]);
 
   return (
-    <ScrollArea className="h-[calc(100vh-57px)]">
-      <div className="p-4 space-y-4">
+    <div className="space-y-4">
         <YearNavigation
           selectedYear={selectedYear}
           onPrevYear={goPrevYear}
@@ -243,7 +242,6 @@ export function YearPage() {
         {loading && <LoadingSkeleton />}
         {error && <ErrorDisplay message={error} />}
         {!loading && !error && data && <YearContent />}
-      </div>
-    </ScrollArea>
+    </div>
   );
 }

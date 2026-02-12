@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useMonthStore } from "@/viewmodels/month-store";
@@ -218,8 +218,7 @@ export function MonthPage() {
   }, [loadData]);
 
   return (
-    <ScrollArea className="h-[calc(100vh-57px)]">
-      <div className="p-4 space-y-4">
+    <div className="space-y-4">
         {/* Month Navigation */}
         <MonthNavigation
           selectedMonth={selectedMonth}
@@ -237,7 +236,6 @@ export function MonthPage() {
 
         {/* Main content */}
         {!loading && !error && data && <MonthContent />}
-      </div>
-    </ScrollArea>
+    </div>
   );
 }
