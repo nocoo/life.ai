@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import type { BarShapeProps } from "recharts";
 import { cn } from "@/lib/utils";
-import { chart } from "@/lib/palette";
+import { chart, chartAxis } from "@/lib/palette";
 
 export interface BarChartDataPoint {
   label: string;
@@ -71,7 +71,8 @@ export function BarChart({
           {showGrid && (
             <CartesianGrid
               strokeDasharray="3 3"
-              className="stroke-muted"
+              stroke={chartAxis}
+              strokeOpacity={0.15}
               vertical={!horizontal}
               horizontal={horizontal}
             />
@@ -84,8 +85,7 @@ export function BarChart({
                   type="category"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 12 }}
-                  className="fill-muted-foreground"
+                  tick={{ fill: chartAxis, fontSize: 11 }}
                   width={80}
                 />
               )}
@@ -94,8 +94,7 @@ export function BarChart({
                   type="number"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 12 }}
-                  className="fill-muted-foreground"
+                  tick={{ fill: chartAxis, fontSize: 11 }}
                   tickFormatter={valueFormatter}
                 />
               )}
@@ -107,16 +106,14 @@ export function BarChart({
                   dataKey="name"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 12 }}
-                  className="fill-muted-foreground"
+                  tick={{ fill: chartAxis, fontSize: 11 }}
                 />
               )}
               {showYAxis && (
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 12 }}
-                  className="fill-muted-foreground"
+                  tick={{ fill: chartAxis, fontSize: 11 }}
                   tickFormatter={valueFormatter}
                 />
               )}
@@ -127,8 +124,8 @@ export function BarChart({
               if (!active || !payload?.length) return null;
               const item = payload[0];
               return (
-                <div className="rounded-lg border bg-background p-2 shadow-sm">
-                  <div className="text-sm font-medium">{item.payload.name}</div>
+                <div className="rounded-widget border border-border bg-card p-2 shadow-sm">
+                  <div className="text-sm font-medium text-foreground">{item.payload.name}</div>
                   <div className="text-sm text-muted-foreground">
                     {valueFormatter(item.value as number)}
                   </div>

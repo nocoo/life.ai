@@ -9,7 +9,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { cn } from "@/lib/utils";
-import { CHART_COLORS } from "@/lib/palette";
+import { CHART_COLORS, chartAxis } from "@/lib/palette";
 
 export interface LineChartDataPoint {
   label: string;
@@ -101,23 +101,26 @@ export function LineChart({
           margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
         >
           {showGrid && (
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke={chartAxis}
+              strokeOpacity={0.15}
+              vertical={false}
+            />
           )}
           {showXAxis && (
             <XAxis
               dataKey="name"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12 }}
-              className="fill-muted-foreground"
+              tick={{ fill: chartAxis, fontSize: 11 }}
             />
           )}
           {showYAxis && (
             <YAxis
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12 }}
-              className="fill-muted-foreground"
+              tick={{ fill: chartAxis, fontSize: 11 }}
               tickFormatter={valueFormatter}
             />
           )}
@@ -125,15 +128,15 @@ export function LineChart({
             content={({ active, payload, label }) => {
               if (!active || !payload?.length) return null;
               return (
-                <div className="rounded-lg border bg-background p-2 shadow-sm">
-                  <div className="text-sm font-medium">{label}</div>
+                <div className="rounded-widget border border-border bg-card p-2 shadow-sm">
+                  <div className="text-sm font-medium text-foreground">{label}</div>
                   {payload.map((item, i) => (
                     <div
                       key={i}
-                      className="text-sm text-muted-foreground flex items-center gap-2"
+                      className="flex items-center gap-2 text-sm text-muted-foreground"
                     >
                       <div
-                        className="w-2 h-2 rounded-full"
+                        className="h-2 w-2 rounded-full"
                         style={{ backgroundColor: item.color }}
                       />
                       <span>{valueFormatter(item.value as number)}</span>
@@ -146,7 +149,7 @@ export function LineChart({
           {referenceLine !== undefined && (
             <ReferenceLine
               y={referenceLine}
-              stroke="hsl(var(--chart-muted))"
+              stroke={chartAxis}
               strokeDasharray="3 3"
               label={
                 referenceLineLabel

@@ -84,13 +84,13 @@ export function PieChart({
               const item = payload[0];
               const percent = total > 0 ? ((item.value as number) / total) * 100 : 0;
               return (
-                <div className="rounded-lg border bg-background p-2 shadow-sm">
+                <div className="rounded-widget border border-border bg-card p-2 shadow-sm">
                   <div className="flex items-center gap-2">
                     <div
-                      className="w-3 h-3 rounded-full"
+                      className="h-3 w-3 rounded-full"
                       style={{ backgroundColor: item.payload.fill }}
                     />
-                    <span className="text-sm font-medium">{item.name}</span>
+                    <span className="text-sm font-medium text-foreground">{item.name}</span>
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {valueFormatter(item.value as number)} ({percent.toFixed(1)}%)
