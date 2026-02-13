@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -25,36 +24,33 @@ const formatAmount = (amount: number, isIncome: boolean): string => {
 
 export function RawPixiuData({ data }: RawPixiuDataProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium">
-          貔貅记账原始数据
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[calc(100vh-200px)]">
-          <div className="space-y-6">
+    <div className="rounded-card bg-secondary p-4">
+      <div className="text-sm font-normal text-muted-foreground mb-3">
+        貔貅记账原始数据
+      </div>
+      <ScrollArea className="h-[calc(100vh-200px)]">
+        <div className="space-y-6">
             {/* Summary Section */}
             {data.summary && (
               <div>
-                <h3 className="text-sm font-medium mb-2">日收支概览</h3>
+                <h3 className="text-sm font-normal text-muted-foreground mb-2">日收支概览</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="rounded-lg border p-3">
+                  <div className="rounded-widget bg-card p-3">
                     <div className="text-xs text-muted-foreground">收入</div>
-                    <div className="text-xl font-bold text-green-600">
+                    <div className="text-xl font-semibold font-display tracking-tight text-green-600">
                       +¥{data.summary.income.toFixed(2)}
                     </div>
                   </div>
-                  <div className="rounded-lg border p-3">
+                  <div className="rounded-widget bg-card p-3">
                     <div className="text-xs text-muted-foreground">支出</div>
-                    <div className="text-xl font-bold text-red-500">
+                    <div className="text-xl font-semibold font-display tracking-tight text-red-500">
                       -¥{data.summary.expense.toFixed(2)}
                     </div>
                   </div>
-                  <div className="rounded-lg border p-3">
+                  <div className="rounded-widget bg-card p-3">
                     <div className="text-xs text-muted-foreground">净收入</div>
                     <div
-                      className={`text-xl font-bold ${
+                      className={`text-xl font-semibold font-display tracking-tight ${
                         data.summary.net >= 0 ? "text-green-600" : "text-red-500"
                       }`}
                     >
@@ -62,9 +58,9 @@ export function RawPixiuData({ data }: RawPixiuDataProps) {
                       {data.summary.net.toFixed(2)}
                     </div>
                   </div>
-                  <div className="rounded-lg border p-3">
+                  <div className="rounded-widget bg-card p-3">
                     <div className="text-xs text-muted-foreground">交易笔数</div>
-                    <div className="text-xl font-bold">
+                    <div className="text-xl font-semibold font-display tracking-tight">
                       {data.summary.transactionCount}
                     </div>
                   </div>
@@ -75,7 +71,7 @@ export function RawPixiuData({ data }: RawPixiuDataProps) {
             {/* Category Breakdown - Expense */}
             {data.expenseByCategory.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium mb-2">支出分类</h3>
+                <h3 className="text-sm font-normal text-muted-foreground mb-2">支出分类</h3>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -110,7 +106,7 @@ export function RawPixiuData({ data }: RawPixiuDataProps) {
             {/* Category Breakdown - Income */}
             {data.incomeByCategory.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium mb-2">收入分类</h3>
+                <h3 className="text-sm font-normal text-muted-foreground mb-2">收入分类</h3>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -145,7 +141,7 @@ export function RawPixiuData({ data }: RawPixiuDataProps) {
             {/* Transactions Section */}
             {data.transactions.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium mb-2">
+                <h3 className="text-sm font-normal text-muted-foreground mb-2">
                   交易明细 ({data.transactions.length})
                 </h3>
                 <Table>
@@ -196,7 +192,6 @@ export function RawPixiuData({ data }: RawPixiuDataProps) {
             )}
           </div>
         </ScrollArea>
-      </CardContent>
-    </Card>
+      </div>
   );
 }

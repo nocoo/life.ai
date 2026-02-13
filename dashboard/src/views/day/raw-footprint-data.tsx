@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -55,41 +54,38 @@ const formatCoord = (value: number, decimals = 6): string => {
 
 export function RawFootprintData({ data }: RawFootprintDataProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium">
-          Footprint 原始数据
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[calc(100vh-200px)]">
-          <div className="space-y-6">
+    <div className="rounded-card bg-secondary p-4">
+      <div className="text-sm font-normal text-muted-foreground mb-3">
+        Footprint 原始数据
+      </div>
+      <ScrollArea className="h-[calc(100vh-200px)]">
+        <div className="space-y-6">
             {/* Summary Section */}
             {data.summary && (
               <div>
-                <h3 className="text-sm font-medium mb-2">轨迹概览</h3>
+                <h3 className="text-sm font-normal text-muted-foreground mb-2">轨迹概览</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="rounded-lg border p-3">
+                  <div className="rounded-widget bg-card p-3">
                     <div className="text-xs text-muted-foreground">总距离</div>
-                    <div className="text-xl font-bold">
+                    <div className="text-xl font-semibold font-display tracking-tight">
                       {formatDistance(data.summary.totalDistance)}
                     </div>
                   </div>
-                  <div className="rounded-lg border p-3">
+                  <div className="rounded-widget bg-card p-3">
                     <div className="text-xs text-muted-foreground">平均速度</div>
-                    <div className="text-xl font-bold">
+                    <div className="text-xl font-semibold font-display tracking-tight">
                       {formatSpeed(data.summary.avgSpeed)}
                     </div>
                   </div>
-                  <div className="rounded-lg border p-3">
+                  <div className="rounded-widget bg-card p-3">
                     <div className="text-xs text-muted-foreground">轨迹点数</div>
-                    <div className="text-xl font-bold">
+                    <div className="text-xl font-semibold font-display tracking-tight">
                       {data.summary.pointCount.toLocaleString()}
                     </div>
                   </div>
-                  <div className="rounded-lg border p-3">
+                  <div className="rounded-widget bg-card p-3">
                     <div className="text-xs text-muted-foreground">记录时间</div>
-                    <div className="text-lg font-bold">
+                    <div className="text-lg font-semibold">
                       {data.summary.minTime} - {data.summary.maxTime}
                     </div>
                   </div>
@@ -100,7 +96,7 @@ export function RawFootprintData({ data }: RawFootprintDataProps) {
             {/* Track Points Section */}
             {data.trackPoints.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium mb-2">
+                <h3 className="text-sm font-normal text-muted-foreground mb-2">
                   轨迹点 ({data.trackPoints.length})
                 </h3>
                 <Table>
@@ -145,7 +141,7 @@ export function RawFootprintData({ data }: RawFootprintDataProps) {
             {/* Locations Section */}
             {data.locations.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium mb-2">
+                <h3 className="text-sm font-normal text-muted-foreground mb-2">
                   停留地点 ({data.locations.length})
                 </h3>
                 <Table>
@@ -178,7 +174,7 @@ export function RawFootprintData({ data }: RawFootprintDataProps) {
             {/* Segments Section */}
             {data.segments.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium mb-2">
+                <h3 className="text-sm font-normal text-muted-foreground mb-2">
                   轨迹分段 ({data.segments.length})
                 </h3>
                 <Table>
@@ -219,7 +215,6 @@ export function RawFootprintData({ data }: RawFootprintDataProps) {
               )}
           </div>
         </ScrollArea>
-      </CardContent>
-    </Card>
+      </div>
   );
 }
