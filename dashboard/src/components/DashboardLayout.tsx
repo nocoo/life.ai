@@ -10,9 +10,9 @@ import { cn } from "@/lib/utils";
 
 // Map route paths to page titles
 const PAGE_TITLES: Record<string, string> = {
-  "/day": "日",
-  "/month": "月",
-  "/year": "年",
+  "/day": "日视图",
+  "/month": "月视图",
+  "/year": "年视图",
 };
 
 interface DashboardLayoutProps {

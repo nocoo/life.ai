@@ -37,9 +37,9 @@ const NAV_GROUPS: NavGroup[] = [
     label: "日常",
     defaultOpen: true,
     items: [
-      { title: "日", icon: CalendarDays, path: "/day" },
-      { title: "月", icon: CalendarRange, path: "/month" },
-      { title: "年", icon: CalendarClock, path: "/year" },
+      { title: "日视图", icon: CalendarDays, path: "/day" },
+      { title: "月视图", icon: CalendarRange, path: "/month" },
+      { title: "年视图", icon: CalendarClock, path: "/year" },
     ],
   },
 ];
