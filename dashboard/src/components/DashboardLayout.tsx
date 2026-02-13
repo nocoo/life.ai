@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Menu } from "lucide-react";
+import { Github, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Map route paths to page titles
@@ -88,6 +88,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <h1 className="text-lg md:text-xl font-semibold text-foreground">{title}</h1>
           </div>
           <div className="flex items-center gap-1">
+            <a
+              href="https://github.com/nocoo/life.ai"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub repository"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            >
+              <Github className="h-[18px] w-[18px]" aria-hidden="true" strokeWidth={1.5} />
+            </a>
             <ThemeToggle />
           </div>
         </header>
