@@ -47,7 +47,7 @@ export function YearNavigation({
         onClick={onPrevYear}
         aria-label="上一年"
       >
-        <ChevronLeft className="h-4 w-4" />
+        <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
       </Button>
 
       {/* Current Year Display */}
@@ -58,7 +58,7 @@ export function YearNavigation({
       >
         <span>{selectedYear}年</span>
         {onToggleCalendar && (
-          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+          <CalendarIcon className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
         )}
       </Button>
 
@@ -69,7 +69,7 @@ export function YearNavigation({
         onClick={onNextYear}
         aria-label="下一年"
       >
-        <ChevronRight className="h-4 w-4" />
+        <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
       </Button>
     </div>
   );

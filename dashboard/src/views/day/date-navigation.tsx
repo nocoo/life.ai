@@ -44,7 +44,7 @@ export function DateNavigation({
         onClick={onPrevDay}
         aria-label="前一天"
       >
-        <ChevronLeft className="h-4 w-4" />
+        <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
       </Button>
 
       {/* Current Date Display */}
@@ -55,7 +55,7 @@ export function DateNavigation({
       >
         <span>{format(selectedDate, "yyyy年M月d日 EEEE", { locale: zhCN })}</span>
         {onToggleCalendar && (
-          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+          <CalendarIcon className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
         )}
       </Button>
 
@@ -66,7 +66,7 @@ export function DateNavigation({
         onClick={onNextDay}
         aria-label="后一天"
       >
-        <ChevronRight className="h-4 w-4" />
+        <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
       </Button>
     </div>
   );

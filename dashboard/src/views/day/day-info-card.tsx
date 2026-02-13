@@ -107,11 +107,11 @@ export function WeatherCard({ date, latitude, longitude }: DayInfoCardProps) {
               {/* Row 1: Sunrise & Sunset */}
               <div className="flex justify-end gap-3 text-xs text-muted-foreground mt-1">
                 <span className="flex items-center gap-0.5">
-                  <Sunrise className="h-3 w-3" />
+                  <Sunrise className="h-3 w-3" strokeWidth={1.5} />
                   {weather.sunrise}
                 </span>
                 <span className="flex items-center gap-0.5">
-                  <Sunset className="h-3 w-3" />
+                  <Sunset className="h-3 w-3" strokeWidth={1.5} />
                   {weather.sunset}
                 </span>
               </div>
@@ -119,11 +119,11 @@ export function WeatherCard({ date, latitude, longitude }: DayInfoCardProps) {
               {/* Row 2: Precipitation & Wind */}
               <div className="flex justify-end gap-3 text-xs text-muted-foreground mt-0.5">
                 <span className="flex items-center gap-0.5">
-                  <Droplets className="h-3 w-3" />
+                  <Droplets className="h-3 w-3" strokeWidth={1.5} />
                   {weather.precipitation.toFixed(1)}mm
                 </span>
                 <span className="flex items-center gap-0.5">
-                  <Wind className="h-3 w-3" />
+                  <Wind className="h-3 w-3" strokeWidth={1.5} />
                   {Math.round(weather.windSpeedMax)}km/h
                 </span>
               </div>

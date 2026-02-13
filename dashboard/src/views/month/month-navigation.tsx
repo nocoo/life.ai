@@ -55,7 +55,7 @@ export function MonthNavigation({
         onClick={onPrevMonth}
         aria-label="上一月"
       >
-        <ChevronLeft className="h-4 w-4" />
+        <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
       </Button>
 
       {/* Current Month Display */}
@@ -66,7 +66,7 @@ export function MonthNavigation({
       >
         <span>{formatMonthDisplay(selectedMonth)}</span>
         {onToggleCalendar && (
-          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+          <CalendarIcon className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
         )}
       </Button>
 
@@ -77,7 +77,7 @@ export function MonthNavigation({
         onClick={onNextMonth}
         aria-label="下一月"
       >
-        <ChevronRight className="h-4 w-4" />
+        <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
       </Button>
     </div>
   );
