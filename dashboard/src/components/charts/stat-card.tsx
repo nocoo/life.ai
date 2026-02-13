@@ -23,6 +23,12 @@ export interface StatCardProps {
   className?: string;
 }
 
+/**
+ * A compact stat/metric card that shows a title, large value, optional icon,
+ * and an optional trend indicator.
+ *
+ * Uses basalt L2 card style (bg-secondary, rounded-card, no border/shadow).
+ */
 export function StatCard({
   title,
   value,
@@ -38,14 +44,14 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "rounded-lg border bg-card p-4 shadow-sm",
+        "rounded-card bg-secondary p-4 md:p-5",
         className
       )}
     >
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-2xl font-bold tracking-tight">
+          <p className="text-xs md:text-sm text-muted-foreground">{title}</p>
+          <p className="text-xl md:text-2xl font-semibold text-foreground font-display tracking-tight">
             {typeof value === "number" ? value.toLocaleString() : value}
           </p>
           {subtitle && (
@@ -53,8 +59,8 @@ export function StatCard({
           )}
         </div>
         {Icon && (
-          <div className={cn("rounded-md bg-muted p-2", iconColor)}>
-            <Icon className="h-5 w-5" />
+          <div className={cn("rounded-md bg-card p-2", iconColor)}>
+            <Icon className="h-5 w-5" strokeWidth={1.5} />
           </div>
         )}
       </div>
@@ -63,8 +69,8 @@ export function StatCard({
           <span
             className={cn(
               "font-medium",
-              isPositiveTrend && "text-green-600",
-              isNegativeTrend && "text-red-600",
+              isPositiveTrend && "text-success",
+              isNegativeTrend && "text-destructive",
               !isPositiveTrend && !isNegativeTrend && "text-muted-foreground"
             )}
           >
@@ -94,7 +100,7 @@ export function StatGrid({ children, columns = 4, className }: StatGridProps) {
   };
 
   return (
-    <div className={cn("grid gap-4", gridCols[columns], className)}>
+    <div className={cn("grid gap-3 md:gap-4", gridCols[columns], className)}>
       {children}
     </div>
   );
