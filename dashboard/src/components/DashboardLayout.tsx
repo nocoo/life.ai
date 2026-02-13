@@ -15,11 +15,18 @@ const PAGE_TITLES: Record<string, string> = {
   "/year": "年视图",
 };
 
-interface DashboardLayoutProps {
-  children: ReactNode;
+export interface UserInfo {
+  name?: string;
+  email?: string;
+  image?: string;
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+interface DashboardLayoutProps {
+  children: ReactNode;
+  user?: UserInfo;
+}
+
+export function DashboardLayout({ children, user }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -57,6 +64,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <AppSidebar
           collapsed={collapsed}
           onToggle={() => setCollapsed(!collapsed)}
+          user={user}
         />
       )}
 
@@ -68,7 +76,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             onClick={() => setMobileOpen(false)}
           />
           <div className="fixed inset-y-0 left-0 z-50 w-[260px]">
-            <AppSidebar collapsed={false} onToggle={() => setMobileOpen(false)} />
+            <AppSidebar collapsed={false} onToggle={() => setMobileOpen(false)} user={user} />
           </div>
         </>
       )}

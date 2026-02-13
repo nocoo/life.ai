@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   CalendarDays, CalendarRange, CalendarClock,
-  Search, ChevronUp, PanelLeft,
+  Search, ChevronUp, PanelLeft, LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter, usePathname } from "next/navigation";
@@ -17,6 +17,8 @@ import {
   CommandDialog, CommandEmpty, CommandGroup,
   CommandInput, CommandItem, CommandList,
 } from "@/components/ui/command";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import type { UserInfo } from "@/components/DashboardLayout";
 
 // ── Navigation data model ──
 
@@ -45,6 +47,16 @@ const NAV_GROUPS: NavGroup[] = [
 ];
 
 const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
+
+function getInitials(name?: string): string {
+  if (!name) return "?";
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
 
 // ── Sub-components ──
 
@@ -128,9 +140,10 @@ function CollapsedNavItem({ item, currentPath }: { item: NavItem; currentPath: s
 interface AppSidebarProps {
   collapsed: boolean;
   onToggle: () => void;
+  user?: UserInfo;
 }
 
-export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
+export function AppSidebar({ collapsed, onToggle, user }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -199,6 +212,23 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
               <CollapsedNavItem key={item.path} item={item} currentPath={pathname} />
             ))}
           </nav>
+
+          {/* User info — collapsed */}
+          {user && (
+            <div className="py-3 flex justify-center w-full">
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <Avatar className="h-9 w-9 cursor-pointer">
+                    {user.image && <AvatarImage src={user.image} alt={user.name ?? "User"} />}
+                    <AvatarFallback className="text-xs">{getInitials(user.name)}</AvatarFallback>
+                  </Avatar>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={8}>
+                  {user.name ?? user.email ?? "User"}
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          )}
         </div>
       ) : (
         /* ── Expanded view ── */
@@ -241,6 +271,31 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
               <NavGroupSection key={group.label} group={group} currentPath={pathname} />
             ))}
           </nav>
+
+          {/* User info — expanded */}
+          {user && (
+            <div className="px-4 py-3 border-t border-border">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-9 w-9 shrink-0">
+                  {user.image && <AvatarImage src={user.image} alt={user.name ?? "User"} />}
+                  <AvatarFallback className="text-xs">{getInitials(user.name)}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                </div>
+                <button
+                  aria-label="Log out"
+                  onClick={() => {
+                    window.location.href = "/api/auth/signout";
+                  }}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
+                >
+                  <LogOut className="h-4 w-4" aria-hidden="true" strokeWidth={1.5} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
