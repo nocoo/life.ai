@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard, StatGrid } from "@/components/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
@@ -83,27 +82,23 @@ export function MonthFootprintPanel({ data }: MonthFootprintPanelProps) {
           value={formatDistance(totalDistance)}
           subtitle={`日均 ${formatDistance(avgDailyDistance)}`}
           icon={Route}
-          iconColor="text-blue-500"
         />
         <StatCard
           title="轨迹点数"
           value={totalTrackPoints.toLocaleString()}
           subtitle="GPS 记录点"
           icon={MapPin}
-          iconColor="text-green-500"
         />
         <StatCard
           title="平均速度"
           value={formatSpeed(avgSpeed)}
           icon={Gauge}
-          iconColor="text-orange-500"
         />
         <StatCard
           title="记录天数"
           value={`${daysWithData} / ${daysInMonth}`}
           subtitle={`${((daysWithData / daysInMonth) * 100).toFixed(0)}% 覆盖率`}
           icon={Calendar}
-          iconColor="text-purple-500"
         />
       </StatGrid>
 
@@ -111,106 +106,90 @@ export function MonthFootprintPanel({ data }: MonthFootprintPanelProps) {
       <div className="grid gap-4 md:grid-cols-2">
         {/* Daily Distance Chart */}
         {dailyDistance.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Route className="h-4 w-4 text-blue-500" aria-hidden="true" />
-                每日距离
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <LineChart
-                data={toChartData(dailyDistance)}
-                height={180}
-                color={chart.primary}
-                valueFormatter={(v) => formatDistance(v)}
-                referenceLine={avgDailyDistance}
-                referenceLineLabel="平均"
-              />
-            </CardContent>
-          </Card>
+          <div className="rounded-card bg-secondary p-4">
+            <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+              <Route className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+              每日距离
+            </div>
+            <LineChart
+              data={toChartData(dailyDistance)}
+              height={180}
+              color={chart.primary}
+              valueFormatter={(v) => formatDistance(v)}
+              referenceLine={avgDailyDistance}
+              referenceLineLabel="平均"
+            />
+          </div>
         )}
 
         {/* Transport Mode Breakdown */}
         {byTransportMode.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Car className="h-4 w-4 text-cyan-500" aria-hidden="true" />
-                出行方式分布
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DonutChart
-                data={byTransportMode.map((m) => ({
-                  label: m.modeName,
-                  value: m.totalDistance,
-                }))}
-                height={180}
-                showLegend
-                valueFormatter={(v) => formatDistance(v)}
-              />
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Transport Mode Details */}
-      {byTransportMode.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">出行方式详情</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {byTransportMode.map((mode) => {
-                const Icon = getTransportIcon(mode.mode);
-                return (
-                  <div
-                    key={mode.mode}
-                    className="flex items-center gap-2.5 rounded-lg border p-2.5"
-                  >
-                    <div className="rounded-md bg-muted p-1.5">
-                      <Icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate">
-                        {mode.modeName}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground tabular-nums">
-                        {formatDistance(mode.totalDistance)} · {mode.percentage.toFixed(0)}%
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
+          <div className="rounded-card bg-secondary p-4">
+            <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+              <Car className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+              出行方式分布
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Distance by Transport Mode Bar Chart */}
-      {byTransportMode.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-indigo-500" aria-hidden="true" />
-              各出行方式距离
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <BarChart
+            <DonutChart
               data={byTransportMode.map((m) => ({
                 label: m.modeName,
                 value: m.totalDistance,
               }))}
               height={180}
-              horizontal
-              color={chart.sky}
+              showLegend
               valueFormatter={(v) => formatDistance(v)}
             />
-          </CardContent>
-        </Card>
+          </div>
+        )}
+      </div>
+
+      {/* Transport Mode Details */}
+      {byTransportMode.length > 0 && (
+        <div className="rounded-card bg-secondary p-4">
+          <div className="text-sm font-normal text-muted-foreground mb-3">出行方式详情</div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {byTransportMode.map((mode) => {
+              const Icon = getTransportIcon(mode.mode);
+              return (
+                <div
+                  key={mode.mode}
+                  className="flex items-center gap-2.5 rounded-widget bg-card p-2.5"
+                >
+                  <div className="rounded-md bg-muted p-1.5">
+                    <Icon className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} aria-hidden="true" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">
+                      {mode.modeName}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground tabular-nums">
+                      {formatDistance(mode.totalDistance)} · {mode.percentage.toFixed(0)}%
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Distance by Transport Mode Bar Chart */}
+      {byTransportMode.length > 0 && (
+        <div className="rounded-card bg-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+            <BarChart3 className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+            各出行方式距离
+          </div>
+          <BarChart
+            data={byTransportMode.map((m) => ({
+              label: m.modeName,
+              value: m.totalDistance,
+            }))}
+            height={180}
+            horizontal
+            color={chart.sky}
+            valueFormatter={(v) => formatDistance(v)}
+          />
+        </div>
       )}
     </div>
   );

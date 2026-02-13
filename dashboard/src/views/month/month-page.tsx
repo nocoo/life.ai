@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useMonthStore } from "@/viewmodels/month-store";
 import { MonthNavigation } from "./month-navigation";
 import { MonthHealthPanel } from "./month-health-panel";
@@ -25,28 +24,22 @@ function LoadingSkeleton() {
   return (
     <div className="space-y-4">
       {/* Stats skeleton */}
-      <div className="grid gap-2 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
-          <Card key={i}>
-            <CardContent className="pt-4 px-3 pb-3">
-              <Skeleton className="h-3 w-20 mb-1.5" />
-              <Skeleton className="h-6 w-28" />
-            </CardContent>
-          </Card>
+          <div key={i} className="rounded-card bg-secondary p-4">
+            <Skeleton className="h-3 w-20 mb-1.5" />
+            <Skeleton className="h-6 w-28" />
+          </div>
         ))}
       </div>
 
       {/* Charts skeleton */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <Card key={i}>
-            <CardHeader>
-              <Skeleton className="h-4 w-28" />
-            </CardHeader>
-            <CardContent className="px-3 pb-3">
-              <Skeleton className="h-40 w-full" />
-            </CardContent>
-          </Card>
+          <div key={i} className="rounded-card bg-secondary p-4">
+            <Skeleton className="h-4 w-28 mb-3" />
+            <Skeleton className="h-40 w-full" />
+          </div>
         ))}
       </div>
     </div>
@@ -112,35 +105,31 @@ function MonthContent() {
     <div className="space-y-6">
       {/* ===== Section 1: Overview Stats ===== */}
       <section>
-        <h2 className="text-sm font-medium text-muted-foreground mb-2">月度总览</h2>
+        <h2 className="text-sm font-normal text-muted-foreground mb-2">月度总览</h2>
         <StatGrid columns={4}>
           <StatCard
             title="总步数"
             value={formatNumber(summary.totalSteps)}
             subtitle={steps ? `日均 ${formatNumber(steps.avgSteps)}` : undefined}
             icon={Footprints}
-            iconColor="text-green-500"
           />
           <StatCard
             title="平均心率"
             value={summary.avgHeartRate ? `${Math.round(summary.avgHeartRate)} bpm` : "-"}
             subtitle={heartRate ? `静息 ${Math.round(heartRate.avgRestingHeartRate)}` : undefined}
             icon={Heart}
-            iconColor="text-red-500"
           />
           <StatCard
             title="移动距离"
             value={summary.totalDistance ? formatDistance(summary.totalDistance) : "-"}
             subtitle={`${summary.daysWithTracking} 天记录`}
             icon={Route}
-            iconColor="text-blue-500"
           />
           <StatCard
             title="净收支"
             value={formatCurrency(summary.totalNet)}
             subtitle={`${summary.transactionCount} 笔交易`}
             icon={Wallet}
-            iconColor={summary.totalNet >= 0 ? "text-emerald-500" : "text-orange-500"}
           />
         </StatGrid>
 
@@ -150,28 +139,24 @@ function MonthContent() {
               title="平均睡眠"
               value={summary.avgSleepHours ? `${summary.avgSleepHours.toFixed(1)} 小时` : "-"}
               icon={Moon}
-              iconColor="text-indigo-500"
             />
             <StatCard
               title="活动能量"
               value={activity ? formatNumber(Math.round(activity.totalActiveEnergy)) : "-"}
               subtitle={activity ? `日均 ${Math.round(activity.avgActiveEnergy)} kcal` : undefined}
               icon={Flame}
-              iconColor="text-orange-500"
             />
             <StatCard
               title="锻炼次数"
               value={summary.totalWorkouts}
               subtitle={workouts ? formatDuration(workouts.totalDuration) : undefined}
               icon={Activity}
-              iconColor="text-purple-500"
             />
             <StatCard
               title="三圈达成"
               value={activity?.ringCloseCount?.all ?? 0}
               subtitle={`运动${activity?.ringCloseCount?.move ?? 0}/锻炼${activity?.ringCloseCount?.exercise ?? 0}/站立${activity?.ringCloseCount?.stand ?? 0}`}
               icon={Dumbbell}
-              iconColor="text-cyan-500"
             />
           </StatGrid>
         </div>
@@ -179,21 +164,21 @@ function MonthContent() {
 
       {/* ===== Section 2: Health Charts ===== */}
       <section>
-        <h2 className="text-sm font-medium text-muted-foreground mb-2">健康数据</h2>
+        <h2 className="text-sm font-normal text-muted-foreground mb-2">健康数据</h2>
         <MonthHealthPanel data={health} />
       </section>
 
       {/* ===== Section 3: Footprint Charts ===== */}
       {(footprint.dailyDistance.length > 0 || footprint.byTransportMode.length > 0) && (
         <section>
-          <h2 className="text-sm font-medium text-muted-foreground mb-2">轨迹数据</h2>
+          <h2 className="text-sm font-normal text-muted-foreground mb-2">轨迹数据</h2>
           <MonthFootprintPanel data={footprint} />
         </section>
       )}
 
       {/* ===== Section 4: Finance Charts ===== */}
       <section>
-        <h2 className="text-sm font-medium text-muted-foreground mb-2">财务数据</h2>
+        <h2 className="text-sm font-normal text-muted-foreground mb-2">财务数据</h2>
         <MonthPixiuPanel data={pixiu} />
       </section>
     </div>
