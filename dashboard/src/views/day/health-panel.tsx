@@ -1,7 +1,6 @@
 "use client";
 
 import { Moon, Heart, Footprints, Droplets, Activity } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DayHealthData, SleepStage, HeartRateRecord } from "@/models/apple-health";
 import { SLEEP_STAGE_COLORS, SLEEP_STAGE_LABELS, getHeartRateColor } from "@/lib/timeline-colors";
 
@@ -96,17 +95,15 @@ export function HealthPanel({ data }: HealthPanelProps) {
     <>
       {/* Sleep Card */}
       {data.sleep && (
-        <Card className="min-w-0 overflow-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Moon className="h-4 w-4 text-indigo-500" />
-              睡眠
-              <span className="ml-auto text-base font-semibold text-indigo-500">
-                {(data.sleep.duration / 60).toFixed(1)}h
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <div className="rounded-card bg-secondary p-4 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+            <Moon className="h-4 w-4" strokeWidth={1.5} />
+            睡眠
+            <span className="ml-auto text-base font-semibold text-foreground font-display tracking-tight">
+              {(data.sleep.duration / 60).toFixed(1)}h
+            </span>
+          </div>
+          <div className="space-y-3">
             {/* Bar Chart - Vertical bars representing 15-minute slots */}
             <div className="flex h-6 w-full items-end gap-px">
               {sleepBars.map((bar, i) => (
@@ -130,7 +127,7 @@ export function HealthPanel({ data }: HealthPanelProps) {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">效率</p>
-                <p className="font-medium text-indigo-500">
+                <p className="font-medium">
                   {Math.round(((data.sleep.duration - data.sleep.awakeMinutes) / data.sleep.duration) * 100)}%
                 </p>
               </div>
@@ -159,23 +156,21 @@ export function HealthPanel({ data }: HealthPanelProps) {
                 <span className="font-medium">{data.sleep.awakeMinutes}m</span>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Heart Rate Card */}
       {data.heartRate && (
-        <Card className="min-w-0 overflow-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Heart className="h-4 w-4 text-red-500" />
-              心率
-              <span className="ml-auto text-base font-semibold text-red-500">
-                {data.heartRate.avg} bpm
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <div className="rounded-card bg-secondary p-4 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+            <Heart className="h-4 w-4" strokeWidth={1.5} />
+            心率
+            <span className="ml-auto text-base font-semibold text-foreground font-display tracking-tight">
+              {data.heartRate.avg} bpm
+            </span>
+          </div>
+          <div className="space-y-3">
             {/* Bar Chart - Vertical bars representing 15-minute slots */}
             {(() => {
               const heartRateBars = getHeartRateBars(data.heartRate!.records);
@@ -201,30 +196,28 @@ export function HealthPanel({ data }: HealthPanelProps) {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">平均</p>
-                <p className="font-medium text-red-500">{data.heartRate.avg}</p>
+                <p className="font-medium">{data.heartRate.avg}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">最高</p>
                 <p className="font-medium">{data.heartRate.max}</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Steps Card */}
       {data.steps.length > 0 && (
-        <Card className="min-w-0 overflow-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Footprints className="h-4 w-4 text-green-500" />
-              步数
-              <span className="ml-auto text-base font-semibold text-green-500">
-                {data.totalSteps.toLocaleString()}
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <div className="rounded-card bg-secondary p-4 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+            <Footprints className="h-4 w-4" strokeWidth={1.5} />
+            步数
+            <span className="ml-auto text-base font-semibold text-foreground font-display tracking-tight">
+              {data.totalSteps.toLocaleString()}
+            </span>
+          </div>
+          <div className="space-y-3">
             {/* Bar Chart - Vertical bars representing hourly steps */}
             {(() => {
               const maxSteps = Math.max(...data.steps.map((x) => x.count));
@@ -262,23 +255,21 @@ export function HealthPanel({ data }: HealthPanelProps) {
                 <p className="font-medium">{data.flightsClimbed || "-"}</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Water Card */}
       {data.water.length > 0 && (
-        <Card className="min-w-0 overflow-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Droplets className="h-4 w-4 text-cyan-500" />
-              饮水
-              <span className="ml-auto text-base font-semibold text-cyan-500">
-                {(data.totalWater / 1000).toFixed(1)}L
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
+        <div className="rounded-card bg-secondary p-4 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+            <Droplets className="h-4 w-4" strokeWidth={1.5} />
+            饮水
+            <span className="ml-auto text-base font-semibold text-foreground font-display tracking-tight">
+              {(data.totalWater / 1000).toFixed(1)}L
+            </span>
+          </div>
+          <div className="space-y-2">
             {data.water.map((w, i) => (
               <div
                 key={i}
@@ -288,20 +279,18 @@ export function HealthPanel({ data }: HealthPanelProps) {
                 <span>{w.amount}ml</span>
               </div>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Activity Rings Card */}
       {data.activity && (
-        <Card className="min-w-0 overflow-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Activity className="h-4 w-4 text-orange-500" />
-              活动圆环
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <div className="rounded-card bg-secondary p-4 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+            <Activity className="h-4 w-4" strokeWidth={1.5} />
+            活动圆环
+          </div>
+          <div className="space-y-3">
             {/* Progress Bars - 3 horizontal bars for Move/Exercise/Stand */}
             {(() => {
               const moveGoal = data.activity!.activeEnergyGoal ?? 500;
@@ -349,8 +338,8 @@ export function HealthPanel({ data }: HealthPanelProps) {
                 </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </>
   );

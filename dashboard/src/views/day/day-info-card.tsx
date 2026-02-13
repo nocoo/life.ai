@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { Droplets, Wind, Sunrise, Sunset, Loader2 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { fetchHistoricalWeather } from "@/services/weather-service";
 import { getWeatherDescription, getWeatherIcon, type DayWeather } from "@/models/weather";
 
@@ -27,12 +26,12 @@ export function DateCard({ date }: { date: Date }) {
   const weekday = formatWeekday(date);
 
   return (
-    <Card className="min-w-0 overflow-hidden">
-      <CardContent className="py-2 flex items-center justify-between">
+    <div className="rounded-card bg-secondary p-4">
+      <div className="flex items-center justify-between">
         <span className="font-medium">{dateStr}</span>
         <span className="text-sm text-muted-foreground">{weekday}</span>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -73,8 +72,7 @@ export function WeatherCard({ date, latitude, longitude }: DayInfoCardProps) {
   }, [date, latitude, longitude]);
 
   return (
-    <Card className="min-w-0 overflow-hidden">
-      <CardContent className="py-2">
+    <div className="rounded-card bg-secondary p-4">
         {/* Loading state */}
         {loading && (
           <div className="flex items-center justify-center text-muted-foreground">
@@ -132,8 +130,7 @@ export function WeatherCard({ date, latitude, longitude }: DayInfoCardProps) {
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
 }
 

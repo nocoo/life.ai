@@ -10,7 +10,6 @@ import {
   Timer,
   TrendingUp,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import type { DaySummary } from "@/models/day-view";
 
 export interface SummaryCardsProps {
@@ -22,7 +21,6 @@ interface SummaryCardProps {
   label: string;
   value: string;
   subtitle?: string;
-  iconColor?: string;
 }
 
 function SummaryCard({
@@ -30,21 +28,20 @@ function SummaryCard({
   label,
   value,
   subtitle,
-  iconColor = "text-primary",
 }: SummaryCardProps) {
   return (
-    <Card>
-      <CardContent className="flex items-center gap-3 p-4">
-        <div className={`${iconColor}`}>{icon}</div>
+    <div className="rounded-card bg-secondary p-4">
+      <div className="flex items-center gap-3">
+        <div className="text-muted-foreground">{icon}</div>
         <div className="flex-1 min-w-0">
           <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="text-lg font-semibold truncate">{value}</p>
+          <p className="text-lg font-semibold text-foreground font-display tracking-tight truncate">{value}</p>
           {subtitle && (
             <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -75,15 +72,14 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {/* Steps */}
       <SummaryCard
-        icon={<Footprints className="h-5 w-5" />}
+        icon={<Footprints className="h-5 w-5" strokeWidth={1.5} />}
         label="步数"
         value={formatNumber(summary.steps)}
-        iconColor="text-green-500"
       />
 
       {/* Heart Rate */}
       <SummaryCard
-        icon={<Heart className="h-5 w-5" />}
+        icon={<Heart className="h-5 w-5" strokeWidth={1.5} />}
         label="心率"
         value={summary.heartRateAvg ? `${summary.heartRateAvg} 次/分` : "-"}
         subtitle={
@@ -91,40 +87,36 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
             ? `${summary.heartRateMin}-${summary.heartRateMax} 次/分`
             : undefined
         }
-        iconColor="text-red-500"
       />
 
       {/* Active Energy */}
       <SummaryCard
-        icon={<Flame className="h-5 w-5" />}
+        icon={<Flame className="h-5 w-5" strokeWidth={1.5} />}
         label="活动能量"
         value={
           summary.activeEnergy ? `${Math.round(summary.activeEnergy)} 千卡` : "-"
         }
-        iconColor="text-orange-500"
       />
 
       {/* Exercise */}
       <SummaryCard
-        icon={<Timer className="h-5 w-5" />}
+        icon={<Timer className="h-5 w-5" strokeWidth={1.5} />}
         label="运动"
         value={
           summary.exerciseMinutes ? `${summary.exerciseMinutes} 分钟` : "-"
         }
-        iconColor="text-blue-500"
       />
 
       {/* Sleep */}
       <SummaryCard
-        icon={<Moon className="h-5 w-5" />}
+        icon={<Moon className="h-5 w-5" strokeWidth={1.5} />}
         label="睡眠"
         value={formatHours(summary.sleepHours)}
-        iconColor="text-indigo-500"
       />
 
       {/* Distance */}
       <SummaryCard
-        icon={<MapPin className="h-5 w-5" />}
+        icon={<MapPin className="h-5 w-5" strokeWidth={1.5} />}
         label="距离"
         value={formatDistance(summary.distance)}
         subtitle={
@@ -132,12 +124,11 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
             ? `${summary.locationCount} 个地点`
             : undefined
         }
-        iconColor="text-cyan-500"
       />
 
       {/* Spending */}
       <SummaryCard
-        icon={<Wallet className="h-5 w-5" />}
+        icon={<Wallet className="h-5 w-5" strokeWidth={1.5} />}
         label="支出"
         value={formatCurrency(summary.expense)}
         subtitle={
@@ -145,17 +136,15 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
             ? `${summary.transactionCount} 笔交易`
             : undefined
         }
-        iconColor="text-rose-500"
       />
 
       {/* Net */}
       {summary.income > 0 && (
         <SummaryCard
-          icon={<TrendingUp className="h-5 w-5" />}
+          icon={<TrendingUp className="h-5 w-5" strokeWidth={1.5} />}
           label="净收入"
           value={formatCurrency(summary.net)}
           subtitle={`收入：${formatCurrency(summary.income)}`}
-          iconColor={summary.net >= 0 ? "text-emerald-500" : "text-rose-500"}
         />
       )}
     </div>

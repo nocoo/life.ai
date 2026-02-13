@@ -2,7 +2,7 @@
 
 import { useMemo, useEffect, useState } from "react";
 import { MapPin, Dumbbell, Wallet, Route } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -115,7 +115,7 @@ export function TrackMapCard({ trackPoints, className }: { trackPoints: TrackPoi
   }
 
   return (
-    <Card className={`min-w-0 overflow-hidden p-0 ${className ?? ""}`}>
+    <Card className={`min-w-0 overflow-hidden rounded-card border-0 bg-secondary shadow-none p-0 ${className ?? ""}`}>
       {/* 16:9 aspect ratio container for better space utilization */}
       <div className="aspect-video w-full">
         <LeafletMap 
@@ -145,14 +145,12 @@ export function ActivityPanel({
     <>
       {/* Workouts Card */}
       {workouts.length > 0 && (
-        <Card className="min-w-0 overflow-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Dumbbell className="h-4 w-4 text-green-500" />
-              运动
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <div className="rounded-card bg-secondary p-4 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+            <Dumbbell className="h-4 w-4" strokeWidth={1.5} />
+            运动
+          </div>
+          <div className="space-y-3">
             {workouts.map((workout, i) => (
               <div key={workout.id}>
                 {i > 0 && <Separator className="my-3" />}
@@ -192,20 +190,18 @@ export function ActivityPanel({
                 </div>
               </div>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Locations Card */}
       {footprint.locations.length > 0 && (
-        <Card className="min-w-0 overflow-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <MapPin className="h-4 w-4 text-blue-500" />
-              地点
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
+        <div className="rounded-card bg-secondary p-4 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+            <MapPin className="h-4 w-4" strokeWidth={1.5} />
+            地点
+          </div>
+          <div className="space-y-2">
             {footprint.locations
               .filter((loc) => loc.name !== "Commute")
               .map((loc) => (
@@ -222,23 +218,21 @@ export function ActivityPanel({
                   </span>
                 </div>
               ))}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Track Summary Card */}
       {footprint.summary && (
-        <Card className="min-w-0 overflow-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Route className="h-4 w-4 text-cyan-500" />
-              移动
-              <span className="ml-auto text-base font-semibold text-cyan-500">
-                {formatDistance(footprint.summary.totalDistance)}
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <div className="rounded-card bg-secondary p-4 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+            <Route className="h-4 w-4" strokeWidth={1.5} />
+            移动
+            <span className="ml-auto text-base font-semibold text-foreground font-display tracking-tight">
+              {formatDistance(footprint.summary.totalDistance)}
+            </span>
+          </div>
+          <div className="space-y-3">
             {/* Bar Chart - Speed distribution from track points */}
             {(() => {
               // Group track points by hour and calculate average speed
@@ -310,23 +304,21 @@ export function ActivityPanel({
                 <p className="font-medium">{footprint.summary.pointCount.toLocaleString()}</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Transactions Card */}
       {pixiu.transactions.length > 0 && (
-        <Card className="min-w-0 overflow-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Wallet className="h-4 w-4 text-green-500" />
-              交易
-              <span className="ml-auto text-base font-semibold text-green-500">
-                ¥{pixiu.summary?.expense.toFixed(0) ?? 0}
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <div className="rounded-card bg-secondary p-4 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+            <Wallet className="h-4 w-4" strokeWidth={1.5} />
+            交易
+            <span className="ml-auto text-base font-semibold text-foreground font-display tracking-tight">
+              ¥{pixiu.summary?.expense.toFixed(0) ?? 0}
+            </span>
+          </div>
+          <div className="space-y-3">
             {/* Bar Chart - Category breakdown as horizontal segments */}
             {(() => {
               const categories = pixiu.expenseByCategory.slice(0, 6);
@@ -413,8 +405,8 @@ export function ActivityPanel({
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </>
   );

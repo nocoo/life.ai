@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDayStore } from "@/viewmodels/day-store";
 import { DateNavigation } from "./date-navigation";
 import { DayCalendar } from "./day-calendar";
@@ -23,51 +22,35 @@ function LoadingSkeleton() {
       {/* Two-column layout skeleton: Timeline primary, Cards sidebar */}
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         {/* Timeline Card skeleton */}
-        <Card>
-          <CardHeader className="py-2 px-3">
-            <Skeleton className="h-4 w-24" />
-          </CardHeader>
-          <CardContent className="space-y-2 px-3 pb-3">
+        <div className="rounded-card bg-secondary p-4">
+          <Skeleton className="h-4 w-24 mb-3" />
+          <div className="space-y-2">
             {Array.from({ length: 12 }).map((_, i) => (
               <Skeleton key={i} className="h-7 w-full" />
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
         {/* Cards sidebar skeleton */}
         <div className="grid gap-3 auto-rows-min">
           {/* DayInfoCard skeleton */}
-          <Card>
-            <CardHeader className="py-2 px-3">
-              <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-4 w-48" />
-            </CardHeader>
-          </Card>
+          <div className="rounded-card bg-secondary p-4">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-4 w-48 mt-1" />
+          </div>
           {/* HealthPanel skeletons */}
-          <Card>
-            <CardHeader className="py-2 px-3">
-              <Skeleton className="h-4 w-20" />
-            </CardHeader>
-            <CardContent className="px-3 pb-3">
-              <Skeleton className="h-14 w-full" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="py-2 px-3">
-              <Skeleton className="h-4 w-20" />
-            </CardHeader>
-            <CardContent className="px-3 pb-3">
-              <Skeleton className="h-20 w-full" />
-            </CardContent>
-          </Card>
+          <div className="rounded-card bg-secondary p-4">
+            <Skeleton className="h-4 w-20 mb-3" />
+            <Skeleton className="h-14 w-full" />
+          </div>
+          <div className="rounded-card bg-secondary p-4">
+            <Skeleton className="h-4 w-20 mb-3" />
+            <Skeleton className="h-20 w-full" />
+          </div>
           {/* ActivityPanel skeleton */}
-          <Card>
-            <CardHeader className="py-2 px-3">
-              <Skeleton className="h-4 w-20" />
-            </CardHeader>
-            <CardContent className="px-3 pb-3">
-              <Skeleton className="h-16 w-full" />
-            </CardContent>
-          </Card>
+          <div className="rounded-card bg-secondary p-4">
+            <Skeleton className="h-4 w-20 mb-3" />
+            <Skeleton className="h-16 w-full" />
+          </div>
         </div>
       </div>
     </div>
@@ -176,22 +159,18 @@ export function DayPage() {
                   />
 
                   {/* Enhanced Timeline in a Card */}
-                  <Card className="min-w-0 overflow-hidden">
-                    <CardHeader className="py-2 px-3">
-                      <CardTitle className="flex items-center gap-2 text-sm font-medium">
-                        <Clock className="h-4 w-4 text-indigo-500" aria-hidden="true" />
-                        时间线
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-3 pb-3 pt-0">
-                      <EnhancedTimeline 
-                        slots={timeSlots} 
-                        date={selectedDate}
-                        latitude={location.latitude}
-                        longitude={location.longitude}
-                      />
-                    </CardContent>
-                  </Card>
+                  <div className="rounded-card bg-secondary p-4 min-w-0 overflow-hidden">
+                    <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+                      <Clock className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+                      时间线
+                    </div>
+                    <EnhancedTimeline 
+                      slots={timeSlots} 
+                      date={selectedDate}
+                      latitude={location.latitude}
+                      longitude={location.longitude}
+                    />
+                  </div>
                 </div>
 
                 {/* Right: Single-column cards sidebar */}
