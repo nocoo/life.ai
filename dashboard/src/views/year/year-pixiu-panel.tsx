@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard, StatGrid } from "@/components/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
@@ -127,25 +126,21 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
           title="年度总收入"
           value={formatCurrency(totalIncome)}
           icon={TrendingUp}
-          iconColor="text-green-500"
         />
         <StatCard
           title="年度总支出"
           value={formatCurrency(totalExpense)}
           icon={TrendingDown}
-          iconColor="text-red-500"
         />
         <StatCard
           title="年度净收支"
           value={formatCurrency(totalNet)}
           icon={isPositiveNet ? PiggyBank : Wallet}
-          iconColor={isPositiveNet ? "text-emerald-500" : "text-orange-500"}
         />
         <StatCard
           title="交易笔数"
           value={transactionCount}
           icon={Receipt}
-          iconColor="text-blue-500"
         />
       </StatGrid>
 
@@ -155,26 +150,21 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
           title="月均收入"
           value={formatCurrency(avgMonthlyIncome)}
           icon={ArrowUpCircle}
-          iconColor="text-green-500"
         />
         <StatCard
           title="月均支出"
           value={formatCurrency(avgMonthlyExpense)}
           icon={ArrowDownCircle}
-          iconColor="text-red-500"
         />
       </StatGrid>
 
       {/* B. Trends - Monthly Income/Expense/Net */}
       {(monthlyIncome.length > 0 || monthlyExpense.length > 0) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-blue-500" aria-hidden="true" />
-              月度收支趋势
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="rounded-card bg-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+            <Calendar className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+            月度收支趋势
+          </div>
             <LineChart
               series={[
                 ...(monthlyIncome.length > 0
@@ -191,20 +181,16 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
               valueFormatter={formatCurrencyCompact}
               showDots
             />
-          </CardContent>
-        </Card>
+        </div>
       )}
 
       {/* C. Breakdown - Category Distribution (symmetric: left=income, right=expense) */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <ArrowUpCircle className="h-4 w-4 text-green-500" aria-hidden="true" />
-              收入 | 分类占比
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="rounded-card bg-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+            <ArrowUpCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+            收入 | 分类占比
+          </div>
             {incomeByCategory.length > 0 ? (
               <DonutChart
                 data={aggregateCategoryData(incomeByCategory)}
@@ -217,16 +203,12 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
                 暂无收入数据
               </div>
             )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <ArrowDownCircle className="h-4 w-4 text-red-500" aria-hidden="true" />
-              支出 | 分类占比
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        </div>
+        <div className="rounded-card bg-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+            <ArrowDownCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+            支出 | 分类占比
+          </div>
             {expenseByCategory.length > 0 ? (
               <DonutChart
                 data={aggregateCategoryData(expenseByCategory)}
@@ -239,20 +221,16 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
                 暂无支出数据
               </div>
             )}
-          </CardContent>
-        </Card>
+        </div>
       </div>
 
       {/* C. Breakdown - Account Distribution (symmetric: left=income, right=expense) */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <ArrowUpCircle className="h-4 w-4 text-green-500" aria-hidden="true" />
-              收入 | 按账户
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="rounded-card bg-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+            <ArrowUpCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+            收入 | 按账户
+          </div>
             {incomeByAccountData.length > 0 ? (
               <BarChart
                 data={incomeByAccountData}
@@ -266,16 +244,12 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
                 暂无收入数据
               </div>
             )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <ArrowDownCircle className="h-4 w-4 text-red-500" aria-hidden="true" />
-              支出 | 按账户
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        </div>
+        <div className="rounded-card bg-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+            <ArrowDownCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+            支出 | 按账户
+          </div>
             {expenseByAccountData.length > 0 ? (
               <BarChart
                 data={expenseByAccountData}
@@ -289,20 +263,16 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
                 暂无支出数据
               </div>
             )}
-          </CardContent>
-        </Card>
+        </div>
       </div>
 
       {/* D. Details - Expense Heatmap */}
       {dailyExpense.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <TrendingDown className="h-4 w-4 text-red-500" aria-hidden="true" />
-              支出日历
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="rounded-card bg-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+            <TrendingDown className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+            支出日历
+          </div>
             <HeatmapCalendar
               data={toHeatmapData(dailyExpense)}
               year={year}
@@ -310,20 +280,16 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
               valueFormatter={formatCurrencyCompact}
               colorScale={heatmapColorScales.red}
             />
-          </CardContent>
-        </Card>
+        </div>
       )}
 
       {/* D. Details - Top Expense Months */}
       {topExpenseMonths.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <TrendingDown className="h-4 w-4 text-red-500" aria-hidden="true" />
-              支出最高月份
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="rounded-card bg-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+            <TrendingDown className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+            支出最高月份
+          </div>
             <BarChart
               data={topExpenseMonths.slice(0, 5).map((m) => ({
                 label: m.month,
@@ -334,8 +300,7 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
               color={COLORS.expense}
               valueFormatter={formatCurrencyCompact}
             />
-          </CardContent>
-        </Card>
+        </div>
       )}
     </div>
   );
