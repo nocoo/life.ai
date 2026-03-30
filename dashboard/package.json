@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 7013 --turbopack",
+    "dev": "next dev -p 7011 --turbopack",
     "build": "next build",
-    "start": "next start -p 7013",
+    "start": "next start -p 7011",
     "lint": "next lint",
     "ut": "bun test --coverage --coverage-reporter=text --coverage-reporter=lcov && bun run coverage-check.ts",
     "ut:watch": "bun test --watch"

@@ -39,7 +39,7 @@ cd dashboard
 bun install
 bun dev
 ```
-默认端口：`7013`
+默认端口：`7011`
 
 ### Dashboard 测试
 ```bash

@@ -9,7 +9,7 @@ Life.AI 可视化前端项目。
 - **状态管理**: Zustand (MVVM ViewModel 层)
 - **运行时**: Bun
 - **测试**: Bun Test
-- **端口**: 7013
+- **端口**: 7011
 
 ## 目录结构
 
@@ -46,7 +46,7 @@ Model 层 (Types & Interfaces)
 
 ```bash
 # 开发
-bun dev           # 启动开发服务器 (端口 7013)
+bun dev           # 启动开发服务器 (端口 7011)
 
 # 测试
 bun run ut        # 运行测试 + 覆盖率检查 (阈值 90%)

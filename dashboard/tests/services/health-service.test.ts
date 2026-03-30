@@ -46,9 +46,9 @@ describe("health-service", () => {
       );
       global.fetch = mockFn as unknown as typeof fetch;
 
-      await fetchHealth("http://localhost:7013");
+      await fetchHealth("http://localhost:7011");
 
-      expect(mockFn).toHaveBeenCalledWith("http://localhost:7013/api/health");
+      expect(mockFn).toHaveBeenCalledWith("http://localhost:7011/api/health");
     });
 
     it("should throw error on non-ok response", async () => {
