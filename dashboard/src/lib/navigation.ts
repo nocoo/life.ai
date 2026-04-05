@@ -25,11 +25,11 @@ export const NAV_GROUPS: NavGroupDef[] = [
     ],
   },
   {
-    label: "Settings",
+    label: "设置",
     defaultOpen: true,
     items: [
-      { href: "/settings", label: "General", icon: Settings },
-      { href: "/settings/storage", label: "Storage", icon: HardDrive },
+      { href: "/settings", label: "通用", icon: Settings },
+      { href: "/settings/storage", label: "存储", icon: HardDrive },
     ],
   },
 ];
@@ -41,6 +41,6 @@ export const ROUTE_LABELS: Record<string, string> = {
   "/day": "日视图",
   "/month": "月视图",
   "/year": "年视图",
-  "/settings": "General",
-  "/settings/storage": "Storage",
+  "/settings": "通用",
+  "/settings/storage": "存储",
 };

@@ -71,7 +71,7 @@ function DatabaseCard({ db, color }: { db: DatabaseStats; color: string }) {
         </div>
       </div>
       <p className="text-xs text-muted-foreground mb-3">
-        {formatNumber(db.totalRows)} records in {db.tables.length} tables
+        {formatNumber(db.totalRows)} 条记录，{db.tables.length} 个表
       </p>
       <div className="space-y-1.5">
         {db.tables.slice(0, 5).map((table) => (
@@ -82,7 +82,7 @@ function DatabaseCard({ db, color }: { db: DatabaseStats; color: string }) {
         ))}
         {db.tables.length > 5 && (
           <p className="text-xs text-muted-foreground">
-            +{db.tables.length - 5} more tables
+            还有 {db.tables.length - 5} 个表
           </p>
         )}
       </div>
@@ -106,7 +106,7 @@ export default function StoragePage() {
           setError(json.error);
         }
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to fetch storage data");
+        setError(e instanceof Error ? e.message : "加载存储数据失败");
       } finally {
         setLoading(false);
       }
@@ -121,7 +121,7 @@ export default function StoragePage() {
   if (error) {
     return (
       <div className="rounded-card bg-destructive/10 p-4 text-sm text-destructive">
-        Failed to load storage data: {error}
+        加载存储数据失败：{error}
       </div>
     );
   }
@@ -142,7 +142,7 @@ export default function StoragePage() {
     ...(overview.gpxSizeBytes > 0
       ? [
           {
-            label: "GPX Files",
+            label: "GPX 文件",
             value: overview.gpxSizeBytes,
             color: CHART_COLORS[databases.length % CHART_COLORS.length],
           },
@@ -164,31 +164,31 @@ export default function StoragePage() {
     <div className="space-y-6">
       {/* Overview Stats */}
       <section>
-        <h2 className="text-sm font-normal text-muted-foreground mb-2">Storage Overview</h2>
+        <h2 className="text-sm font-normal text-muted-foreground mb-2">存储概览</h2>
         <StatGrid columns={4}>
           <StatCard
-            title="Total Size"
+            title="总大小"
             value={`${overview.totalSizeMB} MB`}
-            subtitle="All data combined"
+            subtitle="所有数据合计"
             icon={HardDrive}
             iconColor="text-chart-1"
           />
           <StatCard
-            title="Databases"
+            title="数据库"
             value={overview.databaseCount}
-            subtitle="SQLite files"
+            subtitle="SQLite 文件"
             icon={Database}
             iconColor="text-chart-2"
           />
           <StatCard
-            title="Total Records"
+            title="总记录数"
             value={formatNumber(overview.totalRecords)}
-            subtitle="Across all tables"
+            subtitle="所有表合计"
             icon={Table2}
             iconColor="text-chart-3"
           />
           <StatCard
-            title="GPX Files"
+            title="GPX 文件"
             value={overview.gpxFileCount}
             subtitle={`${overview.gpxSizeMB} MB`}
             icon={FileText}
@@ -199,7 +199,7 @@ export default function StoragePage() {
 
       {/* Database Details */}
       <section>
-        <h2 className="text-sm font-normal text-muted-foreground mb-2">Database Details</h2>
+        <h2 className="text-sm font-normal text-muted-foreground mb-2">数据库详情</h2>
         <StatGrid columns={3}>
           {databases.map((db, i) => (
             <DatabaseCard key={db.name} db={db} color={CHART_COLORS[i % CHART_COLORS.length]} />
@@ -210,7 +210,7 @@ export default function StoragePage() {
       {/* Charts */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-card bg-secondary p-4 md:p-5">
-          <h3 className="text-sm font-medium text-foreground mb-4">Storage Distribution</h3>
+          <h3 className="text-sm font-medium text-foreground mb-4">存储分布</h3>
           <DonutChart
             data={storageDistribution}
             height={220}
@@ -219,7 +219,7 @@ export default function StoragePage() {
           />
         </div>
         <div className="rounded-card bg-secondary p-4 md:p-5">
-          <h3 className="text-sm font-medium text-foreground mb-4">Top Tables by Records</h3>
+          <h3 className="text-sm font-medium text-foreground mb-4">记录数最多的表</h3>
           <BarChart
             data={recordsByType}
             height={220}
