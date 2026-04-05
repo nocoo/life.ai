@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { CalendarDays, CalendarRange, CalendarClock } from "lucide-react";
+import { CalendarDays, CalendarRange, CalendarClock, Settings } from "lucide-react";
 
 export interface NavItemDef {
   href: string;
@@ -24,6 +24,13 @@ export const NAV_GROUPS: NavGroupDef[] = [
       { href: "/year", label: "年视图", icon: CalendarClock },
     ],
   },
+  {
+    label: "Settings",
+    defaultOpen: true,
+    items: [
+      { href: "/settings", label: "General", icon: Settings },
+    ],
+  },
 ];
 
 export const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
@@ -33,4 +40,5 @@ export const ROUTE_LABELS: Record<string, string> = {
   "/day": "日视图",
   "/month": "月视图",
   "/year": "年视图",
+  "/settings": "General",
 };
