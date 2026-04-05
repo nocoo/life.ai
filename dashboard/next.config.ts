@@ -19,6 +19,8 @@ const nextConfig: NextConfig = {
         hostname: "lh3.googleusercontent.com",
       },
     ],
+    // Disable image optimization for local assets (avoids sharp dependency issues)
+    unoptimized: true,
   },
 };
 
