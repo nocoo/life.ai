@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Search, ChevronUp, PanelLeft, LogOut } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useRouter, usePathname } from "next/navigation";
 import {
@@ -149,10 +150,8 @@ export function AppSidebar({ collapsed, onToggle, user }: AppSidebarProps) {
       {collapsed ? (
         /* ── Collapsed (icon-only) view ── */
         <div className="flex h-screen w-[68px] flex-col items-center">
-          <div className="flex h-14 items-center justify-center">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <span className="text-sm font-bold">L</span>
-            </div>
+          <div className="flex h-14 w-full items-center justify-center">
+            <Image src="/logo-24.png" alt="Life.ai" width={24} height={24} />
           </div>
 
           <button
@@ -207,10 +206,8 @@ export function AppSidebar({ collapsed, onToggle, user }: AppSidebarProps) {
           <div className="px-3 h-14 flex items-center">
             <div className="flex w-full items-center justify-between px-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                  <span className="text-sm font-bold">L</span>
-                </div>
-                <span className="text-lg font-semibold text-foreground">Life.ai</span>
+                <Image src="/logo-24.png" alt="Life.ai" width={24} height={24} />
+                <span className="text-lg font-bold tracking-tighter">Life.ai</span>
                 <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground leading-none">
                   v{APP_VERSION}
                 </span>

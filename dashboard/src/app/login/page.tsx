@@ -3,7 +3,8 @@
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { User, Github } from "lucide-react";
+import { Github } from "lucide-react";
+import Image from "next/image";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 function Barcode() {
@@ -137,9 +138,7 @@ export function LoginContent() {
                 }}
               />
               <div className="flex items-center gap-2">
-                <div className="flex h-4 w-4 items-center justify-center rounded-sm bg-primary-foreground/20">
-                  <span className="text-[10px] font-bold text-primary-foreground">L</span>
-                </div>
+                <Image src="/logo-24.png" alt="Life.ai" width={16} height={16} className="brightness-0 invert" />
                 <span className="text-sm font-semibold text-primary-foreground">
                   Life.ai
                 </span>
@@ -161,9 +160,9 @@ export function LoginContent() {
 
           {/* Badge content */}
           <div className="flex flex-1 flex-col items-center px-6 pt-6 pb-14">
-            {/* Avatar placeholder */}
-            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-secondary ring-1 ring-border">
-              <User className="h-10 w-10 text-muted-foreground" strokeWidth={1.5} />
+            {/* Logo */}
+            <div className="h-24 w-24 overflow-hidden rounded-full bg-secondary dark:bg-[#171717] ring-1 ring-border flex items-center justify-center">
+              <Image src="/logo-80.png" alt="Life.ai" width={80} height={80} className="h-full w-full object-cover" />
             </div>
 
             <p className="mt-5 text-lg font-semibold text-foreground">Welcome</p>
