@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { CalendarDays, CalendarRange, CalendarClock, Settings } from "lucide-react";
+import { CalendarDays, CalendarRange, CalendarClock, Settings, HardDrive } from "lucide-react";
 
 export interface NavItemDef {
   href: string;
@@ -29,6 +29,7 @@ export const NAV_GROUPS: NavGroupDef[] = [
     defaultOpen: true,
     items: [
       { href: "/settings", label: "General", icon: Settings },
+      { href: "/settings/storage", label: "Storage", icon: HardDrive },
     ],
   },
 ];
@@ -41,4 +42,5 @@ export const ROUTE_LABELS: Record<string, string> = {
   "/month": "月视图",
   "/year": "年视图",
   "/settings": "General",
+  "/settings/storage": "Storage",
 };
