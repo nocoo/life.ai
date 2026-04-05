@@ -28,7 +28,8 @@
       ]
     },
     "types": [
-      "bun"
+      "bun",
+      "@types/google.maps"
     ]
   },
   "include": [
