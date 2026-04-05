@@ -118,12 +118,15 @@ export function TrackMapCard({ trackPoints, className }: { trackPoints: TrackPoi
     <Card className={`min-w-0 overflow-hidden rounded-card border-0 bg-secondary shadow-none p-0 ${className ?? ""}`}>
       {/* 16:9 aspect ratio container for better space utilization */}
       <div className="aspect-video w-full">
-        <LeafletMap 
-          center={center} 
+        <LeafletMap
+          center={center}
           zoom={12}
           className="h-full w-full rounded-lg"
         >
-          <MapTileLayer />
+          <MapTileLayer
+            url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"
+            darkUrl="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png"
+          />
           <MapZoomControl position="top-1 right-1" />
           {bounds && <FitBounds bounds={bounds} />}
           <MapPolyline 

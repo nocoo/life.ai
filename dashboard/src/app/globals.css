@@ -380,6 +380,14 @@
   .marker-cluster div {
     @apply font-[inherit];
   }
+
+  /* Map tile teal/blue-green color filter */
+  .leaflet-tile-pane {
+    filter: hue-rotate(180deg) saturate(0.6);
+  }
+  .dark .leaflet-tile-pane {
+    filter: hue-rotate(180deg) saturate(0.5) brightness(0.85);
+  }
 }
 
 /*
