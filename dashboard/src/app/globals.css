@@ -388,11 +388,3 @@
 @utility font-display {
   font-family: "DM Sans", system-ui, sans-serif;
 }
-
-/* Map tile teal/blue-green color filter */
-.leaflet-tile-pane {
-  filter: hue-rotate(180deg) saturate(0.6) !important;
-}
-:where(.dark, .dark *) .leaflet-tile-pane {
-  filter: hue-rotate(180deg) saturate(0.5) brightness(0.85) !important;
-}
