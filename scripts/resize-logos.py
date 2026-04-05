@@ -67,7 +67,7 @@ def main() -> None:
 
     # === public/ assets (for <img src> references) ===
     print("\npublic/ assets:")
-    for size in [24, 80]:
+    for size in [24, 80, 192]:
         out = PUBLIC / f"logo-{size}.png"
         resize(img, size).save(out, "PNG", optimize=True)
         print(f"  ✓ {out.relative_to(ROOT)}")
