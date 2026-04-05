@@ -31,20 +31,6 @@ export const SLEEP_STAGE_LABELS: Record<SleepStageType, string> = {
   awake: "清醒",
 };
 
-/**
- * Get sleep stage color
- */
-export function getSleepStageColor(type: SleepStageType): string {
-  return SLEEP_STAGE_COLORS[type];
-}
-
-/**
- * Get sleep stage label
- */
-export function getSleepStageLabel(type: SleepStageType): string {
-  return SLEEP_STAGE_LABELS[type];
-}
-
 // ============================================================================
 // Timeline Colors
 // ============================================================================
@@ -125,34 +111,22 @@ export function getItemSide(type: TimelineDataType): "left" | "right" {
 }
 
 /**
- * Get the color class for a data type
- */
-export function getTimelineColor(type: TimelineDataType): string {
-  return TIMELINE_COLORS[type];
-}
-
-/**
- * Heart rate zones for a 40-year-old male
- * Based on resting heart rate health indicators:
+ * Heart rate zone colors
  * - Green (Ideal): 50-70 bpm - excellent cardiovascular health
  * - Yellow (Elevated): 70-85 bpm - normal but slightly elevated
  * - Orange (High): 85-100 bpm - elevated, may indicate stress or deconditioning
  * - Red (Very High): >100 bpm - tachycardia territory, needs attention
  */
-export type HeartRateZone = "ideal" | "elevated" | "high" | "very-high";
+type HeartRateZone = "ideal" | "elevated" | "high" | "very-high";
 
-export const HEART_RATE_ZONE_COLORS: Record<HeartRateZone, string> = {
+const HEART_RATE_ZONE_COLORS: Record<HeartRateZone, string> = {
   ideal: "bg-green-600",      // Green - healthy resting heart rate
   elevated: "bg-yellow-600",  // Yellow - slightly elevated
   high: "bg-orange-600",      // Orange - high
   "very-high": "bg-red-600",  // Red - very high / tachycardia
 };
 
-/**
- * Get the heart rate zone based on BPM value
- * Thresholds designed for 40-year-old male resting heart rate
- */
-export function getHeartRateZone(bpm: number): HeartRateZone {
+function getHeartRateZone(bpm: number): HeartRateZone {
   if (bpm < 70) return "ideal";
   if (bpm < 85) return "elevated";
   if (bpm < 100) return "high";

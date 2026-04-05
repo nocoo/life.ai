@@ -7,10 +7,7 @@ import {
   TIMELINE_COLORS,
   LEFT_SIDE_TYPES,
   getItemSide,
-  getTimelineColor,
-  getHeartRateZone,
   getHeartRateColor,
-  HEART_RATE_ZONE_COLORS,
 } from "@/lib/timeline-colors";
 import type { TimelineDataType } from "@/models/day-view";
 
@@ -131,58 +128,20 @@ describe("timeline-colors", () => {
     });
   });
 
-  describe("getTimelineColor", () => {
-    it("should return the correct color for each type", () => {
-      expect(getTimelineColor("sleep-deep")).toBe("bg-indigo-800");
-      expect(getTimelineColor("heartRate")).toBe("bg-rose-700");
-      expect(getTimelineColor("water")).toBe("bg-blue-700");
-    });
-  });
-
-  describe("getHeartRateZone", () => {
-    it("should return ideal for heart rate below 70 bpm", () => {
-      expect(getHeartRateZone(50)).toBe("ideal");
-      expect(getHeartRateZone(60)).toBe("ideal");
-      expect(getHeartRateZone(69)).toBe("ideal");
-    });
-
-    it("should return elevated for heart rate 70-84 bpm", () => {
-      expect(getHeartRateZone(70)).toBe("elevated");
-      expect(getHeartRateZone(75)).toBe("elevated");
-      expect(getHeartRateZone(84)).toBe("elevated");
-    });
-
-    it("should return high for heart rate 85-99 bpm", () => {
-      expect(getHeartRateZone(85)).toBe("high");
-      expect(getHeartRateZone(90)).toBe("high");
-      expect(getHeartRateZone(99)).toBe("high");
-    });
-
-    it("should return very-high for heart rate >= 100 bpm", () => {
-      expect(getHeartRateZone(100)).toBe("very-high");
-      expect(getHeartRateZone(120)).toBe("very-high");
-      expect(getHeartRateZone(150)).toBe("very-high");
-    });
-  });
-
   describe("getHeartRateColor", () => {
-    it("should return green for ideal heart rate", () => {
-      expect(getHeartRateColor(60)).toBe(HEART_RATE_ZONE_COLORS.ideal);
+    it("should return green for ideal heart rate (< 70 bpm)", () => {
       expect(getHeartRateColor(60)).toBe("bg-green-600");
     });
 
-    it("should return yellow for elevated heart rate", () => {
-      expect(getHeartRateColor(75)).toBe(HEART_RATE_ZONE_COLORS.elevated);
+    it("should return yellow for elevated heart rate (70-84 bpm)", () => {
       expect(getHeartRateColor(75)).toBe("bg-yellow-600");
     });
 
-    it("should return orange for high heart rate", () => {
-      expect(getHeartRateColor(90)).toBe(HEART_RATE_ZONE_COLORS.high);
+    it("should return orange for high heart rate (85-99 bpm)", () => {
       expect(getHeartRateColor(90)).toBe("bg-orange-600");
     });
 
-    it("should return red for very high heart rate", () => {
-      expect(getHeartRateColor(110)).toBe(HEART_RATE_ZONE_COLORS["very-high"]);
+    it("should return red for very high heart rate (>= 100 bpm)", () => {
       expect(getHeartRateColor(110)).toBe("bg-red-600");
     });
   });
