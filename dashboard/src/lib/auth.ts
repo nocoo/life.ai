@@ -93,10 +93,25 @@ export const { handlers, auth } = NextAuth({
     },
     authorized({ auth: session, request: { nextUrl } }) {
       const isLoggedIn = !!session?.user;
-      const isOnLogin = nextUrl.pathname === "/login";
+      const pathname = nextUrl.pathname;
 
-      if (isOnLogin) {
-        if (isLoggedIn) return Response.redirect(new URL("/day", nextUrl));
+      // Allow public paths: login page and static assets
+      const isPublicPath =
+        pathname === "/login" ||
+        pathname.startsWith("/_next/") ||
+        pathname.startsWith("/api/auth/") ||
+        pathname.endsWith(".png") ||
+        pathname.endsWith(".ico") ||
+        pathname.endsWith(".svg") ||
+        pathname.endsWith(".jpg") ||
+        pathname.endsWith(".jpeg") ||
+        pathname.endsWith(".webp");
+
+      if (isPublicPath) {
+        // Redirect logged-in users away from login page
+        if (pathname === "/login" && isLoggedIn) {
+          return Response.redirect(new URL("/day", nextUrl));
+        }
         return true;
       }
 
