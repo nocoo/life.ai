@@ -13,7 +13,7 @@ const useSecureCookies =
   process.env.NEXTAUTH_URL?.startsWith("https://") ||
   process.env.USE_SECURE_COOKIES === "true";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const { handlers, auth } = NextAuth({
   // Trust the host header for automatic URL detection behind reverse proxies
   trustHost: true,
   providers: [
