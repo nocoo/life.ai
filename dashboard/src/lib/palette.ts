@@ -5,13 +5,6 @@
 /** Helper — wraps a CSS custom property name for inline style usage. */
 const v = (token: string) => `hsl(var(--${token}))`;
 
-/**
- * Returns a CSS color string with alpha from a CSS custom property.
- * Usage: `withAlpha("chart-1", 0.12)` → `hsl(var(--chart-1) / 0.12)`
- */
-export const withAlpha = (token: string, alpha: number) =>
-  `hsl(var(--${token}) / ${alpha})`;
-
 // ── 24 sequential chart colors ──
 
 export const chart = {
@@ -44,18 +37,6 @@ export const chart = {
 /** Ordered array — use for pie / donut / bar where you need N colors by index. */
 export const CHART_COLORS = Object.values(chart);
 
-/** CSS variable names (without --) matching CHART_COLORS order — for withAlpha(). */
-export const CHART_TOKENS = Array.from({ length: 24 }, (_, i) => `chart-${i + 1}`) as readonly string[];
-
 // ── Semantic aliases ──
 
 export const chartAxis = v("chart-axis");
-
-/** Positive / income / inflow */
-export const chartPositive = chart.green;
-
-/** Negative / expense / outflow — reuses the destructive token */
-export const chartNegative = v("destructive");
-
-/** Primary chart accent (most-used single color) */
-export const chartPrimary = chart.primary;
