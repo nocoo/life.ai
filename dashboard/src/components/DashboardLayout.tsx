@@ -1,19 +1,14 @@
 "use client";
 
-import { useState, useEffect, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { SidebarProvider, useSidebar } from "@/components/sidebar-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Github, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-// Map route paths to page titles
-const PAGE_TITLES: Record<string, string> = {
-  "/day": "日视图",
-  "/month": "月视图",
-  "/year": "年视图",
-};
+import { ROUTE_LABELS } from "@/lib/navigation";
 
 export interface UserInfo {
   name?: string;
@@ -26,30 +21,12 @@ interface DashboardLayoutProps {
   user?: UserInfo;
 }
 
-export function DashboardLayout({ children, user }: DashboardLayoutProps) {
-  const [collapsed, setCollapsed] = useState(false);
+function DashboardLayoutInner({ children, user }: DashboardLayoutProps) {
+  const { collapsed, toggle, mobileOpen, setMobileOpen } = useSidebar();
   const isMobile = useIsMobile();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
 
-  const title = PAGE_TITLES[pathname] ?? "Life.ai";
-
-  // Close mobile sidebar on route change
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
-
-  // Prevent body scroll when mobile sidebar is open
-  useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [mobileOpen]);
+  const title = ROUTE_LABELS[pathname] ?? "Life.ai";
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -63,7 +40,7 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
       {!isMobile && (
         <AppSidebar
           collapsed={collapsed}
-          onToggle={() => setCollapsed(!collapsed)}
+          onToggle={toggle}
           user={user}
         />
       )}
@@ -115,5 +92,15 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
         </div>
       </main>
     </div>
+  );
+}
+
+export function DashboardLayout({ children, user }: DashboardLayoutProps) {
+  return (
+    <SidebarProvider>
+      <DashboardLayoutInner user={user}>
+        {children}
+      </DashboardLayoutInner>
+    </SidebarProvider>
   );
 }

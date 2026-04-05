@@ -1,10 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import {
-  CalendarDays, CalendarRange, CalendarClock,
-  Search, ChevronUp, PanelLeft, LogOut,
-} from "lucide-react";
+import { Search, ChevronUp, PanelLeft, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter, usePathname } from "next/navigation";
 import {
@@ -18,35 +15,9 @@ import {
   CommandInput, CommandItem, CommandList,
 } from "@/components/ui/command";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { NAV_GROUPS, ALL_NAV_ITEMS, type NavItemDef, type NavGroupDef } from "@/lib/navigation";
+import { APP_VERSION } from "@/lib/version";
 import type { UserInfo } from "@/components/DashboardLayout";
-
-// ── Navigation data model ──
-
-interface NavItem {
-  title: string;
-  icon: React.ElementType;
-  path: string;
-}
-
-interface NavGroup {
-  label: string;
-  items: NavItem[];
-  defaultOpen?: boolean;
-}
-
-const NAV_GROUPS: NavGroup[] = [
-  {
-    label: "日常",
-    defaultOpen: true,
-    items: [
-      { title: "日视图", icon: CalendarDays, path: "/day" },
-      { title: "月视图", icon: CalendarRange, path: "/month" },
-      { title: "年视图", icon: CalendarClock, path: "/year" },
-    ],
-  },
-];
-
-const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 
 function getInitials(name?: string): string {
   if (!name) return "?";
@@ -60,7 +31,7 @@ function getInitials(name?: string): string {
 
 // ── Sub-components ──
 
-function NavGroupSection({ group, currentPath }: { group: NavGroup; currentPath: string }) {
+function NavGroupSection({ group, currentPath }: { group: NavGroupDef; currentPath: string }) {
   const [open, setOpen] = useState(group.defaultOpen ?? true);
   const router = useRouter();
 
@@ -91,17 +62,17 @@ function NavGroupSection({ group, currentPath }: { group: NavGroup; currentPath:
           <div className="flex flex-col gap-0.5 px-3">
             {group.items.map((item) => (
               <button
-                key={item.path}
-                onClick={() => router.push(item.path)}
+                key={item.href}
+                onClick={() => router.push(item.href)}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-normal transition-colors",
-                  currentPath === item.path
+                  currentPath === item.href
                     ? "bg-accent text-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
                 )}
               >
                 <item.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-                <span className="flex-1 text-left">{item.title}</span>
+                <span className="flex-1 text-left">{item.label}</span>
               </button>
             ))}
           </div>
@@ -111,16 +82,16 @@ function NavGroupSection({ group, currentPath }: { group: NavGroup; currentPath:
   );
 }
 
-function CollapsedNavItem({ item, currentPath }: { item: NavItem; currentPath: string }) {
+function CollapsedNavItem({ item, currentPath }: { item: NavItemDef; currentPath: string }) {
   const router = useRouter();
   return (
     <Tooltip delayDuration={0}>
       <TooltipTrigger asChild>
         <button
-          onClick={() => router.push(item.path)}
+          onClick={() => router.push(item.href)}
           className={cn(
             "relative flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
-            currentPath === item.path
+            currentPath === item.href
               ? "bg-accent text-foreground"
               : "text-muted-foreground hover:bg-accent hover:text-foreground"
           )}
@@ -129,7 +100,7 @@ function CollapsedNavItem({ item, currentPath }: { item: NavItem; currentPath: s
         </button>
       </TooltipTrigger>
       <TooltipContent side="right" sideOffset={8}>
-        {item.title}
+        {item.label}
       </TooltipContent>
     </Tooltip>
   );
@@ -209,7 +180,7 @@ export function AppSidebar({ collapsed, onToggle, user }: AppSidebarProps) {
 
           <nav className="flex-1 flex flex-col items-center gap-1 overflow-y-auto pt-1">
             {ALL_NAV_ITEMS.map((item) => (
-              <CollapsedNavItem key={item.path} item={item} currentPath={pathname} />
+              <CollapsedNavItem key={item.href} item={item} currentPath={pathname} />
             ))}
           </nav>
 
@@ -239,7 +210,10 @@ export function AppSidebar({ collapsed, onToggle, user }: AppSidebarProps) {
                 <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
                   <span className="text-sm font-bold">L</span>
                 </div>
-                <span className="text-lg md:text-xl font-semibold text-foreground">Life.ai</span>
+                <span className="text-lg font-semibold text-foreground">Life.ai</span>
+                <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground leading-none">
+                  v{APP_VERSION}
+                </span>
               </div>
               <button
                 onClick={onToggle}
@@ -308,13 +282,13 @@ export function AppSidebar({ collapsed, onToggle, user }: AppSidebarProps) {
             <CommandGroup key={group.label} heading={group.label}>
               {group.items.map((item) => (
                 <CommandItem
-                  key={item.path}
-                  value={item.title}
-                  onSelect={() => handleSelect(item.path)}
+                  key={item.href}
+                  value={item.label}
+                  onSelect={() => handleSelect(item.href)}
                   className="gap-3 cursor-pointer"
                 >
                   <item.icon className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
-                  <span>{item.title}</span>
+                  <span>{item.label}</span>
                 </CommandItem>
               ))}
             </CommandGroup>
