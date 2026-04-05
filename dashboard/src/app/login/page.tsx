@@ -1,5 +1,10 @@
-import { signIn } from "@/lib/auth";
-import { User } from "lucide-react";
+"use client";
+
+import { signIn } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+import { User, Github } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 function Barcode() {
   const bars = [2, 1, 3, 1, 2, 1, 1, 3, 1, 2, 1, 3, 2, 1, 1, 2, 3, 1, 2, 1];
@@ -39,7 +44,39 @@ function GoogleIcon() {
   );
 }
 
-export default function LoginPage() {
+function LoginSkeleton() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex flex-col items-center">
+        <div className="relative aspect-[54/86] w-72 overflow-hidden rounded-2xl bg-card animate-pulse">
+          <div className="bg-primary/60 h-24" />
+          <div className="flex flex-1 flex-col items-center px-6 pt-6">
+            <div className="h-24 w-24 rounded-full bg-secondary" />
+            <div className="mt-5 h-5 w-24 rounded bg-secondary" />
+            <div className="mt-2 h-3 w-32 rounded bg-secondary" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Exported for testing
+export function LoginContent() {
+  const searchParams = useSearchParams();
+  const error = searchParams.get("error");
+  const rawCallback = searchParams.get("callbackUrl");
+  const callbackUrl =
+    rawCallback && rawCallback.startsWith("/") && !rawCallback.startsWith("//")
+      ? rawCallback
+      : "/day";
+  const year = new Date().getFullYear();
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+
+  const handleGoogleLogin = () => {
+    signIn("google", { callbackUrl });
+  };
+
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
       {/* Radial glow */}
@@ -60,6 +97,19 @@ export default function LoginPage() {
           ].join(" "),
         }}
       />
+      {/* Top-right controls */}
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-1">
+        <a
+          href="https://github.com/nicoxiang/life.ai"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="GitHub repository"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        >
+          <Github className="h-[18px] w-[18px]" aria-hidden="true" strokeWidth={1.5} />
+        </a>
+        <ThemeToggle />
+      </div>
       <div className="flex flex-col items-center">
         {/* Badge card — bank card flipped vertical: 54/86 */}
         <div
@@ -101,7 +151,7 @@ export default function LoginPage() {
             {/* Barcode row */}
             <div className="mt-3 flex items-center justify-between">
               <span className="text-[9px] font-mono text-primary-foreground/40 tracking-wider">
-                ID 2026-0213
+                ID {year}-{today.slice(4)}
               </span>
               <div className="h-6">
                 <Barcode />
@@ -121,27 +171,29 @@ export default function LoginPage() {
               Sign in to get your badge
             </p>
 
+            {/* Error message */}
+            {error && (
+              <div className="mt-3 w-full rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive text-center">
+                {error === "AccessDenied"
+                  ? "Your account is not authorized."
+                  : "Sign in failed. Please try again."}
+              </div>
+            )}
+
             {/* Divider */}
             <div className="mt-5 h-px w-full bg-border" />
 
             {/* Push button toward bottom */}
             <div className="flex-1" />
 
-            {/* Google Sign-in button — server action */}
-            <form
-              action={async () => {
-                "use server";
-                await signIn("google", { redirectTo: "/day" });
-              }}
+            {/* Google Sign-in button */}
+            <button
+              onClick={handleGoogleLogin}
+              className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-secondary px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent cursor-pointer"
             >
-              <button
-                type="submit"
-                className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-secondary px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-              >
-                <GoogleIcon />
-                Continue with Google
-              </button>
-            </form>
+              <GoogleIcon />
+              Continue with Google
+            </button>
 
             {/* Terms */}
             <p className="mt-3 text-center text-[10px] leading-relaxed text-muted-foreground/60">
@@ -161,5 +213,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginSkeleton />}>
+      <LoginContent />
+    </Suspense>
   );
 }

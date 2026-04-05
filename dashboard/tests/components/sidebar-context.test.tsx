@@ -1,11 +1,16 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { renderHook, act } from "@testing-library/react";
+import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { renderHook, act, cleanup } from "@testing-library/react";
 import { SidebarProvider, useSidebar } from "@/components/sidebar-context";
+import { mockNavigationState } from "../setup";
 
-// Mock next/navigation
-mock.module("next/navigation", () => ({
-  usePathname: () => "/day",
-}));
+// Use shared mock from setup.ts - just update the state as needed
+beforeEach(() => {
+  mockNavigationState.pathname = "/day";
+});
+
+afterEach(() => {
+  cleanup();
+});
 
 describe("sidebar-context", () => {
   describe("SidebarProvider", () => {
