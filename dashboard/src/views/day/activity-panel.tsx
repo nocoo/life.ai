@@ -11,11 +11,13 @@ import {
   MapPolyline,
   MapZoomControl,
 } from "@/components/ui/map";
+import { GoogleMap } from "@/components/ui/google-map";
 import { useMap } from "react-leaflet";
 import type { LatLngExpression, LatLngBoundsExpression } from "leaflet";
 import type { DayFootprintData, TrackPoint } from "@/models/footprint";
 import type { DayPixiuData } from "@/models/pixiu";
 import type { WorkoutRecord } from "@/models/apple-health";
+import { useSettingsStore } from "@/viewmodels/settings-store";
 
 export interface ActivityPanelProps {
   footprint: DayFootprintData;
@@ -109,7 +111,24 @@ export function TrackMapCard({ trackPoints, className }: { trackPoints: TrackPoi
   const positions = useMemo(() => trackPointsToPositions(trackPoints), [trackPoints]);
   const center = useMemo(() => calculateCenter(trackPoints), [trackPoints]);
   const bounds = useMemo(() => calculateBounds(trackPoints), [trackPoints]);
-  
+  const mapProvider = useSettingsStore((s) => s.mapProvider);
+
+  // Google Maps format
+  const googleCenter = useMemo(() => {
+    const c = calculateCenter(trackPoints) as [number, number];
+    return { lat: c[0], lng: c[1] };
+  }, [trackPoints]);
+
+  const googlePolyline = useMemo(() => {
+    return trackPoints.map((p) => ({ lat: p.lat, lng: p.lon }));
+  }, [trackPoints]);
+
+  const googleBounds = useMemo(() => {
+    if (!bounds) return undefined;
+    const [[south, west], [north, east]] = bounds as [[number, number], [number, number]];
+    return { north, south, east, west };
+  }, [bounds]);
+
   if (trackPoints.length === 0) {
     return null;
   }
@@ -118,19 +137,29 @@ export function TrackMapCard({ trackPoints, className }: { trackPoints: TrackPoi
     <Card className={`min-w-0 overflow-hidden rounded-card border-0 bg-secondary shadow-none p-0 ${className ?? ""}`}>
       {/* 16:9 aspect ratio container for better space utilization */}
       <div className="aspect-video w-full">
-        <LeafletMap
-          center={center}
-          zoom={12}
-          className="h-full w-full rounded-lg"
-        >
-          <MapTileLayer />
-          <MapZoomControl position="top-1 right-1" />
-          {bounds && <FitBounds bounds={bounds} />}
-          <MapPolyline 
-            positions={positions}
-            className="fill-none stroke-blue-500 stroke-2"
+        {mapProvider === "google" ? (
+          <GoogleMap
+            center={googleCenter}
+            zoom={12}
+            polyline={googlePolyline}
+            bounds={googleBounds}
+            className="h-full w-full rounded-lg"
           />
-        </LeafletMap>
+        ) : (
+          <LeafletMap
+            center={center}
+            zoom={12}
+            className="h-full w-full rounded-lg"
+          >
+            <MapTileLayer />
+            <MapZoomControl position="top-1 right-1" />
+            {bounds && <FitBounds bounds={bounds} />}
+            <MapPolyline
+              positions={positions}
+              className="fill-none stroke-blue-500 stroke-2"
+            />
+          </LeafletMap>
+        )}
       </div>
     </Card>
   );
