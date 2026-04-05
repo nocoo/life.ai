@@ -6,7 +6,7 @@
     "dev": "next dev -p 7011 --turbopack",
     "build": "next build",
     "start": "next start -p 7011",
-    "lint": "next lint",
+    "lint": "eslint .",
     "ut": "bun test --coverage --coverage-reporter=text --coverage-reporter=lcov && bun run coverage-check.ts",
     "ut:watch": "bun test --watch"
   },
@@ -21,7 +21,7 @@
     "leaflet.fullscreen": "^5.3.0",
     "leaflet.markercluster": "^1.5.3",
     "lucide-react": "^0.475.0",
-    "next": "15.2.4",
+    "next": "^16.2.2",
     "next-auth": "^5.0.0-beta.30",
     "next-themes": "^0.4.6",
     "radix-ui": "^1.4.3",
@@ -50,7 +50,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.2.4",
+    "eslint-config-next": "^16.2.2",
     "happy-dom": "^17.4.4",
     "tailwindcss": "^4",
     "typescript": "^5.7.3"

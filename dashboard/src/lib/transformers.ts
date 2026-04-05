@@ -195,7 +195,7 @@ const transformSleep = (records: AppleRecordRow[], date: string): SleepRecord | 
   const sleepEnd = extractTime(firstSession[firstSession.length - 1]._endDate);
 
   // Clean up internal properties before returning
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   const stages: SleepStage[] = firstSession.map(({ _startDate, _endDate, _startMs, _endMs, ...stage }) => stage);
 
   return {
