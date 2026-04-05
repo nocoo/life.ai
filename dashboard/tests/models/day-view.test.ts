@@ -1,6 +1,5 @@
 import { describe, expect, it } from "bun:test";
 import {
-  createEmptyDaySummary,
   buildDaySummary,
   type DaySummary,
   type DayViewData,
@@ -12,29 +11,6 @@ import { createEmptyDayFootprintData } from "@/models/footprint";
 import { createEmptyDayPixiuData } from "@/models/pixiu";
 
 describe("day-view model", () => {
-  describe("createEmptyDaySummary", () => {
-    it("should create empty summary with given date", () => {
-      const date = "2025-01-15";
-      const summary = createEmptyDaySummary(date);
-
-      expect(summary.date).toBe(date);
-      expect(summary.steps).toBe(0);
-      expect(summary.heartRateAvg).toBeNull();
-      expect(summary.heartRateMin).toBeNull();
-      expect(summary.heartRateMax).toBeNull();
-      expect(summary.activeEnergy).toBeNull();
-      expect(summary.exerciseMinutes).toBeNull();
-      expect(summary.standHours).toBeNull();
-      expect(summary.sleepHours).toBeNull();
-      expect(summary.distance).toBeNull();
-      expect(summary.locationCount).toBe(0);
-      expect(summary.income).toBe(0);
-      expect(summary.expense).toBe(0);
-      expect(summary.net).toBe(0);
-      expect(summary.transactionCount).toBe(0);
-    });
-  });
-
   describe("buildDaySummary", () => {
     it("should build summary from empty data", () => {
       const date = "2025-01-15";
@@ -146,12 +122,15 @@ describe("day-view model", () => {
 
     it("should allow valid DayViewData", () => {
       const date = "2025-01-15";
+      const health = createEmptyDayHealthData(date);
+      const footprint = createEmptyDayFootprintData(date);
+      const pixiu = createEmptyDayPixiuData(date);
       const data: DayViewData = {
         date,
-        summary: createEmptyDaySummary(date),
-        health: createEmptyDayHealthData(date),
-        footprint: createEmptyDayFootprintData(date),
-        pixiu: createEmptyDayPixiuData(date),
+        summary: buildDaySummary(date, health, footprint, pixiu),
+        health,
+        footprint,
+        pixiu,
       };
       expect(data.date).toBe(date);
     });

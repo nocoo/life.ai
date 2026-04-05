@@ -62,25 +62,6 @@ export interface TimelineEvent {
   color?: string;
 }
 
-/** Create empty day summary */
-export const createEmptyDaySummary = (date: string): DaySummary => ({
-  date,
-  steps: 0,
-  heartRateAvg: null,
-  heartRateMin: null,
-  heartRateMax: null,
-  activeEnergy: null,
-  exerciseMinutes: null,
-  standHours: null,
-  sleepHours: null,
-  distance: null,
-  locationCount: 0,
-  income: 0,
-  expense: 0,
-  net: 0,
-  transactionCount: 0,
-});
-
 /** Build summary from combined data */
 export const buildDaySummary = (
   date: string,
