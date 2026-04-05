@@ -5,41 +5,12 @@
 import { describe, expect, it } from "bun:test";
 import {
   aggregateFootprintData,
-  detectTransportMode,
   getTransportModeDisplay,
   formatElevation,
-  formatSpeed,
-  type SlotTrackData,
 } from "@/lib/footprint-aggregator";
 import type { TrackPoint } from "@/models/footprint";
 
 describe("footprint-aggregator", () => {
-  describe("detectTransportMode", () => {
-    it("should detect stationary for very low speeds", () => {
-      expect(detectTransportMode(0)).toBe("stationary");
-      expect(detectTransportMode(0.5)).toBe("stationary");
-      expect(detectTransportMode(0.99)).toBe("stationary");
-    });
-
-    it("should detect walking for low to moderate speeds", () => {
-      expect(detectTransportMode(1)).toBe("walking");
-      expect(detectTransportMode(5)).toBe("walking");
-      expect(detectTransportMode(11.9)).toBe("walking");
-    });
-
-    it("should detect cycling for moderate to high speeds", () => {
-      expect(detectTransportMode(12)).toBe("cycling");
-      expect(detectTransportMode(20)).toBe("cycling");
-      expect(detectTransportMode(34.9)).toBe("cycling");
-    });
-
-    it("should detect driving for high speeds", () => {
-      expect(detectTransportMode(35)).toBe("driving");
-      expect(detectTransportMode(60)).toBe("driving");
-      expect(detectTransportMode(120)).toBe("driving");
-    });
-  });
-
   describe("getTransportModeDisplay", () => {
     it("should return correct emoji and label for each mode", () => {
       expect(getTransportModeDisplay("walking")).toEqual({
@@ -63,80 +34,39 @@ describe("footprint-aggregator", () => {
 
   describe("formatElevation", () => {
     it("should format reference elevation with absolute value", () => {
-      const slotData: SlotTrackData = {
-        slotIndex: 0,
-        slot: "00:00",
-        pointCount: 1,
-        avgSpeed: 0,
-        avgSpeedKmh: 0,
+      const slotData = {
         avgElevation: 150,
         elevationDelta: null,
         isElevationReference: true,
-        mode: "stationary",
       };
-
       expect(formatElevation(slotData)).toBe("⛰150m");
     });
 
     it("should format positive elevation delta with plus sign", () => {
-      const slotData: SlotTrackData = {
-        slotIndex: 4,
-        slot: "01:00",
-        pointCount: 1,
-        avgSpeed: 0,
-        avgSpeedKmh: 0,
+      const slotData = {
         avgElevation: 165,
         elevationDelta: 15,
         isElevationReference: false,
-        mode: "stationary",
       };
-
       expect(formatElevation(slotData)).toBe("⛰+15m");
     });
 
     it("should format negative elevation delta", () => {
-      const slotData: SlotTrackData = {
-        slotIndex: 8,
-        slot: "02:00",
-        pointCount: 1,
-        avgSpeed: 0,
-        avgSpeedKmh: 0,
+      const slotData = {
         avgElevation: 135,
         elevationDelta: -15,
         isElevationReference: false,
-        mode: "stationary",
       };
-
       expect(formatElevation(slotData)).toBe("⛰-15m");
     });
 
     it("should return null when no elevation data to display", () => {
-      const slotData: SlotTrackData = {
-        slotIndex: 12,
-        slot: "03:00",
-        pointCount: 1,
-        avgSpeed: 0,
-        avgSpeedKmh: 0,
+      const slotData = {
         avgElevation: 155,
         elevationDelta: null,
         isElevationReference: false,
-        mode: "stationary",
       };
-
       expect(formatElevation(slotData)).toBeNull();
-    });
-  });
-
-  describe("formatSpeed", () => {
-    it("should format speed with one decimal place", () => {
-      expect(formatSpeed(5.5)).toBe("5.5km/h");
-      expect(formatSpeed(25.123)).toBe("25.1km/h");
-    });
-
-    it("should return empty string for very low speeds", () => {
-      expect(formatSpeed(0)).toBe("");
-      expect(formatSpeed(0.5)).toBe("");
-      expect(formatSpeed(0.99)).toBe("");
     });
   });
 

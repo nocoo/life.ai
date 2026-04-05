@@ -14,7 +14,7 @@ import type { TrackPoint } from "@/models/footprint";
 export type TransportMode = "walking" | "cycling" | "driving" | "stationary";
 
 /** Aggregated trackpoint data for a single 15-minute slot */
-export interface SlotTrackData {
+interface SlotTrackData {
   /** Slot index (0-95) */
   slotIndex: number;
   /** Time string (HH:mm) */
@@ -36,7 +36,7 @@ export interface SlotTrackData {
 }
 
 /** Result of footprint aggregation */
-export interface FootprintAggregation {
+interface FootprintAggregation {
   /** All slots with trackpoint data */
   slots: SlotTrackData[];
   /** Map from slot index to SlotTrackData for quick lookup */
@@ -143,7 +143,7 @@ function timeToSlotIndex(hour: number, minute: number): number {
 /**
  * Determine transportation mode based on average speed
  */
-export function detectTransportMode(speedKmh: number): TransportMode {
+function detectTransportMode(speedKmh: number): TransportMode {
   if (speedKmh < SPEED_THRESHOLDS.stationary) {
     return "stationary";
   }
@@ -564,19 +564,9 @@ export function formatElevation(
 }
 
 /**
- * Format speed for display (km/h)
- */
-export function formatSpeed(speedKmh: number): string {
-  if (speedKmh < 1) {
-    return "";
-  }
-  return `${speedKmh.toFixed(1)}km/h`;
-}
-
-/**
  * Format duration for display (Xh Ym or Ym)
  */
-export function formatDuration(minutes: number): string {
+function formatDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
   if (hours > 0) {
@@ -588,7 +578,7 @@ export function formatDuration(minutes: number): string {
 /**
  * Format distance for display (X.Xkm or Xm)
  */
-export function formatDistance(meters: number): string {
+function formatDistance(meters: number): string {
   if (meters >= 1000) {
     return `${(meters / 1000).toFixed(1)}km`;
   }
