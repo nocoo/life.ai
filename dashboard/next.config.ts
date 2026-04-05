@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Set turbopack root to dashboard directory (monorepo has multiple lockfiles)
+  turbopack: {
+    root: __dirname,
+  },
   // Allow cross-origin requests from reverse proxy domains
   allowedDevOrigins: [
     "localhost",
