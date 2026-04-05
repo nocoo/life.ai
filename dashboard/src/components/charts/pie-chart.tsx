@@ -10,21 +10,24 @@ import type { PieSectorShapeProps } from "recharts";
 import { cn } from "@/lib/utils";
 import { CHART_COLORS } from "@/lib/palette";
 
-export interface PieChartDataPoint {
+export interface DonutChartDataPoint {
   label: string;
   value: number;
   color?: string;
 }
 
-export interface PieChartProps {
-  data: PieChartDataPoint[];
+export interface DonutChartProps {
+  data: DonutChartDataPoint[];
   height?: number;
-  innerRadius?: number;
   outerRadius?: number;
   showLegend?: boolean;
   showLabels?: boolean;
   valueFormatter?: (value: number) => string;
   className?: string;
+}
+
+interface PieChartProps extends DonutChartProps {
+  innerRadius?: number;
 }
 
 const defaultColors = CHART_COLORS;
@@ -38,7 +41,7 @@ const createPieSectorShape = (chartData: Array<{ fill: string }>) => {
   return PieSectorShape;
 };
 
-export function PieChart({
+function PieChart({
   data,
   height = 200,
   innerRadius = 0,
@@ -115,6 +118,6 @@ export function PieChart({
   );
 }
 
-export function DonutChart(props: Omit<PieChartProps, "innerRadius">) {
+export function DonutChart(props: DonutChartProps) {
   return <PieChart {...props} innerRadius={60} />;
 }
