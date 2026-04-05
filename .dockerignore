@@ -1,0 +1,13 @@
+# Source assets (not needed in container)
+logo.png
+
+# Dependencies
+node_modules/
+
+# Build artifacts
+.next/
+coverage/
+
+# Local data
+data/
+.DS_Store

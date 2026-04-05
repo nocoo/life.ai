@@ -7,7 +7,8 @@
 - `docs/02-data-structure-footprint.md`：footprint 数据结构与数据库 schema
 - `docs/03-data-structure-pixiu.md`：pixiu 记账数据结构说明
 - `docs/04-scripts.md`：scripts 目录结构与导入说明
-- `docs/05-basalt-migration.md`：basalt UI 迁移工作计划
+- `docs/05-basalt-migration.md`：basalt UI 迁移工作计划（初版，已被 06 取代）
+- `docs/06-basalt-modernization.md`：**Basalt 现代化升级规划** — Next.js 16 升级 + B-0~B-5 规范对齐
 
 ## 数据库文件
 项目使用 SQLite 数据库存储结构化数据，位于 `db/` 目录：
