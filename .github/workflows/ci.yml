@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  quality:
+    uses: nocoo/base-ci/.github/workflows/bun-quality.yml@v2026
+    with:
+      pre-command: "cd dashboard && bun install --frozen-lockfile"
+      test-command: "bun run ut"
+      lint-command: "bun run lint"
+      typecheck-command: "true"
+      enable-security: "false"
+      enable-l2: "false"
+    secrets: inherit
