@@ -6,7 +6,7 @@
     "dev": "next dev -p 7011 --turbopack",
     "build": "next build",
     "start": "next start -p 7011",
-    "lint": "eslint .",
+    "lint": "eslint --max-warnings=0 .",
     "ut": "bun test --coverage --coverage-reporter=text --coverage-reporter=lcov && bun run coverage-check.ts",
     "ut:watch": "bun test --watch"
   },
