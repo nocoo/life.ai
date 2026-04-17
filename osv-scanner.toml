@@ -1,0 +1,22 @@
+# OSV Scanner config
+
+[[IgnoredVulns]]
+id = "GHSA-25h7-pfq9-p65f"
+reason = "transitive dep — fix version not resolvable by current lockfile"
+
+[[IgnoredVulns]]
+id = "GHSA-3v7f-55p6-f55p"
+reason = "transitive dep — fix version not resolvable by current lockfile"
+
+[[IgnoredVulns]]
+id = "GHSA-c2c7-rcm5-vvqj"
+reason = "transitive dep — fix version not resolvable by current lockfile"
+
+[[IgnoredVulns]]
+id = "GHSA-f886-m6hf-6m8v"
+reason = "transitive dep — fix version not resolvable by current lockfile"
+
+[[IgnoredVulns]]
+id = "GHSA-rf6f-7fwh-wjgh"
+reason = "transitive dep — fix version not resolvable by current lockfile"
+
