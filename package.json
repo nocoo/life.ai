@@ -16,7 +16,8 @@
     "db:init": "bun run scripts/import/footprint/init.ts",
     "db:load": "bun run scripts/import/footprint/cli.ts load",
     "db:agg": "bun run scripts/import/footprint/cli.ts agg",
-    "db:refresh": "bun run scripts/import/footprint/refresh.ts"
+    "db:refresh": "bun run scripts/import/footprint/refresh.ts",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@eslint/js": "^9.20.0",
@@ -27,5 +28,10 @@
     "eslint-config-prettier": "^10.0.1",
     "husky": "^9.1.7",
     "typescript": "^5.7.3"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --max-warnings=0"
+    ]
   }
 }
