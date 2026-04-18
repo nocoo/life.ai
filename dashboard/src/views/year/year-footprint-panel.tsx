@@ -181,7 +181,7 @@ export function YearFootprintPanel({ data, year }: YearFootprintPanelProps) {
                 return (
                   <div
                     key={mode.mode}
-                    className="flex items-center gap-2.5 rounded-widget bg-card p-2.5"
+                    className="flex items-center gap-2.5 rounded-widget bg-secondary p-2.5"
                   >
                     <div className="rounded-md bg-muted p-1.5">
                       <Icon className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} aria-hidden="true" />
