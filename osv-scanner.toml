@@ -1,0 +1,21 @@
+# OSV Scanner configuration — life.ai
+
+[[IgnoredVulns]]
+id = "GHSA-f886-m6hf-6m8v"
+reason = "brace-expansion: transitive dep, no direct upgrade path"
+
+[[IgnoredVulns]]
+id = "GHSA-25h7-pfq9-p65f"
+reason = "flatted: transitive dep from eslint, no direct upgrade path"
+
+[[IgnoredVulns]]
+id = "GHSA-rf6f-7fwh-wjgh"
+reason = "flatted: transitive dep from eslint, no direct upgrade path"
+
+[[IgnoredVulns]]
+id = "GHSA-3v7f-55p6-f55p"
+reason = "picomatch: transitive dep, no direct upgrade path"
+
+[[IgnoredVulns]]
+id = "GHSA-c2c7-rcm5-vvqj"
+reason = "picomatch: transitive dep, no direct upgrade path"
