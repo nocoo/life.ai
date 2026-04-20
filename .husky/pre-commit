@@ -1,1 +1,4 @@
+# === Quality Gate: pre-commit ===
+# L1 + G1 + G2a (6DQ standard)
 bun run precommit
+gitleaks protect --staged --no-banner
