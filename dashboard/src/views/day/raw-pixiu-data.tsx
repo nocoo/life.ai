@@ -35,19 +35,19 @@ export function RawPixiuData({ data }: RawPixiuDataProps) {
               <div>
                 <h3 className="text-sm font-normal text-muted-foreground mb-2">日收支概览</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="rounded-widget bg-card p-3">
+                  <div className="rounded-widget bg-secondary p-3">
                     <div className="text-xs text-muted-foreground">收入</div>
                     <div className="text-xl font-semibold font-display tracking-tight text-green-600">
                       +¥{data.summary.income.toFixed(2)}
                     </div>
                   </div>
-                  <div className="rounded-widget bg-card p-3">
+                  <div className="rounded-widget bg-secondary p-3">
                     <div className="text-xs text-muted-foreground">支出</div>
                     <div className="text-xl font-semibold font-display tracking-tight text-red-500">
                       -¥{data.summary.expense.toFixed(2)}
                     </div>
                   </div>
-                  <div className="rounded-widget bg-card p-3">
+                  <div className="rounded-widget bg-secondary p-3">
                     <div className="text-xs text-muted-foreground">净收入</div>
                     <div
                       className={`text-xl font-semibold font-display tracking-tight ${
@@ -58,7 +58,7 @@ export function RawPixiuData({ data }: RawPixiuDataProps) {
                       {data.summary.net.toFixed(2)}
                     </div>
                   </div>
-                  <div className="rounded-widget bg-card p-3">
+                  <div className="rounded-widget bg-secondary p-3">
                     <div className="text-xs text-muted-foreground">交易笔数</div>
                     <div className="text-xl font-semibold font-display tracking-tight">
                       {data.summary.transactionCount}

@@ -65,25 +65,25 @@ export function RawFootprintData({ data }: RawFootprintDataProps) {
               <div>
                 <h3 className="text-sm font-normal text-muted-foreground mb-2">轨迹概览</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="rounded-widget bg-card p-3">
+                  <div className="rounded-widget bg-secondary p-3">
                     <div className="text-xs text-muted-foreground">总距离</div>
                     <div className="text-xl font-semibold font-display tracking-tight">
                       {formatDistance(data.summary.totalDistance)}
                     </div>
                   </div>
-                  <div className="rounded-widget bg-card p-3">
+                  <div className="rounded-widget bg-secondary p-3">
                     <div className="text-xs text-muted-foreground">平均速度</div>
                     <div className="text-xl font-semibold font-display tracking-tight">
                       {formatSpeed(data.summary.avgSpeed)}
                     </div>
                   </div>
-                  <div className="rounded-widget bg-card p-3">
+                  <div className="rounded-widget bg-secondary p-3">
                     <div className="text-xs text-muted-foreground">轨迹点数</div>
                     <div className="text-xl font-semibold font-display tracking-tight">
                       {data.summary.pointCount.toLocaleString()}
                     </div>
                   </div>
-                  <div className="rounded-widget bg-card p-3">
+                  <div className="rounded-widget bg-secondary p-3">
                     <div className="text-xs text-muted-foreground">记录时间</div>
                     <div className="text-lg font-semibold">
                       {data.summary.minTime} - {data.summary.maxTime}

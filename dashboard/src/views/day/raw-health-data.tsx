@@ -53,24 +53,24 @@ export function RawHealthData({ data }: RawHealthDataProps) {
         <div className="space-y-6">
             {/* Summary Cards - Row 1: Core Metrics */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="rounded-widget bg-card p-3">
+              <div className="rounded-widget bg-secondary p-3">
                 <div className="text-xs text-muted-foreground">总步数</div>
                 <div className="text-xl font-semibold font-display tracking-tight">
                   {data.totalSteps.toLocaleString()}
                 </div>
               </div>
-              <div className="rounded-widget bg-card p-3">
+              <div className="rounded-widget bg-secondary p-3">
                 <div className="text-xs text-muted-foreground">步行距离</div>
                 <div className="text-xl font-semibold font-display tracking-tight">
                   {data.distance ? `${data.distance.total.toFixed(2)} km` : "-"}
                 </div>
               </div>
-              <div className="rounded-widget bg-card p-3">
+              <div className="rounded-widget bg-secondary p-3">
                 <div className="text-xs text-muted-foreground">攀爬楼层</div>
                 <div className="text-xl font-semibold font-display tracking-tight">{data.flightsClimbed} 层</div>
               </div>
               {data.activity && (
-                <div className="rounded-widget bg-card p-3">
+                <div className="rounded-widget bg-secondary p-3">
                   <div className="text-xs text-muted-foreground">活动能量</div>
                   <div className="text-xl font-semibold font-display tracking-tight">
                     {Math.round(data.activity.activeEnergy)} kcal
@@ -82,20 +82,20 @@ export function RawHealthData({ data }: RawHealthDataProps) {
             {/* Summary Cards - Row 2: Activity */}
             {data.activity && (
               <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-widget bg-card p-3 text-center">
+                <div className="rounded-widget bg-secondary p-3 text-center">
                   <div className="text-xs text-muted-foreground">运动时间</div>
                   <div className="text-lg font-semibold text-green-500">
                     {data.activity.exerciseMinutes} 分钟
                   </div>
                 </div>
-                <div className="rounded-widget bg-card p-3 text-center">
+                <div className="rounded-widget bg-secondary p-3 text-center">
                   <div className="text-xs text-muted-foreground">站立小时</div>
                   <div className="text-lg font-semibold text-cyan-500">
                     {data.activity.standHours} 小时
                   </div>
                 </div>
                 {data.sleepingWristTemperature && (
-                  <div className="rounded-widget bg-card p-3 text-center">
+                  <div className="rounded-widget bg-secondary p-3 text-center">
                     <div className="text-xs text-muted-foreground">睡眠腕温</div>
                     <div className="text-lg font-semibold">
                       {data.sleepingWristTemperature}°C
@@ -109,7 +109,7 @@ export function RawHealthData({ data }: RawHealthDataProps) {
             {data.sleep && (
               <div>
                 <h3 className="text-sm font-normal text-muted-foreground mb-2">睡眠分析</h3>
-                <div className="rounded-widget bg-card p-3 space-y-3">
+                <div className="rounded-widget bg-secondary p-3 space-y-3">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div>
                       <div className="text-xs text-muted-foreground">总时长</div>
@@ -187,26 +187,26 @@ export function RawHealthData({ data }: RawHealthDataProps) {
               <div>
                 <h3 className="text-sm font-normal text-muted-foreground mb-2">心率</h3>
                 <div className="grid grid-cols-3 md:grid-cols-5 gap-3 mb-3">
-                  <div className="rounded-widget bg-card p-3 text-center">
+                  <div className="rounded-widget bg-secondary p-3 text-center">
                     <div className="text-xs text-muted-foreground">平均</div>
                     <div className="text-lg font-semibold">
                       {data.heartRate.avg} bpm
                     </div>
                   </div>
-                  <div className="rounded-widget bg-card p-3 text-center">
+                  <div className="rounded-widget bg-secondary p-3 text-center">
                     <div className="text-xs text-muted-foreground">最低</div>
                     <div className="text-lg font-semibold text-blue-500">
                       {data.heartRate.min} bpm
                     </div>
                   </div>
-                  <div className="rounded-widget bg-card p-3 text-center">
+                  <div className="rounded-widget bg-secondary p-3 text-center">
                     <div className="text-xs text-muted-foreground">最高</div>
                     <div className="text-lg font-semibold text-red-500">
                       {data.heartRate.max} bpm
                     </div>
                   </div>
                   {data.heartRate.restingHeartRate && (
-                    <div className="rounded-widget bg-card p-3 text-center">
+                    <div className="rounded-widget bg-secondary p-3 text-center">
                       <div className="text-xs text-muted-foreground">静息</div>
                       <div className="text-lg font-semibold text-green-500">
                         {data.heartRate.restingHeartRate} bpm
@@ -214,7 +214,7 @@ export function RawHealthData({ data }: RawHealthDataProps) {
                     </div>
                   )}
                   {data.heartRate.walkingAverage && (
-                    <div className="rounded-widget bg-card p-3 text-center">
+                    <div className="rounded-widget bg-secondary p-3 text-center">
                       <div className="text-xs text-muted-foreground">步行</div>
                       <div className="text-lg font-semibold text-orange-500">
                         {data.heartRate.walkingAverage} bpm
@@ -262,19 +262,19 @@ export function RawHealthData({ data }: RawHealthDataProps) {
               <div>
                 <h3 className="text-sm font-normal text-muted-foreground mb-2">血氧饱和度</h3>
                 <div className="grid grid-cols-3 gap-3 mb-3">
-                  <div className="rounded-widget bg-card p-3 text-center">
+                  <div className="rounded-widget bg-secondary p-3 text-center">
                     <div className="text-xs text-muted-foreground">平均</div>
                     <div className="text-lg font-semibold">
                       {data.oxygenSaturation.avg}%
                     </div>
                   </div>
-                  <div className="rounded-widget bg-card p-3 text-center">
+                  <div className="rounded-widget bg-secondary p-3 text-center">
                     <div className="text-xs text-muted-foreground">最低</div>
                     <div className="text-lg font-semibold text-yellow-500">
                       {data.oxygenSaturation.min}%
                     </div>
                   </div>
-                  <div className="rounded-widget bg-card p-3 text-center">
+                  <div className="rounded-widget bg-secondary p-3 text-center">
                     <div className="text-xs text-muted-foreground">最高</div>
                     <div className="text-lg font-semibold text-green-500">
                       {data.oxygenSaturation.max}%
@@ -316,19 +316,19 @@ export function RawHealthData({ data }: RawHealthDataProps) {
               <div>
                 <h3 className="text-sm font-normal text-muted-foreground mb-2">呼吸频率</h3>
                 <div className="grid grid-cols-3 gap-3 mb-3">
-                  <div className="rounded-widget bg-card p-3 text-center">
+                  <div className="rounded-widget bg-secondary p-3 text-center">
                     <div className="text-xs text-muted-foreground">平均</div>
                     <div className="text-lg font-semibold">
                       {data.respiratoryRate.avg} 次/分
                     </div>
                   </div>
-                  <div className="rounded-widget bg-card p-3 text-center">
+                  <div className="rounded-widget bg-secondary p-3 text-center">
                     <div className="text-xs text-muted-foreground">最低</div>
                     <div className="text-lg font-semibold text-blue-500">
                       {data.respiratoryRate.min} 次/分
                     </div>
                   </div>
-                  <div className="rounded-widget bg-card p-3 text-center">
+                  <div className="rounded-widget bg-secondary p-3 text-center">
                     <div className="text-xs text-muted-foreground">最高</div>
                     <div className="text-lg font-semibold text-red-500">
                       {data.respiratoryRate.max} 次/分
@@ -370,19 +370,19 @@ export function RawHealthData({ data }: RawHealthDataProps) {
               <div>
                 <h3 className="text-sm font-normal text-muted-foreground mb-2">心率变异性 (HRV)</h3>
                 <div className="grid grid-cols-3 gap-3 mb-3">
-                  <div className="rounded-widget bg-card p-3 text-center">
+                  <div className="rounded-widget bg-secondary p-3 text-center">
                     <div className="text-xs text-muted-foreground">平均</div>
                     <div className="text-lg font-semibold">
                       {data.hrv.avg} ms
                     </div>
                   </div>
-                  <div className="rounded-widget bg-card p-3 text-center">
+                  <div className="rounded-widget bg-secondary p-3 text-center">
                     <div className="text-xs text-muted-foreground">最低</div>
                     <div className="text-lg font-semibold text-yellow-500">
                       {data.hrv.min} ms
                     </div>
                   </div>
-                  <div className="rounded-widget bg-card p-3 text-center">
+                  <div className="rounded-widget bg-secondary p-3 text-center">
                     <div className="text-xs text-muted-foreground">最高</div>
                     <div className="text-lg font-semibold text-green-500">
                       {data.hrv.max} ms
