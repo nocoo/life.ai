@@ -150,7 +150,7 @@ export function AppSidebar({ collapsed, onToggle, user }: AppSidebarProps) {
       {collapsed ? (
         /* ── Collapsed (icon-only) view ── */
         <div className="flex h-screen w-[68px] flex-col items-center">
-          <div className="flex h-14 w-full items-center justify-center">
+          <div className="flex h-14 w-full items-center justify-start pl-6 pr-3">
             <Image src="/logo-24.png" alt="Life.ai" width={24} height={24} />
           </div>
 
