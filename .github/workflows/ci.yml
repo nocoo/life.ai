@@ -15,6 +15,5 @@ jobs:
       test-command: "bun run ut"
       lint-command: "bun run lint"
       typecheck-command: "true"
-      enable-security: "false"
       enable-l2: "false"
     secrets: inherit
