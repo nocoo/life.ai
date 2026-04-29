@@ -4,7 +4,7 @@ import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Life.AI Dashboard",
+  title: "life.ai - 个人数据中心",
   description: "Dashboard for health, footprint, and finance data",
 };
 
