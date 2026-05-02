@@ -26,8 +26,7 @@ dashboard/
 │   ├── services/               # 服务层 (API 调用)
 │   ├── components/ui/          # shadcn/ui 组件
 │   └── lib/                    # 工具函数
-├── tests/                      # 单元测试
-└── coverage-check.ts           # 覆盖率检查脚本
+└── tests/                      # 单元测试
 ```
 
 ## MVVM 架构

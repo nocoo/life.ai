@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll } from "bun:test";
-import { Database } from "bun:sqlite";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import Database from "better-sqlite3";
 import { mkdirSync, rmSync } from "fs";
 import { NextRequest } from "next/server";
 import { GET } from "@/app/api/day/footprint/route";
@@ -84,7 +84,7 @@ describe("GET /api/day/footprint", () => {
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.data.date).toBe("2025-01-15");
-    expect(data.data.trackPoints).toBeArray();
+    expect(data.data.trackPoints).toBeInstanceOf(Array);
     expect(data.data.trackPoints.length).toBeGreaterThan(0);
   });
 
@@ -101,7 +101,7 @@ describe("GET /api/day/footprint", () => {
 
     expect(response.status).toBe(500);
     expect(data.success).toBe(false);
-    expect(data.error).toBeString();
+    expect(data.error).toEqual(expect.any(String));
 
     // Restore original path
     process.env.FOOTPRINT_DB_PATH = originalPath;

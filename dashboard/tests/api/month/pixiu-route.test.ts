@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll } from "bun:test";
-import { Database } from "bun:sqlite";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import Database from "better-sqlite3";
 import { mkdirSync, rmSync } from "fs";
 import { NextRequest } from "next/server";
 import { GET } from "@/app/api/month/pixiu/route";
@@ -109,8 +109,8 @@ describe("GET /api/month/pixiu", () => {
     expect(data.data.daysWithData).toBe(2);
     expect(data.data.totalExpense).toBe(60);
     expect(data.data.transactionCount).toBe(2);
-    expect(data.data.expenseByCategory).toBeArray();
-    expect(data.data.byAccount).toBeArray();
+    expect(data.data.expenseByCategory).toBeInstanceOf(Array);
+    expect(data.data.byAccount).toBeInstanceOf(Array);
   });
 
   it("should return empty data for month with no records", async () => {
@@ -139,7 +139,7 @@ describe("GET /api/month/pixiu", () => {
 
     expect(response.status).toBe(500);
     expect(data.success).toBe(false);
-    expect(data.error).toBeString();
+    expect(data.error).toEqual(expect.any(String));
 
     process.env.PIXIU_DB_PATH = originalPath;
   });

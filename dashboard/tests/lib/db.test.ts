@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll } from "bun:test";
-import { Database } from "bun:sqlite";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import Database from "better-sqlite3";
 import { mkdirSync, rmSync } from "fs";
 import { DB_PATHS, getDbPath, openDb, openDbByPath } from "@/lib/db";
 
@@ -89,7 +89,7 @@ describe("db.ts", () => {
       const db = openDbByPath(TEST_DB_PATH);
 
       const row = db.prepare("SELECT name FROM test_table WHERE id = ?").get(999);
-      expect(row).toBeNull();
+      expect(row).toBeUndefined();
 
       db.close();
     });

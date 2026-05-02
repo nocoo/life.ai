@@ -2,7 +2,7 @@
  * Tests for API client
  */
 
-import { describe, expect, test, mock, afterEach } from "bun:test";
+import { describe, expect, test, afterEach, vi } from "vitest";
 import {
   fetchAppleHealthData,
   fetchFootprintData,
@@ -26,7 +26,7 @@ describe("API Client", () => {
         activitySummary: null,
       };
 
-      globalThis.fetch = mock(() =>
+      globalThis.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(JSON.stringify({ success: true, data: mockData }), {
             status: 200,
@@ -44,7 +44,7 @@ describe("API Client", () => {
     });
 
     test("throws on HTTP error", async () => {
-      globalThis.fetch = mock(() =>
+      globalThis.fetch = vi.fn(() =>
         Promise.resolve(
           new Response("Not Found", { status: 404, statusText: "Not Found" })
         )
@@ -56,7 +56,7 @@ describe("API Client", () => {
     });
 
     test("throws on API error response", async () => {
-      globalThis.fetch = mock(() =>
+      globalThis.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(
             JSON.stringify({ success: false, error: "Database error" }),
@@ -79,7 +79,7 @@ describe("API Client", () => {
         dayAgg: null,
       };
 
-      globalThis.fetch = mock(() =>
+      globalThis.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(JSON.stringify({ success: true, data: mockData }), {
             status: 200,
@@ -97,7 +97,7 @@ describe("API Client", () => {
     });
 
     test("throws on HTTP error", async () => {
-      globalThis.fetch = mock(() =>
+      globalThis.fetch = vi.fn(() =>
         Promise.resolve(
           new Response("Server Error", {
             status: 500,
@@ -120,7 +120,7 @@ describe("API Client", () => {
         dayAgg: null,
       };
 
-      globalThis.fetch = mock(() =>
+      globalThis.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(JSON.stringify({ success: true, data: mockData }), {
             status: 200,
@@ -138,7 +138,7 @@ describe("API Client", () => {
     });
 
     test("throws on missing data", async () => {
-      globalThis.fetch = mock(() =>
+      globalThis.fetch = vi.fn(() =>
         Promise.resolve(
           new Response(JSON.stringify({ success: true }), {
             status: 200,
@@ -172,7 +172,7 @@ describe("API Client", () => {
         dayAgg: null,
       };
 
-      globalThis.fetch = mock((url: string) => {
+      globalThis.fetch = vi.fn((url: string) => {
         if (url.includes("applehealth")) {
           return Promise.resolve(
             new Response(
@@ -208,7 +208,7 @@ describe("API Client", () => {
     });
 
     test("throws if any fetch fails", async () => {
-      globalThis.fetch = mock((url: string) => {
+      globalThis.fetch = vi.fn((url: string) => {
         if (url.includes("applehealth")) {
           return Promise.resolve(
             new Response(

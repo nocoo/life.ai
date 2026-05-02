@@ -1,4 +1,4 @@
-import { describe, it, expect, mock, afterEach } from "bun:test";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import { fetchHealth } from "@/services/health-service";
 import type { HealthResponse } from "@/models/health";
 
@@ -17,7 +17,7 @@ describe("health-service", () => {
         version: "1.0.0",
       };
 
-      const mockFn = mock(() =>
+      const mockFn = vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve(mockResponse),
@@ -38,7 +38,7 @@ describe("health-service", () => {
         version: "1.0.0",
       };
 
-      const mockFn = mock(() =>
+      const mockFn = vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve(mockResponse),
@@ -52,7 +52,7 @@ describe("health-service", () => {
     });
 
     it("should throw error on non-ok response", async () => {
-      const mockFn = mock(() =>
+      const mockFn = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 500,
@@ -64,7 +64,7 @@ describe("health-service", () => {
     });
 
     it("should throw error on invalid response format", async () => {
-      const mockFn = mock(() =>
+      const mockFn = vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve({ invalid: "data" }),
@@ -78,7 +78,7 @@ describe("health-service", () => {
     });
 
     it("should throw error on 404 response", async () => {
-      const mockFn = mock(() =>
+      const mockFn = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 404,
@@ -90,7 +90,7 @@ describe("health-service", () => {
     });
 
     it("should throw error on 503 response", async () => {
-      const mockFn = mock(() =>
+      const mockFn = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 503,

@@ -1,18 +1,4 @@
-// 测试环境设置
-import { Window } from "happy-dom";
-import { mock } from "bun:test";
-
-// Setup global DOM environment for React component testing
-const window = new Window({ url: "http://localhost:3000" });
-
-// Register globals
-Object.assign(globalThis, {
-  window,
-  document: window.document,
-  navigator: window.navigator,
-  HTMLElement: window.HTMLElement,
-  customElements: window.customElements,
-});
+import { vi } from "vitest";
 
 // Shared mock for next/navigation - includes all exports used across tests
 // Individual tests can override specific behaviors by reassigning the mock functions
@@ -21,15 +7,15 @@ export const mockNavigationState = {
   searchParams: new URLSearchParams(),
 };
 
-mock.module("next/navigation", () => ({
+vi.mock("next/navigation", () => ({
   usePathname: () => mockNavigationState.pathname,
   useSearchParams: () => mockNavigationState.searchParams,
 }));
 
 // Shared mock for next-auth/react
-export const mockSignIn = mock(() => {});
+export const mockSignIn = vi.fn(() => {});
 
-mock.module("next-auth/react", () => ({
+vi.mock("next-auth/react", () => ({
   signIn: mockSignIn,
 }));
 
@@ -40,6 +26,6 @@ export const mockThemeState = {
   setTheme: () => {},
 };
 
-mock.module("next-themes", () => ({
+vi.mock("next-themes", () => ({
   useTheme: () => mockThemeState,
 }));

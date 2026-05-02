@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach } from "vitest";
 import { renderHook, act, cleanup } from "@testing-library/react";
 import { SidebarProvider, useSidebar } from "@/components/sidebar-context";
 import { mockNavigationState } from "../setup";

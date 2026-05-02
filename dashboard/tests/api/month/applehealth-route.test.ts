@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll } from "bun:test";
-import { Database } from "bun:sqlite";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import Database from "better-sqlite3";
 import { mkdirSync, rmSync } from "fs";
 import { NextRequest } from "next/server";
 import { GET } from "@/app/api/month/applehealth/route";
@@ -147,7 +147,7 @@ describe("GET /api/month/applehealth", () => {
 
     expect(response.status).toBe(500);
     expect(data.success).toBe(false);
-    expect(data.error).toBeString();
+    expect(data.error).toEqual(expect.any(String));
 
     process.env.APPLEHEALTH_DB_PATH = originalPath;
   });

@@ -1,4 +1,4 @@
-import { describe, expect, test, mock, beforeEach, afterEach } from "bun:test";
+import { describe, expect, test, beforeEach, afterEach, vi } from "vitest";
 import { fetchHistoricalWeather } from "@/services/weather-service";
 
 describe("weather-service", () => {
@@ -28,7 +28,7 @@ describe("weather-service", () => {
         },
       };
 
-      globalThis.fetch = mock(() =>
+      globalThis.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve(mockResponse),
@@ -67,7 +67,7 @@ describe("weather-service", () => {
       };
 
       let capturedUrl = "";
-      globalThis.fetch = mock((url: string) => {
+      globalThis.fetch = vi.fn((url: string) => {
         capturedUrl = url;
         return Promise.resolve({
           ok: true,
@@ -83,7 +83,7 @@ describe("weather-service", () => {
     });
 
     test("throws error when API returns non-ok status", async () => {
-      globalThis.fetch = mock(() =>
+      globalThis.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 500,
@@ -111,7 +111,7 @@ describe("weather-service", () => {
         },
       };
 
-      globalThis.fetch = mock(() =>
+      globalThis.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve(mockResponse),
@@ -140,7 +140,7 @@ describe("weather-service", () => {
       };
 
       let capturedUrl = "";
-      globalThis.fetch = mock((url: string) => {
+      globalThis.fetch = vi.fn((url: string) => {
         capturedUrl = url;
         return Promise.resolve({
           ok: true,
@@ -171,7 +171,7 @@ describe("weather-service", () => {
         },
       };
 
-      globalThis.fetch = mock(() =>
+      globalThis.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve(mockResponse),

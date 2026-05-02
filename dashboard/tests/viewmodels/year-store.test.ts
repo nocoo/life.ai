@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterEach, mock } from "bun:test";
+import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { useYearStore, resetYearStore } from "@/viewmodels/year-store";
 
 describe("year-store", () => {
@@ -88,7 +88,7 @@ describe("year-store", () => {
       topExpenseMonths: [],
     };
 
-    globalThis.fetch = mock((url: string) => {
+    globalThis.fetch = vi.fn((url: string) => {
       if (url.includes("applehealth")) {
         return Promise.resolve(
           new Response(JSON.stringify({ success: true, data: mockHealth }), {
@@ -298,7 +298,7 @@ describe("year-store", () => {
     });
 
     it("should set error on fetch failure", async () => {
-      globalThis.fetch = mock(() =>
+      globalThis.fetch = vi.fn(() =>
         Promise.resolve(
           new Response("Server Error", { status: 500, statusText: "Server Error" })
         )

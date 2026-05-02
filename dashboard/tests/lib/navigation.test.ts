@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "vitest";
 import { NAV_GROUPS, ALL_NAV_ITEMS, ROUTE_LABELS } from "@/lib/navigation";
 
 describe("navigation", () => {

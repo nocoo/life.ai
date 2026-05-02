@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start -p 7011",
     "lint": "eslint --max-warnings=0 .",
-    "ut": "bun test --coverage --coverage-reporter=text --coverage-reporter=lcov && bun run coverage-check.ts",
-    "ut:watch": "bun test --watch"
+    "ut": "vitest run --coverage",
+    "ut:watch": "vitest"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^2.0.2",
@@ -50,10 +50,13 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-istanbul": "^4.1.5",
     "eslint": "^9",
     "eslint-config-next": "^16.2.2",
     "happy-dom": "^17.4.4",
     "tailwindcss": "^4",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.5"
   }
 }

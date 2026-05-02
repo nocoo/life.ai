@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll, spyOn } from "bun:test";
-import { Database } from "bun:sqlite";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
+import Database from "better-sqlite3";
 import { mkdirSync, rmSync } from "fs";
 import {
   AppleHealthService,
@@ -142,9 +142,9 @@ describe("AppleHealthService", () => {
 
       expect(data).toBeDefined();
       expect(data.date).toBe("2025-01-15");
-      expect(data.records).toBeArray();
+      expect(data.records).toBeInstanceOf(Array);
       expect(data.records.length).toBeGreaterThan(0);
-      expect(data.workouts).toBeArray();
+      expect(data.workouts).toBeInstanceOf(Array);
       expect(data.activitySummary).toBeDefined();
     });
 
@@ -335,7 +335,7 @@ describe("AppleHealthService", () => {
   describe("caching behavior", () => {
     it("should cache historical month data on second call", () => {
       const service = new AppleHealthService(TEST_DB_PATH);
-      const openDbSpy = spyOn(dbModule, "openDbByPath");
+      const openDbSpy = vi.spyOn(dbModule, "openDbByPath");
 
       // First call - should hit database
       const data1 = service.getMonthData("2025-01");
@@ -353,7 +353,7 @@ describe("AppleHealthService", () => {
 
     it("should cache historical year data on second call", () => {
       const service = new AppleHealthService(TEST_DB_PATH);
-      const openDbSpy = spyOn(dbModule, "openDbByPath");
+      const openDbSpy = vi.spyOn(dbModule, "openDbByPath");
 
       // First call - should hit database
       const data1 = service.getYearData(2025);
@@ -370,7 +370,7 @@ describe("AppleHealthService", () => {
 
     it("should NOT cache current month data", () => {
       const service = new AppleHealthService(TEST_DB_PATH);
-      const openDbSpy = spyOn(dbModule, "openDbByPath");
+      const openDbSpy = vi.spyOn(dbModule, "openDbByPath");
 
       // Get current month
       const now = new Date();
@@ -389,7 +389,7 @@ describe("AppleHealthService", () => {
 
     it("should NOT cache current year data", () => {
       const service = new AppleHealthService(TEST_DB_PATH);
-      const openDbSpy = spyOn(dbModule, "openDbByPath");
+      const openDbSpy = vi.spyOn(dbModule, "openDbByPath");
 
       const currentYear = new Date().getFullYear();
 
@@ -406,7 +406,7 @@ describe("AppleHealthService", () => {
 
     it("should allow clearing the cache", () => {
       const service = new AppleHealthService(TEST_DB_PATH);
-      const openDbSpy = spyOn(dbModule, "openDbByPath");
+      const openDbSpy = vi.spyOn(dbModule, "openDbByPath");
 
       // First call - cache it
       service.getMonthData("2025-01");

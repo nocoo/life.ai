@@ -2,7 +2,7 @@
  * Tests for timeline color mapping
  */
 
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 import {
   TIMELINE_COLORS,
   LEFT_SIDE_TYPES,
@@ -37,7 +37,7 @@ describe("timeline-colors", () => {
 
       for (const type of allTypes) {
         expect(TIMELINE_COLORS[type]).toBeDefined();
-        expect(TIMELINE_COLORS[type]).toStartWith("bg-");
+        expect(TIMELINE_COLORS[type]).toMatch(/^bg-/);
       }
     });
 

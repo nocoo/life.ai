@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, mock, afterEach } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   useHealthStore,
   getInitialHealthStoreState,
@@ -76,7 +76,7 @@ describe("health-store", () => {
         resolvePromise = resolve;
       });
 
-      const mockFn = mock(() => fetchPromise);
+      const mockFn = vi.fn(() => fetchPromise);
       global.fetch = mockFn as unknown as typeof fetch;
 
       const checkPromise = useHealthStore.getState().checkHealth();
@@ -102,7 +102,7 @@ describe("health-store", () => {
         version: "1.0.0",
       };
 
-      const mockFn = mock(() =>
+      const mockFn = vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve(mockResponse),
@@ -126,7 +126,7 @@ describe("health-store", () => {
         version: "1.0.0",
       };
 
-      const mockFn = mock(() =>
+      const mockFn = vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve(mockResponse),
@@ -142,7 +142,7 @@ describe("health-store", () => {
     });
 
     it("should handle fetch error", async () => {
-      const mockFn = mock(() =>
+      const mockFn = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 500,
@@ -159,7 +159,7 @@ describe("health-store", () => {
     });
 
     it("should handle network error", async () => {
-      const mockFn = mock(() => Promise.reject(new Error("Network error")));
+      const mockFn = vi.fn(() => Promise.reject(new Error("Network error")));
       global.fetch = mockFn as unknown as typeof fetch;
 
       await useHealthStore.getState().checkHealth();
@@ -171,7 +171,7 @@ describe("health-store", () => {
     });
 
     it("should handle unknown error type", async () => {
-      const mockFn = mock(() => Promise.reject("string error"));
+      const mockFn = vi.fn(() => Promise.reject("string error"));
       global.fetch = mockFn as unknown as typeof fetch;
 
       await useHealthStore.getState().checkHealth();
@@ -197,7 +197,7 @@ describe("health-store", () => {
         version: "1.0.0",
       };
 
-      const mockFn = mock(() =>
+      const mockFn = vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve(mockResponse),

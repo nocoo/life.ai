@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll } from "bun:test";
-import { Database } from "bun:sqlite";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import Database from "better-sqlite3";
 import { mkdirSync, rmSync } from "fs";
 import { NextRequest } from "next/server";
 import { GET } from "@/app/api/year/applehealth/route";
@@ -119,7 +119,7 @@ describe("GET /api/year/applehealth", () => {
     expect(data.data.daysWithData).toBeGreaterThan(0);
     expect(data.data.heartRate).not.toBeNull();
     expect(data.data.steps).not.toBeNull();
-    expect(data.data.steps.monthlySteps).toBeArray();
+    expect(data.data.steps.monthlySteps).toBeInstanceOf(Array);
   });
 
   it("should return empty data for year with no records", async () => {
@@ -149,7 +149,7 @@ describe("GET /api/year/applehealth", () => {
 
     expect(response.status).toBe(500);
     expect(data.success).toBe(false);
-    expect(data.error).toBeString();
+    expect(data.error).toEqual(expect.any(String));
 
     process.env.APPLEHEALTH_DB_PATH = originalPath;
   });

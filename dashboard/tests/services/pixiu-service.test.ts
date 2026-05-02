@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll, spyOn } from "bun:test";
-import { Database } from "bun:sqlite";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
+import Database from "better-sqlite3";
 import { mkdirSync, rmSync } from "fs";
 import {
   PixiuService,
@@ -139,7 +139,7 @@ describe("PixiuService", () => {
 
       expect(data).toBeDefined();
       expect(data.date).toBe("2025-01-15");
-      expect(data.transactions).toBeArray();
+      expect(data.transactions).toBeInstanceOf(Array);
       expect(data.transactions.length).toBe(4);
       expect(data.dayAgg).toBeDefined();
     });
@@ -311,7 +311,7 @@ describe("PixiuService", () => {
   describe("caching behavior", () => {
     it("should cache historical month data on second call", () => {
       const service = new PixiuService(TEST_DB_PATH);
-      const openDbSpy = spyOn(dbModule, "openDbByPath");
+      const openDbSpy = vi.spyOn(dbModule, "openDbByPath");
 
       // First call - should hit database
       const data1 = service.getMonthData("2025-01");
@@ -328,7 +328,7 @@ describe("PixiuService", () => {
 
     it("should cache historical year data on second call", () => {
       const service = new PixiuService(TEST_DB_PATH);
-      const openDbSpy = spyOn(dbModule, "openDbByPath");
+      const openDbSpy = vi.spyOn(dbModule, "openDbByPath");
 
       // First call - should hit database
       const data1 = service.getYearData(2025);
@@ -345,7 +345,7 @@ describe("PixiuService", () => {
 
     it("should NOT cache current month data", () => {
       const service = new PixiuService(TEST_DB_PATH);
-      const openDbSpy = spyOn(dbModule, "openDbByPath");
+      const openDbSpy = vi.spyOn(dbModule, "openDbByPath");
 
       const now = new Date();
       const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -361,7 +361,7 @@ describe("PixiuService", () => {
 
     it("should NOT cache current year data", () => {
       const service = new PixiuService(TEST_DB_PATH);
-      const openDbSpy = spyOn(dbModule, "openDbByPath");
+      const openDbSpy = vi.spyOn(dbModule, "openDbByPath");
 
       const currentYear = new Date().getFullYear();
 
@@ -376,7 +376,7 @@ describe("PixiuService", () => {
 
     it("should allow clearing the cache", () => {
       const service = new PixiuService(TEST_DB_PATH);
-      const openDbSpy = spyOn(dbModule, "openDbByPath");
+      const openDbSpy = vi.spyOn(dbModule, "openDbByPath");
 
       service.getMonthData("2025-01");
       expect(openDbSpy).toHaveBeenCalledTimes(1);
