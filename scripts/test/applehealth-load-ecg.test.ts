@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { rmSync, mkdirSync } from "node:fs";
 import { openDb, testDbPath } from "../import/applehealth/db";
 import { loadEcg } from "../import/applehealth/load-ecg";

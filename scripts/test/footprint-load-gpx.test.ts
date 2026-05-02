@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { rmSync } from "node:fs";
 import { openDb, testDbPath } from "../import/footprint/db";
 import { loadGpx } from "../import/footprint/load-gpx";

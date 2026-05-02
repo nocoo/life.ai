@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { rmSync, mkdirSync } from "node:fs";
 import { openDb, testDbPath } from "../import/applehealth/db";
 import {
@@ -282,14 +282,14 @@ describe("applehealth verify", () => {
   });
 
   it("throws error when xml file not found", async () => {
-    expect(countXml("/nonexistent/file.xml")).rejects.toThrow("XML file not found");
+    await expect(countXml("/nonexistent/file.xml")).rejects.toThrow("XML file not found");
   });
 
   it("throws error when ecg dir has no files", async () => {
     // Create empty dir - Glob returns empty array when no matching files
     const emptyEcgDir = "db/test-empty-ecg";
     mkdirSync(emptyEcgDir, { recursive: true });
-    expect(countEcgFiles(emptyEcgDir)).rejects.toThrow("ECG dir not found");
+    await expect(countEcgFiles(emptyEcgDir)).rejects.toThrow("ECG dir not found");
     rmSync(emptyEcgDir, { recursive: true, force: true });
   });
 
@@ -297,7 +297,7 @@ describe("applehealth verify", () => {
     // Create empty dir - Glob returns empty array when no matching files
     const emptyRoutesDir = "db/test-empty-routes";
     mkdirSync(emptyRoutesDir, { recursive: true });
-    expect(countRouteFiles(emptyRoutesDir)).rejects.toThrow("Routes dir not found");
+    await expect(countRouteFiles(emptyRoutesDir)).rejects.toThrow("Routes dir not found");
     rmSync(emptyRoutesDir, { recursive: true, force: true });
   });
 
