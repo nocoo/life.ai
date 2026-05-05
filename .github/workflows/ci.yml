@@ -12,7 +12,7 @@ jobs:
     uses: nocoo/base-ci/.github/workflows/bun-quality.yml@v2026.1
     with:
       pre-command: "cd dashboard && bun install --frozen-lockfile"
-      test-command: "bun run ut"
+      test-command: "bun run test:coverage"
       lint-command: "bun run lint"
       typecheck-command: "true"
       enable-l2: "false"

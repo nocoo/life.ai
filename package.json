@@ -11,7 +11,7 @@
     "lint": "eslint --max-warnings=0 . --ext .ts && cd dashboard && bun run lint",
     "lint:import": "eslint scripts/import --ext .ts",
     "lint:verify": "eslint scripts/verify --ext .ts",
-    "precommit": "bun run ut && bun run lint",
+    "precommit": "bun run test:coverage && bun run lint",
     "prepare": "husky",
     "db:init": "bun run scripts/import/footprint/init.ts",
     "db:load": "bun run scripts/import/footprint/cli.ts load",
