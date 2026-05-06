@@ -45,14 +45,10 @@ export const getDaysInYear = (year: number): number => {
 };
 
 /** Group records by month */
-const groupByMonth = <T extends { day?: string }>(
-  records: T[],
-  getDayFn?: (r: T) => string
-): Map<string, T[]> => {
+const groupByMonth = <T extends { day: string }>(records: T[]): Map<string, T[]> => {
   const map = new Map<string, T[]>();
   records.forEach((r) => {
-    const day = getDayFn ? getDayFn(r) : r.day!;
-    const month = day.slice(0, 7); // YYYY-MM
+    const month = r.day.slice(0, 7); // YYYY-MM
     const existing = map.get(month) || [];
     existing.push(r);
     map.set(month, existing);
@@ -61,16 +57,12 @@ const groupByMonth = <T extends { day?: string }>(
 };
 
 /** Group records by day */
-const groupByDay = <T extends { day?: string }>(
-  records: T[],
-  getDayFn?: (r: T) => string
-): Map<string, T[]> => {
+const groupByDay = <T extends { day: string }>(records: T[]): Map<string, T[]> => {
   const map = new Map<string, T[]>();
   records.forEach((r) => {
-    const day = getDayFn ? getDayFn(r) : r.day!;
-    const existing = map.get(day) || [];
+    const existing = map.get(r.day) || [];
     existing.push(r);
-    map.set(day, existing);
+    map.set(r.day, existing);
   });
   return map;
 };
