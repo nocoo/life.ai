@@ -173,6 +173,7 @@ export const loadXml = async (
   let correlationMatch: RegExpExecArray | null;
   while ((correlationMatch = correlationRegex.exec(xml))) {
     const tag = correlationMatch[0].match(/<Correlation\b[^>]*>/);
+    /* istanbul ignore if -- defensive: outer regex guarantees the open tag exists */
     if (!tag) continue;
     const attrs = parseAttributes(tag[0]);
     const startDate = attrs.get("startDate");
@@ -195,6 +196,7 @@ export const loadXml = async (
   let workoutMatch: RegExpExecArray | null;
   while ((workoutMatch = workoutRegex.exec(xml))) {
     const tag = workoutMatch[0].match(/<Workout\b[^>]*>/);
+    /* istanbul ignore if -- defensive: outer regex guarantees the open tag exists */
     if (!tag) continue;
     const attrs = parseAttributes(tag[0]);
     const startDate = attrs.get("startDate");

@@ -17,10 +17,8 @@ export default defineConfig({
       thresholds: {
         lines: 95,
         functions: 95,
-        // istanbul counts TS default args / optional params as branches,
-        // so the achievable bar is lower than the line/function bar.
-        branches: 70,
-        statements: 90,
+        branches: 95,
+        statements: 95,
       },
     },
   },
