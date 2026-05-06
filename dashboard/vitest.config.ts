@@ -42,10 +42,7 @@ export default defineConfig({
         lines: 95,
         functions: 95,
         statements: 95,
-        // istanbul counts TS optional params, default args, and `x ?? y`
-        // narrowing as branches, lowering the achievable branch ratio
-        // vs. line ratio. Matches the threshold used in the repo root.
-        branches: 70,
+        branches: 95,
       },
     },
   },
