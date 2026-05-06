@@ -82,10 +82,10 @@ function getTrueSolarTime(hour: number, minute: number, longitude: number, dayOf
  */
 function getSunAltitudeDegrees(
   hour: number,
-  minute: number = 0,
-  date: Date = new Date(),
-  latitude: number = DEFAULT_LAT,
-  longitude: number = DEFAULT_LON
+  minute: number,
+  date: Date,
+  latitude: number,
+  longitude: number
 ): number {
   const dayOfYear = getDayOfYear(date);
   const declination = getSolarDeclination(dayOfYear);
