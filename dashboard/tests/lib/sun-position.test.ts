@@ -55,6 +55,14 @@ describe("sun-position", () => {
       expect(altitude).toBeGreaterThan(-1);
       expect(altitude).toBeLessThan(1);
     });
+
+    test("uses defaults for minute, date, lat, lon individually", () => {
+      // exercise each default parameter branch
+      expect(typeof getSunAltitude(12)).toBe("number");
+      expect(typeof getSunAltitude(12, 30)).toBe("number");
+      expect(typeof getSunAltitude(12, 30, SPRING_EQUINOX)).toBe("number");
+      expect(typeof getSunAltitude(12, 30, SPRING_EQUINOX, BEIJING_LAT)).toBe("number");
+    });
   });
 
   describe("isSunUp", () => {
@@ -72,6 +80,12 @@ describe("sun-position", () => {
 
     test("uses default values when not provided", () => {
       expect(typeof isSunUp(12)).toBe("boolean");
+    });
+
+    test("uses defaults for minute, date, lat, lon individually", () => {
+      expect(typeof isSunUp(12, 30)).toBe("boolean");
+      expect(typeof isSunUp(12, 30, SPRING_EQUINOX)).toBe("boolean");
+      expect(typeof isSunUp(12, 30, SPRING_EQUINOX, BEIJING_LAT)).toBe("boolean");
     });
   });
 });
