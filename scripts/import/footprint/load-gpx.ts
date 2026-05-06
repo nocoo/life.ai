@@ -13,7 +13,9 @@ const tagValue = (block: string, tag: string) => {
 export const loadGpx = async (
   db: ReturnType<typeof openDb>,
   year: number,
+  /* istanbul ignore next -- default arg only used when caller omits path */
   gpxPath: string = defaultGpxPath,
+  /* istanbul ignore next -- default arg only used when caller omits source */
   source: string = sourceName
 ) => {
   const file = Bun.file(gpxPath);

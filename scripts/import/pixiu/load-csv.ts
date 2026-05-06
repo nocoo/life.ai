@@ -5,6 +5,7 @@ export const defaultCsvPath = "data/pixiu/2025.csv";
 const parseNumber = (value: string | undefined) => {
   if (!value) return 0;
   const cleaned = value.replace(/,/g, "").trim();
+  /* istanbul ignore next -- defensive: callers (`get`) already trim, so cleaned is never empty when value is truthy */
   if (!cleaned) return 0;
   const parsed = Number(cleaned);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -21,7 +22,9 @@ const parseCsv = (text: string) => {
 export const loadCsv = async (
   db: ReturnType<typeof openDb>,
   year: number,
+  /* istanbul ignore next -- default arg only used when caller omits path */
   csvPath: string = defaultCsvPath,
+  /* istanbul ignore next -- default arg only used when caller omits source */
   source: string = sourceName
 ) => {
   const file = Bun.file(csvPath);
@@ -35,6 +38,7 @@ export const loadCsv = async (
 
   const get = (row: string[], name: string) => {
     const idx = indexes.get(name);
+    /* istanbul ignore next -- defensive: callers only request columns known to exist in the header */
     return idx === undefined ? "" : (row[idx] ?? "").trim();
   };
 

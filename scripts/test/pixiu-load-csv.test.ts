@@ -117,4 +117,21 @@ describe("pixiu load csv", () => {
 
     db.close();
   });
+
+  it("handles whitespace-only numbers and short rows (parseNumber empty branch + missing column)", async () => {
+    // First row: inflow column is a single space → after replace(/,/g) and trim() → ""
+    // → exercises L8 (`if (!cleaned)`) in parseNumber.
+    // Second row: omits trailing columns → row[idx] is undefined for tags/note
+    // → exercises L38 (`row[idx] ?? ""`) in get().
+    writePixiuCsv(csvFile, [
+      "2024-03-01,日常收入,工资, ,0,人民币,现金,,",
+      "2024-03-02,日常支出,超市,0,5,人民币,现金",
+    ]);
+
+    const db = openDb(testDbPath);
+    createSchema(db);
+    const count = await loadCsv(db, 2024, csvFile, "pixiu");
+    expect(count).toBe(2);
+    db.close();
+  });
 });

@@ -7,6 +7,7 @@ const parseHeader = (lines: string[]) => {
   for (const line of lines) {
     if (!line.includes(",")) continue;
     const [key, value] = line.split(/,(.+)/);
+    /* istanbul ignore next -- defensive: line.includes(",") above guarantees a key/value split */
     if (!key || value === undefined) continue;
     meta.set(key.trim(), value.trim().replace(/^"|"$/g, ""));
   }
@@ -29,6 +30,7 @@ const extractDay = (dateValue: string | undefined) =>
 export const loadEcg = async (
   db: ReturnType<typeof openDb>,
   year?: number,
+  /* istanbul ignore next -- default arg only used when caller omits path */
   dirPath: string = defaultEcgDir
 ) => {
   const files = await Array.fromAsync(

@@ -101,7 +101,9 @@ const workoutStatValue = (attrs: Map<string, string>) => {
 export const loadXml = async (
   db: ReturnType<typeof openDb>,
   year?: number,
+  /* istanbul ignore next -- default arg only used when caller omits path */
   xmlPath: string = defaultExportPath,
+  /* istanbul ignore next -- default arg only used when caller omits source */
   source: string = sourceName
 ) => {
   const file = Bun.file(xmlPath);

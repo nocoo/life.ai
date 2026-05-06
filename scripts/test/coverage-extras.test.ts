@@ -486,6 +486,11 @@ describe("coverage extras: db.ts env-var paths", () => {
       const fpDb2 = openFootprintDb();
       fpDb2.close();
 
+      // Production path: NODE_ENV != "test" and no env var → falls through to dbPath
+      delete process.env.NODE_ENV;
+      const fpDb3 = openFootprintDb();
+      fpDb3.close();
+
       process.env.PIXIU_DB_PATH = pixiuTestDbPath;
       const pxDb = openPixiuDb();
       pxDb.close();
@@ -493,6 +498,10 @@ describe("coverage extras: db.ts env-var paths", () => {
       delete process.env.PIXIU_DB_PATH;
       const pxDb2 = openPixiuDb();
       pxDb2.close();
+
+      // Production path: NODE_ENV != "test" and no env var → falls through to dbPath
+      const pxDb3 = openPixiuDb();
+      pxDb3.close();
     } finally {
       if (originalFp === undefined) delete process.env.FOOTPRINT_DB_PATH;
       else process.env.FOOTPRINT_DB_PATH = originalFp;
