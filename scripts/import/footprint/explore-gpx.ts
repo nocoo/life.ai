@@ -1,3 +1,5 @@
+export {};
+
 const gpxPath = "data/footprint/20260202.gpx";
 
 const file = Bun.file(gpxPath);

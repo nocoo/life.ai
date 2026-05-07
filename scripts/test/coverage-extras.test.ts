@@ -482,12 +482,12 @@ describe("coverage extras: db.ts env-var paths", () => {
       fpDb.close();
 
       delete process.env.FOOTPRINT_DB_PATH;
-      process.env.NODE_ENV = "test";
+      (process.env as Record<string, string | undefined>).NODE_ENV = "test";
       const fpDb2 = openFootprintDb();
       fpDb2.close();
 
       // Production path: NODE_ENV != "test" and no env var → falls through to dbPath
-      delete process.env.NODE_ENV;
+      delete (process.env as Record<string, string | undefined>).NODE_ENV;
       const fpDb3 = openFootprintDb();
       fpDb3.close();
 
@@ -507,8 +507,8 @@ describe("coverage extras: db.ts env-var paths", () => {
       else process.env.FOOTPRINT_DB_PATH = originalFp;
       if (originalPx === undefined) delete process.env.PIXIU_DB_PATH;
       else process.env.PIXIU_DB_PATH = originalPx;
-      if (originalNode === undefined) delete process.env.NODE_ENV;
-      else process.env.NODE_ENV = originalNode;
+      if (originalNode === undefined) delete (process.env as Record<string, string | undefined>).NODE_ENV;
+      else (process.env as Record<string, string | undefined>).NODE_ENV = originalNode;
       rmSync(footprintTestDbPath, { force: true });
       rmSync(pixiuTestDbPath, { force: true });
       rmSync("db/footprint.sqlite", { force: true });
