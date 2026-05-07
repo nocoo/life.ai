@@ -144,7 +144,6 @@ export const useDayStore = create<DayStore>((set, get) => ({
         loading: false,
       });
     } catch (err) {
-      /* istanbul ignore next -- defensive: caught errors from fetch are always Error instances */
       const message = err instanceof Error ? err.message : "Failed to load data";
       set({
         error: message,

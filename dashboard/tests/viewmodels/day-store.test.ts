@@ -281,6 +281,18 @@ describe("day-store", () => {
       expect(state.loading).toBe(false);
     });
 
+    it("should fall back to default message when caught value is not an Error", async () => {
+      globalThis.fetch = vi.fn(() =>
+        Promise.reject("string failure")
+      ) as unknown as typeof fetch;
+
+      await useDayStore.getState().loadData();
+
+      const state = useDayStore.getState();
+      expect(state.error).toBe("Failed to load data");
+      expect(state.loading).toBe(false);
+    });
+
     it("should build summary from data", async () => {
       setupMockFetch();
       useDayStore.getState().setDate(new Date("2025-01-15"));

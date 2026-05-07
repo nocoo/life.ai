@@ -116,7 +116,6 @@ export const useMonthStore = create<MonthStore>((set, get) => ({
         loading: false,
       });
     } catch (err) {
-      /* istanbul ignore next -- defensive: caught errors from fetch are always Error instances */
       const message = err instanceof Error ? err.message : "Failed to load month data";
       set({
         error: message,

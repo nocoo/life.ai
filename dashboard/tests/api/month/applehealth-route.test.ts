@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import Database from "better-sqlite3";
 import { mkdirSync, rmSync } from "fs";
 import { NextRequest } from "next/server";
 import { GET } from "@/app/api/month/applehealth/route";
+import { AppleHealthService } from "@/services/applehealth-service";
 
 const TEST_DB_DIR = "tests/.tmp";
 const TEST_DB_PATH = `${TEST_DB_DIR}/month-applehealth-api.test.sqlite`;
@@ -150,5 +151,25 @@ describe("GET /api/month/applehealth", () => {
     expect(data.error).toEqual(expect.any(String));
 
     process.env.APPLEHEALTH_DB_PATH = originalPath;
+  });
+
+  it("should return 500 with 'Unknown error' when service throws non-Error value", async () => {
+    const spy = vi
+      .spyOn(AppleHealthService.prototype, "getMonthData")
+      .mockImplementation(() => {
+        throw "string failure";
+      });
+
+    const request = new NextRequest(
+      "http://localhost/api/month/applehealth?month=2025-01"
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(data.success).toBe(false);
+    expect(data.error).toBe("Unknown error");
+
+    spy.mockRestore();
   });
 });

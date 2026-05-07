@@ -34,7 +34,6 @@ export async function GET(
     const data = service.getDayData(date);
     return NextResponse.json({ success: true, data });
   } catch (error) {
-    /* istanbul ignore next -- defensive: caught errors are always Error instances in this code path */
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { success: false, error: message },
