@@ -111,8 +111,8 @@ export const loadXml = async (
 
   const xml = await file.text();
   const recordRegex = /<Record\b[^>]*>/g;
-  const correlationRegex = /<Correlation\b[^>]*>[\s\S]*?<\/Correlation>/g;
-  const workoutRegex = /<Workout\b[^>]*>[\s\S]*?<\/Workout>/g;
+  const correlationRegex = /(<Correlation\b[^>]*>)[\s\S]*?<\/Correlation>/g;
+  const workoutRegex = /(<Workout\b[^>]*>)[\s\S]*?<\/Workout>/g;
   const activityRegex = /<ActivitySummary\b[^>]*>/g;
 
   const recordInsert = db.prepare(
@@ -172,10 +172,7 @@ export const loadXml = async (
   let correlationCount = 0;
   let correlationMatch: RegExpExecArray | null;
   while ((correlationMatch = correlationRegex.exec(xml))) {
-    const tag = correlationMatch[0].match(/<Correlation\b[^>]*>/);
-    /* istanbul ignore if -- defensive: outer regex guarantees the open tag exists */
-    if (!tag) continue;
-    const attrs = parseAttributes(tag[0]);
+    const attrs = parseAttributes(correlationMatch[1]);
     const startDate = attrs.get("startDate");
     const day = extractDay(startDate);
     if (!withinYear(day, year)) continue;
@@ -195,10 +192,7 @@ export const loadXml = async (
   let workoutCount = 0;
   let workoutMatch: RegExpExecArray | null;
   while ((workoutMatch = workoutRegex.exec(xml))) {
-    const tag = workoutMatch[0].match(/<Workout\b[^>]*>/);
-    /* istanbul ignore if -- defensive: outer regex guarantees the open tag exists */
-    if (!tag) continue;
-    const attrs = parseAttributes(tag[0]);
+    const attrs = parseAttributes(workoutMatch[1]);
     const startDate = attrs.get("startDate");
     const day = extractDay(startDate);
     if (!withinYear(day, year)) continue;
