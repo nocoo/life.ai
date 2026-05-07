@@ -7,6 +7,7 @@ import {
   createMockDayFootprintData,
   createMockDayPixiuData,
 } from "@/mocks";
+import { createMockCategoryBreakdown, createMockExpenseSummary } from "@/mocks/pixiu-mock";
 
 describe("mocks", () => {
   describe("createMockDayHealthData", () => {
@@ -151,6 +152,40 @@ describe("mocks", () => {
         expect(events[i].time >= events[i - 1].time).toBe(true);
       }
     });
+
+    it("uses duration when workout has no distance, and shows + sign for income", () => {
+      const data = createMockDayViewData("2025-01-15");
+      // Mutate to exercise both branches
+      const mutated = {
+        ...data,
+        health: {
+          ...data.health,
+          workouts: [
+            {
+              ...data.health.workouts[0],
+              distance: 0, // falsy → uses duration branch
+              duration: 42,
+            },
+          ],
+        },
+        pixiu: {
+          ...data.pixiu,
+          transactions: [
+            {
+              ...data.pixiu.transactions[0],
+              isIncome: true,
+              amount: 100,
+            },
+          ],
+        },
+      };
+      const events = buildTimelineEvents(mutated);
+      const workoutEvent = events.find((e) => e.type === "workout");
+      expect(workoutEvent?.subtitle).toBe("42 min");
+      const txEvent = events.find((e) => e.type === "transaction");
+      expect(txEvent?.subtitle).toBe("+¥100");
+      expect(txEvent?.color).toBe("bg-emerald-500");
+    });
   });
 
   describe("getMockDayData", () => {
@@ -160,6 +195,46 @@ describe("mocks", () => {
 
       expect(data.date).toBe("2025-01-15");
       expect(data.summary).not.toBeNull();
+    });
+  });
+
+  describe("createMockCategoryBreakdown", () => {
+    it("returns empty array when no transactions match", () => {
+      // No income txs in default mock → total === 0 branch
+      const txs = [
+        {
+          id: "x",
+          time: "00:00",
+          categoryL1: "a",
+          categoryL2: "b",
+          amount: 0,
+          isIncome: true,
+          account: "",
+          note: "",
+        },
+      ];
+      const breakdown = createMockCategoryBreakdown(txs, true);
+      expect(breakdown[0].percentage).toBe(0);
+    });
+  });
+
+  describe("createMockExpenseSummary", () => {
+    it("computes income reducer when income transactions present", () => {
+      const summary = createMockExpenseSummary([
+        {
+          id: "i",
+          time: "10:00",
+          categoryL1: "income",
+          categoryL2: "salary",
+          amount: 1000,
+          isIncome: true,
+          account: "bank",
+          note: "",
+        },
+      ]);
+      expect(summary.income).toBe(1000);
+      expect(summary.expense).toBe(0);
+      expect(summary.net).toBe(1000);
     });
   });
 });

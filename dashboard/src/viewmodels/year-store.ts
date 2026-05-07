@@ -102,8 +102,9 @@ export const useYearStore = create<YearStore>((set, get) => ({
         loading: false,
       });
     } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to load year data";
       set({
-        error: err instanceof Error ? err.message : "Failed to load year data",
+        error: message,
         loading: false,
       });
     }

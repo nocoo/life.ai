@@ -281,6 +281,18 @@ describe("day-store", () => {
       expect(state.loading).toBe(false);
     });
 
+    it("should fall back to default message when caught value is not an Error", async () => {
+      globalThis.fetch = vi.fn(() =>
+        Promise.reject("string failure")
+      ) as unknown as typeof fetch;
+
+      await useDayStore.getState().loadData();
+
+      const state = useDayStore.getState();
+      expect(state.error).toBe("Failed to load data");
+      expect(state.loading).toBe(false);
+    });
+
     it("should build summary from data", async () => {
       setupMockFetch();
       useDayStore.getState().setDate(new Date("2025-01-15"));
@@ -290,6 +302,52 @@ describe("day-store", () => {
       expect(state.data).not.toBeNull();
       expect(state.data!.summary).toBeDefined();
       expect(state.data!.summary.date).toBe("2025-01-15");
+    });
+
+    it("should set location from first track point when present", async () => {
+      const mockAppleHealth = {
+        date: "2025-01-15",
+        records: [],
+        workouts: [],
+        activitySummary: null,
+      };
+      const mockFootprint = {
+        date: "2025-01-15",
+        trackPoints: [
+          {
+            id: 1,
+            day: "2025-01-15",
+            ts: "2025-01-15T08:00:00+08:00",
+            lat: 31.23,
+            lon: 121.47,
+            ele: null,
+            speed: null,
+            year: 2025,
+          },
+        ],
+        dayAgg: null,
+      };
+      const mockPixiu = { date: "2025-01-15", transactions: [], dayAgg: null };
+      globalThis.fetch = vi.fn((url: string) => {
+        const data = url.includes("applehealth")
+          ? mockAppleHealth
+          : url.includes("footprint")
+          ? mockFootprint
+          : mockPixiu;
+        return Promise.resolve(
+          new Response(JSON.stringify({ success: true, data }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          })
+        );
+      }) as unknown as typeof fetch;
+
+      useDayStore.getState().setDate(new Date("2025-01-15"));
+      await useDayStore.getState().loadData();
+
+      const state = useDayStore.getState();
+      expect(state.location.latitude).toBeCloseTo(31.23);
+      expect(state.location.longitude).toBeCloseTo(121.47);
     });
   });
 

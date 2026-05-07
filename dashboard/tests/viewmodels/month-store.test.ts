@@ -325,6 +325,18 @@ describe("month-store", () => {
       expect(state.error).not.toBeNull();
       expect(state.loading).toBe(false);
     });
+
+    it("should fall back to default message when caught value is not an Error", async () => {
+      globalThis.fetch = vi.fn(() =>
+        Promise.reject(123)
+      ) as unknown as typeof fetch;
+
+      await useMonthStore.getState().loadData();
+
+      const state = useMonthStore.getState();
+      expect(state.error).toBe("Failed to load month data");
+      expect(state.loading).toBe(false);
+    });
   });
 
   describe("resetMonthStore", () => {

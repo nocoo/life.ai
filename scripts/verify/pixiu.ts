@@ -225,6 +225,7 @@ export const runCli = async (
   return { exitCode: result.ok ? 0 : 1, ok: result.ok };
 };
 
+/* istanbul ignore if -- CLI entry-point, exercised end-to-end, not in unit tests */
 if (import.meta.main) {
   const result = await runCli(process.argv.slice(2));
   if (result.exitCode !== 0) process.exit(result.exitCode);

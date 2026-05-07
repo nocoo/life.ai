@@ -141,4 +141,15 @@ describe("load gpx (year filter)", () => {
 
     db.close();
   });
+
+  it("uses default gpx path and source when arguments are omitted", async () => {
+    const db = openDb(testDbPath);
+    createSchema(db);
+
+    await expect(loadGpx(db, 2024)).rejects.toThrow(
+      "GPX file not found: data/footprint/20260202.gpx"
+    );
+
+    db.close();
+  });
 });

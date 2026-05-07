@@ -81,6 +81,7 @@ export const countXml = async (path: string, year?: number) => {
   let corrMatch: RegExpExecArray | null;
   while ((corrMatch = correlationRegex.exec(xml))) {
     const tag = corrMatch[0].match(/<Correlation\b[^>]*>/);
+    /* istanbul ignore if -- defensive: outer regex guarantees the open tag exists */
     if (!tag) continue;
     const attrs = parseAttributes(tag[0]);
     const day = extractDay(attrs.get("startDate"));
@@ -91,6 +92,7 @@ export const countXml = async (path: string, year?: number) => {
   let workoutMatch: RegExpExecArray | null;
   while ((workoutMatch = workoutRegex.exec(xml))) {
     const tag = workoutMatch[0].match(/<Workout\b[^>]*>/);
+    /* istanbul ignore if -- defensive: outer regex guarantees the open tag exists */
     if (!tag) continue;
     const attrs = parseAttributes(tag[0]);
     const day = extractDay(attrs.get("startDate"));
@@ -289,6 +291,7 @@ export const runCli = async (
   return { exitCode: result.ok ? 0 : 1, ok: result.ok };
 };
 
+/* istanbul ignore if -- CLI entry-point, exercised end-to-end, not in unit tests */
 if (import.meta.main) {
   const result = await runCli(process.argv.slice(2));
   if (result.exitCode !== 0) process.exit(result.exitCode);

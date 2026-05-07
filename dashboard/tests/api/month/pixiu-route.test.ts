@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import Database from "better-sqlite3";
 import { mkdirSync, rmSync } from "fs";
 import { NextRequest } from "next/server";
 import { GET } from "@/app/api/month/pixiu/route";
+import { PixiuService } from "@/services/pixiu-service";
 
 const TEST_DB_DIR = "tests/.tmp";
 const TEST_DB_PATH = `${TEST_DB_DIR}/month-pixiu-api.test.sqlite`;
@@ -142,5 +143,25 @@ describe("GET /api/month/pixiu", () => {
     expect(data.error).toEqual(expect.any(String));
 
     process.env.PIXIU_DB_PATH = originalPath;
+  });
+
+  it("should return 500 with 'Unknown error' when service throws non-Error value", async () => {
+    const spy = vi
+      .spyOn(PixiuService.prototype, "getMonthData")
+      .mockImplementation(() => {
+        throw { code: "weird" };
+      });
+
+    const request = new NextRequest(
+      "http://localhost/api/month/pixiu?month=2025-01"
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(data.success).toBe(false);
+    expect(data.error).toBe("Unknown error");
+
+    spy.mockRestore();
   });
 });

@@ -5,7 +5,6 @@ export const defaultCsvPath = "data/pixiu/2025.csv";
 const parseNumber = (value: string | undefined) => {
   if (!value) return 0;
   const cleaned = value.replace(/,/g, "").trim();
-  if (!cleaned) return 0;
   const parsed = Number(cleaned);
   return Number.isFinite(parsed) ? parsed : 0;
 };
