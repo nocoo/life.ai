@@ -85,11 +85,14 @@ describe("transformers branch extras", () => {
       "2024-01-15 01:00:00 +0800"
     );
     // Post-noon → endDateTime >= noonCutoff → returns null (L147)
+    // Use 21:00-22:00 +0800 (= 13:00-14:00 UTC) so the end is past noon
+    // regardless of whether `new Date("2024-01-15T12:00:00")` is parsed in
+    // local time (e.g. CST) or UTC (CI).
     const postNoonStage = sleepRecord(
       2,
       "HKCategoryValueSleepAnalysisAsleepCore",
-      "2024-01-15 14:00:00 +0800",
-      "2024-01-15 15:00:00 +0800"
+      "2024-01-15 21:00:00 +0800",
+      "2024-01-15 22:00:00 +0800"
     );
     // First-session and second-session split with > 2h gap (L178 break)
     const overnightFirst = sleepRecord(
