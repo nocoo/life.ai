@@ -187,6 +187,17 @@ describe("year-transformers extras", () => {
     };
     const result = transformYearHealthData(raw);
     expect(result.sleep).not.toBeNull();
+    // Only 2024-01-15 contributes sleep minutes (Core 60 + REM 30 + Awake 15);
+    // 2024-02-10 has only InBed -> dayTotal === 0 and is excluded from
+    // daysWithData and the avg-* breakdown denominators.
+    expect(result.sleep!.daysWithData).toBe(1);
+    expect(result.sleep!.avgCoreMinutes).toBe(60);
+    expect(result.sleep!.avgRemMinutes).toBe(30);
+    expect(result.sleep!.avgAwakeMinutes).toBe(15);
+    expect(result.sleep!.avgDeepMinutes).toBe(0);
+    // 105 minutes of sleep for the single contributing day -> 1.75h avg/total
+    expect(result.sleep!.totalHours).toBeCloseTo(1.75);
+    expect(result.sleep!.avgDuration).toBeCloseTo(1.75);
   });
 
   test("workouts: type fallback when not in WORKOUT_TYPE_NAMES, falsy duration, null distance/energy", () => {
@@ -201,7 +212,23 @@ describe("year-transformers extras", () => {
     };
     const result = transformYearHealthData(raw);
     expect(result.workouts).not.toBeNull();
-    expect(result.workouts!.byType.length).toBeGreaterThan(0);
+    // Falsy duration / null distance / null energy collapse to 0 totals
+    expect(result.workouts!.totalWorkouts).toBe(1);
+    expect(result.workouts!.totalDuration).toBe(0);
+    expect(result.workouts!.totalDistance).toBe(0);
+    expect(result.workouts!.totalCalories).toBe(0);
+    expect(result.workouts!.daysWithWorkouts).toBe(1);
+    // Unknown type falls back to stripping the `HKWorkoutActivityType` prefix
+    expect(result.workouts!.byType).toEqual([
+      {
+        type: "HKWorkoutActivityTypeUnknownXYZ",
+        typeName: "UnknownXYZ",
+        count: 1,
+        totalDuration: 0,
+        totalDistance: 0,
+        totalCalories: 0,
+      },
+    ]);
   });
 
   test("activity: null active_energy/exercise_time/stand_hours hit ?? 0 branches", () => {
@@ -213,6 +240,14 @@ describe("year-transformers extras", () => {
     };
     const result = transformYearHealthData(raw);
     expect(result.activity).not.toBeNull();
+    // All three nullable activity fields collapse to 0 totals (and 0 averages)
+    expect(result.activity!.totalActiveEnergy).toBe(0);
+    expect(result.activity!.avgActiveEnergy).toBe(0);
+    expect(result.activity!.totalExerciseMinutes).toBe(0);
+    expect(result.activity!.avgExerciseMinutes).toBe(0);
+    expect(result.activity!.totalStandHours).toBe(0);
+    expect(result.activity!.avgStandHours).toBe(0);
+    expect(result.activity!.daysWithData).toBe(1);
   });
 
   test("distance: maxDistance comparison with smaller dayTotal hits false branch", () => {
@@ -239,6 +274,11 @@ describe("year-transformers extras", () => {
     };
     const result = transformYearHealthData(raw);
     expect(result.distance).not.toBeNull();
+    // 5000 m on 2024-05-01 stays the maximum even though 2024-05-02 (1000 m)
+    // is processed afterwards and exercises the false branch of `v > maxDistance`.
+    expect(result.distance!.maxDistance).toBe(5000);
+    expect(result.distance!.maxDistanceDate).toBe("2024-05-01");
+    expect(result.distance!.totalDistance).toBe(6000);
   });
 
   test("hrv/oxygen: descending values exercise the false branch of v>maxValue", () => {

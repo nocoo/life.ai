@@ -71,7 +71,13 @@ describe("footprint-aggregator branch extras", () => {
       { ts: "2024-01-15T08:00:00", lat: 39.9, lon: 116.4 },
     ];
     const agg = aggregateFootprintData(trackPoints);
-    expect(agg.slots.length).toBeGreaterThan(0);
+    // Only the first point's speed (1.0 m/s) reaches the slot's speeds array;
+    // the second point's speed stays undefined because timeDiff === 0 short-circuits
+    // the recompute branch and the point has no own `speed` field.
+    expect(agg.slots).toHaveLength(1);
+    expect(agg.slots[0].avgSpeed).toBeCloseTo(1.0);
+    expect(agg.slots[0].avgSpeedKmh).toBeCloseTo(3.6);
+    expect(agg.slots[0].mode).toBe("walking");
   });
 
   it("dominant mode falls through to walking and stationary fallbacks", () => {
