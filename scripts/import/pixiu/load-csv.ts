@@ -5,8 +5,6 @@ export const defaultCsvPath = "data/pixiu/2025.csv";
 const parseNumber = (value: string | undefined) => {
   if (!value) return 0;
   const cleaned = value.replace(/,/g, "").trim();
-  /* istanbul ignore next -- defensive: callers (`get`) already trim, so cleaned is never empty when value is truthy */
-  if (!cleaned) return 0;
   const parsed = Number(cleaned);
   return Number.isFinite(parsed) ? parsed : 0;
 };
@@ -36,7 +34,6 @@ export const loadCsv = async (
 
   const get = (row: string[], name: string) => {
     const idx = indexes.get(name);
-    /* istanbul ignore next -- defensive: callers only request columns known to exist in the header */
     return idx === undefined ? "" : (row[idx] ?? "").trim();
   };
 

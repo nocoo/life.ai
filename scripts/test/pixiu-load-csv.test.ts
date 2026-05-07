@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { rmSync } from "node:fs";
+import { rmSync, writeFileSync } from "node:fs";
 import { openDb, testDbPath } from "../import/pixiu/db";
 import { loadCsv } from "../import/pixiu/load-csv";
-import { writePixiuCsv } from "./pixiu-fixtures";
+import { ensureParentDir, writePixiuCsv } from "./pixiu-fixtures";
 
 const createSchema = (db: ReturnType<typeof openDb>) => {
   db.exec(`
@@ -129,11 +129,7 @@ describe("pixiu load csv", () => {
     db.close();
   });
 
-  it("handles whitespace-only numbers and short rows (parseNumber empty branch + missing column)", async () => {
-    // First row: inflow column is a single space → after replace(/,/g) and trim() → ""
-    // → exercises L8 (`if (!cleaned)`) in parseNumber.
-    // Second row: omits trailing columns → row[idx] is undefined for tags/note
-    // → exercises L38 (`row[idx] ?? ""`) in get().
+  it("handles whitespace-only numbers and short rows", async () => {
     writePixiuCsv(csvFile, [
       "2024-03-01,日常收入,工资, ,0,人民币,现金,,",
       "2024-03-02,日常支出,超市,0,5,人民币,现金",
@@ -143,6 +139,27 @@ describe("pixiu load csv", () => {
     createSchema(db);
     const count = await loadCsv(db, 2024, csvFile, "pixiu");
     expect(count).toBe(2);
+    db.close();
+  });
+
+  it("returns empty string when requested column is missing from header", async () => {
+    // Header omits "标签" and "备注"; loader requests them via get() →
+    // exercises the `idx === undefined` branch in get().
+    const header = "日期,交易分类,交易类型,流入金额,流出金额,币种,资金账户";
+    const body = "2024-04-01,日常收入,工资,100,0,人民币,现金";
+    ensureParentDir(csvFile);
+    writeFileSync(csvFile, `${header}\n${body}`, "utf-8");
+
+    const db = openDb(testDbPath);
+    createSchema(db);
+    const count = await loadCsv(db, 2024, csvFile, "pixiu");
+    expect(count).toBe(1);
+
+    const row = db
+      .query("select tags, note from pixiu_transaction where tx_date = '2024-04-01'")
+      .get() as { tags: string; note: string };
+    expect(row.tags).toBe("");
+    expect(row.note).toBe("");
     db.close();
   });
 });
