@@ -7,7 +7,6 @@ const parseHeader = (lines: string[]) => {
   for (const line of lines) {
     if (!line.includes(",")) continue;
     const [key, value] = line.split(/,(.+)/);
-    /* istanbul ignore next -- defensive: line.includes(",") above guarantees a key/value split */
     if (!key || value === undefined) continue;
     meta.set(key.trim(), value.trim().replace(/^"|"$/g, ""));
   }

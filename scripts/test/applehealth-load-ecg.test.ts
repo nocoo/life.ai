@@ -96,4 +96,24 @@ describe("applehealth load ecg", () => {
     );
     db.close();
   });
+
+  it("skips header lines with trailing comma but no value", async () => {
+    writeEcgCsv(ecgFile, [
+      "记录日期,2025-01-05 09:54:54 +0800",
+      "采样率,",
+      "",
+      "1.0"
+    ]);
+
+    const db = openDb(testDbPath);
+    createSchema(db);
+    const count = await loadEcg(db, 2025, ecgDir);
+    expect(count).toBe(1);
+
+    const row = db
+      .query("select sampling_rate from apple_ecg_file")
+      .get() as { sampling_rate: number | null };
+    expect(row.sampling_rate).toBeNull();
+    db.close();
+  });
 });
