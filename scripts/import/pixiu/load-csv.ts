@@ -22,9 +22,7 @@ const parseCsv = (text: string) => {
 export const loadCsv = async (
   db: ReturnType<typeof openDb>,
   year: number,
-  /* istanbul ignore next -- default arg only used when caller omits path */
   csvPath: string = defaultCsvPath,
-  /* istanbul ignore next -- default arg only used when caller omits source */
   source: string = sourceName
 ) => {
   const file = Bun.file(csvPath);

@@ -164,4 +164,15 @@ describe("applehealth load xml", () => {
 
     db.close();
   });
+
+  it("uses default xml path and source when arguments are omitted", async () => {
+    const db = openDb(testDbPath);
+    createSchema(db);
+
+    await expect(loadXml(db, 2025)).rejects.toThrow(
+      "XML file not found: data/apple-health/导出.xml"
+    );
+
+    db.close();
+  });
 });

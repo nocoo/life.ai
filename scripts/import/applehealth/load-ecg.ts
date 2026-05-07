@@ -30,7 +30,6 @@ const extractDay = (dateValue: string | undefined) =>
 export const loadEcg = async (
   db: ReturnType<typeof openDb>,
   year?: number,
-  /* istanbul ignore next -- default arg only used when caller omits path */
   dirPath: string = defaultEcgDir
 ) => {
   const files = await Array.fromAsync(

@@ -75,4 +75,13 @@ describe("applehealth load routes", () => {
     );
     db.close();
   });
+
+  it("uses default routes dir when dirPath argument is omitted", async () => {
+    const db = openDb(testDbPath);
+    createSchema(db);
+    await expect(loadRoutes(db, 2025)).rejects.toThrow(
+      "Routes dir not found: data/apple-health/workout-routes"
+    );
+    db.close();
+  });
 });

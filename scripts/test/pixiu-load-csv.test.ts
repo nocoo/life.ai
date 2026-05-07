@@ -118,6 +118,17 @@ describe("pixiu load csv", () => {
     db.close();
   });
 
+  it("uses default csv path and source when arguments are omitted", async () => {
+    const db = openDb(testDbPath);
+    createSchema(db);
+
+    await expect(loadCsv(db, 2024)).rejects.toThrow(
+      "CSV file not found: data/pixiu/2025.csv"
+    );
+
+    db.close();
+  });
+
   it("handles whitespace-only numbers and short rows (parseNumber empty branch + missing column)", async () => {
     // First row: inflow column is a single space → after replace(/,/g) and trim() → ""
     // → exercises L8 (`if (!cleaned)`) in parseNumber.

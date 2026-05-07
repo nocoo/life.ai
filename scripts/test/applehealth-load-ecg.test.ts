@@ -87,4 +87,13 @@ describe("applehealth load ecg", () => {
     );
     db.close();
   });
+
+  it("uses default ECG dir when dirPath argument is omitted", async () => {
+    const db = openDb(testDbPath);
+    createSchema(db);
+    await expect(loadEcg(db, 2025)).rejects.toThrow(
+      "ECG dir not found: data/apple-health/electrocardiograms"
+    );
+    db.close();
+  });
 });
