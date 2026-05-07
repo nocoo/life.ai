@@ -15,5 +15,6 @@ jobs:
       test-command: "bun run test:coverage"
       lint-command: "bun run lint"
       typecheck-command: "true"
-      enable-l2: "false"
+      enable-l2: "true"
+      l2-command: "bun run test:l2"
     secrets: inherit
