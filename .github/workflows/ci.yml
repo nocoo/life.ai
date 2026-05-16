@@ -12,6 +12,7 @@ jobs:
     uses: nocoo/base-ci/.github/workflows/bun-quality.yml@v2026.4
     with:
       ignore-scripts: true
+      trusted-native-deps: "better-sqlite3"
       extra-install-dirs: "dashboard"
       test-command: "bun run test:coverage"
       lint-command: "bun run lint"
