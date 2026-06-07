@@ -33,7 +33,7 @@
     "vitest": "^4.1.5"
   },
   "overrides": {
-    "ajv": ">=6.14.0",
+    "ajv": "^6.14.0",
     "flatted": ">=3.4.2",
     "minimatch": ">=3.1.4",
     "picomatch": ">=4.0.4",
