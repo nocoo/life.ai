@@ -6,7 +6,8 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { SidebarProvider, useSidebar } from "@/components/sidebar-context";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Github, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
+import { Github } from "@/components/icons/github";
 import { cn } from "@/lib/utils";
 import { ROUTE_LABELS } from "@/lib/navigation";
 

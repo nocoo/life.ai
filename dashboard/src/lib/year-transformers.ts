@@ -120,7 +120,6 @@ const transformYearSleep = (
   let daysWithData = 0;
 
   byDay.forEach((dayRecords, day) => {
-    let dayTotal = 0;
     let dayDeep = 0;
     let dayCore = 0;
     let dayRem = 0;
@@ -137,7 +136,7 @@ const transformYearSleep = (
       else if (r.value === "HKCategoryValueSleepAnalysisAwake") dayAwake += duration;
     });
 
-    dayTotal = dayDeep + dayCore + dayRem + dayAwake;
+    const dayTotal = dayDeep + dayCore + dayRem + dayAwake;
     if (dayTotal > 0) {
       dailyDuration.push({ date: day, value: dayTotal / 60 });
       daysWithData++;

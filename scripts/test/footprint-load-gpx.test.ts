@@ -3,6 +3,7 @@ import { rmSync } from "node:fs";
 import { openDb, testDbPath } from "../import/footprint/db";
 import { loadGpx } from "../import/footprint/load-gpx";
 import { writeGpx } from "./footprint-fixtures";
+import { withIsolatedCwd } from "./helpers/isolated-cwd";
 
 const createSchema = (db: ReturnType<typeof openDb>) => {
   db.exec(`
@@ -146,9 +147,11 @@ describe("load gpx (year filter)", () => {
     const db = openDb(testDbPath);
     createSchema(db);
 
-    await expect(loadGpx(db, 2024)).rejects.toThrow(
-      "GPX file not found: data/footprint/20260202.gpx"
-    );
+    await withIsolatedCwd(async () => {
+      await expect(loadGpx(db, 2024)).rejects.toThrow(
+        "GPX file not found: data/footprint/20260202.gpx"
+      );
+    });
 
     db.close();
   });
