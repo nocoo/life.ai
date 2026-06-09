@@ -3,6 +3,7 @@ import { rmSync } from "node:fs";
 import { openDb, testDbPath } from "../import/applehealth/db";
 import { loadXml } from "../import/applehealth/load-xml";
 import { writeAppleHealthXml } from "./applehealth-fixtures";
+import { withIsolatedCwd } from "./helpers/isolated-cwd";
 
 const createSchema = (db: ReturnType<typeof openDb>) => {
   db.exec(`
@@ -169,9 +170,11 @@ describe("applehealth load xml", () => {
     const db = openDb(testDbPath);
     createSchema(db);
 
-    await expect(loadXml(db, 2025)).rejects.toThrow(
-      "XML file not found: data/apple-health/导出.xml"
-    );
+    await withIsolatedCwd(async () => {
+      await expect(loadXml(db, 2025)).rejects.toThrow(
+        "XML file not found: data/apple-health/导出.xml"
+      );
+    });
 
     db.close();
   });

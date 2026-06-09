@@ -3,6 +3,7 @@ import { rmSync, mkdirSync } from "node:fs";
 import { openDb, testDbPath } from "../import/applehealth/db";
 import { loadEcg } from "../import/applehealth/load-ecg";
 import { writeEcgCsv } from "./applehealth-fixtures";
+import { withIsolatedCwd } from "./helpers/isolated-cwd";
 
 const createSchema = (db: ReturnType<typeof openDb>) => {
   db.exec(`
@@ -91,9 +92,11 @@ describe("applehealth load ecg", () => {
   it("uses default ECG dir when dirPath argument is omitted", async () => {
     const db = openDb(testDbPath);
     createSchema(db);
-    await expect(loadEcg(db, 2025)).rejects.toThrow(
-      "ECG dir not found: data/apple-health/electrocardiograms"
-    );
+    await withIsolatedCwd(async () => {
+      await expect(loadEcg(db, 2025)).rejects.toThrow(
+        "ECG dir not found: data/apple-health/electrocardiograms"
+      );
+    });
     db.close();
   });
 
