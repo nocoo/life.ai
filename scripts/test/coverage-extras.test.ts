@@ -5,6 +5,8 @@ import { openDb as openAppleDb, testDbPath as appleTestDbPath } from "../import/
 import { openDb as openFootprintDb, testDbPath as footprintTestDbPath } from "../import/footprint/db";
 import { openDb as openPixiuDb, testDbPath as pixiuTestDbPath } from "../import/pixiu/db";
 
+import { withIsolatedCwd } from "./helpers/isolated-cwd";
+
 import { loadXml } from "../import/applehealth/load-xml";
 import { loadEcg } from "../import/applehealth/load-ecg";
 import { loadRoutes } from "../import/applehealth/load-routes";
@@ -635,7 +637,9 @@ describe("coverage extras: verify/applehealth (no-year branches and CLI)", () =>
     };
 
     // No-year run uses default paths which don't exist → throws.
-    await expect(runAppleCli([], io)).rejects.toThrow();
+    await withIsolatedCwd(async () => {
+      await expect(runAppleCli([], io)).rejects.toThrow();
+    });
     logs.length = 0;
     errors.length = 0;
 
@@ -899,7 +903,9 @@ describe("coverage extras: more branch holes", () => {
   it("loadCsv with default csvPath/source args throws CSV not found", async () => {
     const db = openPixiuDb(pixiuTestDbPath);
     createPixiuSchema(db);
-    await expect(loadCsv(db, 2099)).rejects.toThrow("CSV file not found");
+    await withIsolatedCwd(async () => {
+      await expect(loadCsv(db, 2099)).rejects.toThrow("CSV file not found");
+    });
     db.close();
   });
 
@@ -949,7 +955,9 @@ describe("coverage extras: more branch holes", () => {
   });
 
   it("verify/applehealth: verifyAppleHealth with no paths uses defaults (throws)", async () => {
-    await expect(verifyAppleHealth({})).rejects.toThrow();
+    await withIsolatedCwd(async () => {
+      await expect(verifyAppleHealth({})).rejects.toThrow();
+    });
   });
 
   it("verify/footprint: parseGpxSummary trkpt without time tag is skipped", async () => {
@@ -962,7 +970,9 @@ describe("coverage extras: more branch holes", () => {
   });
 
   it("verify/footprint: verifyFootprint with default gpxPath throws", async () => {
-    await expect(verifyFootprint({ year: 2099 })).rejects.toThrow();
+    await withIsolatedCwd(async () => {
+      await expect(verifyFootprint({ year: 2099 })).rejects.toThrow();
+    });
   });
 
   it("loadGpx: trkpt block without attrs (lat/lon NaN) is skipped", async () => {
@@ -1120,14 +1130,18 @@ describe("coverage extras: more branch holes", () => {
     const errors: string[] = [];
     const io = { log: (m: string) => logs.push(m), error: (m: string) => errors.push(m) };
     // gpxPath not provided (uses default which doesn't exist) → throws
-    await expect(runFootprintCli(["2024", "--json"], io)).rejects.toThrow();
+    await withIsolatedCwd(async () => {
+      await expect(runFootprintCli(["2024", "--json"], io)).rejects.toThrow();
+    });
   });
 
   it("verify/pixiu: runCli with default csvPath (--json arg in slot 1) throws", async () => {
     const logs: string[] = [];
     const errors: string[] = [];
     const io = { log: (m: string) => logs.push(m), error: (m: string) => errors.push(m) };
-    await expect(runPixiuCli(["2099", "--json"], io)).rejects.toThrow();
+    await withIsolatedCwd(async () => {
+      await expect(runPixiuCli(["2099", "--json"], io)).rejects.toThrow();
+    });
   });
 
   it("verify/footprint: parseGpxSummary handles out-of-order timestamps (iso<minTs/iso<maxTs branch)", async () => {

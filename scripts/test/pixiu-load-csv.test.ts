@@ -3,6 +3,7 @@ import { rmSync, writeFileSync } from "node:fs";
 import { openDb, testDbPath } from "../import/pixiu/db";
 import { loadCsv } from "../import/pixiu/load-csv";
 import { ensureParentDir, writePixiuCsv } from "./pixiu-fixtures";
+import { withIsolatedCwd } from "./helpers/isolated-cwd";
 
 const createSchema = (db: ReturnType<typeof openDb>) => {
   db.exec(`
@@ -122,9 +123,11 @@ describe("pixiu load csv", () => {
     const db = openDb(testDbPath);
     createSchema(db);
 
-    await expect(loadCsv(db, 2024)).rejects.toThrow(
-      "CSV file not found: data/pixiu/2025.csv"
-    );
+    await withIsolatedCwd(async () => {
+      await expect(loadCsv(db, 2024)).rejects.toThrow(
+        "CSV file not found: data/pixiu/2025.csv"
+      );
+    });
 
     db.close();
   });

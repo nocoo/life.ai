@@ -3,6 +3,7 @@ import { rmSync, mkdirSync } from "node:fs";
 import { openDb, testDbPath } from "../import/applehealth/db";
 import { loadRoutes } from "../import/applehealth/load-routes";
 import { writeRouteGpx } from "./applehealth-fixtures";
+import { withIsolatedCwd } from "./helpers/isolated-cwd";
 
 const createSchema = (db: ReturnType<typeof openDb>) => {
   db.exec(`
@@ -79,9 +80,11 @@ describe("applehealth load routes", () => {
   it("uses default routes dir when dirPath argument is omitted", async () => {
     const db = openDb(testDbPath);
     createSchema(db);
-    await expect(loadRoutes(db, 2025)).rejects.toThrow(
-      "Routes dir not found: data/apple-health/workout-routes"
-    );
+    await withIsolatedCwd(async () => {
+      await expect(loadRoutes(db, 2025)).rejects.toThrow(
+        "Routes dir not found: data/apple-health/workout-routes"
+      );
+    });
     db.close();
   });
 });
