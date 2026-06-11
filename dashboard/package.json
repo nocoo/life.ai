@@ -54,7 +54,7 @@
     "@vitejs/plugin-react": "^6.0.2",
     "@vitest/coverage-istanbul": "^4.1.8",
     "eslint": "^10",
-    "eslint-config-next": "^16.2.7",
+    "eslint-config-next": "^16.2.9",
     "happy-dom": "^20.10.2",
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3",
