@@ -5,7 +5,7 @@
     "": {
       "name": "dashboard",
       "dependencies": {
-        "@googlemaps/js-api-loader": "^2.1.0",
+        "@googlemaps/js-api-loader": "^2.1.1",
         "@types/google.maps": "^3.65.1",
         "better-sqlite3": "^12.10.0",
         "class-variance-authority": "^0.7.1",
@@ -138,7 +138,7 @@
 
     "@floating-ui/utils": ["@floating-ui/utils@0.2.10", "", {}, "sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ=="],
 
-    "@googlemaps/js-api-loader": ["@googlemaps/js-api-loader@2.1.0", "", { "dependencies": { "@types/google.maps": "^3.53.1" } }, "sha512-aZii781WEfncmJAFk1UPv6bdwT1mgRZzY8IWmpmx9mGAMCt97JZrXpn95LTsYinj7E4tC+LJv3FE8k2xRAsYgg=="],
+    "@googlemaps/js-api-loader": ["@googlemaps/js-api-loader@2.1.1", "", { "dependencies": { "@types/google.maps": "^3.53.1" } }, "sha512-yUpAwksbHrlZIWD49JmveNSfBG4oAK0AwMknfSaPMnP5N7UT8oFRVCqwjGb1XQovi//7KLbPQKZpbofiLGzpDw=="],
 
     "@humanfs/core": ["@humanfs/core@0.19.1", "", {}, "sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA=="],
 

@@ -11,7 +11,7 @@
     "ut:watch": "vitest"
   },
   "dependencies": {
-    "@googlemaps/js-api-loader": "^2.1.0",
+    "@googlemaps/js-api-loader": "^2.1.1",
     "@types/google.maps": "^3.65.1",
     "better-sqlite3": "^12.10.0",
     "class-variance-authority": "^0.7.1",
