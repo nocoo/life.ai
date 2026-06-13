@@ -19,4 +19,7 @@ jobs:
       typecheck-command: "true"
       enable-l2: "true"
       l2-command: "bun run test:l2"
+      enable-l3: "true"
+      l3-command: "bun run test:e2e:bdd"
+      l3-browser: "chromium"
     secrets: inherit

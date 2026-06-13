@@ -9,6 +9,7 @@
     "ut": "bun --bun vitest run --coverage && bun run scripts/coverage-check.ts && cd dashboard && bun run ut",
     "ut:scripts": "bun --bun vitest run --coverage && bun run scripts/coverage-check.ts",
     "test:l2": "cd dashboard && bunx vitest run tests/api/",
+    "test:e2e:bdd": "cd dashboard && bunx playwright test",
     "lint": "eslint --max-warnings=0 . --ext .ts && cd dashboard && bun run lint",
     "lint:import": "eslint scripts/import --ext .ts",
     "lint:verify": "eslint scripts/verify --ext .ts",
