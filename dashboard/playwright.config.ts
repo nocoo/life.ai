@@ -14,7 +14,7 @@ export default defineConfig({
   },
   webServer: {
     command:
-      "AUTH_SECRET=e2e-placeholder-secret AUTH_GOOGLE_ID=e2e-placeholder AUTH_GOOGLE_SECRET=e2e-placeholder bun run dev -- -p 27011",
+      "AUTH_SECRET=e2e-placeholder-secret AUTH_GOOGLE_ID=e2e-placeholder AUTH_GOOGLE_SECRET=e2e-placeholder bunx next dev -p 27011 --turbopack",
     port: 27011,
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
