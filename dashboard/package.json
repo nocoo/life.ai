@@ -13,7 +13,7 @@
   "dependencies": {
     "@googlemaps/js-api-loader": "^2.1.1",
     "@types/google.maps": "^3.65.1",
-    "better-sqlite3": "^12.10.0",
+    "better-sqlite3": "^12.10.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
