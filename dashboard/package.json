@@ -13,7 +13,7 @@
   "dependencies": {
     "@googlemaps/js-api-loader": "^2.1.1",
     "@types/google.maps": "^3.65.1",
-    "better-sqlite3": "^12.10.1",
+    "better-sqlite3": "^12.11.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -26,7 +26,7 @@
     "next": "^16.2.9",
     "next-auth": "^5.0.0-beta.30",
     "next-themes": "^0.4.6",
-    "radix-ui": "^1.5.0",
+    "radix-ui": "^1.6.0",
     "react": "^19.2.7",
     "react-day-picker": "^10.0.1",
     "react-dom": "^19.2.7",
@@ -40,7 +40,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.60.0",
+    "@playwright/test": "^1.61.0",
     "@tailwindcss/postcss": "^4.3.1",
     "@testing-library/react": "^16.3.2",
     "@types/better-sqlite3": "^7.6.13",
@@ -53,13 +53,13 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.2",
-    "@vitest/coverage-istanbul": "^4.1.8",
+    "@vitest/coverage-istanbul": "^4.1.9",
     "eslint": "^10.5.0",
     "eslint-config-next": "^16.2.9",
-    "happy-dom": "^20.10.3",
+    "happy-dom": "^20.10.4",
     "tailwindcss": "^4.3.1",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.9"
   },
   "trustedDependencies": [
     "better-sqlite3"
@@ -70,6 +70,8 @@
     "minimatch": ">=3.1.4",
     "picomatch": ">=4.0.4",
     "postcss": ">=8.5.10",
-    "brace-expansion": ">=5.0.6"
+    "brace-expansion": ">=5.0.6",
+    "vite": ">=8.0.16",
+    "@babel/core": ">=7.29.6"
   }
 }
