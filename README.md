@@ -74,3 +74,17 @@ bun run build   # 生产构建
 - Husky 目录：`.husky/`
 - `core.hooksPath` 必须指向根目录 `.husky`
 - hooks 会强制执行 UT 与 Lint
+
+## 🔒 依赖安装安全（bunfig.toml）
+仓库根的 `bunfig.toml` 启用 `[install] ignoreScripts = true`，禁用所有依赖的
+`preinstall` / `install` / `postinstall` / `prepare` 生命周期脚本，规避 native
+binding（如 `better-sqlite3` 触发的 `node-gyp` / `binding.gyp`）供应链 RCE 风险。
+`bun.lock` 走 prebuilt binary，默认无需运行任何脚本即可安装。
+
+如需要为某个包临时启用构建脚本（升级后 prebuilt 不可用、新平台无 prebuilt 等），按需运行：
+
+```bash
+bun install --trusted=better-sqlite3
+```
+
+`--trusted` 仅作用于本次安装，不会写入配置；恢复默认时直接重新 `bun install` 即可。

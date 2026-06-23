@@ -1,0 +1,4 @@
+[install]
+# Disable lifecycle scripts to mitigate supply-chain RCE via native bindings
+# (e.g. node-gyp/binding.gyp). Override per-package with `bun install --trusted=<pkg>`.
+ignoreScripts = true
