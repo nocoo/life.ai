@@ -81,10 +81,30 @@ bun run build   # 生产构建
 binding（如 `better-sqlite3` 触发的 `node-gyp` / `binding.gyp`）供应链 RCE 风险。
 `bun.lock` 走 prebuilt binary，默认无需运行任何脚本即可安装。
 
-如需要为某个包临时启用构建脚本（升级后 prebuilt 不可用、新平台无 prebuilt 等），按需运行：
+### 何时需要为某个包临时启用构建脚本？
+
+升级后 prebuilt 不可用、当前平台无 prebuilt、或上游强依赖 `postinstall` 时。**在
+`ignoreScripts = true` 仍然生效的前提下**，无论是 `bun install --trust <pkg>`、
+`bun pm trust <pkg>`，还是 `package.json` 的 `trustedDependencies`，都**不会**
+执行脚本——`ignoreScripts` 会盖过它们。
+
+经实测可生效的临时流程（执行完务必恢复，不要合入仓库）：
 
 ```bash
-bun install --trusted=better-sqlite3
+# 1. 临时关掉 ignoreScripts —— 二选一即可：
+#    a) 改 bunfig.toml：ignoreScripts = false
+#    b) 暂时移走：mv bunfig.toml bunfig.toml.off
+# 2. 把目标包加入 package.json 的 trustedDependencies，例如：
+#    "trustedDependencies": ["better-sqlite3"]
+# 3. 重新安装，脚本会按 trustedDependencies 名单运行：
+rm -rf node_modules && bun install
+# 4. 验证构建产物已生成（如 node_modules/<pkg>/build/Release/*.node）
+# 5. 恢复 bunfig.toml（保持 ignoreScripts = true）
+#    并把第 2 步加入的 trustedDependencies 移除（除非项目想长期信任，但那时
+#    也需要明白 ignoreScripts 仍会压过它，下次再触发同样需要本流程）
 ```
 
-`--trusted` 仅作用于本次安装，不会写入配置；恢复默认时直接重新 `bun install` 即可。
+> ⚠️ 实测注意：
+> - `bun install --trusted=<pkg>` 不是真实 flag（bun 1.3.14 只有 `--trust`），写错时 CLI 也可能静默返回 0，**不能**用"命令不报错"证明它生效。
+> - `bun install --trust <pkg>` 会**写入** `package.json` 的 `trustedDependencies`，并不是"仅本次有效"。
+> - 唯一可靠的判定：检查包内是否生成预期的 build 产物（例如 native `.node` 文件）。

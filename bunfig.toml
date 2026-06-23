@@ -1,4 +1,10 @@
 [install]
-# Disable lifecycle scripts to mitigate supply-chain RCE via native bindings
-# (e.g. node-gyp/binding.gyp). Override per-package with `bun install --trusted=<pkg>`.
+# Disable lifecycle scripts (preinstall / install / postinstall / prepare) for ALL
+# dependencies — including those listed in package.json `trustedDependencies` — to
+# mitigate supply-chain RCE via native bindings (node-gyp / binding.gyp).
+#
+# This setting overrides per-package trust: as long as it is on, neither
+# `trustedDependencies` nor `bun pm trust <pkg>` nor `bun install --trust <pkg>`
+# will run any package's scripts. See README.md → "依赖安装安全" for the rare
+# fallback procedure when a dependency genuinely needs to build from source.
 ignoreScripts = true
