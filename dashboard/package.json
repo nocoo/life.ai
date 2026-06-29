@@ -22,7 +22,7 @@
     "leaflet-draw": "^1.0.4",
     "leaflet.fullscreen": "^5.3.1",
     "leaflet.markercluster": "^1.5.3",
-    "lucide-react": "^1.21.0",
+    "lucide-react": "1.22.0",
     "next": "^16.2.9",
     "next-auth": "^5.0.0-beta.30",
     "next-themes": "^0.4.6",
