@@ -14,7 +14,7 @@
         "date-fns": "^4.4.0",
         "leaflet": "^1.9.4",
         "leaflet-draw": "^1.0.4",
-        "leaflet.fullscreen": "^5.3.1",
+        "leaflet.fullscreen": "^5.3.3",
         "leaflet.markercluster": "^1.5.3",
         "lucide-react": "1.22.0",
         "next": "^16.2.9",
@@ -999,7 +999,7 @@
 
     "leaflet-draw": ["leaflet-draw@1.0.4", "", {}, "sha512-rsQ6saQO5ST5Aj6XRFylr5zvarWgzWnrg46zQ1MEOEIHsppdC/8hnN8qMoFvACsPvTioAuysya/TVtog15tyAQ=="],
 
-    "leaflet.fullscreen": ["leaflet.fullscreen@5.3.1", "", { "peerDependencies": { "leaflet": "^1.7.0 || >=2.0.0-alpha.1" } }, "sha512-2IO5WJ5xpQWyn2ZLICwwpyiWJ2KdZMuxAUCsrK7b4dj770GZ/zwPp4uVQNKOxqnz9xRWEN1d2VNpLaX4ptSdnA=="],
+    "leaflet.fullscreen": ["leaflet.fullscreen@5.3.3", "", { "peerDependencies": { "leaflet": "^1.7.0 || >=2.0.0-alpha.1" } }, "sha512-ejA/av8y2/pPHl7kPROQziWuoKXoycxyBiBR+vRucnp6CxlTpsSfrXxWuGyYdQICHHJxtMeJlrYp7fwMtNpRhQ=="],
 
     "leaflet.markercluster": ["leaflet.markercluster@1.5.3", "", { "peerDependencies": { "leaflet": "^1.3.1" } }, "sha512-vPTw/Bndq7eQHjLBVlWpnGeLa3t+3zGiuM7fJwCkiMFq+nmRuG3RI3f7f4N4TDX7T4NpbAXpR2+NTRSEGfCSeA=="],
 
