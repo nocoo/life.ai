@@ -59,7 +59,7 @@
     "happy-dom": "^20.10.6",
     "tailwindcss": "^4.3.2",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "vitest": "4.1.10"
   },
   "trustedDependencies": [
     "better-sqlite3"
