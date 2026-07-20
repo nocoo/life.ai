@@ -537,7 +537,7 @@ function MapLayersControl({
                                     layerGroup.name
                                 )}
                                 disabled={layerGroup.disabled}
-                                onCheckedChange={(checked: boolean) =>
+                                onCheckedChange={(checked) =>
                                     handleLayerGroupToggle(
                                         layerGroup.name,
                                         checked
