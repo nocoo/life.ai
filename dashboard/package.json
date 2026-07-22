@@ -23,13 +23,13 @@
     "leaflet.fullscreen": "^5.3.3",
     "leaflet.markercluster": "^1.5.3",
     "lucide-react": "1.25.0",
-    "next": "^16.2.10",
+    "next": "^16.2.11",
     "next-auth": "^5.0.0-beta.30",
     "next-themes": "^0.4.6",
     "radix-ui": "1.6.4",
-    "react": "^19.2.7",
+    "react": "^19.2.8",
     "react-day-picker": "^10.0.1",
-    "react-dom": "^19.2.7",
+    "react-dom": "^19.2.8",
     "react-leaflet": "^5.0.0",
     "react-leaflet-markercluster": "^5.0.0-rc.0",
     "recharts": "^3.10.0",
@@ -55,7 +55,7 @@
     "@vitejs/plugin-react": "^6.0.3",
     "@vitest/coverage-istanbul": "4.1.10",
     "eslint": "^10.7.0",
-    "eslint-config-next": "^16.2.10",
+    "eslint-config-next": "^16.2.11",
     "happy-dom": "^20.11.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
@@ -72,6 +72,7 @@
     "postcss": ">=8.5.10",
     "brace-expansion": ">=5.0.7",
     "vite": ">=8.0.16",
-    "@babel/core": ">=7.29.6"
+    "@babel/core": ">=7.29.6",
+    "sharp": ">=0.35.0"
   }
 }
