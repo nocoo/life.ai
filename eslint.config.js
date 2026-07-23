@@ -42,6 +42,17 @@ export default [
     }
   },
   {
+    files: ["**/*.mjs"],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: "module",
+      globals: {
+        console: "readonly",
+        process: "readonly"
+      }
+    }
+  },
+  {
     files: ["tests/**/*.ts", "scripts/test/**/*.ts"],
     languageOptions: {
       globals: {

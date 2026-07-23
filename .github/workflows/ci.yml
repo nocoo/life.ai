@@ -8,7 +8,21 @@ on:
   workflow_dispatch:
 
 jobs:
+  node-preflight:
+    # setup-bun does not read .node-version. Explicitly stand up the Node
+    # runtime declared in .node-version and run the package-manager-agnostic
+    # engines.node check so a Node runtime below the required minimum aborts
+    # CI at preflight instead of leaking into the Bun-driven quality job.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - run: node scripts/check-node-version.mjs
+
   quality:
+    needs: node-preflight
     uses: nocoo/base-ci/.github/workflows/bun-quality.yml@aec4adc1a817c56790d1698329ef9398a15a754a  # v2026.5
     with:
       ignore-scripts: true
