@@ -12,6 +12,8 @@
     "pretest:coverage": "bun run check:node",
     "preut": "bun run check:node",
     "preut:scripts": "bun run check:node",
+    "pretest:l2": "bun run check:node",
+    "pretest:e2e:bdd": "bun run check:node",
     "prelint": "bun run check:node",
     "pretypecheck": "bun run check:node",
     "dev": "cd dashboard && bun dev",
