@@ -2,6 +2,9 @@
   "name": "life.ai",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "cd dashboard && bun dev",
     "test": "bun --bun vitest run --coverage && bun run scripts/coverage-check.ts && cd dashboard && bun run ut",
