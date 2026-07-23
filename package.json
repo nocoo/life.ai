@@ -6,6 +6,14 @@
     "node": ">=22"
   },
   "scripts": {
+    "check:node": "node scripts/check-node-version.mjs",
+    "predev": "bun run check:node",
+    "pretest": "bun run check:node",
+    "pretest:coverage": "bun run check:node",
+    "preut": "bun run check:node",
+    "preut:scripts": "bun run check:node",
+    "prelint": "bun run check:node",
+    "pretypecheck": "bun run check:node",
     "dev": "cd dashboard && bun dev",
     "test": "bun --bun vitest run --coverage && bun run scripts/coverage-check.ts && cd dashboard && bun run ut",
     "test:coverage": "bun --bun vitest run --coverage && bun run scripts/coverage-check.ts && cd dashboard && bun run ut",

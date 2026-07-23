@@ -6,6 +6,13 @@
     "node": ">=22"
   },
   "scripts": {
+    "check:node": "node ../scripts/check-node-version.mjs",
+    "predev": "bun run check:node",
+    "prebuild": "bun run check:node",
+    "prestart": "bun run check:node",
+    "prelint": "bun run check:node",
+    "preut": "bun run check:node",
+    "preut:watch": "bun run check:node",
     "dev": "next dev -p 7011 --turbopack",
     "build": "next build",
     "start": "next start -p 7011",
