@@ -35,13 +35,15 @@ jobs:
       l2-command: "bun run test:l2"
       enable-l3: "true"
       # base-ci's own browser install runs `bunx playwright install` from repo
-      # root, where no playwright is pinned, so bunx pulls npm-latest
-      # (currently 1.62.0 → chromium rev 1234). dashboard is pinned to
-      # playwright 1.61.1 (rev 1228), so the runtime looks under the wrong
-      # cache dir and fails to launch. Reinstall from dashboard/ so the pinned
-      # CLI drops the bundle under chromium-1228 before tests run. Bake this
-      # into the L3 command (not pre-command) so L1/L2 jobs stay unaffected;
-      # --with-deps apt libs already installed by base-ci's prior step.
+      # root, where no playwright is pinned, so bunx resolves npm-latest;
+      # dashboard/ pins its own version via bun.lock. The two may map to
+      # different Chromium revisions, so the base-ci-installed bundle can
+      # land in a cache dir the pinned runtime does not look under, and
+      # tests fail to launch. Reinstall from dashboard/ so the pinned CLI
+      # drops the bundle in the revision dir it will actually look under.
+      # Bake this into the L3 command (not pre-command) so L1/L2 jobs stay
+      # unaffected; --with-deps apt libs already installed by base-ci's
+      # prior step.
       l3-command: "cd dashboard && bunx playwright install chromium && cd .. && bun run test:e2e:bdd"
       l3-browser: "chromium"
     secrets: inherit
