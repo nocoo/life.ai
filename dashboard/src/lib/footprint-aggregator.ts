@@ -551,7 +551,10 @@ export function getTransportModeDisplay(mode: TransportMode): {
  * - Delta: shows +/- change
  */
 export function formatElevation(
-  slotData: SlotTrackData
+  slotData: Pick<
+    SlotTrackData,
+    "avgElevation" | "elevationDelta" | "isElevationReference"
+  >
 ): string | null {
   if (slotData.isElevationReference && slotData.avgElevation !== null) {
     return `⛰${Math.round(slotData.avgElevation)}m`;
