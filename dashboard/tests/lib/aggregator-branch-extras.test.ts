@@ -38,7 +38,7 @@ const emptyHealth = (overrides: Partial<DayHealthData> = {}): DayHealthData => (
   workouts: [],
   activity: null,
   ecgRecords: [],
-  flightsClimbed: undefined,
+  flightsClimbed: 0,
   sleepingWristTemperature: undefined,
   ...overrides,
 });

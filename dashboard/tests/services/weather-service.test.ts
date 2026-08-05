@@ -3,6 +3,9 @@ import { fetchHistoricalWeather } from "@/services/weather-service";
 
 describe("weather-service", () => {
   const originalFetch = globalThis.fetch;
+  const setFetchMock = (mock: ReturnType<typeof vi.fn>) => {
+    globalThis.fetch = mock as unknown as typeof fetch;
+  };
 
   beforeEach(() => {
     // Reset fetch mock before each test
@@ -28,12 +31,12 @@ describe("weather-service", () => {
         },
       };
 
-      globalThis.fetch = vi.fn(() =>
+      setFetchMock(vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve(mockResponse),
         } as Response)
-      );
+      ));
 
       const date = new Date(2025, 11, 2); // 2025-12-02
       const result = await fetchHistoricalWeather(date);
@@ -67,13 +70,13 @@ describe("weather-service", () => {
       };
 
       let capturedUrl = "";
-      globalThis.fetch = vi.fn((url: string) => {
+      setFetchMock(vi.fn((url: string) => {
         capturedUrl = url;
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve(mockResponse),
         } as Response);
-      });
+      }));
 
       const date = new Date(2025, 11, 2);
       await fetchHistoricalWeather(date, 31.2304, 121.4737); // Shanghai
@@ -83,12 +86,12 @@ describe("weather-service", () => {
     });
 
     test("throws error when API returns non-ok status", async () => {
-      globalThis.fetch = vi.fn(() =>
+      setFetchMock(vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 500,
         } as Response)
-      );
+      ));
 
       const date = new Date(2025, 11, 2);
       await expect(fetchHistoricalWeather(date)).rejects.toThrow(
@@ -111,12 +114,12 @@ describe("weather-service", () => {
         },
       };
 
-      globalThis.fetch = vi.fn(() =>
+      setFetchMock(vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve(mockResponse),
         } as Response)
-      );
+      ));
 
       const date = new Date(2025, 11, 2);
       await expect(fetchHistoricalWeather(date)).rejects.toThrow(
@@ -140,13 +143,13 @@ describe("weather-service", () => {
       };
 
       let capturedUrl = "";
-      globalThis.fetch = vi.fn((url: string) => {
+      setFetchMock(vi.fn((url: string) => {
         capturedUrl = url;
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve(mockResponse),
         } as Response);
-      });
+      }));
 
       const date = new Date(2025, 11, 2);
       await fetchHistoricalWeather(date);
@@ -171,12 +174,12 @@ describe("weather-service", () => {
         },
       };
 
-      globalThis.fetch = vi.fn(() =>
+      setFetchMock(vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve(mockResponse),
         } as Response)
-      );
+      ));
 
       const date = new Date(2025, 11, 2);
       const result = await fetchHistoricalWeather(date);
