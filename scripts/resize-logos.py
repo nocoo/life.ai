@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 """
 Logo asset generator - Basalt B-3 compliant
-Generates all derived logo assets from the root logo.png
+Transparent app marks use root logo.png; touch and social assets use assets/brand/.
 
 Usage:
-    uv run scripts/resize-logos.py
-    # or
-    python scripts/resize-logos.py
+    uv run --with pillow python scripts/resize-logos.py
 """
 
 from pathlib import Path
@@ -47,9 +45,7 @@ def generate_og_image(img: Image.Image, output: Path) -> None:
 
 def generate_ico(img: Image.Image, output: Path) -> None:
     """Generate multi-resolution ICO file (16x16 + 32x32)."""
-    ico_16 = resize(img, 16)
-    ico_32 = resize(img, 32)
-    ico_16.save(output, format="ICO", sizes=[(16, 16), (32, 32)], append_images=[ico_32])
+    img.save(output, format="ICO", sizes=[(16, 16), (32, 32)])
     print(f"  ✓ {output.relative_to(ROOT)}")
 
 
@@ -59,6 +55,8 @@ def main() -> None:
         raise SystemExit(1)
 
     img = Image.open(SOURCE).convert("RGBA")
+    square = Image.open(ROOT / "assets/brand/icon.png").convert("RGBA")
+    rounded = Image.open(ROOT / "assets/brand/icon-rounded.png").convert("RGBA")
     print(f"Source: {SOURCE} ({img.width}x{img.height})")
 
     # Ensure directories exist
@@ -82,14 +80,14 @@ def main() -> None:
 
     # Apple touch icon: 180x180
     apple_out = APP / "apple-icon.png"
-    resize(img, 180).save(apple_out, "PNG", optimize=True)
+    resize(square, 180).convert("RGB").save(apple_out, "PNG", optimize=True)
     print(f"  ✓ {apple_out.relative_to(ROOT)}")
 
     # favicon.ico: multi-resolution
     generate_ico(img, APP / "favicon.ico")
 
     # OG image: 1200x630
-    generate_og_image(img, APP / "opengraph-image.png")
+    generate_og_image(rounded, APP / "opengraph-image.png")
 
     print("\n✅ All logo assets generated successfully!")
 

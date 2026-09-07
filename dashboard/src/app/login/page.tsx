@@ -138,7 +138,7 @@ export function LoginContent() {
                 }}
               />
               <div className="flex items-center gap-2">
-                <Image src="/logo-24.png" alt="Life.ai" width={16} height={16} className="brightness-0 invert" />
+                <Image src="/logo-24.png" alt="Life.ai" width={16} height={16} />
                 <span className="text-sm font-semibold text-primary-foreground">
                   Life.ai
                 </span>
@@ -161,8 +161,14 @@ export function LoginContent() {
           {/* Badge content */}
           <div className="flex flex-1 flex-col items-center px-6 pt-6 pb-14">
             {/* Logo */}
-            <div className="h-24 w-24 overflow-hidden rounded-full bg-secondary dark:bg-[#171717] ring-1 ring-border">
-              <Image src="/logo-192.png" alt="Life.ai" width={192} height={192} className="h-full w-full" />
+            <div className="h-24 w-24">
+              <Image
+                src="/logo-192.png"
+                alt="Life.ai"
+                width={192}
+                height={192}
+                className="h-full w-full"
+              />
             </div>
 
             <p className="mt-5 text-lg font-semibold text-foreground">Welcome</p>

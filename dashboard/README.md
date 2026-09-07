@@ -2,6 +2,8 @@
 
 Life.AI 可视化前端项目。
 
+图标使用参见[品牌资源规范](../assets/brand/README.md)：侧栏、页头与 favicon 使用透明前景，大图展示使用独立背景版本。
+
 ## 技术栈
 - **框架**: Next.js 15 (App Router)
 - **样式**: Tailwind CSS v4

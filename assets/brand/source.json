@@ -1,0 +1,46 @@
+{
+  "study": "life-ai/2026-09-07-01",
+  "finishing": "02",
+  "model": "gpt-image-2",
+  "method": "generated-framing-repair",
+  "generationCalls": 1,
+  "nativeDimensions": [
+    2048,
+    2048
+  ],
+  "generation": {
+    "path": "raw/generated.png",
+    "sha256": "705264fc5b59cc4d709426f59b226cbafa0a4a82aadfd458cc5f3f1ab634a2ec"
+  },
+  "previous": {
+    "original": "/logos/originals/life-ai.png",
+    "sourceUrl": "https://github.com/nocoo/life.ai/blob/4e23d62f401ba4aa2fab39956b49312e5818d50d/logo.png",
+    "sha256": "306b58b664359d913e95828db42a754cfc1dfa1b6b007db5b6ed33f3d63d726d",
+    "width": 2048,
+    "height": 2048
+  },
+  "masters": {
+    "logo.png": {
+      "sha256": "dc9f9d0a07acd163c5837d831f38beab0bdbe206a693221f40892801b9a493ca",
+      "width": 2048,
+      "height": 2048
+    },
+    "assets/brand/icon.png": {
+      "sha256": "36f5a83c65868f88669bd52dcf2983ae875a39eb1990cebcf3eea3f16b662509",
+      "width": 2048,
+      "height": 2048
+    },
+    "assets/brand/icon-rounded.png": {
+      "sha256": "c96ac0910c491e515bf7dfa674d9b38f8fe6339a5db6747190502ae94333015a",
+      "width": 2048,
+      "height": 2048
+    }
+  },
+  "protectedFeatureClearancePx": 239.5,
+  "intentionalEdges": [
+    "bottom",
+    "lower-left"
+  ],
+  "review": "https://hexly.ai/logos/life-ai",
+  "archive": "https://github.com/nocoo/hexly.ai/tree/main/artwork/logo-family/life-ai/2026-09-07-01"
+}
