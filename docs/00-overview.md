@@ -1,6 +1,6 @@
 # 00 概览
 
-本项目用于统一管理健康数据、足迹数据与记账数据，并提供结构化存储与可视化基础能力。当前包含 Apple Health 数据结构梳理、footprint 轨迹数据的数据库化与聚合方案，以及 pixiu 记账导出数据的结构说明。
+本项目将 Apple Health、footprint 和貔貅记账的导出数据导入 SQLite，并提供日、月、年视图的 Web Dashboard。首次安装、配置和测试入口见[项目 README](../README.md)。
 
 ## 文档导航
 - `docs/01-data-structure-apple-health.md`：Apple Health 数据结构说明
@@ -9,6 +9,8 @@
 - `docs/04-scripts.md`：scripts 目录结构与导入说明
 - `docs/05-basalt-migration.md`：basalt UI 迁移工作计划（初版，已被 06 取代）
 - `docs/06-basalt-modernization.md`：**Basalt 现代化升级规划** — Next.js 16 升级 + B-0~B-5 规范对齐
+- [本地开发与 SQLite 驱动](07-development.md)：安装后的检查和原生模块构建
+- [English README](README.en.md)
 
 ## 数据库文件
 项目使用 SQLite 数据库存储结构化数据，位于 `db/` 目录：
