@@ -23,6 +23,7 @@ jobs:
       runtime-version: "1.4.2"
       node-version: "22.20.0"
       install-policy: "trusted"
+      coverage-path: "coverage"
       extra-install-dirs: "dashboard"
       test-command: "bun run test:coverage"
       lint-command: "bun run lint"
