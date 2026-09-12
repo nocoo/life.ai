@@ -9,41 +9,28 @@ on:
 
 jobs:
   node-preflight:
-    # setup-bun does not read .node-version. Explicitly stand up the Node
-    # runtime declared in .node-version and run the package-manager-agnostic
-    # engines.node check so a Node runtime below the required minimum aborts
-    # CI at preflight instead of leaking into the Bun-driven quality job.
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .node-version
-      - run: node scripts/check-node-version.mjs
+    uses: nocoo/base-ci/.github/workflows/test-job.yml@ab52d72877d386c9a8fd224e9ac868e88be90539
+    with:
+      runtime: "none"
+      node-version: "22.20.0"
+      timeout-minutes: 5
+      command: "node scripts/check-node-version.mjs"
 
   quality:
     needs: node-preflight
-    uses: nocoo/base-ci/.github/workflows/bun-quality.yml@aec4adc1a817c56790d1698329ef9398a15a754a  # v2026.5
+    uses: nocoo/base-ci/.github/workflows/quality.yml@ab52d72877d386c9a8fd224e9ac868e88be90539
     with:
-      ignore-scripts: true
-      trusted-native-deps: "better-sqlite3"
+      runtime-version: "1.4.2"
+      node-version: "22.20.0"
+      install-policy: "trusted"
       extra-install-dirs: "dashboard"
       test-command: "bun run test:coverage"
       lint-command: "bun run lint"
-      typecheck-command: "true"
-      enable-l2: "true"
+      typecheck: false
+      disabled-check-reasons: '{"typecheck": "no root tsconfig; subprojects checked via lint and tests"}'
+      l2: true
       l2-command: "bun run test:l2"
-      enable-l3: "true"
-      # base-ci's own browser install runs `bunx playwright install` from repo
-      # root, where no playwright is pinned, so bunx resolves npm-latest;
-      # dashboard/ pins its own version via bun.lock. The two may map to
-      # different Chromium revisions, so the base-ci-installed bundle can
-      # land in a cache dir the pinned runtime does not look under, and
-      # tests fail to launch. Reinstall from dashboard/ so the pinned CLI
-      # drops the bundle in the revision dir it will actually look under.
-      # Bake this into the L3 command (not pre-command) so L1/L2 jobs stay
-      # unaffected; --with-deps apt libs already installed by base-ci's
-      # prior step.
+      l3: true
       l3-command: "cd dashboard && bunx playwright install chromium && cd .. && bun run test:e2e:bdd"
       l3-browser: "chromium"
     secrets: inherit
