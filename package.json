@@ -2,6 +2,7 @@
   "name": "life.ai",
   "private": true,
   "type": "module",
+  "trustedDependencies": [],
   "engines": {
     "node": ">=22"
   },
