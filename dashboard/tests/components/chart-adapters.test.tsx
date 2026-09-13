@@ -11,13 +11,21 @@ const chartMocks = vi.hoisted(() => ({
   referenceLine: vi.fn(),
   legend: vi.fn(),
   tooltipActive: true,
-  tooltipPayload: [{ name: "Walking", value: 25, payload: { fill: "blue" } }],
+  tooltipPayload: [{ name: "Walking", value: 25, payload: { fill: "blue" } }] as Array<{
+    name: string;
+    value?: number;
+    payload: { fill: string };
+  }>,
 }));
 
 vi.mock("@nocoo/basalt/charts/line", () => ({
-  LineChart: (props: unknown) => {
+  LineChart: (props: { dataAlternative?: React.ReactNode }) => {
     chartMocks.basaltLine(props);
-    return <div data-testid="basalt-line" />;
+    return (
+      <div data-testid="basalt-line">
+        {props.dataAlternative}
+      </div>
+    );
   },
 }));
 
@@ -57,7 +65,10 @@ vi.mock("recharts", () => ({
     return null;
   },
   Bar: ({ shape }: { shape?: (props: { index: number }) => React.ReactNode }) => (
-    <>{shape?.({ index: 0 })}</>
+    <>
+      {shape?.({ index: 0 })}
+      {shape?.({ index: 99 })}
+    </>
   ),
   Rectangle: () => null,
   CartesianGrid: () => null,
@@ -73,9 +84,21 @@ vi.mock("recharts", () => ({
     chartMocks.legacyYAxis(props);
     return null;
   },
-  Pie: ({ children, ...props }: { children: React.ReactNode }) => {
-    chartMocks.pie(props);
-    return <>{children}</>;
+  Pie: ({
+    children,
+    label,
+    ...props
+  }: {
+    children: React.ReactNode;
+    label?: false | ((props: { name: string; percent?: number }) => React.ReactNode);
+  }) => {
+    chartMocks.pie({ ...props, label });
+    return (
+      <>
+        {children}
+        {typeof label === "function" ? label({ name: "Walking" }) : null}
+      </>
+    );
   },
   Cell: () => null,
   Legend: (props: unknown) => {
@@ -114,13 +137,17 @@ describe("chart adapters", () => {
     }));
     render(<LineChart ariaLabel="Four metrics" series={series} />);
 
-    expect(chartMocks.legacyLine).toHaveBeenCalledTimes(4);
-    expect(chartMocks.legacyLine.mock.calls.map(([props]) => props)).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ dataKey: "one" }),
-        expect.objectContaining({ dataKey: "four" }),
-      ]),
-    );
+    const props = chartMocks.basaltLine.mock.calls[0][0] as {
+      data: Array<Record<string, number | string>>;
+      series: Array<{ key: string }>;
+    };
+    expect(props.series.map((item) => item.key)).toEqual([
+      "series0",
+      "series1",
+      "series2",
+      "series3",
+    ]);
+    expect(props.data[0].series3).toBe(4);
     expect(screen.getByText(/Jan, one: 1, two: 2, three: 3, four: 4/)).toBeTruthy();
   });
 
@@ -133,6 +160,7 @@ describe("chart adapters", () => {
       />,
     );
     expect(screen.getByTestId("legacy-line-chart")).toBeTruthy();
+    expect(chartMocks.basaltLine).not.toHaveBeenCalled();
     expect(chartMocks.legacyLine.mock.calls[0][0]).toMatchObject({ dot: true });
   });
 
@@ -167,6 +195,21 @@ describe("chart adapters", () => {
   test("renders no line chart without data", () => {
     const { container } = render(<LineChart ariaLabel="Empty trend" />);
     expect(container.firstChild).toBeNull();
+  });
+
+  test("uses Basalt for a standard single-series line", () => {
+    render(
+      <LineChart
+        ariaLabel="Daily distance"
+        data={[{ label: "Mon", value: 12 }]}
+      />,
+    );
+    const props = chartMocks.basaltLine.mock.calls[0][0] as {
+      data: Array<Record<string, number | string>>;
+      series: Array<{ key: string }>;
+    };
+    expect(props.series).toHaveLength(1);
+    expect(props.data[0]).toEqual({ x: "Mon", series0: 12 });
   });
 
   test("preserves custom line presentation and reference lines", () => {
@@ -214,6 +257,16 @@ describe("chart adapters", () => {
     expect(screen.getByText(/Series 1: 5, Target: 0/)).toBeTruthy();
   });
 
+  test("falls back safely when a line has more than eight series", () => {
+    const series = Array.from({ length: 9 }, (_, index) => ({
+      name: `Metric ${index}`,
+      data: [{ label: "Jan", value: index }],
+    }));
+    render(<LineChart ariaLabel="Nine metrics" series={series} />);
+    expect(chartMocks.basaltLine).not.toHaveBeenCalled();
+    expect(chartMocks.legacyLine).toHaveBeenCalledTimes(9);
+  });
+
   test("preserves horizontal bars and per-point colors", () => {
     render(
       <BarChart
@@ -229,7 +282,9 @@ describe("chart adapters", () => {
   });
 
   test("supports a zero-total donut and inactive tooltip", () => {
-    chartMocks.tooltipActive = false;
+    chartMocks.tooltipPayload = [
+      { name: "None", value: undefined, payload: { fill: "gray" } },
+    ];
     render(
       <DonutChart
         ariaLabel="Empty split"
@@ -240,7 +295,7 @@ describe("chart adapters", () => {
     );
     expect(chartMocks.legend).toHaveBeenCalledOnce();
     expect(screen.getByText("No distribution")).toBeTruthy();
-    expect(screen.queryByText(/%/)).toBeNull();
+    expect(screen.getByText(/0\.0%/)).toBeTruthy();
   });
 
   test("preserves donut radius, labels, and percentage tooltip", () => {

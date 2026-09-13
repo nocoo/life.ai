@@ -10,6 +10,11 @@ import {
 import { cn } from "@/lib/utils";
 import { CHART_COLORS, chartAxis } from "@/lib/palette";
 import { ChartFrame } from "@nocoo/basalt/charts/frame";
+import {
+  LineChart as BasaltLineChart,
+  type LineChartNumericKeys,
+} from "@nocoo/basalt/charts/line";
+import type { ChartSeriesDescriptor } from "@nocoo/basalt/charts/series";
 import { ChartTooltipContent } from "@nocoo/basalt/charts/tooltip";
 import type { ReactNode } from "react";
 
@@ -59,6 +64,28 @@ export interface LineChartProps {
 }
 
 const defaultColors = CHART_COLORS;
+type BasaltPoint = {
+  x: string;
+  series0: number;
+  series1?: number;
+  series2?: number;
+  series3?: number;
+  series4?: number;
+  series5?: number;
+  series6?: number;
+  series7?: number;
+};
+type BasaltSeriesKey = LineChartNumericKeys<BasaltPoint> & string;
+const BASALT_SERIES_KEYS = [
+  "series0",
+  "series1",
+  "series2",
+  "series3",
+  "series4",
+  "series5",
+  "series6",
+  "series7",
+] as const satisfies readonly BasaltSeriesKey[];
 
 export function LineChart({
   ariaLabel,
@@ -115,6 +142,52 @@ export function LineChart({
         .join("; ")}
     </span>
   );
+
+  if (
+    normalizedSeries.length <= BASALT_SERIES_KEYS.length &&
+    referenceLine === undefined &&
+    !showArea &&
+    !showDots &&
+    curved &&
+    showGrid &&
+    showXAxis &&
+    showYAxis
+  ) {
+    const valueAt = (seriesIndex: number, pointIndex: number) =>
+      normalizedSeries[seriesIndex]?.data[pointIndex]?.value;
+    const basaltData: BasaltPoint[] = labels.map((label, index) => ({
+      x: label,
+      series0: valueAt(0, index) ?? 0,
+      ...(valueAt(1, index) === undefined ? {} : { series1: valueAt(1, index) }),
+      ...(valueAt(2, index) === undefined ? {} : { series2: valueAt(2, index) }),
+      ...(valueAt(3, index) === undefined ? {} : { series3: valueAt(3, index) }),
+      ...(valueAt(4, index) === undefined ? {} : { series4: valueAt(4, index) }),
+      ...(valueAt(5, index) === undefined ? {} : { series5: valueAt(5, index) }),
+      ...(valueAt(6, index) === undefined ? {} : { series6: valueAt(6, index) }),
+      ...(valueAt(7, index) === undefined ? {} : { series7: valueAt(7, index) }),
+    }));
+    const basaltSeries: Array<ChartSeriesDescriptor<BasaltSeriesKey>> =
+      normalizedSeries.flatMap((item, index) => {
+        const key = BASALT_SERIES_KEYS[index];
+        return key ? [{ key, label: item.name, color: item.color }] : [];
+      });
+
+    return (
+      <div className={cn("w-full", className)} style={{ height }}>
+        <BasaltLineChart<BasaltPoint, BasaltSeriesKey>
+          data={basaltData}
+          series={basaltSeries}
+          ariaLabel={ariaLabel}
+          className="h-full w-full"
+          showAxes
+          showLegend={normalizedSeries.length > 1}
+          valueFormatter={valueFormatter}
+          summary={summary}
+          dataAlternative={resolvedDataAlternative}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={cn("w-full", className)} style={{ height }}>
