@@ -29,6 +29,7 @@ jobs:
   security:
     uses: nocoo/base-ci/.github/workflows/security.yml@ad43150de3a2be2fa464b5cd2f921dc4fa9f8f0f
     with:
+      package-manager: bun
       runtime-version: '1.4.0'
       node-version: '26.8.1'
       install-policy: trusted

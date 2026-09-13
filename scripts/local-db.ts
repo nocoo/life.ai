@@ -1,4 +1,5 @@
 import { rmSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { resolve } from "node:path";
 import { verifyLocalBindings } from "./verify-test-bindings";
 
@@ -52,6 +53,13 @@ export function testEnvironment(state?: string): Record<string, string | undefin
 	delete env.FORCE_COLOR;
 	env.WRANGLER_SEND_METRICS = "false";
 	if (state) {
+		// Linux Playwright also uses XDG_CACHE_HOME; retain its installed browser binaries.
+		if (process.platform === "linux" && !env.PLAYWRIGHT_BROWSERS_PATH) {
+			env.PLAYWRIGHT_BROWSERS_PATH = resolve(
+				process.env.XDG_CACHE_HOME || resolve(homedir(), ".cache"),
+				"ms-playwright",
+			);
+		}
 		// Wrangler's XDG paths keep this run away from the user's OAuth configuration.
 		env.XDG_CONFIG_HOME = resolve(state, "config");
 		env.XDG_CACHE_HOME = resolve(state, "cache");

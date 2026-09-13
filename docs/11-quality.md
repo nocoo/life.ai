@@ -17,4 +17,6 @@ L2/L3 每轮在 `.wrangler/tests/<tier>-<random>` 创建全新状态和 Vite 缓
 
 测试结果位于 `test-results`、`playwright-report` 和 `coverage`，不提交生成结果。根 [08 重构记录](08-chronicle-rewrite.md) 保留实际执行结果与上线证据。薄 View 和浏览器交互由 L3 覆盖，不纳入 L1 逻辑分母。
 
+Linux 测试会在隔离 XDG 缓存前固定已安装的 Playwright 浏览器路径；只复用浏览器程序，Wrangler OAuth 配置、缓存和 SQLite 仍使用本轮独立目录。自定义 G2 命令使用 Bun，因此复用的 security workflow 必须显式设置 `package-manager: bun`。
+
 Husky pre-commit 执行 L1 + G1；pre-push 并行执行 L2 + G2。CI 同时运行全部维度，所有 GitHub Actions 可复用工作流固定到具体 SHA。
