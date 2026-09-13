@@ -28,8 +28,6 @@ export interface DayState {
   timelineEvents: TimelineEvent[];
   /** Enhanced timeline slots (15-minute granularity) */
   timeSlots: TimeSlot[];
-  /** Calendar visibility */
-  calendarOpen: boolean;
   /** Location for sun position calculation (from Footprint) */
   location: { latitude: number; longitude: number };
 }
@@ -43,10 +41,6 @@ export interface DayActions {
   goPrevDay: () => void;
   /** Go to next day */
   goNextDay: () => void;
-  /** Toggle calendar visibility */
-  toggleCalendar: () => void;
-  /** Close calendar */
-  closeCalendar: () => void;
   /** Load data for selected date */
   loadData: () => Promise<void>;
 }
@@ -63,7 +57,6 @@ const initialState: DayState = {
   data: null,
   timelineEvents: [],
   timeSlots: [],
-  calendarOpen: false,
   location: { latitude: DEFAULT_LAT, longitude: DEFAULT_LON },
 };
 
@@ -71,13 +64,13 @@ export const useDayStore = create<DayStore>((set, get) => ({
   ...initialState,
 
   setDate: (date: Date) => {
-    set({ selectedDate: startOfDay(date), calendarOpen: false });
+    set({ selectedDate: startOfDay(date) });
     get().loadData();
   },
 
   goToday: () => {
     const today = startOfDay(new Date());
-    set({ selectedDate: today, calendarOpen: false });
+    set({ selectedDate: today });
     get().loadData();
   },
 
@@ -91,14 +84,6 @@ export const useDayStore = create<DayStore>((set, get) => ({
     const nextDay = addDays(get().selectedDate, 1);
     set({ selectedDate: nextDay });
     get().loadData();
-  },
-
-  toggleCalendar: () => {
-    set((state) => ({ calendarOpen: !state.calendarOpen }));
-  },
-
-  closeCalendar: () => {
-    set({ calendarOpen: false });
   },
 
   loadData: async () => {

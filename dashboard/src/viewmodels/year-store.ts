@@ -12,8 +12,6 @@ export interface YearState {
   error: string | null;
   /** Year view data */
   data: YearViewData | null;
-  /** Calendar visibility */
-  calendarOpen: boolean;
 }
 
 export interface YearActions {
@@ -25,10 +23,6 @@ export interface YearActions {
   goPrevYear: () => void;
   /** Go to next year */
   goNextYear: () => void;
-  /** Toggle calendar visibility */
-  toggleCalendar: () => void;
-  /** Close calendar */
-  closeCalendar: () => void;
   /** Load data for selected year */
   loadData: () => Promise<void>;
 }
@@ -43,20 +37,19 @@ const initialState: YearState = {
   loading: false,
   error: null,
   data: null,
-  calendarOpen: false,
 };
 
 export const useYearStore = create<YearStore>((set, get) => ({
   ...initialState,
 
   setYear: (year: number) => {
-    set({ selectedYear: year, calendarOpen: false });
+    set({ selectedYear: year });
     get().loadData();
   },
 
   goCurrentYear: () => {
     const currentYear = new Date().getFullYear();
-    set({ selectedYear: currentYear, calendarOpen: false });
+    set({ selectedYear: currentYear });
     get().loadData();
   },
 
@@ -70,14 +63,6 @@ export const useYearStore = create<YearStore>((set, get) => ({
     const nextYear = get().selectedYear + 1;
     set({ selectedYear: nextYear });
     get().loadData();
-  },
-
-  toggleCalendar: () => {
-    set((state) => ({ calendarOpen: !state.calendarOpen }));
-  },
-
-  closeCalendar: () => {
-    set({ calendarOpen: false });
   },
 
   loadData: async () => {

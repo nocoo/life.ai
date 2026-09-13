@@ -13,8 +13,6 @@ export interface MonthState {
   error: string | null;
   /** Month view data */
   data: MonthViewData | null;
-  /** Calendar visibility */
-  calendarOpen: boolean;
 }
 
 export interface MonthActions {
@@ -26,10 +24,6 @@ export interface MonthActions {
   goPrevMonth: () => void;
   /** Go to next month */
   goNextMonth: () => void;
-  /** Toggle calendar visibility */
-  toggleCalendar: () => void;
-  /** Close calendar */
-  closeCalendar: () => void;
   /** Load data for selected month */
   loadData: () => Promise<void>;
 }
@@ -44,7 +38,6 @@ const initialState: MonthState = {
   loading: false,
   error: null,
   data: null,
-  calendarOpen: false,
 };
 
 /** Convert month string to Date for navigation */
@@ -62,13 +55,13 @@ export const useMonthStore = create<MonthStore>((set, get) => ({
   ...initialState,
 
   setMonth: (month: string) => {
-    set({ selectedMonth: month, calendarOpen: false });
+    set({ selectedMonth: month });
     get().loadData();
   },
 
   goCurrentMonth: () => {
     const currentMonth = dateToMonth(new Date());
-    set({ selectedMonth: currentMonth, calendarOpen: false });
+    set({ selectedMonth: currentMonth });
     get().loadData();
   },
 
@@ -84,14 +77,6 @@ export const useMonthStore = create<MonthStore>((set, get) => ({
     const nextMonth = dateToMonth(addMonths(currentDate, 1));
     set({ selectedMonth: nextMonth });
     get().loadData();
-  },
-
-  toggleCalendar: () => {
-    set((state) => ({ calendarOpen: !state.calendarOpen }));
-  },
-
-  closeCalendar: () => {
-    set({ calendarOpen: false });
   },
 
   loadData: async () => {

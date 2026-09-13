@@ -134,11 +134,6 @@ describe("day-store", () => {
       const state = useDayStore.getState();
       expect(state.timelineEvents).toEqual([]);
     });
-
-    it("should have calendar closed initially", () => {
-      const state = useDayStore.getState();
-      expect(state.calendarOpen).toBe(false);
-    });
   });
 
   describe("setDate", () => {
@@ -149,15 +144,6 @@ describe("day-store", () => {
 
       const state = useDayStore.getState();
       expect(format(state.selectedDate, "yyyy-MM-dd")).toBe("2025-01-15");
-    });
-
-    it("should close calendar when setting date", () => {
-      setupMockFetch();
-      useDayStore.setState({ calendarOpen: true });
-      useDayStore.getState().setDate(new Date("2025-01-15"));
-
-      const state = useDayStore.getState();
-      expect(state.calendarOpen).toBe(false);
     });
   });
 
@@ -172,15 +158,6 @@ describe("day-store", () => {
       expect(format(state.selectedDate, "yyyy-MM-dd")).toBe(
         format(today, "yyyy-MM-dd")
       );
-    });
-
-    it("should close calendar", () => {
-      setupMockFetch();
-      useDayStore.setState({ calendarOpen: true });
-      useDayStore.getState().goToday();
-
-      const state = useDayStore.getState();
-      expect(state.calendarOpen).toBe(false);
     });
   });
 
@@ -205,27 +182,6 @@ describe("day-store", () => {
 
       const state = useDayStore.getState();
       expect(format(state.selectedDate, "yyyy-MM-dd")).toBe("2025-01-16");
-    });
-  });
-
-  describe("toggleCalendar", () => {
-    it("should toggle calendar open state", () => {
-      expect(useDayStore.getState().calendarOpen).toBe(false);
-
-      useDayStore.getState().toggleCalendar();
-      expect(useDayStore.getState().calendarOpen).toBe(true);
-
-      useDayStore.getState().toggleCalendar();
-      expect(useDayStore.getState().calendarOpen).toBe(false);
-    });
-  });
-
-  describe("closeCalendar", () => {
-    it("should close calendar", () => {
-      useDayStore.setState({ calendarOpen: true });
-      useDayStore.getState().closeCalendar();
-
-      expect(useDayStore.getState().calendarOpen).toBe(false);
     });
   });
 
@@ -358,7 +314,6 @@ describe("day-store", () => {
       useDayStore.setState({
         loading: true,
         error: "Some error",
-        calendarOpen: true,
       });
       await useDayStore.getState().loadData();
 
@@ -369,7 +324,6 @@ describe("day-store", () => {
       expect(state.loading).toBe(false);
       expect(state.error).toBeNull();
       expect(state.data).toBeNull();
-      expect(state.calendarOpen).toBe(false);
     });
   });
 });

@@ -133,11 +133,6 @@ describe("month-store", () => {
       const state = useMonthStore.getState();
       expect(state.data).toBeNull();
     });
-
-    it("should have calendar closed initially", () => {
-      const state = useMonthStore.getState();
-      expect(state.calendarOpen).toBe(false);
-    });
   });
 
   describe("setMonth", () => {
@@ -147,15 +142,6 @@ describe("month-store", () => {
 
       const state = useMonthStore.getState();
       expect(state.selectedMonth).toBe("2025-01");
-    });
-
-    it("should close calendar when setting month", () => {
-      setupMockFetch();
-      useMonthStore.setState({ calendarOpen: true });
-      useMonthStore.getState().setMonth("2025-01");
-
-      const state = useMonthStore.getState();
-      expect(state.calendarOpen).toBe(false);
     });
   });
 
@@ -169,15 +155,6 @@ describe("month-store", () => {
       const now = new Date();
       const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
       expect(state.selectedMonth).toBe(currentMonth);
-    });
-
-    it("should close calendar", () => {
-      setupMockFetch();
-      useMonthStore.setState({ calendarOpen: true });
-      useMonthStore.getState().goCurrentMonth();
-
-      const state = useMonthStore.getState();
-      expect(state.calendarOpen).toBe(false);
     });
   });
 
@@ -218,27 +195,6 @@ describe("month-store", () => {
 
       const state = useMonthStore.getState();
       expect(state.selectedMonth).toBe("2025-01");
-    });
-  });
-
-  describe("toggleCalendar", () => {
-    it("should toggle calendar open state", () => {
-      expect(useMonthStore.getState().calendarOpen).toBe(false);
-
-      useMonthStore.getState().toggleCalendar();
-      expect(useMonthStore.getState().calendarOpen).toBe(true);
-
-      useMonthStore.getState().toggleCalendar();
-      expect(useMonthStore.getState().calendarOpen).toBe(false);
-    });
-  });
-
-  describe("closeCalendar", () => {
-    it("should close calendar", () => {
-      useMonthStore.setState({ calendarOpen: true });
-      useMonthStore.getState().closeCalendar();
-
-      expect(useMonthStore.getState().calendarOpen).toBe(false);
     });
   });
 
@@ -347,7 +303,6 @@ describe("month-store", () => {
         selectedMonth: "2024-06",
         loading: true,
         error: "Some error",
-        calendarOpen: true,
       });
       await useMonthStore.getState().loadData();
 
@@ -359,7 +314,6 @@ describe("month-store", () => {
       expect(state.loading).toBe(false);
       expect(state.error).toBeNull();
       expect(state.data).toBeNull();
-      expect(state.calendarOpen).toBe(false);
     });
   });
 });

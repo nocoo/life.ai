@@ -137,11 +137,6 @@ describe("year-store", () => {
       const state = useYearStore.getState();
       expect(state.data).toBeNull();
     });
-
-    it("should have calendar closed initially", () => {
-      const state = useYearStore.getState();
-      expect(state.calendarOpen).toBe(false);
-    });
   });
 
   describe("setYear", () => {
@@ -151,15 +146,6 @@ describe("year-store", () => {
 
       const state = useYearStore.getState();
       expect(state.selectedYear).toBe(2024);
-    });
-
-    it("should close calendar when setting year", () => {
-      setupMockFetch();
-      useYearStore.setState({ calendarOpen: true });
-      useYearStore.getState().setYear(2024);
-
-      const state = useYearStore.getState();
-      expect(state.calendarOpen).toBe(false);
     });
   });
 
@@ -172,15 +158,6 @@ describe("year-store", () => {
       const state = useYearStore.getState();
       const currentYear = new Date().getFullYear();
       expect(state.selectedYear).toBe(currentYear);
-    });
-
-    it("should close calendar", () => {
-      setupMockFetch();
-      useYearStore.setState({ calendarOpen: true });
-      useYearStore.getState().goCurrentYear();
-
-      const state = useYearStore.getState();
-      expect(state.calendarOpen).toBe(false);
     });
   });
 
@@ -203,27 +180,6 @@ describe("year-store", () => {
 
       const state = useYearStore.getState();
       expect(state.selectedYear).toBe(2025);
-    });
-  });
-
-  describe("toggleCalendar", () => {
-    it("should toggle calendar open state", () => {
-      expect(useYearStore.getState().calendarOpen).toBe(false);
-
-      useYearStore.getState().toggleCalendar();
-      expect(useYearStore.getState().calendarOpen).toBe(true);
-
-      useYearStore.getState().toggleCalendar();
-      expect(useYearStore.getState().calendarOpen).toBe(false);
-    });
-  });
-
-  describe("closeCalendar", () => {
-    it("should close calendar", () => {
-      useYearStore.setState({ calendarOpen: true });
-      useYearStore.getState().closeCalendar();
-
-      expect(useYearStore.getState().calendarOpen).toBe(false);
     });
   });
 
@@ -332,7 +288,6 @@ describe("year-store", () => {
         selectedYear: 2020,
         loading: true,
         error: "Some error",
-        calendarOpen: true,
       });
       await useYearStore.getState().loadData();
 
@@ -344,7 +299,6 @@ describe("year-store", () => {
       expect(state.loading).toBe(false);
       expect(state.error).toBeNull();
       expect(state.data).toBeNull();
-      expect(state.calendarOpen).toBe(false);
     });
   });
 });
