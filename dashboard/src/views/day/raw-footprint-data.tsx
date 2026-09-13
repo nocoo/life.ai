@@ -1,7 +1,7 @@
 "use client";
 
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@nocoo/basalt";
+import { Badge } from "@nocoo/basalt";
 import {
   Table,
   TableBody,
@@ -9,7 +9,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@nocoo/basalt/components/table";
 import type { DayFootprintData } from "@/models/footprint";
 
 export interface RawFootprintDataProps {
@@ -54,8 +54,8 @@ const formatCoord = (value: number, decimals = 6): string => {
 
 export function RawFootprintData({ data }: RawFootprintDataProps) {
   return (
-    <div className="rounded-card bg-secondary p-4">
-      <div className="text-sm font-normal text-muted-foreground mb-3">
+    <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+      <div className="text-sm font-normal text-basalt-muted-foreground mb-3">
         Footprint 原始数据
       </div>
       <ScrollArea className="h-[calc(100vh-200px)]">
@@ -63,28 +63,28 @@ export function RawFootprintData({ data }: RawFootprintDataProps) {
             {/* Summary Section */}
             {data.summary && (
               <div>
-                <h3 className="text-sm font-normal text-muted-foreground mb-2">轨迹概览</h3>
+                <h3 className="text-sm font-normal text-basalt-muted-foreground mb-2">轨迹概览</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="rounded-widget bg-secondary p-3">
-                    <div className="text-xs text-muted-foreground">总距离</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3">
+                    <div className="text-xs text-basalt-muted-foreground">总距离</div>
                     <div className="text-xl font-semibold font-display tracking-tight">
                       {formatDistance(data.summary.totalDistance)}
                     </div>
                   </div>
-                  <div className="rounded-widget bg-secondary p-3">
-                    <div className="text-xs text-muted-foreground">平均速度</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3">
+                    <div className="text-xs text-basalt-muted-foreground">平均速度</div>
                     <div className="text-xl font-semibold font-display tracking-tight">
                       {formatSpeed(data.summary.avgSpeed)}
                     </div>
                   </div>
-                  <div className="rounded-widget bg-secondary p-3">
-                    <div className="text-xs text-muted-foreground">轨迹点数</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3">
+                    <div className="text-xs text-basalt-muted-foreground">轨迹点数</div>
                     <div className="text-xl font-semibold font-display tracking-tight">
                       {data.summary.pointCount.toLocaleString()}
                     </div>
                   </div>
-                  <div className="rounded-widget bg-secondary p-3">
-                    <div className="text-xs text-muted-foreground">记录时间</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3">
+                    <div className="text-xs text-basalt-muted-foreground">记录时间</div>
                     <div className="text-lg font-semibold">
                       {data.summary.minTime} - {data.summary.maxTime}
                     </div>
@@ -96,7 +96,7 @@ export function RawFootprintData({ data }: RawFootprintDataProps) {
             {/* Track Points Section */}
             {data.trackPoints.length > 0 && (
               <div>
-                <h3 className="text-sm font-normal text-muted-foreground mb-2">
+                <h3 className="text-sm font-normal text-basalt-muted-foreground mb-2">
                   轨迹点 ({data.trackPoints.length})
                 </h3>
                 <Table>
@@ -113,7 +113,7 @@ export function RawFootprintData({ data }: RawFootprintDataProps) {
                   <TableBody>
                     {data.trackPoints.map((point, idx) => (
                       <TableRow key={idx}>
-                        <TableCell className="text-muted-foreground">
+                        <TableCell className="text-basalt-muted-foreground">
                           {idx + 1}
                         </TableCell>
                         <TableCell className="font-mono text-xs">
@@ -125,7 +125,7 @@ export function RawFootprintData({ data }: RawFootprintDataProps) {
                         <TableCell className="font-mono text-xs">
                           {formatCoord(point.lon)}
                         </TableCell>
-                        <TableCell className="text-right text-muted-foreground">
+                        <TableCell className="text-right text-basalt-muted-foreground">
                           {point.ele !== undefined ? point.ele.toFixed(1) : "-"}
                         </TableCell>
                         <TableCell className="text-right">
@@ -141,7 +141,7 @@ export function RawFootprintData({ data }: RawFootprintDataProps) {
             {/* Locations Section */}
             {data.locations.length > 0 && (
               <div>
-                <h3 className="text-sm font-normal text-muted-foreground mb-2">
+                <h3 className="text-sm font-normal text-basalt-muted-foreground mb-2">
                   停留地点 ({data.locations.length})
                 </h3>
                 <Table>
@@ -158,7 +158,7 @@ export function RawFootprintData({ data }: RawFootprintDataProps) {
                         <TableCell>
                           <Badge variant="outline">{location.name}</Badge>
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
+                        <TableCell className="text-basalt-muted-foreground">
                           {location.startTime} - {location.endTime}
                         </TableCell>
                         <TableCell className="text-right font-medium">
@@ -174,7 +174,7 @@ export function RawFootprintData({ data }: RawFootprintDataProps) {
             {/* Segments Section */}
             {data.segments.length > 0 && (
               <div>
-                <h3 className="text-sm font-normal text-muted-foreground mb-2">
+                <h3 className="text-sm font-normal text-basalt-muted-foreground mb-2">
                   轨迹分段 ({data.segments.length})
                 </h3>
                 <Table>
@@ -189,7 +189,7 @@ export function RawFootprintData({ data }: RawFootprintDataProps) {
                   <TableBody>
                     {data.segments.map((segment) => (
                       <TableRow key={segment.id}>
-                        <TableCell className="text-muted-foreground">
+                        <TableCell className="text-basalt-muted-foreground">
                           {segment.startTime} - {segment.endTime}
                         </TableCell>
                         <TableCell>{formatDistance(segment.distance)}</TableCell>
@@ -209,7 +209,7 @@ export function RawFootprintData({ data }: RawFootprintDataProps) {
               data.trackPoints.length === 0 &&
               data.locations.length === 0 &&
               data.segments.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-8 text-basalt-muted-foreground">
                   当天没有轨迹数据
                 </div>
               )}

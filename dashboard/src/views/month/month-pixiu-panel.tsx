@@ -1,6 +1,6 @@
 "use client";
 
-import { StatCard, StatGrid } from "@/components/charts/stat-card";
+import { StatCard, StatGrid } from "@nocoo/basalt/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
 import { DonutChart } from "@/components/charts/pie-chart";
@@ -70,9 +70,9 @@ const aggregateCategoryData = (
 };
 
 const COLORS = {
-  income: "hsl(var(--chart-5))",
-  expense: "hsl(var(--destructive))",
-  net: "hsl(var(--chart-1))",
+  income: "hsl(var(--basalt-chart-5))",
+  expense: "hsl(var(--basalt-destructive))",
+  net: "hsl(var(--basalt-chart-1))",
 };
 
 export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
@@ -148,8 +148,8 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
 
       {/* B. Trends - Daily Income/Expense/Net */}
       {(dailyIncome.length > 0 || dailyExpense.length > 0) && (
-        <div className="rounded-card bg-secondary p-4">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Calendar className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             每日收支趋势
           </div>
@@ -173,8 +173,8 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
 
       {/* C. Breakdown - Category Distribution (symmetric: left=income, right=expense) */}
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-card bg-secondary p-4">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowUpCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             收入 | 分类占比
           </div>
@@ -186,13 +186,13 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
               valueFormatter={formatCurrencyCompact}
             />
           ) : (
-            <div className="h-[180px] flex items-center justify-center text-sm text-muted-foreground">
+            <div className="h-[180px] flex items-center justify-center text-sm text-basalt-muted-foreground">
               暂无收入数据
             </div>
           )}
         </div>
-        <div className="rounded-card bg-secondary p-4">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowDownCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             支出 | 分类占比
           </div>
@@ -204,7 +204,7 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
               valueFormatter={formatCurrencyCompact}
             />
           ) : (
-            <div className="h-[180px] flex items-center justify-center text-sm text-muted-foreground">
+            <div className="h-[180px] flex items-center justify-center text-sm text-basalt-muted-foreground">
               暂无支出数据
             </div>
           )}
@@ -213,8 +213,8 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
 
       {/* C. Breakdown - Account Distribution (symmetric: left=income, right=expense) */}
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-card bg-secondary p-4">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowUpCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             收入 | 按账户
           </div>
@@ -227,13 +227,13 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
               valueFormatter={formatCurrencyCompact}
             />
           ) : (
-            <div className="h-[180px] flex items-center justify-center text-sm text-muted-foreground">
+            <div className="h-[180px] flex items-center justify-center text-sm text-basalt-muted-foreground">
               暂无收入数据
             </div>
           )}
         </div>
-        <div className="rounded-card bg-secondary p-4">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowDownCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             支出 | 按账户
           </div>
@@ -246,7 +246,7 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
               valueFormatter={formatCurrencyCompact}
             />
           ) : (
-            <div className="h-[180px] flex items-center justify-center text-sm text-muted-foreground">
+            <div className="h-[180px] flex items-center justify-center text-sm text-basalt-muted-foreground">
               暂无支出数据
             </div>
           )}
@@ -255,8 +255,8 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
 
       {/* D. Details - Top Expenses */}
       {topExpenses.length > 0 && (
-        <div className="rounded-card bg-secondary p-4">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <TrendingDown className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             大额支出
           </div>
@@ -264,17 +264,17 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
             {topExpenses.slice(0, 5).map((expense, index) => (
               <div
                 key={`${expense.date}-${index}`}
-                className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0"
+                className="flex items-center justify-between py-1.5 border-b border-basalt-border/50 last:border-0"
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">
                     {expense.note || expense.category}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-[10px] text-basalt-muted-foreground">
                     {expense.date} · {expense.category}
                   </p>
                 </div>
-                <p className="text-destructive font-medium tabular-nums ml-4">
+                <p className="text-basalt-destructive font-medium tabular-nums ml-4">
                   {formatCurrency(expense.amount)}
                 </p>
               </div>

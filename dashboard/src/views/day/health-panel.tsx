@@ -95,11 +95,11 @@ export function HealthPanel({ data }: HealthPanelProps) {
     <>
       {/* Sleep Card */}
       {data.sleep && (
-        <div className="rounded-card bg-secondary p-4 min-w-0 overflow-hidden">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Moon className="h-4 w-4" strokeWidth={1.5} />
             睡眠
-            <span className="ml-auto text-base font-semibold text-foreground font-display tracking-tight">
+            <span className="ml-auto text-base font-semibold text-basalt-foreground font-display tracking-tight">
               {(data.sleep.duration / 60).toFixed(1)}h
             </span>
           </div>
@@ -118,15 +118,15 @@ export function HealthPanel({ data }: HealthPanelProps) {
             {/* Row 1: Start time, End time, Efficiency */}
             <div className="grid grid-cols-3 gap-2 text-center text-sm">
               <div>
-                <p className="text-xs text-muted-foreground">入睡</p>
+                <p className="text-xs text-basalt-muted-foreground">入睡</p>
                 <p className="font-medium">{formatTime(data.sleep.start)}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">醒来</p>
+                <p className="text-xs text-basalt-muted-foreground">醒来</p>
                 <p className="font-medium">{formatTime(data.sleep.end)}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">效率</p>
+                <p className="text-xs text-basalt-muted-foreground">效率</p>
                 <p className="font-medium">
                   {Math.round(((data.sleep.duration - data.sleep.awakeMinutes) / data.sleep.duration) * 100)}%
                 </p>
@@ -137,22 +137,22 @@ export function HealthPanel({ data }: HealthPanelProps) {
             <div className="grid grid-cols-4 gap-1 text-center text-xs">
               <div className="flex flex-col items-center gap-1">
                 <div className={`h-2 w-2 rounded-sm ${SLEEP_STAGE_COLORS.deep}`} />
-                <span className="text-muted-foreground">{SLEEP_STAGE_LABELS.deep}</span>
+                <span className="text-basalt-muted-foreground">{SLEEP_STAGE_LABELS.deep}</span>
                 <span className="font-medium">{data.sleep.deepMinutes}m</span>
               </div>
               <div className="flex flex-col items-center gap-1">
                 <div className={`h-2 w-2 rounded-sm ${SLEEP_STAGE_COLORS.core}`} />
-                <span className="text-muted-foreground">{SLEEP_STAGE_LABELS.core}</span>
+                <span className="text-basalt-muted-foreground">{SLEEP_STAGE_LABELS.core}</span>
                 <span className="font-medium">{data.sleep.coreMinutes}m</span>
               </div>
               <div className="flex flex-col items-center gap-1">
                 <div className={`h-2 w-2 rounded-sm ${SLEEP_STAGE_COLORS.rem}`} />
-                <span className="text-muted-foreground">{SLEEP_STAGE_LABELS.rem}</span>
+                <span className="text-basalt-muted-foreground">{SLEEP_STAGE_LABELS.rem}</span>
                 <span className="font-medium">{data.sleep.remMinutes}m</span>
               </div>
               <div className="flex flex-col items-center gap-1">
                 <div className={`h-2 w-2 rounded-sm ${SLEEP_STAGE_COLORS.awake}`} />
-                <span className="text-muted-foreground">{SLEEP_STAGE_LABELS.awake}</span>
+                <span className="text-basalt-muted-foreground">{SLEEP_STAGE_LABELS.awake}</span>
                 <span className="font-medium">{data.sleep.awakeMinutes}m</span>
               </div>
             </div>
@@ -162,11 +162,11 @@ export function HealthPanel({ data }: HealthPanelProps) {
 
       {/* Heart Rate Card */}
       {data.heartRate && (
-        <div className="rounded-card bg-secondary p-4 min-w-0 overflow-hidden">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Heart className="h-4 w-4" strokeWidth={1.5} />
             心率
-            <span className="ml-auto text-base font-semibold text-foreground font-display tracking-tight">
+            <span className="ml-auto text-base font-semibold text-basalt-foreground font-display tracking-tight">
               {data.heartRate.avg} bpm
             </span>
           </div>
@@ -179,7 +179,7 @@ export function HealthPanel({ data }: HealthPanelProps) {
                   {heartRateBars.map((bar, i) => (
                     <div
                       key={i}
-                      className={`flex-1 rounded-sm ${bar.avgBpm > 0 ? getHeartRateColor(bar.avgBpm) : "bg-muted"}`}
+                      className={`flex-1 rounded-sm ${bar.avgBpm > 0 ? getHeartRateColor(bar.avgBpm) : "bg-basalt-muted"}`}
                       style={{ height: "100%" }}
                       title={bar.avgBpm > 0 ? `${bar.avgBpm} bpm` : "无数据"}
                     />
@@ -191,15 +191,15 @@ export function HealthPanel({ data }: HealthPanelProps) {
             {/* Row: Min, Avg, Max */}
             <div className="grid grid-cols-3 gap-2 text-center text-sm">
               <div>
-                <p className="text-xs text-muted-foreground">最低</p>
+                <p className="text-xs text-basalt-muted-foreground">最低</p>
                 <p className="font-medium">{data.heartRate.min}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">平均</p>
+                <p className="text-xs text-basalt-muted-foreground">平均</p>
                 <p className="font-medium">{data.heartRate.avg}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">最高</p>
+                <p className="text-xs text-basalt-muted-foreground">最高</p>
                 <p className="font-medium">{data.heartRate.max}</p>
               </div>
             </div>
@@ -209,11 +209,11 @@ export function HealthPanel({ data }: HealthPanelProps) {
 
       {/* Steps Card */}
       {data.steps.length > 0 && (
-        <div className="rounded-card bg-secondary p-4 min-w-0 overflow-hidden">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Footprints className="h-4 w-4" strokeWidth={1.5} />
             步数
-            <span className="ml-auto text-base font-semibold text-foreground font-display tracking-tight">
+            <span className="ml-auto text-base font-semibold text-basalt-foreground font-display tracking-tight">
               {data.totalSteps.toLocaleString()}
             </span>
           </div>
@@ -228,7 +228,7 @@ export function HealthPanel({ data }: HealthPanelProps) {
                     return (
                       <div
                         key={i}
-                        className={`flex-1 rounded-sm ${s.count > 0 ? "bg-green-500" : "bg-muted"}`}
+                        className={`flex-1 rounded-sm ${s.count > 0 ? "bg-green-500" : "bg-basalt-muted"}`}
                         style={{ height: s.count > 0 ? `${Math.max(height, 10)}%` : "100%" }}
                         title={`${s.hour}:00 - ${s.count.toLocaleString()} 步`}
                       />
@@ -241,17 +241,17 @@ export function HealthPanel({ data }: HealthPanelProps) {
             {/* Stats Row */}
             <div className="grid grid-cols-3 gap-2 text-center text-sm">
               <div>
-                <p className="text-xs text-muted-foreground">总计</p>
+                <p className="text-xs text-basalt-muted-foreground">总计</p>
                 <p className="font-medium">{data.totalSteps.toLocaleString()}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">距离</p>
+                <p className="text-xs text-basalt-muted-foreground">距离</p>
                 <p className="font-medium">
                   {data.distance ? `${data.distance.total.toFixed(1)} km` : "-"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">楼层</p>
+                <p className="text-xs text-basalt-muted-foreground">楼层</p>
                 <p className="font-medium">{data.flightsClimbed || "-"}</p>
               </div>
             </div>
@@ -261,11 +261,11 @@ export function HealthPanel({ data }: HealthPanelProps) {
 
       {/* Water Card */}
       {data.water.length > 0 && (
-        <div className="rounded-card bg-secondary p-4 min-w-0 overflow-hidden">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Droplets className="h-4 w-4" strokeWidth={1.5} />
             饮水
-            <span className="ml-auto text-base font-semibold text-foreground font-display tracking-tight">
+            <span className="ml-auto text-base font-semibold text-basalt-foreground font-display tracking-tight">
               {(data.totalWater / 1000).toFixed(1)}L
             </span>
           </div>
@@ -275,7 +275,7 @@ export function HealthPanel({ data }: HealthPanelProps) {
                 key={i}
                 className="flex items-center justify-between text-sm"
               >
-                <span className="text-muted-foreground">{w.time}</span>
+                <span className="text-basalt-muted-foreground">{w.time}</span>
                 <span>{w.amount}ml</span>
               </div>
             ))}
@@ -285,8 +285,8 @@ export function HealthPanel({ data }: HealthPanelProps) {
 
       {/* Activity Rings Card */}
       {data.activity && (
-        <div className="rounded-card bg-secondary p-4 min-w-0 overflow-hidden">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Activity className="h-4 w-4" strokeWidth={1.5} />
             活动圆环
           </div>
@@ -302,15 +302,15 @@ export function HealthPanel({ data }: HealthPanelProps) {
               return (
                 <div className="flex h-6 w-full gap-1">
                   {/* Move bar */}
-                  <div className="flex-1 rounded-sm bg-muted overflow-hidden" title={`活动 ${Math.round(data.activity!.activeEnergy)}/${moveGoal} 千卡`}>
+                  <div className="flex-1 rounded-sm bg-basalt-muted overflow-hidden" title={`活动 ${Math.round(data.activity!.activeEnergy)}/${moveGoal} 千卡`}>
                     <div className="h-full bg-red-500" style={{ width: `${moveProgress}%` }} />
                   </div>
                   {/* Exercise bar */}
-                  <div className="flex-1 rounded-sm bg-muted overflow-hidden" title={`运动 ${data.activity!.exerciseMinutes}/${exerciseGoal} 分钟`}>
+                  <div className="flex-1 rounded-sm bg-basalt-muted overflow-hidden" title={`运动 ${data.activity!.exerciseMinutes}/${exerciseGoal} 分钟`}>
                     <div className="h-full bg-green-500" style={{ width: `${exerciseProgress}%` }} />
                   </div>
                   {/* Stand bar */}
-                  <div className="flex-1 rounded-sm bg-muted overflow-hidden" title={`站立 ${data.activity!.standHours}/${standGoal} 小时`}>
+                  <div className="flex-1 rounded-sm bg-basalt-muted overflow-hidden" title={`站立 ${data.activity!.standHours}/${standGoal} 小时`}>
                     <div className="h-full bg-cyan-500" style={{ width: `${standProgress}%` }} />
                   </div>
                 </div>
@@ -320,19 +320,19 @@ export function HealthPanel({ data }: HealthPanelProps) {
             {/* Stats Row */}
             <div className="grid grid-cols-3 gap-2 text-center text-sm">
               <div>
-                <p className="text-xs text-muted-foreground">活动</p>
+                <p className="text-xs text-basalt-muted-foreground">活动</p>
                 <p className="font-medium text-red-500">
                   {Math.round(data.activity.activeEnergy)} 千卡
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">运动</p>
+                <p className="text-xs text-basalt-muted-foreground">运动</p>
                 <p className="font-medium text-green-500">
                   {data.activity.exerciseMinutes} 分钟
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">站立</p>
+                <p className="text-xs text-basalt-muted-foreground">站立</p>
                 <p className="font-medium text-cyan-500">
                   {data.activity.standHours} 小时
                 </p>

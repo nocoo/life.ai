@@ -1,9 +1,9 @@
 "use client";
 
-import { StatCard, StatGrid } from "@/components/charts/stat-card";
+import { StatCard, StatGrid } from "@nocoo/basalt/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
-import { HeatmapCalendar, heatmapColorScales } from "@/components/charts/heatmap-calendar";
+import { HeatmapCalendar, heatmapColorScales } from "@nocoo/basalt/charts/heatmap-calendar";
 import { chart } from "@/lib/palette";
 import type { YearHealthData } from "@/models/year-view";
 import {
@@ -131,8 +131,8 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
 
       {/* Steps Heatmap */}
       {steps && steps.dailySteps.length > 0 && (
-        <div className="rounded-card bg-secondary p-4">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Footprints className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             年度步数分布
           </div>
@@ -149,8 +149,8 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
       <div className="grid gap-4 md:grid-cols-2">
         {/* Monthly Steps Chart */}
         {steps && steps.monthlySteps.length > 0 && (
-          <div className="rounded-card bg-secondary p-4">
-            <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+            <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Footprints className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               月度步数趋势
             </div>
@@ -165,8 +165,8 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
 
         {/* Monthly Heart Rate Chart */}
         {heartRate && heartRate.monthlyAvg.length > 0 && (
-          <div className="rounded-card bg-secondary p-4">
-            <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+            <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Heart className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               月度心率趋势
             </div>
@@ -192,8 +192,8 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
 
       {/* Activity Heatmap */}
       {activity && activity.dailyActiveEnergy.length > 0 && (
-        <div className="rounded-card bg-secondary p-4">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Flame className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             年度活动能量分布
           </div>
@@ -211,8 +211,8 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
       <div className="grid gap-4 md:grid-cols-2">
         {/* Monthly Active Energy Chart */}
         {activity && activity.monthlyActiveEnergy.length > 0 && (
-          <div className="rounded-card bg-secondary p-4">
-            <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+            <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Flame className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               月度活动能量
             </div>
@@ -227,8 +227,8 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
 
         {/* Monthly Exercise Minutes Chart */}
         {activity && activity.monthlyExerciseMinutes.length > 0 && (
-          <div className="rounded-card bg-secondary p-4">
-            <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+            <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Timer className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               月度运动时长
             </div>
@@ -244,8 +244,8 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
 
       {/* Workout Breakdown */}
       {workouts && workouts.byType.length > 0 && (
-        <div className="rounded-card bg-secondary p-4">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Dumbbell className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             年度锻炼类型分布
           </div>
@@ -264,8 +264,8 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
 
       {/* Monthly Workout Trends */}
       {workouts && workouts.monthlyWorkouts.length > 0 && (
-        <div className="rounded-card bg-secondary p-4">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Dumbbell className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             月度锻炼次数
           </div>

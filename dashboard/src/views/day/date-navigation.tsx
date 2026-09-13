@@ -3,7 +3,7 @@
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@nocoo/basalt";
 
 export interface DateNavigationProps {
   selectedDate: Date;
@@ -55,7 +55,7 @@ export function DateNavigation({
       >
         <span>{format(selectedDate, "yyyy年M月d日 EEEE", { locale: zhCN })}</span>
         {onToggleCalendar && (
-          <CalendarIcon className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+          <CalendarIcon className="h-4 w-4 text-basalt-muted-foreground" strokeWidth={1.5} />
         )}
       </Button>
 

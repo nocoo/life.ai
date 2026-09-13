@@ -9,7 +9,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@nocoo/basalt";
 
 export interface EnhancedTimelineProps {
   slots: TimeSlot[];
@@ -150,7 +150,7 @@ function SunCurveIndicator({ hour, minute, date, latitude, longitude }: SunCurve
     >
       {/* Horizon reference line (dashed vertical line at 50%) */}
       <div 
-        className="absolute top-0 bottom-0 border-l border-dashed border-muted-foreground/30"
+        className="absolute top-0 bottom-0 border-l border-dashed border-basalt-muted-foreground/30"
         style={{ left: "50%" }}
       />
       
@@ -255,7 +255,7 @@ function TimeSlotRow({ slot, date, latitude, longitude }: TimeSlotRowProps) {
     <div
       className={cn(
         "flex items-center py-1 min-h-[32px]",
-        isOddHour && "bg-muted/50"
+        isOddHour && "bg-basalt-muted/50"
       )}
     >
       {/* Sun/Moon curve indicator */}
@@ -277,7 +277,7 @@ function TimeSlotRow({ slot, date, latitude, longitude }: TimeSlotRowProps) {
       {/* Center - time label with border */}
       <div className="w-14 flex-shrink-0 relative">
         {/* Vertical line */}
-        <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-border" />
+        <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-basalt-border" />
 
         {/* Time label */}
         <div className="relative flex justify-center">
@@ -285,10 +285,10 @@ function TimeSlotRow({ slot, date, latitude, longitude }: TimeSlotRowProps) {
             className={cn(
               "text-xs px-1",
               // Use transparent background to let row bg show through
-              isOddHour ? "bg-muted/50" : "bg-background",
+              isOddHour ? "bg-basalt-muted/50" : "bg-basalt-background",
               slot.hasData
-                ? "text-foreground font-medium"
-                : "text-muted-foreground"
+                ? "text-basalt-foreground font-medium"
+                : "text-basalt-muted-foreground"
             )}
           >
             {slot.slot}
@@ -348,7 +348,7 @@ export function EnhancedTimeline({
 
         {/* Empty state */}
         {slots.length === 0 && (
-          <div className="flex items-center justify-center py-8 text-muted-foreground">
+          <div className="flex items-center justify-center py-8 text-basalt-muted-foreground">
             暂无数据
           </div>
         )}

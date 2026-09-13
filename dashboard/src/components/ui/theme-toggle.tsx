@@ -23,7 +23,7 @@ export function ThemeToggle() {
     return (
       <button
         disabled
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground"
+        className="flex h-8 w-8 items-center justify-center rounded-lg text-basalt-muted-foreground"
       >
         <Sun className="h-4 w-4" strokeWidth={1.5} />
       </button>
@@ -33,7 +33,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={cycleTheme}
-      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+      className="flex h-8 w-8 items-center justify-center rounded-lg text-basalt-muted-foreground hover:text-basalt-foreground hover:bg-basalt-accent transition-colors"
       aria-label={`Toggle theme, currently ${theme}`}
     >
       {resolvedTheme === "dark" ? (

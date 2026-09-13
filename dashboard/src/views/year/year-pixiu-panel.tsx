@@ -1,10 +1,10 @@
 "use client";
 
-import { StatCard, StatGrid } from "@/components/charts/stat-card";
+import { StatCard, StatGrid } from "@nocoo/basalt/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
 import { DonutChart } from "@/components/charts/pie-chart";
-import { HeatmapCalendar, heatmapColorScales } from "@/components/charts/heatmap-calendar";
+import { HeatmapCalendar, heatmapColorScales } from "@nocoo/basalt/charts/heatmap-calendar";
 import type { YearPixiuData } from "@/models/year-view";
 import {
   TrendingUp,
@@ -81,9 +81,9 @@ const aggregateCategoryData = (
 };
 
 const COLORS = {
-  income: "hsl(var(--chart-5))",
-  expense: "hsl(var(--destructive))",
-  net: "hsl(var(--chart-1))",
+  income: "hsl(var(--basalt-chart-5))",
+  expense: "hsl(var(--basalt-destructive))",
+  net: "hsl(var(--basalt-chart-1))",
 };
 
 export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
@@ -160,8 +160,8 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
 
       {/* B. Trends - Monthly Income/Expense/Net */}
       {(monthlyIncome.length > 0 || monthlyExpense.length > 0) && (
-        <div className="rounded-card bg-secondary p-4">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Calendar className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             月度收支趋势
           </div>
@@ -186,8 +186,8 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
 
       {/* C. Breakdown - Category Distribution (symmetric: left=income, right=expense) */}
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-card bg-secondary p-4">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowUpCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             收入 | 分类占比
           </div>
@@ -199,13 +199,13 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
                 valueFormatter={formatCurrencyCompact}
               />
             ) : (
-              <div className="h-[180px] flex items-center justify-center text-sm text-muted-foreground">
+              <div className="h-[180px] flex items-center justify-center text-sm text-basalt-muted-foreground">
                 暂无收入数据
               </div>
             )}
         </div>
-        <div className="rounded-card bg-secondary p-4">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowDownCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             支出 | 分类占比
           </div>
@@ -217,7 +217,7 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
                 valueFormatter={formatCurrencyCompact}
               />
             ) : (
-              <div className="h-[180px] flex items-center justify-center text-sm text-muted-foreground">
+              <div className="h-[180px] flex items-center justify-center text-sm text-basalt-muted-foreground">
                 暂无支出数据
               </div>
             )}
@@ -226,8 +226,8 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
 
       {/* C. Breakdown - Account Distribution (symmetric: left=income, right=expense) */}
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-card bg-secondary p-4">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowUpCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             收入 | 按账户
           </div>
@@ -240,13 +240,13 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
                 valueFormatter={formatCurrencyCompact}
               />
             ) : (
-              <div className="h-[180px] flex items-center justify-center text-sm text-muted-foreground">
+              <div className="h-[180px] flex items-center justify-center text-sm text-basalt-muted-foreground">
                 暂无收入数据
               </div>
             )}
         </div>
-        <div className="rounded-card bg-secondary p-4">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowDownCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             支出 | 按账户
           </div>
@@ -259,7 +259,7 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
                 valueFormatter={formatCurrencyCompact}
               />
             ) : (
-              <div className="h-[180px] flex items-center justify-center text-sm text-muted-foreground">
+              <div className="h-[180px] flex items-center justify-center text-sm text-basalt-muted-foreground">
                 暂无支出数据
               </div>
             )}
@@ -268,8 +268,8 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
 
       {/* D. Details - Expense Heatmap */}
       {dailyExpense.length > 0 && (
-        <div className="rounded-card bg-secondary p-4">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <TrendingDown className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             支出日历
           </div>
@@ -285,8 +285,8 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
 
       {/* D. Details - Top Expense Months */}
       {topExpenseMonths.length > 0 && (
-        <div className="rounded-card bg-secondary p-4">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <TrendingDown className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             支出最高月份
           </div>

@@ -3,8 +3,8 @@
 import { useMemo, useEffect, useState } from "react";
 import { MapPin, Dumbbell, Wallet, Route } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { Badge } from "@nocoo/basalt";
+import { Separator } from "@nocoo/basalt";
 import {
   Map as LeafletMap,
   MapTileLayer,
@@ -134,7 +134,7 @@ export function TrackMapCard({ trackPoints, className }: { trackPoints: TrackPoi
   }
 
   return (
-    <Card className={`min-w-0 overflow-hidden rounded-card border-0 bg-secondary shadow-none p-0 ${className ?? ""}`}>
+    <Card className={`min-w-0 overflow-hidden rounded-basalt-lg border-0 bg-basalt-secondary shadow-none p-0 ${className ?? ""}`}>
       {/* 16:9 aspect ratio container for better space utilization */}
       <div className="aspect-video w-full">
         {mapProvider === "google" ? (
@@ -174,8 +174,8 @@ export function ActivityPanel({
     <>
       {/* Workouts Card */}
       {workouts.length > 0 && (
-        <div className="rounded-card bg-secondary p-4 min-w-0 overflow-hidden">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Dumbbell className="h-4 w-4" strokeWidth={1.5} />
             运动
           </div>
@@ -192,14 +192,14 @@ export function ActivityPanel({
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-center text-sm">
                     <div>
-                      <p className="text-xs text-muted-foreground">时长</p>
+                      <p className="text-xs text-basalt-muted-foreground">时长</p>
                       <p className="font-medium">
                         {formatDuration(workout.duration)}
                       </p>
                     </div>
                     {workout.distance && (
                       <div>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-basalt-muted-foreground">
                           距离
                         </p>
                         <p className="font-medium">
@@ -209,7 +209,7 @@ export function ActivityPanel({
                     )}
                     {workout.calories && (
                       <div>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-basalt-muted-foreground">
                           消耗
                         </p>
                         <p className="font-medium">{workout.calories} 千卡</p>
@@ -225,8 +225,8 @@ export function ActivityPanel({
 
       {/* Locations Card */}
       {footprint.locations.length > 0 && (
-        <div className="rounded-card bg-secondary p-4 min-w-0 overflow-hidden">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <MapPin className="h-4 w-4" strokeWidth={1.5} />
             地点
           </div>
@@ -242,7 +242,7 @@ export function ActivityPanel({
                     <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0" />
                     <span className="truncate">{loc.name}</span>
                   </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
+                  <span className="text-xs text-basalt-muted-foreground whitespace-nowrap flex-shrink-0">
                     {loc.startTime} - {loc.endTime}
                   </span>
                 </div>
@@ -253,11 +253,11 @@ export function ActivityPanel({
 
       {/* Track Summary Card */}
       {footprint.summary && (
-        <div className="rounded-card bg-secondary p-4 min-w-0 overflow-hidden">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Route className="h-4 w-4" strokeWidth={1.5} />
             移动
-            <span className="ml-auto text-base font-semibold text-foreground font-display tracking-tight">
+            <span className="ml-auto text-base font-semibold text-basalt-foreground font-display tracking-tight">
               {formatDistance(footprint.summary.totalDistance)}
             </span>
           </div>
@@ -281,7 +281,7 @@ export function ActivityPanel({
                 // No speed data, show placeholder
                 return (
                   <div className="flex h-6 w-full items-end gap-px">
-                    <div className="flex-1 rounded-sm bg-muted h-full" />
+                    <div className="flex-1 rounded-sm bg-basalt-muted h-full" />
                   </div>
                 );
               }
@@ -308,7 +308,7 @@ export function ActivityPanel({
                     return (
                       <div
                         key={i}
-                        className={`flex-1 rounded-sm ${bar.avgSpeed > 0 ? "bg-cyan-500" : "bg-muted"}`}
+                        className={`flex-1 rounded-sm ${bar.avgSpeed > 0 ? "bg-cyan-500" : "bg-basalt-muted"}`}
                         style={{ height: bar.avgSpeed > 0 ? `${Math.max(height, 10)}%` : "100%" }}
                         title={bar.avgSpeed > 0 ? `${bar.hour}:00 - ${(bar.avgSpeed * 3.6).toFixed(1)} km/h` : `${bar.hour}:00 - 无数据`}
                       />
@@ -321,15 +321,15 @@ export function ActivityPanel({
             {/* Stats Row */}
             <div className="grid grid-cols-3 gap-2 text-center text-sm">
               <div>
-                <p className="text-xs text-muted-foreground">距离</p>
+                <p className="text-xs text-basalt-muted-foreground">距离</p>
                 <p className="font-medium">{formatDistance(footprint.summary.totalDistance)}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">速度</p>
+                <p className="text-xs text-basalt-muted-foreground">速度</p>
                 <p className="font-medium">{(footprint.summary.avgSpeed * 3.6).toFixed(1)} km/h</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">轨迹点</p>
+                <p className="text-xs text-basalt-muted-foreground">轨迹点</p>
                 <p className="font-medium">{footprint.summary.pointCount.toLocaleString()}</p>
               </div>
             </div>
@@ -339,11 +339,11 @@ export function ActivityPanel({
 
       {/* Transactions Card */}
       {pixiu.transactions.length > 0 && (
-        <div className="rounded-card bg-secondary p-4 min-w-0 overflow-hidden">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Wallet className="h-4 w-4" strokeWidth={1.5} />
             交易
-            <span className="ml-auto text-base font-semibold text-foreground font-display tracking-tight">
+            <span className="ml-auto text-base font-semibold text-basalt-foreground font-display tracking-tight">
               ¥{pixiu.summary?.expense.toFixed(0) ?? 0}
             </span>
           </div>
@@ -356,7 +356,7 @@ export function ActivityPanel({
               if (categories.length === 0 || totalExpense === 0) {
                 return (
                   <div className="flex h-6 w-full items-end gap-px">
-                    <div className="flex-1 rounded-sm bg-muted h-full" />
+                    <div className="flex-1 rounded-sm bg-basalt-muted h-full" />
                   </div>
                 );
               }
@@ -391,19 +391,19 @@ export function ActivityPanel({
             {/* Stats Row */}
             <div className="grid grid-cols-3 gap-2 text-center text-sm">
               <div>
-                <p className="text-xs text-muted-foreground">支出</p>
+                <p className="text-xs text-basalt-muted-foreground">支出</p>
                 <p className="font-medium text-green-500">
                   ¥{pixiu.summary?.expense.toFixed(0) ?? 0}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">收入</p>
+                <p className="text-xs text-basalt-muted-foreground">收入</p>
                 <p className="font-medium text-red-500">
                   ¥{pixiu.summary?.income.toFixed(0) ?? 0}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">笔数</p>
+                <p className="text-xs text-basalt-muted-foreground">笔数</p>
                 <p className="font-medium">{pixiu.transactions.length}</p>
               </div>
             </div>
@@ -419,7 +419,7 @@ export function ActivityPanel({
                   <div className="flex-1 min-w-0">
                     <span className="truncate">{tx.categoryL2}</span>
                     {tx.note && (
-                      <p className="text-xs text-muted-foreground truncate">
+                      <p className="text-xs text-basalt-muted-foreground truncate">
                         {tx.note}
                       </p>
                     )}

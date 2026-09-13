@@ -1,6 +1,6 @@
 "use client";
 
-import { StatCard, StatGrid } from "@/components/charts/stat-card";
+import { StatCard, StatGrid } from "@nocoo/basalt/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
 import { DonutChart } from "@/components/charts/pie-chart";
@@ -106,8 +106,8 @@ export function MonthFootprintPanel({ data }: MonthFootprintPanelProps) {
       <div className="grid gap-4 md:grid-cols-2">
         {/* Daily Distance Chart */}
         {dailyDistance.length > 0 && (
-          <div className="rounded-card bg-secondary p-4">
-            <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+            <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Route className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               每日距离
             </div>
@@ -124,8 +124,8 @@ export function MonthFootprintPanel({ data }: MonthFootprintPanelProps) {
 
         {/* Transport Mode Breakdown */}
         {byTransportMode.length > 0 && (
-          <div className="rounded-card bg-secondary p-4">
-            <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+            <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Car className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               出行方式分布
             </div>
@@ -144,24 +144,24 @@ export function MonthFootprintPanel({ data }: MonthFootprintPanelProps) {
 
       {/* Transport Mode Details */}
       {byTransportMode.length > 0 && (
-        <div className="rounded-card bg-secondary p-4">
-          <div className="text-sm font-normal text-muted-foreground mb-3">出行方式详情</div>
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <div className="text-sm font-normal text-basalt-muted-foreground mb-3">出行方式详情</div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {byTransportMode.map((mode) => {
               const Icon = getTransportIcon(mode.mode);
               return (
                 <div
                   key={mode.mode}
-                  className="flex items-center gap-2.5 rounded-widget bg-secondary p-2.5"
+                  className="flex items-center gap-2.5 rounded-basalt-lg bg-basalt-secondary p-2.5"
                 >
-                  <div className="rounded-md bg-muted p-1.5">
-                    <Icon className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} aria-hidden="true" />
+                  <div className="rounded-md bg-basalt-muted p-1.5">
+                    <Icon className="h-4 w-4 text-basalt-muted-foreground" strokeWidth={1.5} aria-hidden="true" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium truncate">
                       {mode.modeName}
                     </p>
-                    <p className="text-[10px] text-muted-foreground tabular-nums">
+                    <p className="text-[10px] text-basalt-muted-foreground tabular-nums">
                       {formatDistance(mode.totalDistance)} · {mode.percentage.toFixed(0)}%
                     </p>
                   </div>
@@ -174,8 +174,8 @@ export function MonthFootprintPanel({ data }: MonthFootprintPanelProps) {
 
       {/* Distance by Transport Mode Bar Chart */}
       {byTransportMode.length > 0 && (
-        <div className="rounded-card bg-secondary p-4">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <BarChart3 className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             各出行方式距离
           </div>

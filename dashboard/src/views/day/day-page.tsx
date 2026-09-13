@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SkeletonLine as Skeleton } from "@nocoo/basalt/components/skeleton-line";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@nocoo/basalt";
 import { useDayStore } from "@/viewmodels/day-store";
 import { DateNavigation } from "./date-navigation";
 import { DayCalendar } from "./day-calendar";
@@ -22,7 +22,7 @@ function LoadingSkeleton() {
       {/* Two-column layout skeleton: Timeline primary, Cards sidebar */}
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         {/* Timeline Card skeleton */}
-        <div className="rounded-card bg-secondary p-4">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
           <Skeleton className="h-4 w-24 mb-3" />
           <div className="space-y-2">
             {Array.from({ length: 12 }).map((_, i) => (
@@ -33,21 +33,21 @@ function LoadingSkeleton() {
         {/* Cards sidebar skeleton */}
         <div className="grid gap-3 auto-rows-min">
           {/* DayInfoCard skeleton */}
-          <div className="rounded-card bg-secondary p-4">
+          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
             <Skeleton className="h-5 w-32" />
             <Skeleton className="h-4 w-48 mt-1" />
           </div>
           {/* HealthPanel skeletons */}
-          <div className="rounded-card bg-secondary p-4">
+          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
             <Skeleton className="h-4 w-20 mb-3" />
             <Skeleton className="h-14 w-full" />
           </div>
-          <div className="rounded-card bg-secondary p-4">
+          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
             <Skeleton className="h-4 w-20 mb-3" />
             <Skeleton className="h-20 w-full" />
           </div>
           {/* ActivityPanel skeleton */}
-          <div className="rounded-card bg-secondary p-4">
+          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
             <Skeleton className="h-4 w-20 mb-3" />
             <Skeleton className="h-16 w-full" />
           </div>
@@ -61,8 +61,8 @@ function ErrorDisplay({ message }: { message: string }) {
   return (
     <div className="flex h-[400px] items-center justify-center">
       <div className="text-center">
-        <p className="text-lg font-medium text-destructive">错误</p>
-        <p className="text-sm text-muted-foreground">{message}</p>
+        <p className="text-lg font-medium text-basalt-destructive">错误</p>
+        <p className="text-sm text-basalt-muted-foreground">{message}</p>
       </div>
     </div>
   );
@@ -159,8 +159,8 @@ export function DayPage() {
                   />
 
                   {/* Enhanced Timeline in a Card */}
-                  <div className="rounded-card bg-secondary p-4 min-w-0 overflow-hidden">
-                    <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-4 min-w-0 overflow-hidden">
+                    <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
                       <Clock className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
                       时间线
                     </div>
@@ -202,7 +202,7 @@ export function DayPage() {
                 {visitedTabs.has("health") ? (
                   <RawHealthData data={data.health} />
                 ) : (
-                  <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+                  <div className="h-[400px] flex items-center justify-center text-basalt-muted-foreground">
                     点击标签页加载数据…
                   </div>
                 )}
@@ -215,7 +215,7 @@ export function DayPage() {
                 {visitedTabs.has("footprint") ? (
                   <RawFootprintData data={data.footprint} />
                 ) : (
-                  <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+                  <div className="h-[400px] flex items-center justify-center text-basalt-muted-foreground">
                     点击标签页加载数据…
                   </div>
                 )}
@@ -228,7 +228,7 @@ export function DayPage() {
                 {visitedTabs.has("pixiu") ? (
                   <RawPixiuData data={data.pixiu} />
                 ) : (
-                  <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+                  <div className="h-[400px] flex items-center justify-center text-basalt-muted-foreground">
                     点击标签页加载数据…
                   </div>
                 )}

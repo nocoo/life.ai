@@ -1,7 +1,7 @@
 "use client";
 
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@nocoo/basalt";
+import { Badge } from "@nocoo/basalt";
 import {
   Table,
   TableBody,
@@ -9,7 +9,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@nocoo/basalt/components/table";
 import type { DayPixiuData } from "@/models/pixiu";
 
 export interface RawPixiuDataProps {
@@ -24,8 +24,8 @@ const formatAmount = (amount: number, isIncome: boolean): string => {
 
 export function RawPixiuData({ data }: RawPixiuDataProps) {
   return (
-    <div className="rounded-card bg-secondary p-4">
-      <div className="text-sm font-normal text-muted-foreground mb-3">
+    <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+      <div className="text-sm font-normal text-basalt-muted-foreground mb-3">
         貔貅记账原始数据
       </div>
       <ScrollArea className="h-[calc(100vh-200px)]">
@@ -33,22 +33,22 @@ export function RawPixiuData({ data }: RawPixiuDataProps) {
             {/* Summary Section */}
             {data.summary && (
               <div>
-                <h3 className="text-sm font-normal text-muted-foreground mb-2">日收支概览</h3>
+                <h3 className="text-sm font-normal text-basalt-muted-foreground mb-2">日收支概览</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="rounded-widget bg-secondary p-3">
-                    <div className="text-xs text-muted-foreground">收入</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3">
+                    <div className="text-xs text-basalt-muted-foreground">收入</div>
                     <div className="text-xl font-semibold font-display tracking-tight text-green-600">
                       +¥{data.summary.income.toFixed(2)}
                     </div>
                   </div>
-                  <div className="rounded-widget bg-secondary p-3">
-                    <div className="text-xs text-muted-foreground">支出</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3">
+                    <div className="text-xs text-basalt-muted-foreground">支出</div>
                     <div className="text-xl font-semibold font-display tracking-tight text-red-500">
                       -¥{data.summary.expense.toFixed(2)}
                     </div>
                   </div>
-                  <div className="rounded-widget bg-secondary p-3">
-                    <div className="text-xs text-muted-foreground">净收入</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3">
+                    <div className="text-xs text-basalt-muted-foreground">净收入</div>
                     <div
                       className={`text-xl font-semibold font-display tracking-tight ${
                         data.summary.net >= 0 ? "text-green-600" : "text-red-500"
@@ -58,8 +58,8 @@ export function RawPixiuData({ data }: RawPixiuDataProps) {
                       {data.summary.net.toFixed(2)}
                     </div>
                   </div>
-                  <div className="rounded-widget bg-secondary p-3">
-                    <div className="text-xs text-muted-foreground">交易笔数</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3">
+                    <div className="text-xs text-basalt-muted-foreground">交易笔数</div>
                     <div className="text-xl font-semibold font-display tracking-tight">
                       {data.summary.transactionCount}
                     </div>
@@ -71,7 +71,7 @@ export function RawPixiuData({ data }: RawPixiuDataProps) {
             {/* Category Breakdown - Expense */}
             {data.expenseByCategory.length > 0 && (
               <div>
-                <h3 className="text-sm font-normal text-muted-foreground mb-2">支出分类</h3>
+                <h3 className="text-sm font-normal text-basalt-muted-foreground mb-2">支出分类</h3>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -90,10 +90,10 @@ export function RawPixiuData({ data }: RawPixiuDataProps) {
                         <TableCell className="text-right font-medium text-red-500">
                           -¥{cat.amount.toFixed(2)}
                         </TableCell>
-                        <TableCell className="text-right text-muted-foreground">
+                        <TableCell className="text-right text-basalt-muted-foreground">
                           {cat.count}
                         </TableCell>
-                        <TableCell className="text-right text-muted-foreground">
+                        <TableCell className="text-right text-basalt-muted-foreground">
                           {cat.percentage.toFixed(1)}%
                         </TableCell>
                       </TableRow>
@@ -106,7 +106,7 @@ export function RawPixiuData({ data }: RawPixiuDataProps) {
             {/* Category Breakdown - Income */}
             {data.incomeByCategory.length > 0 && (
               <div>
-                <h3 className="text-sm font-normal text-muted-foreground mb-2">收入分类</h3>
+                <h3 className="text-sm font-normal text-basalt-muted-foreground mb-2">收入分类</h3>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -125,10 +125,10 @@ export function RawPixiuData({ data }: RawPixiuDataProps) {
                         <TableCell className="text-right font-medium text-green-600">
                           +¥{cat.amount.toFixed(2)}
                         </TableCell>
-                        <TableCell className="text-right text-muted-foreground">
+                        <TableCell className="text-right text-basalt-muted-foreground">
                           {cat.count}
                         </TableCell>
-                        <TableCell className="text-right text-muted-foreground">
+                        <TableCell className="text-right text-basalt-muted-foreground">
                           {cat.percentage.toFixed(1)}%
                         </TableCell>
                       </TableRow>
@@ -141,7 +141,7 @@ export function RawPixiuData({ data }: RawPixiuDataProps) {
             {/* Transactions Section */}
             {data.transactions.length > 0 && (
               <div>
-                <h3 className="text-sm font-normal text-muted-foreground mb-2">
+                <h3 className="text-sm font-normal text-basalt-muted-foreground mb-2">
                   交易明细 ({data.transactions.length})
                 </h3>
                 <Table>
@@ -156,13 +156,13 @@ export function RawPixiuData({ data }: RawPixiuDataProps) {
                   <TableBody>
                     {data.transactions.map((tx) => (
                       <TableRow key={tx.id}>
-                        <TableCell className="text-muted-foreground">
+                        <TableCell className="text-basalt-muted-foreground">
                           {tx.time}
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col">
                             <span className="text-sm">{tx.categoryL2}</span>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-xs text-basalt-muted-foreground">
                               {tx.categoryL1}
                             </span>
                           </div>
@@ -186,7 +186,7 @@ export function RawPixiuData({ data }: RawPixiuDataProps) {
 
             {/* Empty State */}
             {!data.summary && data.transactions.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-basalt-muted-foreground">
                 当天没有交易记录
               </div>
             )}

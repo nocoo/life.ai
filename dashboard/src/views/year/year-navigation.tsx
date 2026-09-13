@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@nocoo/basalt";
 
 export interface YearNavigationProps {
   /** Selected year */
@@ -58,7 +58,7 @@ export function YearNavigation({
       >
         <span>{selectedYear}年</span>
         {onToggleCalendar && (
-          <CalendarIcon className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+          <CalendarIcon className="h-4 w-4 text-basalt-muted-foreground" strokeWidth={1.5} />
         )}
       </Button>
 

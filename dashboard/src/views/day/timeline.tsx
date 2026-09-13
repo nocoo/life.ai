@@ -36,11 +36,11 @@ export function Timeline({ events, className }: TimelineProps) {
             key={hour}
             className={cn(
               "flex items-start border-l-2 py-2 pl-4 relative",
-              hasEvents ? "border-primary" : "border-border"
+              hasEvents ? "border-basalt-primary" : "border-basalt-border"
             )}
           >
             {/* Hour label */}
-            <div className="absolute left-0 -translate-x-full pr-2 text-xs text-muted-foreground w-12 text-right">
+            <div className="absolute left-0 -translate-x-full pr-2 text-xs text-basalt-muted-foreground w-12 text-right">
               {hour.toString().padStart(2, "0")}:00
             </div>
 
@@ -48,7 +48,7 @@ export function Timeline({ events, className }: TimelineProps) {
             <div
               className={cn(
                 "absolute -left-[5px] top-2 h-2 w-2 rounded-full",
-                hasEvents ? "bg-primary" : "bg-border"
+                hasEvents ? "bg-basalt-primary" : "bg-basalt-border"
               )}
             />
 
@@ -59,7 +59,7 @@ export function Timeline({ events, className }: TimelineProps) {
                   key={event.id}
                   className={cn(
                     "flex items-center gap-2 rounded-md px-2 py-1 text-xs",
-                    event.color ? `${event.color} text-white` : "bg-muted"
+                    event.color ? `${event.color} text-white` : "bg-basalt-muted"
                   )}
                 >
                   <span className="font-medium">{event.time}</span>

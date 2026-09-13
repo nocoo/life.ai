@@ -124,9 +124,9 @@ export function BarChart({
               if (!active || !payload?.length) return null;
               const item = payload[0];
               return (
-                <div className="rounded-widget border border-border bg-card p-2 shadow-sm">
-                  <div className="text-sm font-medium text-foreground">{item.payload.name}</div>
-                  <div className="text-sm text-muted-foreground">
+                <div className="rounded-basalt-lg border border-basalt-border bg-basalt-card p-2 shadow-sm">
+                  <div className="text-sm font-medium text-basalt-foreground">{item.payload.name}</div>
+                  <div className="text-sm text-basalt-muted-foreground">
                     {valueFormatter(item.value as number)}
                   </div>
                 </div>

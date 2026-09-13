@@ -115,7 +115,7 @@ export function GoogleMap({ center, zoom, polyline, bounds, className }: GoogleM
 
   if (!GOOGLE_MAPS_API_KEY) {
     return (
-      <div className={`flex items-center justify-center bg-muted text-muted-foreground text-sm ${className}`}>
+      <div className={`flex items-center justify-center bg-basalt-muted text-basalt-muted-foreground text-sm ${className}`}>
         Google Maps API key not configured
       </div>
     );
@@ -125,7 +125,7 @@ export function GoogleMap({ center, zoom, polyline, bounds, className }: GoogleM
     <div className={`relative ${className}`}>
       <div ref={mapRef} className="h-full w-full" />
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted text-muted-foreground text-sm">
+        <div className="absolute inset-0 flex items-center justify-center bg-basalt-muted text-basalt-muted-foreground text-sm">
           Loading map...
         </div>
       )}

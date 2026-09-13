@@ -3,7 +3,7 @@
 import { format, parse } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@nocoo/basalt";
 
 export interface MonthNavigationProps {
   /** Selected month in YYYY-MM format */
@@ -66,7 +66,7 @@ export function MonthNavigation({
       >
         <span>{formatMonthDisplay(selectedMonth)}</span>
         {onToggleCalendar && (
-          <CalendarIcon className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+          <CalendarIcon className="h-4 w-4 text-basalt-muted-foreground" strokeWidth={1.5} />
         )}
       </Button>
 

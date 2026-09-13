@@ -2,14 +2,14 @@
 
 import { useEffect } from "react";
 
-import { Skeleton } from "@/components/ui/skeleton";
+import { SkeletonLine as Skeleton } from "@nocoo/basalt/components/skeleton-line";
 
 import { useYearStore } from "@/viewmodels/year-store";
 import { YearNavigation } from "./year-navigation";
 import { YearHealthPanel } from "./year-health-panel";
 import { YearFootprintPanel } from "./year-footprint-panel";
 import { YearPixiuPanel } from "./year-pixiu-panel";
-import { StatCard, StatGrid } from "@/components/charts/stat-card";
+import { StatCard, StatGrid } from "@nocoo/basalt/charts/stat-card";
 import {
   Footprints,
   Heart,
@@ -26,21 +26,21 @@ function LoadingSkeleton() {
     <div className="space-y-4">
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="rounded-card bg-secondary p-4">
+          <div key={i} className="rounded-basalt-lg bg-basalt-secondary p-4">
             <Skeleton className="h-3 w-20 mb-1.5" />
             <Skeleton className="h-6 w-28" />
           </div>
         ))}
       </div>
 
-      <div className="rounded-card bg-secondary p-4">
+      <div className="rounded-basalt-lg bg-basalt-secondary p-4">
         <Skeleton className="h-4 w-28 mb-3" />
         <Skeleton className="h-28 w-full" />
       </div>
 
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="rounded-card bg-secondary p-4">
+          <div key={i} className="rounded-basalt-lg bg-basalt-secondary p-4">
             <Skeleton className="h-4 w-28 mb-3" />
             <Skeleton className="h-40 w-full" />
           </div>
@@ -54,8 +54,8 @@ function ErrorDisplay({ message }: { message: string }) {
   return (
     <div className="flex h-[400px] items-center justify-center">
       <div className="text-center">
-        <p className="text-lg font-medium text-destructive">错误</p>
-        <p className="text-sm text-muted-foreground">{message}</p>
+        <p className="text-lg font-medium text-basalt-destructive">错误</p>
+        <p className="text-sm text-basalt-muted-foreground">{message}</p>
       </div>
     </div>
   );
@@ -114,7 +114,7 @@ function YearContent() {
     <div className="space-y-6">
       {/* Section 1: Overview Stats */}
       <section>
-        <h2 className="text-sm font-normal text-muted-foreground mb-2">年度总览</h2>
+        <h2 className="text-sm font-normal text-basalt-muted-foreground mb-2">年度总览</h2>
         <StatGrid columns={4}>
           <StatCard
             title="总步数"
@@ -173,21 +173,21 @@ function YearContent() {
 
       {/* Section 2: Health Data */}
       <section>
-        <h2 className="text-sm font-normal text-muted-foreground mb-2">健康数据</h2>
+        <h2 className="text-sm font-normal text-basalt-muted-foreground mb-2">健康数据</h2>
         <YearHealthPanel data={health} year={selectedYear} />
       </section>
 
       {/* Section 3: Footprint Data */}
       {(footprint.dailyDistance.length > 0 || footprint.byTransportMode.length > 0) && (
         <section>
-          <h2 className="text-sm font-normal text-muted-foreground mb-2">轨迹数据</h2>
+          <h2 className="text-sm font-normal text-basalt-muted-foreground mb-2">轨迹数据</h2>
           <YearFootprintPanel data={footprint} year={selectedYear} />
         </section>
       )}
 
       {/* Section 4: Finance Data */}
       <section>
-        <h2 className="text-sm font-normal text-muted-foreground mb-2">财务数据</h2>
+        <h2 className="text-sm font-normal text-basalt-muted-foreground mb-2">财务数据</h2>
         <YearPixiuPanel data={pixiu} year={selectedYear} />
       </section>
     </div>

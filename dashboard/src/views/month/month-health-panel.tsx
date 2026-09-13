@@ -1,6 +1,6 @@
 "use client";
 
-import { StatCard, StatGrid } from "@/components/charts/stat-card";
+import { StatCard, StatGrid } from "@nocoo/basalt/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
 import { chart } from "@/lib/palette";
@@ -113,8 +113,8 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
       <div className="grid gap-4 md:grid-cols-2">
         {/* Daily Steps Chart */}
         {steps && steps.dailySteps.length > 0 && (
-          <div className="rounded-card bg-secondary p-4">
-            <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+            <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Footprints className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               每日步数
             </div>
@@ -131,8 +131,8 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
 
         {/* Daily Heart Rate Chart */}
         {heartRate && heartRate.dailyAvg.length > 0 && (
-          <div className="rounded-card bg-secondary p-4">
-            <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+            <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Heart className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               每日心率
             </div>
@@ -157,8 +157,8 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
 
         {/* Daily Sleep Chart */}
         {sleep && sleep.dailyDuration.length > 0 && (
-          <div className="rounded-card bg-secondary p-4">
-            <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+            <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Moon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               每日睡眠
             </div>
@@ -173,8 +173,8 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
 
         {/* Daily Active Energy Chart */}
         {activity && activity.dailyActiveEnergy.length > 0 && (
-          <div className="rounded-card bg-secondary p-4">
-            <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+            <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Flame className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               每日活动能量
             </div>
@@ -192,8 +192,8 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
 
       {/* Workout Breakdown */}
       {workouts && workouts.byType.length > 0 && (
-        <div className="rounded-card bg-secondary p-4">
-          <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground mb-3">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Dumbbell className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             锻炼类型分布
           </div>

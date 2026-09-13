@@ -30,14 +30,14 @@ function SummaryCard({
   subtitle,
 }: SummaryCardProps) {
   return (
-    <div className="rounded-card bg-secondary p-4">
+    <div className="rounded-basalt-lg bg-basalt-secondary p-4">
       <div className="flex items-center gap-3">
-        <div className="text-muted-foreground">{icon}</div>
+        <div className="text-basalt-muted-foreground">{icon}</div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="text-lg font-semibold text-foreground font-display tracking-tight truncate">{value}</p>
+          <p className="text-xs text-basalt-muted-foreground">{label}</p>
+          <p className="text-lg font-semibold text-basalt-foreground font-display tracking-tight truncate">{value}</p>
           {subtitle && (
-            <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+            <p className="text-xs text-basalt-muted-foreground truncate">{subtitle}</p>
           )}
         </div>
       </div>

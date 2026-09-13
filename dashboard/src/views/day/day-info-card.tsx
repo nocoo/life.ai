@@ -26,10 +26,10 @@ export function DateCard({ date }: { date: Date }) {
   const weekday = formatWeekday(date);
 
   return (
-    <div className="rounded-card bg-secondary p-4">
+    <div className="rounded-basalt-lg bg-basalt-secondary p-4">
       <div className="flex items-center justify-between">
         <span className="font-medium">{dateStr}</span>
-        <span className="text-sm text-muted-foreground">{weekday}</span>
+        <span className="text-sm text-basalt-muted-foreground">{weekday}</span>
       </div>
     </div>
   );
@@ -72,10 +72,10 @@ export function WeatherCard({ date, latitude, longitude }: DayInfoCardProps) {
   }, [date, latitude, longitude]);
 
   return (
-    <div className="rounded-card bg-secondary p-4">
+    <div className="rounded-basalt-lg bg-basalt-secondary p-4">
         {/* Loading state */}
         {loading && (
-          <div className="flex items-center justify-center text-muted-foreground">
+          <div className="flex items-center justify-center text-basalt-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin mr-2" />
             <span className="text-sm">加载中...</span>
           </div>
@@ -83,7 +83,7 @@ export function WeatherCard({ date, latitude, longitude }: DayInfoCardProps) {
 
         {/* Error state */}
         {error && !loading && (
-          <div className="text-center text-sm text-muted-foreground">
+          <div className="text-center text-sm text-basalt-muted-foreground">
             {error}
           </div>
         )}
@@ -94,7 +94,7 @@ export function WeatherCard({ date, latitude, longitude }: DayInfoCardProps) {
             {/* Left: Large weather icon with description */}
             <div className="flex-shrink-0 text-center">
               <span className="text-5xl">{getWeatherIcon(weather.weatherCode)}</span>
-              <p className="text-xs text-muted-foreground">{getWeatherDescription(weather.weatherCode)}</p>
+              <p className="text-xs text-basalt-muted-foreground">{getWeatherDescription(weather.weatherCode)}</p>
             </div>
 
             {/* Right: Weather details - all right-aligned */}
@@ -105,7 +105,7 @@ export function WeatherCard({ date, latitude, longitude }: DayInfoCardProps) {
               </div>
 
               {/* Row 1: Sunrise & Sunset */}
-              <div className="flex justify-end gap-3 text-xs text-muted-foreground mt-1">
+              <div className="flex justify-end gap-3 text-xs text-basalt-muted-foreground mt-1">
                 <span className="flex items-center gap-0.5">
                   <Sunrise className="h-3 w-3" strokeWidth={1.5} />
                   {weather.sunrise}
@@ -117,7 +117,7 @@ export function WeatherCard({ date, latitude, longitude }: DayInfoCardProps) {
               </div>
 
               {/* Row 2: Precipitation & Wind */}
-              <div className="flex justify-end gap-3 text-xs text-muted-foreground mt-0.5">
+              <div className="flex justify-end gap-3 text-xs text-basalt-muted-foreground mt-0.5">
                 <span className="flex items-center gap-0.5">
                   <Droplets className="h-3 w-3" strokeWidth={1.5} />
                   {weather.precipitation.toFixed(1)}mm

@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { Button } from "@nocoo/basalt"
 import { ButtonGroup } from "@/components/ui/button-group"
 import {
     DropdownMenu,
@@ -493,7 +493,7 @@ function MapLayersControl({
                 <Button
                     type="button"
                     variant="secondary"
-                    size="icon-sm"
+                    size="icon"
                     aria-label="Select layers"
                     title="Select layers"
                     className={cn(
@@ -588,10 +588,10 @@ function MapMarker({
 
 function MapMarkerClusterGroup({
     polygonOptions = {
-        className: "fill-foreground stroke-foreground stroke-2",
+        className: "fill-basalt-foreground stroke-basalt-foreground stroke-2",
     },
     spiderLegPolylineOptions = {
-        className: "fill-foreground stroke-foreground stroke-2",
+        className: "fill-basalt-foreground stroke-basalt-foreground stroke-2",
     },
     icon,
     ...props
@@ -629,7 +629,7 @@ function MapCircle({
     return (
         <LeafletCircle
             className={cn(
-                "fill-foreground stroke-foreground stroke-2",
+                "fill-basalt-foreground stroke-basalt-foreground stroke-2",
                 className
             )}
             {...props}
@@ -644,7 +644,7 @@ function MapCircleMarker({
     return (
         <LeafletCircleMarker
             className={cn(
-                "fill-foreground stroke-foreground stroke-2",
+                "fill-basalt-foreground stroke-basalt-foreground stroke-2",
                 className
             )}
             {...props}
@@ -659,7 +659,7 @@ function MapPolyline({
     return (
         <LeafletPolyline
             className={cn(
-                "fill-foreground stroke-foreground stroke-2",
+                "fill-basalt-foreground stroke-basalt-foreground stroke-2",
                 className
             )}
             {...props}
@@ -674,7 +674,7 @@ function MapPolygon({
     return (
         <LeafletPolygon
             className={cn(
-                "fill-foreground stroke-foreground stroke-2",
+                "fill-basalt-foreground stroke-basalt-foreground stroke-2",
                 className
             )}
             {...props}
@@ -689,7 +689,7 @@ function MapRectangle({
     return (
         <LeafletRectangle
             className={cn(
-                "fill-foreground stroke-foreground stroke-2",
+                "fill-basalt-foreground stroke-basalt-foreground stroke-2",
                 className
             )}
             {...props}
@@ -704,7 +704,7 @@ function MapPopup({
     return (
         <LeafletPopup
             className={cn(
-                "bg-popover text-popover-foreground animate-in fade-out-0 fade-in-0 zoom-out-95 zoom-in-95 slide-in-from-bottom-2 z-50 w-72 rounded-md border p-4 font-sans shadow-md outline-hidden",
+                "bg-basalt-popover text-basalt-popover-foreground animate-in fade-out-0 fade-in-0 zoom-out-95 zoom-in-95 slide-in-from-bottom-2 z-50 w-72 rounded-md border p-4 font-sans shadow-md outline-hidden",
                 className
             )}
             {...props}
@@ -750,7 +750,7 @@ function MapTooltip({
             {children}
             <div
                 className={cn(
-                    "bg-foreground fill-foreground absolute z-50 size-2.5 rotate-45 rounded-[2px]",
+                    "bg-basalt-foreground fill-basalt-foreground absolute z-50 size-2.5 rotate-45 rounded-[2px]",
                     ARROW_POSITION_CLASSES[side]
                 )}
             />
@@ -780,7 +780,7 @@ function MapZoomControl({
                 {...props}>
                 <Button
                     type="button"
-                    size="icon-sm"
+                    size="icon"
                     variant="secondary"
                     aria-label="Zoom in"
                     title="Zoom in"
@@ -791,7 +791,7 @@ function MapZoomControl({
                 </Button>
                 <Button
                     type="button"
-                    size="icon-sm"
+                    size="icon"
                     variant="secondary"
                     aria-label="Zoom out"
                     title="Zoom out"
@@ -843,7 +843,7 @@ function MapFullscreenControl({
         <MapControlContainer className={cn(position, className)}>
             <Button
                 type="button"
-                size="icon-sm"
+                size="icon"
                 variant="secondary"
                 onClick={() => map.toggleFullscreen()}
                 aria-label={
@@ -861,8 +861,8 @@ function MapFullscreenControl({
 function MapLocatePulseIcon() {
     return (
         <div className="absolute -top-1 -right-1 flex size-3 rounded-full">
-            <div className="bg-primary absolute inline-flex size-full animate-ping rounded-full opacity-75" />
-            <div className="bg-primary relative inline-flex size-3 rounded-full" />
+            <div className="bg-basalt-primary absolute inline-flex size-full animate-ping rounded-full opacity-75" />
+            <div className="bg-basalt-primary relative inline-flex size-3 rounded-full" />
         </div>
     )
 }
@@ -913,7 +913,7 @@ function MapLocateControl({
         <MapControlContainer className={cn(position, className)}>
             <Button
                 type="button"
-                size="icon-sm"
+                size="icon"
                 variant={location ? "default" : "secondary"}
                 onClick={location ? stopLocating : startLocating}
                 disabled={isLocating}
@@ -1095,7 +1095,7 @@ function MapDrawShapeButton<T extends Draw.Feature>({
     return (
         <Button
             type="button"
-            size="icon-sm"
+            size="icon"
             aria-label={`Draw ${drawMode}`}
             title={`Draw ${drawMode}`}
             className={cn("border", className)}
@@ -1295,7 +1295,7 @@ function MapDrawActionButton<T extends EditToolbar.Edit | EditToolbar.Delete>({
     return (
         <Button
             type="button"
-            size="icon-sm"
+            size="icon"
             aria-label={`${drawAction === "edit" ? "Edit" : "Remove"} shapes`}
             title={`${drawAction === "edit" ? "Edit" : "Remove"} shapes`}
             variant={isActive ? "default" : "secondary"}
@@ -1410,7 +1410,7 @@ function MapDrawUndo({ className, ...props }: React.ComponentProps<"button">) {
     return (
         <Button
             type="button"
-            size="icon-sm"
+            size="icon"
             variant="secondary"
             aria-label={`Undo ${activeMode}`}
             title={`Undo ${activeMode}`}
@@ -1454,7 +1454,7 @@ function useMapDrawHandleIcon() {
     return L.divIcon({
         iconAnchor: [8, 8],
         html: renderToString(
-            <CircleIcon className="fill-primary stroke-primary size-4 transition-transform hover:scale-110" />
+            <CircleIcon className="fill-basalt-primary stroke-basalt-primary size-4 transition-transform hover:scale-110" />
         ),
     })
 }

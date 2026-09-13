@@ -1,14 +1,14 @@
 "use client";
 
 import { useSettingsStore, type MapProvider } from "@/viewmodels/settings-store";
-import { Label } from "@/components/ui/label";
+import { Label } from "@nocoo/basalt";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@nocoo/basalt/components/select";
 
 const MAP_PROVIDERS: { value: MapProvider; label: string }[] = [
   { value: "carto", label: "CARTO（默认）" },
@@ -22,15 +22,18 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold mb-4">通用设置</h2>
-        <div className="rounded-card bg-secondary p-4 space-y-4">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4 space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="map-provider">地图服务商</Label>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-basalt-muted-foreground">
                 选择轨迹可视化的地图瓦片服务商
               </p>
             </div>
-            <Select value={mapProvider} onValueChange={(v: MapProvider) => setMapProvider(v)}>
+            <Select
+              value={mapProvider}
+              onValueChange={(value) => setMapProvider(value as MapProvider)}
+            >
               <SelectTrigger id="map-provider" className="w-[180px]">
                 <SelectValue />
               </SelectTrigger>

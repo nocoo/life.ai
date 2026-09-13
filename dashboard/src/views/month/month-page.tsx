@@ -2,13 +2,13 @@
 
 import { useEffect } from "react";
 
-import { Skeleton } from "@/components/ui/skeleton";
+import { SkeletonLine as Skeleton } from "@nocoo/basalt/components/skeleton-line";
 import { useMonthStore } from "@/viewmodels/month-store";
 import { MonthNavigation } from "./month-navigation";
 import { MonthHealthPanel } from "./month-health-panel";
 import { MonthFootprintPanel } from "./month-footprint-panel";
 import { MonthPixiuPanel } from "./month-pixiu-panel";
-import { StatCard, StatGrid } from "@/components/charts/stat-card";
+import { StatCard, StatGrid } from "@nocoo/basalt/charts/stat-card";
 import {
   Footprints,
   Heart,
@@ -26,7 +26,7 @@ function LoadingSkeleton() {
       {/* Stats skeleton */}
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="rounded-card bg-secondary p-4">
+          <div key={i} className="rounded-basalt-lg bg-basalt-secondary p-4">
             <Skeleton className="h-3 w-20 mb-1.5" />
             <Skeleton className="h-6 w-28" />
           </div>
@@ -36,7 +36,7 @@ function LoadingSkeleton() {
       {/* Charts skeleton */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="rounded-card bg-secondary p-4">
+          <div key={i} className="rounded-basalt-lg bg-basalt-secondary p-4">
             <Skeleton className="h-4 w-28 mb-3" />
             <Skeleton className="h-40 w-full" />
           </div>
@@ -50,8 +50,8 @@ function ErrorDisplay({ message }: { message: string }) {
   return (
     <div className="flex h-[400px] items-center justify-center">
       <div className="text-center">
-        <p className="text-lg font-medium text-destructive">错误</p>
-        <p className="text-sm text-muted-foreground">{message}</p>
+        <p className="text-lg font-medium text-basalt-destructive">错误</p>
+        <p className="text-sm text-basalt-muted-foreground">{message}</p>
       </div>
     </div>
   );
@@ -105,7 +105,7 @@ function MonthContent() {
     <div className="space-y-6">
       {/* ===== Section 1: Overview Stats ===== */}
       <section>
-        <h2 className="text-sm font-normal text-muted-foreground mb-2">月度总览</h2>
+        <h2 className="text-sm font-normal text-basalt-muted-foreground mb-2">月度总览</h2>
         <StatGrid columns={4}>
           <StatCard
             title="总步数"
@@ -164,21 +164,21 @@ function MonthContent() {
 
       {/* ===== Section 2: Health Charts ===== */}
       <section>
-        <h2 className="text-sm font-normal text-muted-foreground mb-2">健康数据</h2>
+        <h2 className="text-sm font-normal text-basalt-muted-foreground mb-2">健康数据</h2>
         <MonthHealthPanel data={health} />
       </section>
 
       {/* ===== Section 3: Footprint Charts ===== */}
       {(footprint.dailyDistance.length > 0 || footprint.byTransportMode.length > 0) && (
         <section>
-          <h2 className="text-sm font-normal text-muted-foreground mb-2">轨迹数据</h2>
+          <h2 className="text-sm font-normal text-basalt-muted-foreground mb-2">轨迹数据</h2>
           <MonthFootprintPanel data={footprint} />
         </section>
       )}
 
       {/* ===== Section 4: Finance Charts ===== */}
       <section>
-        <h2 className="text-sm font-normal text-muted-foreground mb-2">财务数据</h2>
+        <h2 className="text-sm font-normal text-basalt-muted-foreground mb-2">财务数据</h2>
         <MonthPixiuPanel data={pixiu} />
       </section>
     </div>

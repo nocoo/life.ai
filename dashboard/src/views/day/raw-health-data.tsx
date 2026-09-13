@@ -1,7 +1,7 @@
 "use client";
 
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@nocoo/basalt";
+import { Badge } from "@nocoo/basalt";
 import {
   Table,
   TableBody,
@@ -9,7 +9,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@nocoo/basalt/components/table";
 import type { DayHealthData, SleepStageType } from "@/models/apple-health";
 import { SLEEP_STAGE_COLORS, SLEEP_STAGE_LABELS } from "@/lib/timeline-colors";
 
@@ -45,33 +45,33 @@ const getSleepStageInfo = (type: SleepStageType): { name: string; color: string 
 
 export function RawHealthData({ data }: RawHealthDataProps) {
   return (
-    <div className="rounded-card bg-secondary p-4">
-      <div className="text-sm font-normal text-muted-foreground mb-3">
+    <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+      <div className="text-sm font-normal text-basalt-muted-foreground mb-3">
         Apple Health 原始数据
       </div>
       <ScrollArea className="h-[calc(100vh-200px)]">
         <div className="space-y-6">
             {/* Summary Cards - Row 1: Core Metrics */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="rounded-widget bg-secondary p-3">
-                <div className="text-xs text-muted-foreground">总步数</div>
+              <div className="rounded-basalt-lg bg-basalt-secondary p-3">
+                <div className="text-xs text-basalt-muted-foreground">总步数</div>
                 <div className="text-xl font-semibold font-display tracking-tight">
                   {data.totalSteps.toLocaleString()}
                 </div>
               </div>
-              <div className="rounded-widget bg-secondary p-3">
-                <div className="text-xs text-muted-foreground">步行距离</div>
+              <div className="rounded-basalt-lg bg-basalt-secondary p-3">
+                <div className="text-xs text-basalt-muted-foreground">步行距离</div>
                 <div className="text-xl font-semibold font-display tracking-tight">
                   {data.distance ? `${data.distance.total.toFixed(2)} km` : "-"}
                 </div>
               </div>
-              <div className="rounded-widget bg-secondary p-3">
-                <div className="text-xs text-muted-foreground">攀爬楼层</div>
+              <div className="rounded-basalt-lg bg-basalt-secondary p-3">
+                <div className="text-xs text-basalt-muted-foreground">攀爬楼层</div>
                 <div className="text-xl font-semibold font-display tracking-tight">{data.flightsClimbed} 层</div>
               </div>
               {data.activity && (
-                <div className="rounded-widget bg-secondary p-3">
-                  <div className="text-xs text-muted-foreground">活动能量</div>
+                <div className="rounded-basalt-lg bg-basalt-secondary p-3">
+                  <div className="text-xs text-basalt-muted-foreground">活动能量</div>
                   <div className="text-xl font-semibold font-display tracking-tight">
                     {Math.round(data.activity.activeEnergy)} kcal
                   </div>
@@ -82,21 +82,21 @@ export function RawHealthData({ data }: RawHealthDataProps) {
             {/* Summary Cards - Row 2: Activity */}
             {data.activity && (
               <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-widget bg-secondary p-3 text-center">
-                  <div className="text-xs text-muted-foreground">运动时间</div>
+                <div className="rounded-basalt-lg bg-basalt-secondary p-3 text-center">
+                  <div className="text-xs text-basalt-muted-foreground">运动时间</div>
                   <div className="text-lg font-semibold text-green-500">
                     {data.activity.exerciseMinutes} 分钟
                   </div>
                 </div>
-                <div className="rounded-widget bg-secondary p-3 text-center">
-                  <div className="text-xs text-muted-foreground">站立小时</div>
+                <div className="rounded-basalt-lg bg-basalt-secondary p-3 text-center">
+                  <div className="text-xs text-basalt-muted-foreground">站立小时</div>
                   <div className="text-lg font-semibold text-cyan-500">
                     {data.activity.standHours} 小时
                   </div>
                 </div>
                 {data.sleepingWristTemperature && (
-                  <div className="rounded-widget bg-secondary p-3 text-center">
-                    <div className="text-xs text-muted-foreground">睡眠腕温</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3 text-center">
+                    <div className="text-xs text-basalt-muted-foreground">睡眠腕温</div>
                     <div className="text-lg font-semibold">
                       {data.sleepingWristTemperature}°C
                     </div>
@@ -108,41 +108,41 @@ export function RawHealthData({ data }: RawHealthDataProps) {
             {/* Sleep Section */}
             {data.sleep && (
               <div>
-                <h3 className="text-sm font-normal text-muted-foreground mb-2">睡眠分析</h3>
-                <div className="rounded-widget bg-secondary p-3 space-y-3">
+                <h3 className="text-sm font-normal text-basalt-muted-foreground mb-2">睡眠分析</h3>
+                <div className="rounded-basalt-lg bg-basalt-secondary p-3 space-y-3">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div>
-                      <div className="text-xs text-muted-foreground">总时长</div>
+                      <div className="text-xs text-basalt-muted-foreground">总时长</div>
                       <div className="text-lg font-semibold">
                         {formatDuration(data.sleep.duration)}
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-muted-foreground">深睡</div>
+                      <div className="text-xs text-basalt-muted-foreground">深睡</div>
                       <div className="text-lg font-semibold text-indigo-500">
                         {formatDuration(data.sleep.deepMinutes)}
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-muted-foreground">核心睡眠</div>
+                      <div className="text-xs text-basalt-muted-foreground">核心睡眠</div>
                       <div className="text-lg font-semibold text-blue-500">
                         {formatDuration(data.sleep.coreMinutes)}
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-muted-foreground">REM</div>
+                      <div className="text-xs text-basalt-muted-foreground">REM</div>
                       <div className="text-lg font-semibold text-purple-500">
                         {formatDuration(data.sleep.remMinutes)}
                       </div>
                     </div>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">时间范围</span>
+                    <span className="text-basalt-muted-foreground">时间范围</span>
                     <span>{data.sleep.start} - {data.sleep.end}</span>
                   </div>
                   {data.sleep.stages.length > 0 && (
                     <details className="text-sm">
-                      <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                      <summary className="cursor-pointer text-basalt-muted-foreground hover:text-basalt-foreground">
                         查看 {data.sleep.stages.length} 个睡眠阶段
                       </summary>
                       <Table className="mt-2">
@@ -162,10 +162,10 @@ export function RawHealthData({ data }: RawHealthDataProps) {
                                 <TableCell>
                                   <Badge className={info.color}>{info.name}</Badge>
                                 </TableCell>
-                                <TableCell className="text-muted-foreground">
+                                <TableCell className="text-basalt-muted-foreground">
                                   {stage.start}
                                 </TableCell>
-                                <TableCell className="text-muted-foreground">
+                                <TableCell className="text-basalt-muted-foreground">
                                   {stage.end}
                                 </TableCell>
                                 <TableCell className="text-right font-medium">
@@ -185,37 +185,37 @@ export function RawHealthData({ data }: RawHealthDataProps) {
             {/* Heart Rate Section */}
             {data.heartRate && (
               <div>
-                <h3 className="text-sm font-normal text-muted-foreground mb-2">心率</h3>
+                <h3 className="text-sm font-normal text-basalt-muted-foreground mb-2">心率</h3>
                 <div className="grid grid-cols-3 md:grid-cols-5 gap-3 mb-3">
-                  <div className="rounded-widget bg-secondary p-3 text-center">
-                    <div className="text-xs text-muted-foreground">平均</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3 text-center">
+                    <div className="text-xs text-basalt-muted-foreground">平均</div>
                     <div className="text-lg font-semibold">
                       {data.heartRate.avg} bpm
                     </div>
                   </div>
-                  <div className="rounded-widget bg-secondary p-3 text-center">
-                    <div className="text-xs text-muted-foreground">最低</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3 text-center">
+                    <div className="text-xs text-basalt-muted-foreground">最低</div>
                     <div className="text-lg font-semibold text-blue-500">
                       {data.heartRate.min} bpm
                     </div>
                   </div>
-                  <div className="rounded-widget bg-secondary p-3 text-center">
-                    <div className="text-xs text-muted-foreground">最高</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3 text-center">
+                    <div className="text-xs text-basalt-muted-foreground">最高</div>
                     <div className="text-lg font-semibold text-red-500">
                       {data.heartRate.max} bpm
                     </div>
                   </div>
                   {data.heartRate.restingHeartRate && (
-                    <div className="rounded-widget bg-secondary p-3 text-center">
-                      <div className="text-xs text-muted-foreground">静息</div>
+                    <div className="rounded-basalt-lg bg-basalt-secondary p-3 text-center">
+                      <div className="text-xs text-basalt-muted-foreground">静息</div>
                       <div className="text-lg font-semibold text-green-500">
                         {data.heartRate.restingHeartRate} bpm
                       </div>
                     </div>
                   )}
                   {data.heartRate.walkingAverage && (
-                    <div className="rounded-widget bg-secondary p-3 text-center">
-                      <div className="text-xs text-muted-foreground">步行</div>
+                    <div className="rounded-basalt-lg bg-basalt-secondary p-3 text-center">
+                      <div className="text-xs text-basalt-muted-foreground">步行</div>
                       <div className="text-lg font-semibold text-orange-500">
                         {data.heartRate.walkingAverage} bpm
                       </div>
@@ -224,7 +224,7 @@ export function RawHealthData({ data }: RawHealthDataProps) {
                 </div>
                 {data.heartRate.records.length > 0 && (
                   <details className="text-sm">
-                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                    <summary className="cursor-pointer text-basalt-muted-foreground hover:text-basalt-foreground">
                       查看 {data.heartRate.records.length} 条记录
                     </summary>
                     <Table className="mt-2">
@@ -237,7 +237,7 @@ export function RawHealthData({ data }: RawHealthDataProps) {
                       <TableBody>
                         {data.heartRate.records.slice(0, 50).map((record, idx) => (
                           <TableRow key={idx}>
-                            <TableCell className="text-muted-foreground">
+                            <TableCell className="text-basalt-muted-foreground">
                               {record.time}
                             </TableCell>
                             <TableCell className="text-right font-medium">
@@ -248,7 +248,7 @@ export function RawHealthData({ data }: RawHealthDataProps) {
                       </TableBody>
                     </Table>
                     {data.heartRate.records.length > 50 && (
-                      <p className="text-xs text-muted-foreground mt-2">
+                      <p className="text-xs text-basalt-muted-foreground mt-2">
                         显示前 50 条，共 {data.heartRate.records.length} 条
                       </p>
                     )}
@@ -260,22 +260,22 @@ export function RawHealthData({ data }: RawHealthDataProps) {
             {/* Blood Oxygen Section */}
             {data.oxygenSaturation && (
               <div>
-                <h3 className="text-sm font-normal text-muted-foreground mb-2">血氧饱和度</h3>
+                <h3 className="text-sm font-normal text-basalt-muted-foreground mb-2">血氧饱和度</h3>
                 <div className="grid grid-cols-3 gap-3 mb-3">
-                  <div className="rounded-widget bg-secondary p-3 text-center">
-                    <div className="text-xs text-muted-foreground">平均</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3 text-center">
+                    <div className="text-xs text-basalt-muted-foreground">平均</div>
                     <div className="text-lg font-semibold">
                       {data.oxygenSaturation.avg}%
                     </div>
                   </div>
-                  <div className="rounded-widget bg-secondary p-3 text-center">
-                    <div className="text-xs text-muted-foreground">最低</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3 text-center">
+                    <div className="text-xs text-basalt-muted-foreground">最低</div>
                     <div className="text-lg font-semibold text-yellow-500">
                       {data.oxygenSaturation.min}%
                     </div>
                   </div>
-                  <div className="rounded-widget bg-secondary p-3 text-center">
-                    <div className="text-xs text-muted-foreground">最高</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3 text-center">
+                    <div className="text-xs text-basalt-muted-foreground">最高</div>
                     <div className="text-lg font-semibold text-green-500">
                       {data.oxygenSaturation.max}%
                     </div>
@@ -283,7 +283,7 @@ export function RawHealthData({ data }: RawHealthDataProps) {
                 </div>
                 {data.oxygenSaturation.records.length > 0 && (
                   <details className="text-sm">
-                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                    <summary className="cursor-pointer text-basalt-muted-foreground hover:text-basalt-foreground">
                       查看 {data.oxygenSaturation.records.length} 条记录
                     </summary>
                     <Table className="mt-2">
@@ -296,7 +296,7 @@ export function RawHealthData({ data }: RawHealthDataProps) {
                       <TableBody>
                         {data.oxygenSaturation.records.map((record, idx) => (
                           <TableRow key={idx}>
-                            <TableCell className="text-muted-foreground">
+                            <TableCell className="text-basalt-muted-foreground">
                               {record.time}
                             </TableCell>
                             <TableCell className="text-right font-medium">
@@ -314,22 +314,22 @@ export function RawHealthData({ data }: RawHealthDataProps) {
             {/* Respiratory Rate Section */}
             {data.respiratoryRate && (
               <div>
-                <h3 className="text-sm font-normal text-muted-foreground mb-2">呼吸频率</h3>
+                <h3 className="text-sm font-normal text-basalt-muted-foreground mb-2">呼吸频率</h3>
                 <div className="grid grid-cols-3 gap-3 mb-3">
-                  <div className="rounded-widget bg-secondary p-3 text-center">
-                    <div className="text-xs text-muted-foreground">平均</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3 text-center">
+                    <div className="text-xs text-basalt-muted-foreground">平均</div>
                     <div className="text-lg font-semibold">
                       {data.respiratoryRate.avg} 次/分
                     </div>
                   </div>
-                  <div className="rounded-widget bg-secondary p-3 text-center">
-                    <div className="text-xs text-muted-foreground">最低</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3 text-center">
+                    <div className="text-xs text-basalt-muted-foreground">最低</div>
                     <div className="text-lg font-semibold text-blue-500">
                       {data.respiratoryRate.min} 次/分
                     </div>
                   </div>
-                  <div className="rounded-widget bg-secondary p-3 text-center">
-                    <div className="text-xs text-muted-foreground">最高</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3 text-center">
+                    <div className="text-xs text-basalt-muted-foreground">最高</div>
                     <div className="text-lg font-semibold text-red-500">
                       {data.respiratoryRate.max} 次/分
                     </div>
@@ -337,7 +337,7 @@ export function RawHealthData({ data }: RawHealthDataProps) {
                 </div>
                 {data.respiratoryRate.records.length > 0 && (
                   <details className="text-sm">
-                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                    <summary className="cursor-pointer text-basalt-muted-foreground hover:text-basalt-foreground">
                       查看 {data.respiratoryRate.records.length} 条记录
                     </summary>
                     <Table className="mt-2">
@@ -350,7 +350,7 @@ export function RawHealthData({ data }: RawHealthDataProps) {
                       <TableBody>
                         {data.respiratoryRate.records.map((record, idx) => (
                           <TableRow key={idx}>
-                            <TableCell className="text-muted-foreground">
+                            <TableCell className="text-basalt-muted-foreground">
                               {record.time}
                             </TableCell>
                             <TableCell className="text-right font-medium">
@@ -368,22 +368,22 @@ export function RawHealthData({ data }: RawHealthDataProps) {
             {/* HRV Section */}
             {data.hrv && (
               <div>
-                <h3 className="text-sm font-normal text-muted-foreground mb-2">心率变异性 (HRV)</h3>
+                <h3 className="text-sm font-normal text-basalt-muted-foreground mb-2">心率变异性 (HRV)</h3>
                 <div className="grid grid-cols-3 gap-3 mb-3">
-                  <div className="rounded-widget bg-secondary p-3 text-center">
-                    <div className="text-xs text-muted-foreground">平均</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3 text-center">
+                    <div className="text-xs text-basalt-muted-foreground">平均</div>
                     <div className="text-lg font-semibold">
                       {data.hrv.avg} ms
                     </div>
                   </div>
-                  <div className="rounded-widget bg-secondary p-3 text-center">
-                    <div className="text-xs text-muted-foreground">最低</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3 text-center">
+                    <div className="text-xs text-basalt-muted-foreground">最低</div>
                     <div className="text-lg font-semibold text-yellow-500">
                       {data.hrv.min} ms
                     </div>
                   </div>
-                  <div className="rounded-widget bg-secondary p-3 text-center">
-                    <div className="text-xs text-muted-foreground">最高</div>
+                  <div className="rounded-basalt-lg bg-basalt-secondary p-3 text-center">
+                    <div className="text-xs text-basalt-muted-foreground">最高</div>
                     <div className="text-lg font-semibold text-green-500">
                       {data.hrv.max} ms
                     </div>
@@ -391,7 +391,7 @@ export function RawHealthData({ data }: RawHealthDataProps) {
                 </div>
                 {data.hrv.records.length > 0 && (
                   <details className="text-sm">
-                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                    <summary className="cursor-pointer text-basalt-muted-foreground hover:text-basalt-foreground">
                       查看 {data.hrv.records.length} 条记录
                     </summary>
                     <Table className="mt-2">
@@ -404,7 +404,7 @@ export function RawHealthData({ data }: RawHealthDataProps) {
                       <TableBody>
                         {data.hrv.records.map((record, idx) => (
                           <TableRow key={idx}>
-                            <TableCell className="text-muted-foreground">
+                            <TableCell className="text-basalt-muted-foreground">
                               {record.time}
                             </TableCell>
                             <TableCell className="text-right font-medium">
@@ -422,7 +422,7 @@ export function RawHealthData({ data }: RawHealthDataProps) {
             {/* Steps Section */}
             {data.steps.length > 0 && (
               <div>
-                <h3 className="text-sm font-normal text-muted-foreground mb-2">每小时步数</h3>
+                <h3 className="text-sm font-normal text-basalt-muted-foreground mb-2">每小时步数</h3>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -442,14 +442,14 @@ export function RawHealthData({ data }: RawHealthDataProps) {
                         );
                         return (
                           <TableRow key={step.hour}>
-                            <TableCell className="text-muted-foreground">
+                            <TableCell className="text-basalt-muted-foreground">
                               {step.hour.toString().padStart(2, "0")}:00
                             </TableCell>
                             <TableCell className="text-right font-medium">
                               {step.count.toLocaleString()}
                             </TableCell>
                             {data.distance && (
-                              <TableCell className="text-right text-muted-foreground">
+                              <TableCell className="text-right text-basalt-muted-foreground">
                                 {distanceForHour
                                   ? distanceForHour.distance.toFixed(3)
                                   : "-"}
@@ -466,7 +466,7 @@ export function RawHealthData({ data }: RawHealthDataProps) {
             {/* Workouts Section */}
             {data.workouts.length > 0 && (
               <div>
-                <h3 className="text-sm font-normal text-muted-foreground mb-2">
+                <h3 className="text-sm font-normal text-basalt-muted-foreground mb-2">
                   运动记录 ({data.workouts.length})
                 </h3>
                 <Table>
@@ -505,7 +505,7 @@ export function RawHealthData({ data }: RawHealthDataProps) {
             {/* Water Section */}
             {data.water.length > 0 && (
               <div>
-                <h3 className="text-sm font-normal text-muted-foreground mb-2">饮水记录</h3>
+                <h3 className="text-sm font-normal text-basalt-muted-foreground mb-2">饮水记录</h3>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -516,7 +516,7 @@ export function RawHealthData({ data }: RawHealthDataProps) {
                   <TableBody>
                     {data.water.map((record, idx) => (
                       <TableRow key={idx}>
-                        <TableCell className="text-muted-foreground">
+                        <TableCell className="text-basalt-muted-foreground">
                           {record.time}
                         </TableCell>
                         <TableCell className="text-right font-medium">
@@ -532,7 +532,7 @@ export function RawHealthData({ data }: RawHealthDataProps) {
             {/* ECG Records Section */}
             {data.ecgRecords.length > 0 && (
               <div>
-                <h3 className="text-sm font-normal text-muted-foreground mb-2">
+                <h3 className="text-sm font-normal text-basalt-muted-foreground mb-2">
                   心电图记录 ({data.ecgRecords.length})
                 </h3>
                 <Table>
@@ -545,7 +545,7 @@ export function RawHealthData({ data }: RawHealthDataProps) {
                   <TableBody>
                     {data.ecgRecords.map((record) => (
                       <TableRow key={record.id}>
-                        <TableCell className="text-muted-foreground">
+                        <TableCell className="text-basalt-muted-foreground">
                           {record.recordedAt}
                         </TableCell>
                         <TableCell className="text-right font-medium">
@@ -567,7 +567,7 @@ export function RawHealthData({ data }: RawHealthDataProps) {
               data.steps.length === 0 &&
               data.workouts.length === 0 &&
               data.water.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-8 text-basalt-muted-foreground">
                   当天没有健康数据
                 </div>
               )}

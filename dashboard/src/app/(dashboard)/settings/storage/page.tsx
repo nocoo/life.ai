@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Database, HardDrive, FileText, Table2 } from "lucide-react";
-import { StatCard, StatGrid } from "@/components/charts/stat-card";
+import { StatCard, StatGrid } from "@nocoo/basalt/charts/stat-card";
 import { DonutChart, type DonutChartDataPoint } from "@/components/charts/pie-chart";
 import { BarChart, type BarChartDataPoint } from "@/components/charts/bar-chart";
-import { Skeleton } from "@/components/ui/skeleton";
+import { SkeletonLine as Skeleton } from "@nocoo/basalt/components/skeleton-line";
 import type { StorageStats, DatabaseStats } from "@/services/storage-service";
 import { CHART_COLORS } from "@/lib/palette";
 
@@ -22,7 +22,7 @@ function StorageSkeleton() {
         <Skeleton className="h-5 w-40 mb-4" />
         <StatGrid columns={4}>
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="rounded-card bg-secondary p-4 space-y-3">
+            <div key={i} className="rounded-basalt-lg bg-basalt-secondary p-4 space-y-3">
               <Skeleton className="h-3 w-20" />
               <Skeleton className="h-7 w-24" />
               <Skeleton className="h-3 w-16" />
@@ -34,7 +34,7 @@ function StorageSkeleton() {
         <Skeleton className="h-5 w-40 mb-4" />
         <StatGrid columns={3}>
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="rounded-card bg-secondary p-4 space-y-3">
+            <div key={i} className="rounded-basalt-lg bg-basalt-secondary p-4 space-y-3">
               <Skeleton className="h-4 w-28" />
               <Skeleton className="h-6 w-20" />
               <Skeleton className="h-3 w-32" />
@@ -43,11 +43,11 @@ function StorageSkeleton() {
         </StatGrid>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-card bg-secondary p-4">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
           <Skeleton className="h-4 w-32 mb-4" />
           <Skeleton className="h-[200px] w-full" />
         </div>
-        <div className="rounded-card bg-secondary p-4">
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
           <Skeleton className="h-4 w-32 mb-4" />
           <Skeleton className="h-[200px] w-full" />
         </div>
@@ -58,11 +58,11 @@ function StorageSkeleton() {
 
 function DatabaseCard({ db, color }: { db: DatabaseStats; color: string }) {
   return (
-    <div className="rounded-card bg-secondary p-4 md:p-5">
+    <div className="rounded-basalt-lg bg-basalt-secondary p-4 md:p-5">
       <div className="flex items-start justify-between mb-3">
         <div>
-          <p className="text-sm font-medium text-foreground">{db.displayName}</p>
-          <p className="text-2xl font-semibold text-foreground font-display tracking-tight">
+          <p className="text-sm font-medium text-basalt-foreground">{db.displayName}</p>
+          <p className="text-2xl font-semibold text-basalt-foreground font-display tracking-tight">
             {db.sizeMB} MB
           </p>
         </div>
@@ -70,18 +70,18 @@ function DatabaseCard({ db, color }: { db: DatabaseStats; color: string }) {
           <Database className="h-5 w-5" style={{ color }} strokeWidth={1.5} />
         </div>
       </div>
-      <p className="text-xs text-muted-foreground mb-3">
+      <p className="text-xs text-basalt-muted-foreground mb-3">
         {formatNumber(db.totalRows)} 条记录，{db.tables.length} 个表
       </p>
       <div className="space-y-1.5">
         {db.tables.slice(0, 5).map((table) => (
           <div key={table.name} className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground truncate max-w-[150px]">{table.name}</span>
-            <span className="text-foreground font-medium">{formatNumber(table.rowCount)}</span>
+            <span className="text-basalt-muted-foreground truncate max-w-[150px]">{table.name}</span>
+            <span className="text-basalt-foreground font-medium">{formatNumber(table.rowCount)}</span>
           </div>
         ))}
         {db.tables.length > 5 && (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-basalt-muted-foreground">
             还有 {db.tables.length - 5} 个表
           </p>
         )}
@@ -120,7 +120,7 @@ export default function StoragePage() {
 
   if (error) {
     return (
-      <div className="rounded-card bg-destructive/10 p-4 text-sm text-destructive">
+      <div className="rounded-basalt-lg bg-basalt-destructive/10 p-4 text-sm text-basalt-destructive">
         加载存储数据失败：{error}
       </div>
     );
@@ -164,42 +164,42 @@ export default function StoragePage() {
     <div className="space-y-6">
       {/* Overview Stats */}
       <section>
-        <h2 className="text-sm font-normal text-muted-foreground mb-2">存储概览</h2>
+        <h2 className="text-sm font-normal text-basalt-muted-foreground mb-2">存储概览</h2>
         <StatGrid columns={4}>
           <StatCard
             title="总大小"
             value={`${overview.totalSizeMB} MB`}
             subtitle="所有数据合计"
             icon={HardDrive}
-            iconColor="text-chart-1"
+            iconColor="text-basalt-chart-1"
           />
           <StatCard
             title="数据库"
             value={overview.databaseCount}
             subtitle="SQLite 文件"
             icon={Database}
-            iconColor="text-chart-2"
+            iconColor="text-basalt-chart-2"
           />
           <StatCard
             title="总记录数"
             value={formatNumber(overview.totalRecords)}
             subtitle="所有表合计"
             icon={Table2}
-            iconColor="text-chart-3"
+            iconColor="text-basalt-chart-3"
           />
           <StatCard
             title="GPX 文件"
             value={overview.gpxFileCount}
             subtitle={`${overview.gpxSizeMB} MB`}
             icon={FileText}
-            iconColor="text-chart-4"
+            iconColor="text-basalt-chart-4"
           />
         </StatGrid>
       </section>
 
       {/* Database Details */}
       <section>
-        <h2 className="text-sm font-normal text-muted-foreground mb-2">数据库详情</h2>
+        <h2 className="text-sm font-normal text-basalt-muted-foreground mb-2">数据库详情</h2>
         <StatGrid columns={3}>
           {databases.map((db, i) => (
             <DatabaseCard key={db.name} db={db} color={CHART_COLORS[i % CHART_COLORS.length]} />
@@ -209,8 +209,8 @@ export default function StoragePage() {
 
       {/* Charts */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-card bg-secondary p-4 md:p-5">
-          <h3 className="text-sm font-medium text-foreground mb-4">存储分布</h3>
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4 md:p-5">
+          <h3 className="text-sm font-medium text-basalt-foreground mb-4">存储分布</h3>
           <DonutChart
             data={storageDistribution}
             height={220}
@@ -218,8 +218,8 @@ export default function StoragePage() {
             valueFormatter={(v) => `${(v / (1024 * 1024)).toFixed(1)} MB`}
           />
         </div>
-        <div className="rounded-card bg-secondary p-4 md:p-5">
-          <h3 className="text-sm font-medium text-foreground mb-4">记录数最多的表</h3>
+        <div className="rounded-basalt-lg bg-basalt-secondary p-4 md:p-5">
+          <h3 className="text-sm font-medium text-basalt-foreground mb-4">记录数最多的表</h3>
           <BarChart
             data={recordsByType}
             height={220}

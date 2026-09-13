@@ -128,12 +128,12 @@ export function LineChart({
             content={({ active, payload, label }) => {
               if (!active || !payload?.length) return null;
               return (
-                <div className="rounded-widget border border-border bg-card p-2 shadow-sm">
-                  <div className="text-sm font-medium text-foreground">{label}</div>
+                <div className="rounded-basalt-lg border border-basalt-border bg-basalt-card p-2 shadow-sm">
+                  <div className="text-sm font-medium text-basalt-foreground">{label}</div>
                   {payload.map((item, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-2 text-sm text-muted-foreground"
+                      className="flex items-center gap-2 text-sm text-basalt-muted-foreground"
                     >
                       <div
                         className="h-2 w-2 rounded-full"
@@ -156,7 +156,7 @@ export function LineChart({
                   ? {
                       value: referenceLineLabel,
                       position: "insideTopRight",
-                      className: "fill-muted-foreground text-xs",
+                      className: "fill-basalt-muted-foreground text-xs",
                     }
                   : undefined
               }
