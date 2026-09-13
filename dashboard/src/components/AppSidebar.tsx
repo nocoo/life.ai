@@ -45,10 +45,11 @@ function getInitials(name?: string): string {
 interface AppSidebarProps {
   collapsed: boolean;
   onToggle: () => void;
+  onNavigate?: () => void;
   user?: UserInfo;
 }
 
-export function AppSidebar({ collapsed, onToggle, user }: AppSidebarProps) {
+export function AppSidebar({ collapsed, onToggle, onNavigate, user }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -68,8 +69,9 @@ export function AppSidebar({ collapsed, onToggle, user }: AppSidebarProps) {
     (href: string) => {
       setSearchOpen(false);
       router.push(href);
+      onNavigate?.();
     },
-    [router],
+    [onNavigate, router],
   );
 
   const avatar = user ? (
