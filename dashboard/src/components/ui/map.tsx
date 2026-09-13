@@ -1140,10 +1140,10 @@ function MapDrawMarker({ ...props }: DrawOptions.MarkerOptions) {
 function MapDrawPolyline({
     showLength = false,
     drawError = {
-        color: "var(--color-destructive)",
+        color: "hsl(var(--basalt-destructive))",
     },
     shapeOptions = {
-        color: "var(--color-primary)",
+        color: "hsl(var(--basalt-primary))",
         opacity: 1,
         weight: 2,
     },
@@ -1176,7 +1176,7 @@ function MapDrawPolyline({
 function MapDrawCircle({
     showRadius = false,
     shapeOptions = {
-        color: "var(--color-primary)",
+        color: "hsl(var(--basalt-primary))",
         opacity: 1,
         weight: 2,
     },
@@ -1200,7 +1200,7 @@ function MapDrawCircle({
 function MapDrawRectangle({
     showArea = false,
     shapeOptions = {
-        color: "var(--color-primary)",
+        color: "hsl(var(--basalt-primary))",
         opacity: 1,
         weight: 2,
     },
@@ -1223,10 +1223,10 @@ function MapDrawRectangle({
 
 function MapDrawPolygon({
     drawError = {
-        color: "var(--color-destructive)",
+        color: "hsl(var(--basalt-destructive))",
     },
     shapeOptions = {
-        color: "var(--color-primary)",
+        color: "hsl(var(--basalt-primary))",
         opacity: 1,
         weight: 2,
     },
@@ -1320,8 +1320,8 @@ function MapDrawActionButton<T extends EditToolbar.Edit | EditToolbar.Delete>({
 
 function MapDrawEdit({
     selectedPathOptions = {
-        color: "var(--color-primary)",
-        fillColor: "var(--color-primary)",
+        color: "hsl(var(--basalt-primary))",
+        fillColor: "hsl(var(--basalt-primary))",
         weight: 2,
     },
     ...props
@@ -1340,7 +1340,7 @@ function MapDrawEdit({
             icon: mapDrawHandleIcon,
             touchIcon: mapDrawHandleIcon,
             drawError: {
-                color: "var(--color-destructive)",
+                color: "hsl(var(--basalt-destructive))",
             },
         })
         L.Edit.SimpleShape.mergeOptions({
