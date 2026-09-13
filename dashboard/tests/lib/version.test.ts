@@ -12,8 +12,8 @@ describe("version", () => {
     expect(semverPattern.test(APP_VERSION)).toBe(true);
   });
 
-  test("APP_VERSION matches package.json", async () => {
-    const pkg = await import("../../package.json");
+  test("APP_VERSION matches the root package.json", async () => {
+    const pkg = await import("../../../package.json");
     expect(APP_VERSION).toBe(pkg.version);
   });
 });

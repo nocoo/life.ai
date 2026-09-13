@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { GET } from "@/app/api/health/route";
+import { APP_VERSION } from "@/lib/version";
 
 describe("GET /api/health", () => {
   it("should return 200 status", async () => {
@@ -15,11 +16,11 @@ describe("GET /api/health", () => {
     expect(data.status).toBe("ok");
   });
 
-  it("should return version 1.0.0", async () => {
+  it("should return the project version", async () => {
     const response = await GET();
     const data = await response.json();
 
-    expect(data.version).toBe("1.0.0");
+    expect(data.version).toBe(APP_VERSION);
   });
 
   it("should return valid ISO timestamp", async () => {

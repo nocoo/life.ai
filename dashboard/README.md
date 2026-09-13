@@ -71,6 +71,6 @@ bun run lint      # ESLint 检查
 {
   "status": "ok",
   "timestamp": "2025-01-01T00:00:00.000Z",
-  "version": "1.0.0"
+  "version": "0.2.0"
 }
 ```

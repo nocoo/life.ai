@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
+import rootPackage from "../package.json";
 
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_APP_VERSION: rootPackage.version,
+  },
   // Set turbopack root to dashboard directory (monorepo has multiple lockfiles)
   turbopack: {
     root: __dirname,
