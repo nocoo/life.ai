@@ -1004,30 +1004,26 @@ function MapDrawControl({
     const [activeMode, setActiveMode] = useState<MapDrawMode>(null)
     const [layersCount, setLayersCount] = useState(0)
 
-    function updateLayersCount() {
-        if (featureGroup) {
-            setLayersCount(featureGroup.getLayers().length)
-        }
-    }
-
-    function handleDrawCreated(event: DrawEvents.Created) {
-        if (!featureGroup) return
-        const { layer } = event
-        featureGroup.addLayer(layer)
-        onLayersChange?.(featureGroup)
-        updateLayersCount()
-        setActiveMode(null)
-    }
-
-    function handleDrawEditedOrDeleted() {
-        if (!featureGroup) return
-        onLayersChange?.(featureGroup)
-        updateLayersCount()
-        setActiveMode(null)
-    }
-
     useEffect(() => {
-        if (!L || !LeafletDraw || !map) return
+        if (!L || !LeafletDraw || !map || !featureGroup) return
+        const currentFeatureGroup = featureGroup
+
+        function updateLayersCount() {
+            setLayersCount(currentFeatureGroup.getLayers().length)
+        }
+
+        function handleDrawCreated(event: DrawEvents.Created) {
+            currentFeatureGroup.addLayer(event.layer)
+            onLayersChange?.(currentFeatureGroup)
+            updateLayersCount()
+            setActiveMode(null)
+        }
+
+        function handleDrawEditedOrDeleted() {
+            onLayersChange?.(currentFeatureGroup)
+            updateLayersCount()
+            setActiveMode(null)
+        }
 
         map.on(
             L.Draw.Event.CREATED,
@@ -1044,8 +1040,7 @@ function MapDrawControl({
             map.off(L.Draw.Event.EDITED, handleDrawEditedOrDeleted)
             map.off(L.Draw.Event.DELETED, handleDrawEditedOrDeleted)
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [L, LeafletDraw, map, onLayersChange])
+    }, [L, LeafletDraw, map, featureGroup, onLayersChange])
 
     return (
         <MapDrawContext.Provider
