@@ -1,7 +1,6 @@
 "use client";
 
 import { LayerCard } from "@nocoo/basalt/components/layer-card";
-
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
@@ -28,7 +27,7 @@ export function DateCard({ date }: { date: Date }) {
   const weekday = formatWeekday(date);
 
   return (
-    <LayerCard className="">
+    <LayerCard>
       <div className="flex items-center justify-between">
         <span className="font-medium">{dateStr}</span>
         <span className="text-sm text-basalt-muted-foreground">{weekday}</span>
@@ -74,7 +73,7 @@ export function WeatherCard({ date, latitude, longitude }: DayInfoCardProps) {
   }, [date, latitude, longitude]);
 
   return (
-    <LayerCard className="">
+    <LayerCard>
         {/* Loading state */}
         {loading && (
           <div className="flex items-center justify-center text-basalt-muted-foreground">

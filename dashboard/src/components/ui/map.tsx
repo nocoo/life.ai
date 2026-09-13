@@ -508,7 +508,7 @@ function MapLayersControl({
                     aria-label="Select layers"
                     title="Select layers"
                     className={cn(
-                        "absolute z-1000 border",
+                        "absolute z-1000 border border-basalt-border",
                         position,
                         className
                     )}
@@ -715,7 +715,7 @@ function MapPopup({
     return (
         <LeafletPopup
             className={cn(
-                "bg-basalt-popover text-basalt-popover-foreground animate-in fade-out-0 fade-in-0 zoom-out-95 zoom-in-95 slide-in-from-bottom-2 z-50 w-72 rounded-md border p-4 font-sans shadow-md outline-hidden",
+                "z-50 w-72 rounded-md border border-basalt-border bg-basalt-popover p-4 font-sans text-basalt-popover-foreground shadow-md outline-hidden",
                 className
             )}
             {...props}
@@ -750,7 +750,7 @@ function MapTooltip({
     return (
         <LeafletTooltip
             className={cn(
-                "animate-in fade-in-0 zoom-in-95 fade-out-0 zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 w-fit text-xs text-balance transition-opacity",
+                "relative z-50 w-fit text-balance text-xs transition-opacity",
                 className
             )}
             data-side={side}
@@ -795,7 +795,7 @@ function MapZoomControl({
                     variant="secondary"
                     aria-label="Zoom in"
                     title="Zoom in"
-                    className="border"
+                    className="border border-basalt-border"
                     disabled={zoomLevel >= map.getMaxZoom()}
                     onClick={() => map.zoomIn()}>
                     <PlusIcon />
@@ -806,7 +806,7 @@ function MapZoomControl({
                     variant="secondary"
                     aria-label="Zoom out"
                     title="Zoom out"
-                    className="border"
+                    className="border border-basalt-border"
                     disabled={zoomLevel <= map.getMinZoom()}
                     onClick={() => map.zoomOut()}>
                     <MinusIcon />
@@ -861,7 +861,7 @@ function MapFullscreenControl({
                     isFullscreen ? "Exit fullscreen" : "Enter fullscreen"
                 }
                 title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                className="border"
+                className="border border-basalt-border"
                 {...props}>
                 {isFullscreen ? <MinimizeIcon /> : <MaximizeIcon />}
             </Button>
@@ -942,7 +942,7 @@ function MapLocateControl({
                           ? "Stop location tracking"
                           : "Start location tracking"
                 }
-                className="border"
+                className="border border-basalt-border"
                 {...props}>
                 {isLocating ? (
                     <LoaderCircleIcon className="animate-spin" />
@@ -1109,7 +1109,7 @@ function MapDrawShapeButton<T extends Draw.Feature>({
             size="icon"
             aria-label={`Draw ${drawMode}`}
             title={`Draw ${drawMode}`}
-            className={cn("border", className)}
+            className={cn("border border-basalt-border", className)}
             variant={isActive ? "default" : "secondary"}
             disabled={activeMode === "edit" || activeMode === "delete"}
             onClick={handleClick}
@@ -1312,7 +1312,7 @@ function MapDrawActionButton<T extends EditToolbar.Edit | EditToolbar.Delete>({
             variant={isActive ? "default" : "secondary"}
             disabled={!hasFeatures}
             onClick={handleClick}
-            className={cn("border", className)}
+            className={cn("border border-basalt-border", className)}
             {...props}
         />
     )
@@ -1427,7 +1427,7 @@ function MapDrawUndo({ className, ...props }: React.ComponentProps<"button">) {
             title={`Undo ${activeMode}`}
             onClick={handleUndo}
             disabled={!isActive}
-            className={cn("border", className)}
+            className={cn("border border-basalt-border", className)}
             {...props}>
             <Undo2Icon />
         </Button>

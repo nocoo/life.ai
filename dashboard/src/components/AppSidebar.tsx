@@ -83,13 +83,13 @@ export function AppSidebar({ collapsed, onToggle, user }: AppSidebarProps) {
     <Sidebar collapsed={collapsed} aria-label="Primary navigation">
       {collapsed ? (
         <>
-          <SidebarHeader className="justify-start px-3">
+          <SidebarHeader className="justify-center px-0">
             <Image src="/logo-24.png" alt="Life.ai" width={24} height={24} />
           </SidebarHeader>
           <Button
             variant="ghost"
             size="icon"
-            className="mb-1 ml-1.5"
+            className="mb-1 self-center"
             onClick={onToggle}
             aria-label="Expand sidebar"
           >
@@ -98,7 +98,7 @@ export function AppSidebar({ collapsed, onToggle, user }: AppSidebarProps) {
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <SidebarIconItem
-                className="mb-2 ml-1.5"
+                className="mb-2 self-center"
                 onClick={() => setSearchOpen(true)}
                 aria-label="Search (⌘K)"
               >
@@ -115,7 +115,7 @@ export function AppSidebar({ collapsed, onToggle, user }: AppSidebarProps) {
                 <TooltipTrigger asChild>
                   <SidebarIconItem
                     active={pathname === item.href}
-                    className="ml-1.5"
+                    className="self-center"
                     onClick={() => navigate(item.href)}
                     aria-label={item.label}
                   >
@@ -146,7 +146,13 @@ export function AppSidebar({ collapsed, onToggle, user }: AppSidebarProps) {
           <SidebarHeader>
             <div className="flex w-full items-center justify-between">
               <div className="flex min-w-0 items-center gap-3">
-                <Image src="/logo-24.png" alt="Life.ai" width={24} height={24} />
+                <Image
+                  className="ml-2.5"
+                  src="/logo-24.png"
+                  alt="Life.ai"
+                  width={24}
+                  height={24}
+                />
                 <span className="truncate text-lg font-semibold text-basalt-foreground">Life.ai</span>
                 <span className="shrink-0 rounded-md bg-basalt-secondary px-1.5 py-0.5 font-mono text-[10px] leading-none font-medium text-basalt-muted-foreground">
                   v{APP_VERSION}

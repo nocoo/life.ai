@@ -39,6 +39,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <ThemeProvider>
       <AccentProvider
         defaultAccent="primary"
+        persist={false}
         paletteOverrides={{
           primary: { light: "217 91% 60%", dark: "217 91% 65%" },
         }}

@@ -1,7 +1,6 @@
 "use client";
 
 import { LayerCard } from "@nocoo/basalt/components/layer-card";
-
 import { ScrollArea } from "@nocoo/basalt";
 import { Badge } from "@nocoo/basalt";
 import {
@@ -47,7 +46,7 @@ const getSleepStageInfo = (type: SleepStageType): { name: string; color: string 
 
 export function RawHealthData({ data }: RawHealthDataProps) {
   return (
-    <LayerCard className="">
+    <LayerCard>
       <div className="text-sm font-normal text-basalt-muted-foreground mb-3">
         Apple Health 原始数据
       </div>

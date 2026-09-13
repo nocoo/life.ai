@@ -23,7 +23,7 @@ function LoadingSkeleton() {
       {/* Two-column layout skeleton: Timeline primary, Cards sidebar */}
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         {/* Timeline Card skeleton */}
-        <LayerCard className="">
+        <LayerCard>
           <Skeleton className="h-4 w-24 mb-3" />
           <div className="space-y-2">
             {Array.from({ length: 12 }).map((_, i) => (
@@ -34,21 +34,21 @@ function LoadingSkeleton() {
         {/* Cards sidebar skeleton */}
         <div className="grid gap-3 auto-rows-min">
           {/* DayInfoCard skeleton */}
-          <LayerCard className="">
+          <LayerCard>
             <Skeleton className="h-5 w-32" />
             <Skeleton className="h-4 w-48 mt-1" />
           </LayerCard>
           {/* HealthPanel skeletons */}
-          <LayerCard className="">
+          <LayerCard>
             <Skeleton className="h-4 w-20 mb-3" />
             <Skeleton className="h-14 w-full" />
           </LayerCard>
-          <LayerCard className="">
+          <LayerCard>
             <Skeleton className="h-4 w-20 mb-3" />
             <Skeleton className="h-20 w-full" />
           </LayerCard>
           {/* ActivityPanel skeleton */}
-          <LayerCard className="">
+          <LayerCard>
             <Skeleton className="h-4 w-20 mb-3" />
             <Skeleton className="h-16 w-full" />
           </LayerCard>

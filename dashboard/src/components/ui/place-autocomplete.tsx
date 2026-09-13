@@ -322,13 +322,7 @@ function PlaceAutocomplete({
                 {showCommandList && (
                     <CommandList
                         data-state={showCommandList ? "open" : "closed"}
-                        className={cn(
-                            "bg-basalt-popover border-basalt-border absolute top-full right-0 left-0 rounded-b-md border border-t-0 shadow-md",
-                            "data-[state=open]:animate-in data-[state=closed]:animate-out",
-                            "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-                            "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-                            "data-[state=open]:slide-in-from-top-2 data-[state=closed]:slide-out-to-top-2"
-                        )}>
+                        className="absolute top-full right-0 left-0 rounded-b-md border border-t-0 border-basalt-border bg-basalt-popover shadow-md">
                         {error && (
                             <CommandEmpty>Error: {error.message}</CommandEmpty>
                         )}

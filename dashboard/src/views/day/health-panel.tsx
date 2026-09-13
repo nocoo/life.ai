@@ -1,7 +1,6 @@
 "use client";
 
 import { LayerCard } from "@nocoo/basalt/components/layer-card";
-
 import { Moon, Heart, Footprints, Droplets, Activity } from "lucide-react";
 import type { DayHealthData, SleepStage, HeartRateRecord } from "@/models/apple-health";
 import { SLEEP_STAGE_COLORS, SLEEP_STAGE_LABELS, getHeartRateColor } from "@/lib/timeline-colors";

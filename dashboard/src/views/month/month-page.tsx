@@ -1,7 +1,6 @@
 "use client";
 
 import { LayerCard } from "@nocoo/basalt/components/layer-card";
-
 import { useEffect } from "react";
 
 import { SkeletonLine as Skeleton } from "@nocoo/basalt/components/skeleton-line";
@@ -30,7 +29,7 @@ function LoadingSkeleton() {
       {/* Stats skeleton */}
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
-          <LayerCard key={i} className="">
+          <LayerCard key={i}>
             <Skeleton className="h-3 w-20 mb-1.5" />
             <Skeleton className="h-6 w-28" />
           </LayerCard>
@@ -40,7 +39,7 @@ function LoadingSkeleton() {
       {/* Charts skeleton */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <LayerCard key={i} className="">
+          <LayerCard key={i}>
             <Skeleton className="h-4 w-28 mb-3" />
             <Skeleton className="h-40 w-full" />
           </LayerCard>

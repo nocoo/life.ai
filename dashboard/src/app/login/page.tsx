@@ -47,7 +47,11 @@ function GoogleIcon() {
 
 function LoginSkeleton() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-basalt-background">
+    <div
+      role="status"
+      aria-label="Loading sign-in"
+      className="flex min-h-screen items-center justify-center bg-basalt-background"
+    >
       <div className="flex flex-col items-center">
         <div className="relative aspect-[54/86] w-72 overflow-hidden rounded-2xl bg-basalt-card animate-pulse">
           <div className="bg-basalt-primary/60 h-24" />
@@ -180,7 +184,10 @@ export function LoginContent() {
 
             {/* Error message */}
             {error && (
-              <div className="mt-3 w-full rounded-lg bg-basalt-destructive/10 px-3 py-2 text-xs text-basalt-destructive text-center">
+              <div
+                role="alert"
+                className="mt-3 w-full rounded-lg bg-basalt-destructive/10 px-3 py-2 text-center text-xs text-basalt-destructive"
+              >
                 {error === "AccessDenied"
                   ? "Your account is not authorized."
                   : "Sign in failed. Please try again."}

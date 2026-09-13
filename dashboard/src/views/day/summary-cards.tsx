@@ -1,7 +1,6 @@
 "use client";
 
 import { LayerCard } from "@nocoo/basalt/components/layer-card";
-
 import {
   Footprints,
   Heart,
@@ -32,7 +31,7 @@ function SummaryCard({
   subtitle,
 }: SummaryCardProps) {
   return (
-    <LayerCard className="">
+    <LayerCard>
       <div className="flex items-center gap-3">
         <div className="text-basalt-muted-foreground">{icon}</div>
         <div className="flex-1 min-w-0">

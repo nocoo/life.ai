@@ -1,7 +1,6 @@
 "use client";
 
 import { LayerCard } from "@nocoo/basalt/components/layer-card";
-
 import { ScrollArea } from "@nocoo/basalt";
 import { Badge } from "@nocoo/basalt";
 import {
@@ -56,7 +55,7 @@ const formatCoord = (value: number, decimals = 6): string => {
 
 export function RawFootprintData({ data }: RawFootprintDataProps) {
   return (
-    <LayerCard className="">
+    <LayerCard>
       <div className="text-sm font-normal text-basalt-muted-foreground mb-3">
         Footprint 原始数据
       </div>

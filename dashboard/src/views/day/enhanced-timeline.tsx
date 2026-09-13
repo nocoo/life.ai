@@ -99,6 +99,8 @@ function Pill({ item }: { item: TimelineItem }) {
     <Tooltip>
       <TooltipTrigger asChild>
         <span
+          tabIndex={0}
+          aria-label={tooltipText}
           className={cn(
             colorClass,
             "text-white px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap cursor-default"
@@ -255,7 +257,7 @@ function TimeSlotRow({ slot, date, latitude, longitude }: TimeSlotRowProps) {
     <div
       className={cn(
         "flex items-center py-1 min-h-[32px]",
-        isOddHour && "bg-basalt-muted/50"
+        isOddHour && "bg-[var(--basalt-zebra-fill)]"
       )}
     >
       {/* Sun/Moon curve indicator */}
@@ -285,7 +287,7 @@ function TimeSlotRow({ slot, date, latitude, longitude }: TimeSlotRowProps) {
             className={cn(
               "text-xs px-1",
               // Use transparent background to let row bg show through
-              isOddHour ? "bg-basalt-muted/50" : "bg-basalt-background",
+              "bg-[var(--basalt-control-fill)]",
               slot.hasData
                 ? "text-basalt-foreground font-medium"
                 : "text-basalt-muted-foreground"

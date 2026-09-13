@@ -1,7 +1,6 @@
 "use client";
 
 import { LayerCard } from "@nocoo/basalt/components/layer-card";
-
 import { ScrollArea } from "@nocoo/basalt";
 import { Badge } from "@nocoo/basalt";
 import {
@@ -26,7 +25,7 @@ const formatAmount = (amount: number, isIncome: boolean): string => {
 
 export function RawPixiuData({ data }: RawPixiuDataProps) {
   return (
-    <LayerCard className="">
+    <LayerCard>
       <div className="text-sm font-normal text-basalt-muted-foreground mb-3">
         貔貅记账原始数据
       </div>

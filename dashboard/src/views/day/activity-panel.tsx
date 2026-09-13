@@ -1,7 +1,6 @@
 "use client";
 
 import { LayerCard } from "@nocoo/basalt/components/layer-card";
-
 import { useMemo, useEffect, useState } from "react";
 import { MapPin, Dumbbell, Wallet, Route } from "lucide-react";
 import { Badge } from "@nocoo/basalt";
