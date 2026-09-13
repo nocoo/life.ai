@@ -212,6 +212,88 @@ describe("chart adapters", () => {
     expect(props.data[0]).toEqual({ x: "Mon", series0: 12 });
   });
 
+  test("aligns sparse Basalt series by label instead of array index", () => {
+    render(
+      <LineChart
+        ariaLabel="Sparse heart rate"
+        series={[
+          {
+            name: "Average",
+            data: [
+              { label: "Jan", value: 70 },
+              { label: "Mar", value: 72 },
+            ],
+          },
+          {
+            name: "Resting",
+            data: [
+              { label: "Feb", value: 60 },
+              { label: "Mar", value: 61 },
+            ],
+          },
+        ]}
+      />,
+    );
+    const props = chartMocks.basaltLine.mock.calls[0][0] as {
+      data: Array<Record<string, number | string>>;
+    };
+    expect(props.data).toEqual([
+      { x: "Jan", series0: 70 },
+      { x: "Feb", series1: 60 },
+      { x: "Mar", series0: 72, series1: 61 },
+    ]);
+    expect(screen.getByText(/Feb, Average: —, Resting: 60/)).toBeTruthy();
+  });
+
+  test("sorts date and numeric labels chronologically", () => {
+    render(
+      <LineChart
+        ariaLabel="Dated values"
+        data={[
+          { label: "2025-02-01", value: 2 },
+          { label: "2025-01-01", value: 1 },
+        ]}
+      />,
+    );
+    let props = chartMocks.basaltLine.mock.calls[0][0] as {
+      data: Array<Record<string, number | string>>;
+    };
+    expect(props.data.map((point) => point.x)).toEqual(["2025-01-01", "2025-02-01"]);
+
+    cleanup();
+    chartMocks.basaltLine.mockClear();
+    render(
+      <LineChart
+        ariaLabel="Numbered values"
+        data={[
+          { label: "20项", value: 20 },
+          { label: "3项", value: 3 },
+        ]}
+      />,
+    );
+    props = chartMocks.basaltLine.mock.calls[0][0] as {
+      data: Array<Record<string, number | string>>;
+    };
+    expect(props.data.map((point) => point.x)).toEqual(["3项", "20项"]);
+  });
+
+  test("maps all eight typed Basalt series keys", () => {
+    const series = Array.from({ length: 8 }, (_, index) => ({
+      name: `Metric ${index}`,
+      data: [{ label: "Jan", value: index }],
+    }));
+    render(<LineChart ariaLabel="Eight metrics" series={series} />);
+    const props = chartMocks.basaltLine.mock.calls[0][0] as {
+      data: Array<Record<string, number | string>>;
+    };
+    expect(props.data[0]).toMatchObject({
+      series4: 4,
+      series5: 5,
+      series6: 6,
+      series7: 7,
+    });
+  });
+
   test("preserves custom line presentation and reference lines", () => {
     render(
       <LineChart
@@ -254,7 +336,7 @@ describe("chart adapters", () => {
     expect(chartMocks.referenceLine.mock.calls[0][0]).toMatchObject({
       label: expect.objectContaining({ value: "Average" }),
     });
-    expect(screen.getByText(/Series 1: 5, Target: 0/)).toBeTruthy();
+    expect(screen.getByText(/Series 1: 5, Target: —/)).toBeTruthy();
   });
 
   test("falls back safely when a line has more than eight series", () => {

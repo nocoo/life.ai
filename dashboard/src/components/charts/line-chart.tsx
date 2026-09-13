@@ -66,7 +66,7 @@ export interface LineChartProps {
 const defaultColors = CHART_COLORS;
 type BasaltPoint = {
   x: string;
-  series0: number;
+  series0?: number;
   series1?: number;
   series2?: number;
   series3?: number;
@@ -118,24 +118,49 @@ export function LineChart({
   }
 
   // Build unified data array for recharts
-  const labels = normalizedSeries[0].data.map((d) => d.label);
-  const chartData = labels.map((label, i) => {
+  const labels = Array.from(
+    new Set(normalizedSeries.flatMap((item) => item.data.map((point) => point.label))),
+  );
+  const insertionOrder = new Map(labels.map((label, index) => [label, index]));
+  labels.sort((left, right) => {
+    const directLeftDate = Date.parse(left);
+    const directRightDate = Date.parse(right);
+    const leftDate = Number.isFinite(directLeftDate)
+      ? directLeftDate
+      : Date.parse(`1 ${left} 2000`);
+    const rightDate = Number.isFinite(directRightDate)
+      ? directRightDate
+      : Date.parse(`1 ${right} 2000`);
+    if (Number.isFinite(leftDate) && Number.isFinite(rightDate)) return leftDate - rightDate;
+    const numericOrder = left.localeCompare(right, undefined, { numeric: true });
+    if (/\d/.test(left) && /\d/.test(right)) return numericOrder;
+    return (insertionOrder.get(left) ?? 0) - (insertionOrder.get(right) ?? 0);
+  });
+  const valuesBySeries = normalizedSeries.map(
+    (item) => new Map(item.data.map((point) => [point.label, point.value])),
+  );
+  const chartData = labels.map((label) => {
     const point: Record<string, string | number> = { name: label };
     normalizedSeries.forEach((s, si) => {
       const key = s.name || `series${si}`;
-      point[key] = s.data[i]?.value ?? 0;
+      const value = valuesBySeries[si].get(label);
+      if (value !== undefined) point[key] = value;
     });
     return point;
   });
   const resolvedDataAlternative = dataAlternative ?? (
     <span className="sr-only">
       {labels
-        .map((label, index) =>
+        .map((label) =>
           [
             label,
             ...normalizedSeries.map(
               (item, seriesIndex) =>
-                `${item.name ?? `Series ${seriesIndex + 1}`}: ${valueFormatter(item.data[index]?.value ?? 0)}`,
+                `${item.name ?? `Series ${seriesIndex + 1}`}: ${
+                  valuesBySeries[seriesIndex].has(label)
+                    ? valueFormatter(valuesBySeries[seriesIndex].get(label)!)
+                    : "—"
+                }`,
             ),
           ].join(", "),
         )
@@ -153,24 +178,25 @@ export function LineChart({
     showXAxis &&
     showYAxis
   ) {
-    const valueAt = (seriesIndex: number, pointIndex: number) =>
-      normalizedSeries[seriesIndex]?.data[pointIndex]?.value;
-    const basaltData: BasaltPoint[] = labels.map((label, index) => ({
+    const valueAt = (seriesIndex: number, label: string) =>
+      valuesBySeries[seriesIndex]?.get(label);
+    const basaltData: BasaltPoint[] = labels.map((label) => ({
       x: label,
-      series0: valueAt(0, index) ?? 0,
-      ...(valueAt(1, index) === undefined ? {} : { series1: valueAt(1, index) }),
-      ...(valueAt(2, index) === undefined ? {} : { series2: valueAt(2, index) }),
-      ...(valueAt(3, index) === undefined ? {} : { series3: valueAt(3, index) }),
-      ...(valueAt(4, index) === undefined ? {} : { series4: valueAt(4, index) }),
-      ...(valueAt(5, index) === undefined ? {} : { series5: valueAt(5, index) }),
-      ...(valueAt(6, index) === undefined ? {} : { series6: valueAt(6, index) }),
-      ...(valueAt(7, index) === undefined ? {} : { series7: valueAt(7, index) }),
+      ...(valueAt(0, label) === undefined ? {} : { series0: valueAt(0, label) }),
+      ...(valueAt(1, label) === undefined ? {} : { series1: valueAt(1, label) }),
+      ...(valueAt(2, label) === undefined ? {} : { series2: valueAt(2, label) }),
+      ...(valueAt(3, label) === undefined ? {} : { series3: valueAt(3, label) }),
+      ...(valueAt(4, label) === undefined ? {} : { series4: valueAt(4, label) }),
+      ...(valueAt(5, label) === undefined ? {} : { series5: valueAt(5, label) }),
+      ...(valueAt(6, label) === undefined ? {} : { series6: valueAt(6, label) }),
+      ...(valueAt(7, label) === undefined ? {} : { series7: valueAt(7, label) }),
     }));
     const basaltSeries: Array<ChartSeriesDescriptor<BasaltSeriesKey>> =
-      normalizedSeries.flatMap((item, index) => {
-        const key = BASALT_SERIES_KEYS[index];
-        return key ? [{ key, label: item.name, color: item.color }] : [];
-      });
+      BASALT_SERIES_KEYS.slice(0, normalizedSeries.length).map((key, index) => ({
+        key,
+        label: normalizedSeries[index].name,
+        color: normalizedSeries[index].color,
+      }));
 
     return (
       <div className={cn("w-full", className)} style={{ height }}>
