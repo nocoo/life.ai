@@ -1,7 +1,6 @@
 "use client";
 
 import { LayerCard } from "@nocoo/basalt/components/layer-card";
-
 import { StatCard, StatGrid } from "@nocoo/basalt/charts/stat-card";
 import { BarChart } from "@/components/charts/bar-chart";
 import { DonutChart } from "@/components/charts/pie-chart";
@@ -120,7 +119,7 @@ export function YearFootprintPanel({ data, year }: YearFootprintPanelProps) {
 
       {/* Distance Heatmap */}
       {dailyDistance.length > 0 && (
-        <LayerCard className="">
+        <LayerCard>
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Route className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             年度距离分布
@@ -139,12 +138,13 @@ export function YearFootprintPanel({ data, year }: YearFootprintPanelProps) {
       <div className="grid gap-4 md:grid-cols-2">
         {/* Monthly Distance Chart */}
         {monthlyDistance.length > 0 && (
-          <LayerCard className="">
+          <LayerCard>
             <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Route className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               月度距离趋势
             </div>
               <BarChart
+              ariaLabel="月度移动距离"
                 data={toMonthlyChartData(monthlyDistance)}
                 height={180}
                 color={chart.primary}
@@ -155,12 +155,13 @@ export function YearFootprintPanel({ data, year }: YearFootprintPanelProps) {
 
         {/* Transport Mode Breakdown */}
         {byTransportMode.length > 0 && (
-          <LayerCard className="">
+          <LayerCard>
             <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Car className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               年度出行方式分布
             </div>
               <DonutChart
+              ariaLabel="年度出行方式占比"
                 data={byTransportMode.map((m) => ({
                   label: m.modeName,
                   value: m.totalDistance,
@@ -175,7 +176,7 @@ export function YearFootprintPanel({ data, year }: YearFootprintPanelProps) {
 
       {/* Transport Mode Details */}
       {byTransportMode.length > 0 && (
-        <LayerCard className="">
+        <LayerCard>
           <div className="text-sm font-normal text-basalt-muted-foreground mb-3">年度出行方式详情</div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {byTransportMode.map((mode) => {
@@ -205,12 +206,13 @@ export function YearFootprintPanel({ data, year }: YearFootprintPanelProps) {
 
       {/* Distance by Transport Mode Bar Chart */}
       {byTransportMode.length > 0 && (
-        <LayerCard className="">
+        <LayerCard>
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Route className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             各出行方式距离
           </div>
             <BarChart
+              ariaLabel="各出行方式距离"
               data={byTransportMode.map((m) => ({
                 label: m.modeName,
                 value: m.totalDistance,

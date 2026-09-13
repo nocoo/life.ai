@@ -1,7 +1,6 @@
 "use client";
 
 import { LayerCard } from "@nocoo/basalt/components/layer-card";
-
 import { StatCard, StatGrid } from "@nocoo/basalt/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
@@ -162,12 +161,13 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
 
       {/* B. Trends - Monthly Income/Expense/Net */}
       {(monthlyIncome.length > 0 || monthlyExpense.length > 0) && (
-        <LayerCard className="">
+        <LayerCard>
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Calendar className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             月度收支趋势
           </div>
             <LineChart
+              ariaLabel="月度收支趋势"
               series={[
                 ...(monthlyIncome.length > 0
                   ? [{ data: toMonthlyChartData(monthlyIncome), color: COLORS.income, name: "收入" }]
@@ -188,13 +188,14 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
 
       {/* C. Breakdown - Category Distribution (symmetric: left=income, right=expense) */}
       <div className="grid gap-4 md:grid-cols-2">
-        <LayerCard className="">
+        <LayerCard>
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowUpCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             收入 | 分类占比
           </div>
             {incomeByCategory.length > 0 ? (
               <DonutChart
+              ariaLabel="年度收入分类占比"
                 data={aggregateCategoryData(incomeByCategory)}
                 height={180}
                 showLegend
@@ -206,13 +207,14 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
               </div>
             )}
         </LayerCard>
-        <LayerCard className="">
+        <LayerCard>
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowDownCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             支出 | 分类占比
           </div>
             {expenseByCategory.length > 0 ? (
               <DonutChart
+              ariaLabel="年度支出分类占比"
                 data={aggregateCategoryData(expenseByCategory)}
                 height={180}
                 showLegend
@@ -228,13 +230,14 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
 
       {/* C. Breakdown - Account Distribution (symmetric: left=income, right=expense) */}
       <div className="grid gap-4 md:grid-cols-2">
-        <LayerCard className="">
+        <LayerCard>
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowUpCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             收入 | 按账户
           </div>
             {incomeByAccountData.length > 0 ? (
               <BarChart
+              ariaLabel="各账户年度收入"
                 data={incomeByAccountData}
                 height={180}
                 horizontal
@@ -247,13 +250,14 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
               </div>
             )}
         </LayerCard>
-        <LayerCard className="">
+        <LayerCard>
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowDownCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             支出 | 按账户
           </div>
             {expenseByAccountData.length > 0 ? (
               <BarChart
+              ariaLabel="各账户年度支出"
                 data={expenseByAccountData}
                 height={180}
                 horizontal
@@ -270,7 +274,7 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
 
       {/* D. Details - Expense Heatmap */}
       {dailyExpense.length > 0 && (
-        <LayerCard className="">
+        <LayerCard>
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <TrendingDown className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             支出日历
@@ -287,12 +291,13 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
 
       {/* D. Details - Top Expense Months */}
       {topExpenseMonths.length > 0 && (
-        <LayerCard className="">
+        <LayerCard>
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <TrendingDown className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             支出最高月份
           </div>
             <BarChart
+              ariaLabel="支出最高月份"
               data={topExpenseMonths.slice(0, 5).map((m) => ({
                 label: m.month,
                 value: m.amount,

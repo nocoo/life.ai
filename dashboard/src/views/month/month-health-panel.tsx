@@ -1,7 +1,6 @@
 "use client";
 
 import { LayerCard } from "@nocoo/basalt/components/layer-card";
-
 import { StatCard, StatGrid } from "@nocoo/basalt/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
@@ -115,12 +114,13 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
       <div className="grid gap-4 md:grid-cols-2">
         {/* Daily Steps Chart */}
         {steps && steps.dailySteps.length > 0 && (
-          <LayerCard className="">
+          <LayerCard>
             <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Footprints className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               每日步数
             </div>
             <LineChart
+              ariaLabel="每日步数趋势"
               data={toChartData(steps.dailySteps)}
               height={180}
               color={chart.primary}
@@ -133,12 +133,13 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
 
         {/* Daily Heart Rate Chart */}
         {heartRate && heartRate.dailyAvg.length > 0 && (
-          <LayerCard className="">
+          <LayerCard>
             <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Heart className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               每日心率
             </div>
             <LineChart
+              ariaLabel="每日心率趋势"
               series={[
                 {
                   data: toChartData(heartRate.dailyAvg),
@@ -159,12 +160,13 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
 
         {/* Daily Sleep Chart */}
         {sleep && sleep.dailyDuration.length > 0 && (
-          <LayerCard className="">
+          <LayerCard>
             <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Moon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               每日睡眠
             </div>
             <BarChart
+              ariaLabel="每日睡眠时长"
               data={toChartData(sleep.dailyDuration)}
               height={180}
               color={chart.teal}
@@ -175,12 +177,13 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
 
         {/* Daily Active Energy Chart */}
         {activity && activity.dailyActiveEnergy.length > 0 && (
-          <LayerCard className="">
+          <LayerCard>
             <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Flame className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               每日活动能量
             </div>
             <LineChart
+              ariaLabel="每日活动能量"
               data={toChartData(activity.dailyActiveEnergy)}
               height={180}
               color={chart.jade}
@@ -194,12 +197,13 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
 
       {/* Workout Breakdown */}
       {workouts && workouts.byType.length > 0 && (
-        <LayerCard className="">
+        <LayerCard>
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Dumbbell className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             锻炼类型分布
           </div>
           <BarChart
+              ariaLabel="锻炼类型分布"
             data={workouts.byType.map((w) => ({
               label: w.typeName,
               value: w.count,

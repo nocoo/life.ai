@@ -46,11 +46,11 @@ function StorageSkeleton() {
         </StatGrid>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <LayerCard className="">
+        <LayerCard>
           <Skeleton className="h-4 w-32 mb-4" />
           <Skeleton className="h-[200px] w-full" />
         </LayerCard>
-        <LayerCard className="">
+        <LayerCard>
           <Skeleton className="h-4 w-32 mb-4" />
           <Skeleton className="h-[200px] w-full" />
         </LayerCard>
@@ -215,6 +215,7 @@ export default function StoragePage() {
         <LayerCard>
           <h3 className="text-sm font-medium text-basalt-foreground mb-4">存储分布</h3>
           <DonutChart
+              ariaLabel="存储空间分布"
             data={storageDistribution}
             height={220}
             showLegend
@@ -224,6 +225,7 @@ export default function StoragePage() {
         <LayerCard>
           <h3 className="text-sm font-medium text-basalt-foreground mb-4">记录数最多的表</h3>
           <BarChart
+              ariaLabel="记录数最多的表"
             data={recordsByType}
             height={220}
             horizontal

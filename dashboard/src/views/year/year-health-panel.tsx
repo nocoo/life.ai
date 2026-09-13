@@ -1,7 +1,6 @@
 "use client";
 
 import { LayerCard } from "@nocoo/basalt/components/layer-card";
-
 import { StatCard, StatGrid } from "@nocoo/basalt/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
@@ -133,7 +132,7 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
 
       {/* Steps Heatmap */}
       {steps && steps.dailySteps.length > 0 && (
-        <LayerCard className="">
+        <LayerCard>
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Footprints className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             年度步数分布
@@ -151,12 +150,13 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
       <div className="grid gap-4 md:grid-cols-2">
         {/* Monthly Steps Chart */}
         {steps && steps.monthlySteps.length > 0 && (
-          <LayerCard className="">
+          <LayerCard>
             <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Footprints className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               月度步数趋势
             </div>
             <BarChart
+              ariaLabel="月度步数趋势"
               data={toMonthlyChartData(steps.monthlySteps)}
               height={180}
               color={chart.primary}
@@ -167,12 +167,13 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
 
         {/* Monthly Heart Rate Chart */}
         {heartRate && heartRate.monthlyAvg.length > 0 && (
-          <LayerCard className="">
+          <LayerCard>
             <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Heart className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               月度心率趋势
             </div>
             <LineChart
+              ariaLabel="月度心率趋势"
               series={[
                 {
                   data: toMonthlyChartData(heartRate.monthlyAvg),
@@ -194,7 +195,7 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
 
       {/* Activity Heatmap */}
       {activity && activity.dailyActiveEnergy.length > 0 && (
-        <LayerCard className="">
+        <LayerCard>
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Flame className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             年度活动能量分布
@@ -213,12 +214,13 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
       <div className="grid gap-4 md:grid-cols-2">
         {/* Monthly Active Energy Chart */}
         {activity && activity.monthlyActiveEnergy.length > 0 && (
-          <LayerCard className="">
+          <LayerCard>
             <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Flame className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               月度活动能量
             </div>
             <BarChart
+              ariaLabel="月度活动能量"
               data={toMonthlyChartData(activity.monthlyActiveEnergy)}
               height={180}
               color={chart.jade}
@@ -229,12 +231,13 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
 
         {/* Monthly Exercise Minutes Chart */}
         {activity && activity.monthlyExerciseMinutes.length > 0 && (
-          <LayerCard className="">
+          <LayerCard>
             <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Timer className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               月度运动时长
             </div>
             <BarChart
+              ariaLabel="月度运动时长"
               data={toMonthlyChartData(activity.monthlyExerciseMinutes)}
               height={180}
               color={chart.sky}
@@ -246,12 +249,13 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
 
       {/* Workout Breakdown */}
       {workouts && workouts.byType.length > 0 && (
-        <LayerCard className="">
+        <LayerCard>
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Dumbbell className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             年度锻炼类型分布
           </div>
           <BarChart
+              ariaLabel="年度锻炼类型分布"
             data={workouts.byType.map((w) => ({
               label: w.typeName,
               value: w.count,
@@ -266,12 +270,13 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
 
       {/* Monthly Workout Trends */}
       {workouts && workouts.monthlyWorkouts.length > 0 && (
-        <LayerCard className="">
+        <LayerCard>
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Dumbbell className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             月度锻炼次数
           </div>
           <LineChart
+              ariaLabel="月度锻炼次数"
             data={toMonthlyChartData(workouts.monthlyWorkouts)}
             height={180}
             color={chart.teal}

@@ -1,7 +1,6 @@
 "use client";
 
 import { LayerCard } from "@nocoo/basalt/components/layer-card";
-
 import { StatCard, StatGrid } from "@nocoo/basalt/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
@@ -150,12 +149,13 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
 
       {/* B. Trends - Daily Income/Expense/Net */}
       {(dailyIncome.length > 0 || dailyExpense.length > 0) && (
-        <LayerCard className="">
+        <LayerCard>
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Calendar className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             每日收支趋势
           </div>
           <LineChart
+              ariaLabel="每日收支趋势"
             series={[
               ...(dailyIncome.length > 0
                 ? [{ data: toDailyChartData(dailyIncome), color: COLORS.income, name: "收入" }]
@@ -175,13 +175,14 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
 
       {/* C. Breakdown - Category Distribution (symmetric: left=income, right=expense) */}
       <div className="grid gap-4 md:grid-cols-2">
-        <LayerCard className="">
+        <LayerCard>
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowUpCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             收入 | 分类占比
           </div>
           {incomeByCategory.length > 0 ? (
             <DonutChart
+              ariaLabel="收入分类占比"
               data={aggregateCategoryData(incomeByCategory)}
               height={180}
               showLegend
@@ -193,13 +194,14 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
             </div>
           )}
         </LayerCard>
-        <LayerCard className="">
+        <LayerCard>
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowDownCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             支出 | 分类占比
           </div>
           {expenseByCategory.length > 0 ? (
             <DonutChart
+              ariaLabel="支出分类占比"
               data={aggregateCategoryData(expenseByCategory)}
               height={180}
               showLegend
@@ -215,13 +217,14 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
 
       {/* C. Breakdown - Account Distribution (symmetric: left=income, right=expense) */}
       <div className="grid gap-4 md:grid-cols-2">
-        <LayerCard className="">
+        <LayerCard>
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowUpCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             收入 | 按账户
           </div>
           {incomeByAccountData.length > 0 ? (
             <BarChart
+              ariaLabel="各账户收入"
               data={incomeByAccountData}
               height={180}
               horizontal
@@ -234,13 +237,14 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
             </div>
           )}
         </LayerCard>
-        <LayerCard className="">
+        <LayerCard>
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowDownCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             支出 | 按账户
           </div>
           {expenseByAccountData.length > 0 ? (
             <BarChart
+              ariaLabel="各账户支出"
               data={expenseByAccountData}
               height={180}
               horizontal
@@ -257,7 +261,7 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
 
       {/* D. Details - Top Expenses */}
       {topExpenses.length > 0 && (
-        <LayerCard className="">
+        <LayerCard>
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <TrendingDown className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             大额支出
