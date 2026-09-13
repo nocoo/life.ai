@@ -5,13 +5,11 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { CHART_COLORS, chartAxis } from "@/lib/palette";
-import { LineChart as BasaltLineChart } from "@nocoo/basalt/charts/line";
-import type { ChartSeriesDescriptor } from "@nocoo/basalt/charts/series";
+import { ChartFrame } from "@nocoo/basalt/charts/frame";
 import { ChartTooltipContent } from "@nocoo/basalt/charts/tooltip";
 import type { ReactNode } from "react";
 
@@ -104,70 +102,31 @@ export function LineChart({
   });
   const resolvedDataAlternative = dataAlternative ?? (
     <span className="sr-only">
-      {chartData.map((point) => Object.values(point).join(": ")).join("; ")}
+      {labels
+        .map((label, index) =>
+          [
+            label,
+            ...normalizedSeries.map(
+              (item, seriesIndex) =>
+                `${item.name ?? `Series ${seriesIndex + 1}`}: ${valueFormatter(item.data[index]?.value ?? 0)}`,
+            ),
+          ].join(", "),
+        )
+        .join("; ")}
     </span>
   );
 
-  if (
-    referenceLine === undefined &&
-    !showArea &&
-    !showDots &&
-    curved &&
-    showGrid &&
-    showXAxis &&
-    showYAxis
-  ) {
-    const basaltSeries: ChartSeriesDescriptor[] = normalizedSeries.map((item, index) => ({
-      key: `series${index}`,
-      label: item.name,
-      color: item.color,
-    }));
-    const basaltData = labels.map((label, index) => {
-      const row: Record<string, string | number> = { x: label };
-      normalizedSeries.forEach((item, seriesIndex) => {
-        row[`series${seriesIndex}`] = item.data[index]?.value ?? 0;
-      });
-      return row;
-    });
-    const DynamicLineChart = BasaltLineChart as unknown as (props: {
-      data: Array<Record<string, string | number>>;
-      series: ChartSeriesDescriptor[];
-      ariaLabel: string;
-      className: string;
-      showAxes: boolean;
-      showLegend: boolean;
-      valueFormatter: (value: number) => string;
-      summary?: ReactNode;
-      dataAlternative?: ReactNode;
-    }) => ReactNode;
-
-    return (
-      <div className={cn("w-full", className)} style={{ height }}>
-        <DynamicLineChart
-          data={basaltData}
-          series={basaltSeries}
-          ariaLabel={ariaLabel}
-          className="h-full w-full"
-          showAxes
-          showLegend={normalizedSeries.length > 1}
-          valueFormatter={valueFormatter}
-          summary={summary}
-          dataAlternative={resolvedDataAlternative}
-        />
-      </div>
-    );
-  }
-
   return (
-    <figure className={cn("m-0 w-full", className)} aria-label={ariaLabel}>
-      {summary && <figcaption className="mb-2 text-xs text-basalt-muted-foreground">{summary}</figcaption>}
-      <div style={{ height }}>
-      <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+    <div className={cn("w-full", className)} style={{ height }}>
+      <ChartFrame
+        ariaLabel={ariaLabel}
+        className="h-full w-full"
+        summary={summary}
+        dataAlternative={resolvedDataAlternative}
+      >
         <RechartsLineChart
           data={chartData}
           margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
-          accessibilityLayer
-          aria-label={ariaLabel}
         >
           {showGrid && (
             <CartesianGrid
@@ -228,9 +187,7 @@ export function LineChart({
             );
           })}
         </RechartsLineChart>
-      </ResponsiveContainer>
-      </div>
-      <div className="mt-2 text-xs text-basalt-muted-foreground">{resolvedDataAlternative}</div>
-    </figure>
+      </ChartFrame>
+    </div>
   );
 }

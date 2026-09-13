@@ -25,10 +25,11 @@ export default defineConfig({
         // Auth and storage routes integrate with external services
         "src/app/api/auth/**",
         "src/app/api/storage/**",
-        // React components and hooks
-        "src/components/**",
+        // Platform-heavy components covered by build, integration, and E2E gates
+        "src/components/icons/**",
+        "src/components/ui/**",
+        "src/components/DashboardLayout.tsx",
         "src/views/**",
-        "src/hooks/**",
         // Modules with platform-specific or untested entry points
         "src/lib/auth.ts",
         "src/lib/palette.ts",
