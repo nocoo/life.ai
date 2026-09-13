@@ -66,19 +66,19 @@ Both collaborators handed off their files after their checks. Codex owns the int
 Verified on 2026-09-13:
 
 - L1 aggregate: 261 tests in 21 files passed. Statements 99.08%, branches 96.55%, functions 99.39%, lines 99.13%; all four enforced thresholds exceed 95%.
-- L2: 15 scenarios passed against real local Worker + SQLite, covering all 9 method/path API contracts. Includes signed JWT claims, token hashing, future hour replacement, concurrent idempotency, per-token isolation, revoke/history, import validation/atomicity/precision, UTC boundaries, 200-record pagination and machine hostname denial.
+- L2: 15 scenarios passed against real local Worker + SQLite, covering all 9 method/path API contracts. Includes rejection of unsupported ingestion methods, signed JWT claims, token hashing, future hour replacement, concurrent idempotency, per-token isolation, revoke/history, import validation/atomicity/precision, UTC boundaries, 200-record pagination and machine hostname denial.
 - G1: strict typecheck across web, Worker, tooling and tests passed; Biome has zero errors/warnings.
 - G2: gitleaks and OSV passed against the complete reviewable tree and all 380 lockfile packages. The only allowlist is the exact public Access audience.
-- Build and Wrangler dry run passed. Lazy routes reduce the initial client JavaScript from 713.52 kB to 356.27 kB (125.68 kB gzip); Worker is 66.95 kB. Temporary machine-specific registry URLs were removed without changing package versions or integrity hashes; frozen-lockfile validation passed.
+- Build and Wrangler dry run passed. Lazy routes reduce the initial client JavaScript from 713.52 kB to 356.27 kB (125.68 kB gzip); Worker is 67.10 kB. Temporary machine-specific registry URLs were removed without changing package versions or integrity hashes; frozen-lockfile validation passed.
 - L3: all 8 scenarios passed: 24 hours, import/replay, UTC/local precision display, Connect creation/write/revoke, error recovery, responsive navigation/theme, anonymous/forged auth, and full/partial DST. Desktop light and mobile dark WCAG 2 A/AA checks passed. Access 302 login redirects are recognized as expired sessions; the browser test verifies a full reload recovers. Screenshots are generated under `test-results/l3/`.
 - D1 `life` created in APAC, ID `50a1d276-d24b-4c07-82af-e14683116489`; no previous `life` database or Worker domain binding was found. The initial schema was empty; `0001_initial.sql` applied at `2026-09-13 10:14:17` UTC. No production fixtures or test marker were written.
 - Added explicit `dev:prod` for the original request to use production data locally. Normal dev and automated tests remain local; tests have fresh directories, marker validation, ephemeral RSA keys and isolated Wrangler OAuth config paths.
 
 ## Production release
 
-Version **1.0.0**, Cloudflare tag `v1.0.0`, active Worker version **`cca8e0c1-96fa-498d-8b77-538cd21fb1d2`**, deployed at `2026-09-13T10:22:12Z` with 100% traffic. Worker `life` owns both custom domains; `workers.dev` and preview URLs remain disabled.
+Version **1.0.0**, Cloudflare tag `v1.0.0`, active Worker version **`21d51fb2-12ee-49eb-a9a2-2406a35c3917`**, deployed on 2026-09-13 (UTC) with 100% traffic. Worker `life` owns both custom domains; `workers.dev` and preview URLs remain disabled.
 
-Fourteen production read-only/denial checks passed at approximately `2026-09-13T10:19:55Z`. Both live endpoints were rechecked successfully after final packaging at `2026-09-13T10:22:53Z`:
+Fourteen production read-only/denial checks passed at approximately `2026-09-13T10:19:55Z`. Both live endpoints were rechecked successfully after the ingestion method fix at `2026-09-13T10:28:18Z`:
 
 | Check | Actual result |
 | --- | --- |
