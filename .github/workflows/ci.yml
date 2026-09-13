@@ -7,31 +7,54 @@ on:
     branches: [main]
   workflow_dispatch:
 
-jobs:
-  node-preflight:
-    uses: nocoo/base-ci/.github/workflows/test-job.yml@ad43150de3a2be2fa464b5cd2f921dc4fa9f8f0f
-    with:
-      runtime: "none"
-      node-version: "22.20.0"
-      timeout-minutes: 5
-      command: "node scripts/check-node-version.mjs"
+permissions:
+  contents: read
 
+concurrency:
+  group: life-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
   quality:
-    needs: node-preflight
     uses: nocoo/base-ci/.github/workflows/quality.yml@ad43150de3a2be2fa464b5cd2f921dc4fa9f8f0f
     with:
-      runtime-version: "1.4.2"
-      node-version: "22.20.0"
-      install-policy: "trusted"
-      coverage-path: "coverage"
-      extra-install-dirs: "dashboard"
-      test-command: "bun run test:coverage"
-      lint-command: "bun run lint"
-      typecheck: false
-      disabled-check-reasons: '{"typecheck": "no root tsconfig; subprojects checked via lint and tests"}'
-      l2: true
-      l2-command: "bun run test:l2"
-      l3: true
-      l3-command: "bun run test:e2e:bdd"
-      l3-browser: "chromium"
-      l3-browser-directory: "dashboard"
+      runtime-version: '1.4.0'
+      node-version: '26.8.1'
+      install-policy: trusted
+      build: true
+      security: false
+      disabled-check-reasons: '{"security":"A dedicated G2 job scans the complete reviewable tree and root lockfile."}'
+      coverage-path: coverage/
+
+  security:
+    uses: nocoo/base-ci/.github/workflows/security.yml@ad43150de3a2be2fa464b5cd2f921dc4fa9f8f0f
+    with:
+      runtime-version: '1.4.0'
+      node-version: '26.8.1'
+      install-policy: trusted
+      scan-secrets: false
+      scan-dependencies: false
+      security-command: bun run gate:security
+      report-path: test-results/security/
+
+  integration:
+    name: ${{ matrix.tier }} local Worker + SQLite
+    strategy:
+      fail-fast: false
+      matrix:
+        tier: [l2, l3]
+    uses: nocoo/base-ci/.github/workflows/test-job.yml@ad43150de3a2be2fa464b5cd2f921dc4fa9f8f0f
+    with:
+      runtime-version: '1.4.0'
+      node-version: '26.8.1'
+      install-policy: trusted
+      timeout-minutes: 15
+      browser: ${{ matrix.tier == 'l3' && 'chromium' || '' }}
+      command: bun run test:${{ matrix.tier }}
+      artifact-name: ${{ matrix.tier }}-evidence
+      artifact-path: |
+        test-results/
+        playwright-report/
+
+  workflows:
+    uses: nocoo/base-ci/.github/workflows/workflow-lint.yml@ad43150de3a2be2fa464b5cd2f921dc4fa9f8f0f

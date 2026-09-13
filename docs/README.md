@@ -1,0 +1,18 @@
+# Life.ai 文档
+
+当前版本以个人生活实录为核心：UTC 记录、多来源导入与 Connect 写入、本地 24 小时时间线。
+
+| 文档 | 内容 |
+| --- | --- |
+| [00 产品与架构](00-overview.md) | 单人数据集与 MVVM 分层 |
+| [01 Apple Health 数据](01-data-structure-apple-health.md) | 原始导出格式参考 |
+| [02 GPS 数据](02-data-structure-footprint.md) | GPX 格式参考 |
+| [03 貔貅数据](03-data-structure-pixiu.md) | CSV 字段参考 |
+| [04 导入与脚本](04-scripts.md) | 当前导入格式与命令 |
+| [05 Basalt 初次迁移](05-basalt-migration.md) | 0.2.x 历史记录 |
+| [06 Basalt 整理](06-basalt-modernization.md) | 0.2.x 历史记录 |
+| [07 开发与部署](07-development.md) | 环境、端口、D1、Access |
+| [08 重构记录](08-chronicle-rewrite.md) | 产品/API 契约与实际验证 |
+| [09 Basalt UI](09-basalt-ui.md) | 当前组件使用与界面整理 |
+| [10 Worker API](10-worker-api.md) | 认证、接口与数据库 |
+| [11 质量与隔离](11-quality.md) | 6DQ、运行方法和隔离边界 |

@@ -1,10 +1,8 @@
-bun run ut:scripts
-bun run lint
-bun run lint:import
-bun run lint:verify
-
-# Dashboard 测试和 lint
-(cd dashboard && bun run ut && bun run lint)
-
-# G2b: dependency vulnerability scan
-osv-scanner scan --lockfile=bun.lock --config=osv-scanner.toml
+# L2 + G2, each returns a required status.
+bun run test:l2 &
+life_l2_pid=$!
+bun run gate:security
+life_security_status=$?
+wait "$life_l2_pid"
+life_l2_status=$?
+test "$life_security_status" -eq 0 && test "$life_l2_status" -eq 0

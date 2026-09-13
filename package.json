@@ -1,66 +1,70 @@
 {
-  "name": "life.ai",
-  "version": "0.2.1",
-  "private": true,
-  "type": "module",
-  "trustedDependencies": [],
-  "engines": {
-    "node": ">=22"
-  },
-  "scripts": {
-    "check:node": "node scripts/check-node-version.mjs",
-    "predev": "bun run check:node",
-    "pretest": "bun run check:node",
-    "pretest:coverage": "bun run check:node",
-    "preut": "bun run check:node",
-    "preut:scripts": "bun run check:node",
-    "pretest:l2": "bun run check:node",
-    "pretest:e2e:bdd": "bun run check:node",
-    "prelint": "bun run check:node",
-    "pretypecheck": "bun run check:node",
-    "dev": "cd dashboard && bun dev",
-    "test": "bun --bun vitest run --coverage && bun run scripts/coverage-check.ts && cd dashboard && bun run ut",
-    "test:coverage": "bun --bun vitest run --coverage && bun run scripts/coverage-check.ts && cd dashboard && bun run ut",
-    "ut": "bun --bun vitest run --coverage && bun run scripts/coverage-check.ts && cd dashboard && bun run ut",
-    "ut:scripts": "bun --bun vitest run --coverage && bun run scripts/coverage-check.ts",
-    "test:l2": "cd dashboard && bunx vitest run tests/api/",
-    "test:e2e:bdd": "cd dashboard && bunx playwright test",
-    "lint": "eslint --max-warnings=0 . --ext .ts && cd dashboard && bun run lint",
-    "lint:import": "eslint scripts/import --ext .ts",
-    "lint:verify": "eslint scripts/verify --ext .ts",
-    "precommit": "bun run test:coverage && bun run lint",
-    "prepare": "husky",
-    "db:init": "bun run scripts/import/footprint/init.ts",
-    "db:load": "bun run scripts/import/footprint/cli.ts load",
-    "db:agg": "bun run scripts/import/footprint/cli.ts agg",
-    "db:refresh": "bun run scripts/import/footprint/refresh.ts",
-    "typecheck": "tsc --noEmit"
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/bun": "1.4.2",
-    "@typescript-eslint/eslint-plugin": "8.70.0",
-    "@typescript-eslint/parser": "8.70.0",
-    "@vitest/coverage-istanbul": "5.0.0",
-    "eslint": "^10.10.0",
-    "eslint-config-prettier": "^10.1.8",
-    "husky": "^9.1.7",
-    "typescript": "^6.0.3",
-    "vitest": "5.0.0"
-  },
-  "overrides": {
-    "ajv": "^6.14.0",
-    "flatted": ">=3.4.2",
-    "minimatch": ">=3.1.4",
-    "picomatch": ">=4.0.4",
-    "nanoid": "^3.3.18",
-    "postcss": ">=8.5.23",
-    "brace-expansion": ">=5.0.9",
-    "vite": ">=8.0.16"
-  },
-  "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --max-warnings=0"
-    ]
-  }
+	"name": "life.ai",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"packageManager": "bun@1.4.0",
+	"engines": {
+		"node": ">=22.20.0"
+	},
+	"scripts": {
+		"dev": "CLOUDFLARE_ENV=local vite --host 127.0.0.1",
+		"build": "vite build",
+		"preview": "vite preview --host 127.0.0.1",
+		"deploy": "bun scripts/deploy.ts",
+		"cf-typegen": "wrangler types --env local --include-runtime=false --strict-vars=false",
+		"typecheck": "bun run cf-typegen && tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.worker.json && tsc --noEmit -p tsconfig.tools.json && tsc --noEmit -p tsconfig.test.json",
+		"lint": "biome check --error-on-warnings .",
+		"lint:fix": "biome check --write .",
+		"test": "vitest run",
+		"test:coverage": "vitest run --coverage",
+		"ut": "bun run test:coverage",
+		"test:l2": "bun scripts/run-tests.ts l2",
+		"test:l3": "bun scripts/run-tests.ts l3",
+		"gate:security": "bun scripts/security.ts",
+		"quality": "bun run typecheck && bun run lint && bun run test:coverage && bun run build && bun run test:l2 && bun run test:l3 && bun run gate:security",
+		"db:migrate": "wrangler d1 migrations apply life-local --config wrangler.jsonc --local --env local --persist-to .wrangler/state",
+		"prepare": "husky",
+		"dev:prod": "CLOUDFLARE_ENV=devprod vite --host 127.0.0.1"
+	},
+	"dependencies": {
+		"@nocoo/basalt": "2.1.7",
+		"jose": "6.2.12",
+		"lucide-react": "1.43.0",
+		"papaparse": "5.7.0",
+		"react": "19.2.8",
+		"react-dom": "19.2.8",
+		"react-router": "8.3.1",
+		"saxes": "6.0.0",
+		"zod": "4.6.2",
+		"zustand": "5.0.15"
+	},
+	"devDependencies": {
+		"@axe-core/playwright": "4.13.0",
+		"@biomejs/biome": "2.5.13",
+		"@cloudflare/vite-plugin": "1.54.8",
+		"@cloudflare/workers-types": "5.20260911.1",
+		"@playwright/test": "1.63.0",
+		"@tailwindcss/vite": "4.3.3",
+		"@testing-library/react": "16.3.3",
+		"@types/bun": "1.4.0",
+		"@types/node": "22.20.2",
+		"@types/papaparse": "5.5.2",
+		"@types/react": "19.3.0",
+		"@types/react-dom": "19.3.0",
+		"@vitejs/plugin-react": "6.1.1",
+		"@vitest/coverage-v8": "5.0.0",
+		"husky": "9.1.7",
+		"jsdom": "30.0.1",
+		"tailwindcss": "4.3.3",
+		"typescript": "7.0.2",
+		"vite": "8.2.2",
+		"vitest": "5.0.0",
+		"wrangler": "4.131.1"
+	},
+	"trustedDependencies": [
+		"@biomejs/biome",
+		"esbuild",
+		"workerd"
+	]
 }

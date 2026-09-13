@@ -1,0 +1,102 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "life",
+	"account_id": "d51a8fde361e4be31db17d8c56737c1f",
+	"main": "worker/index.ts",
+	"compatibility_date": "2026-09-13",
+	"compatibility_flags": ["nodejs_compat"],
+	"workers_dev": false,
+	"preview_urls": false,
+	"routes": [
+		{
+			"pattern": "life.hexly.ai",
+			"custom_domain": true
+		},
+		{
+			"pattern": "life.worker.hexly.ai",
+			"custom_domain": true
+		}
+	],
+	"assets": {
+		"binding": "ASSETS",
+		"not_found_handling": "single-page-application",
+		"run_worker_first": true
+	},
+	"observability": {
+		"enabled": true,
+		"head_sampling_rate": 1
+	},
+	"vars": {
+		"RESOURCE_ENV": "production",
+		"ACCESS_TEAM_DOMAIN": "nocoo.cloudflareaccess.com",
+		"ACCESS_AUD": "3d1df7c70e4cb094a5bd4a1c2ec7a81aad0d5265e93f8b89424a206859269503",
+		"APP_ORIGIN": "https://life.hexly.ai",
+		"INGEST_HOST": "life.worker.hexly.ai",
+		"TEST_ACCESS_JWKS": ""
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "life",
+			"database_id": "50a1d276-d24b-4c07-82af-e14683116489",
+			"migrations_dir": "worker/migrations"
+		}
+	],
+	"env": {
+		"local": {
+			"name": "life-local",
+			"workers_dev": false,
+			"preview_urls": false,
+			"routes": [],
+			"vars": {
+				"RESOURCE_ENV": "development",
+				"ACCESS_TEAM_DOMAIN": "nocoo.cloudflareaccess.com",
+				"ACCESS_AUD": "life-local-only",
+				"APP_ORIGIN": "https://life.dev.hexly.ai",
+				"INGEST_HOST": "life.worker.hexly.ai",
+				"TEST_ACCESS_JWKS": ""
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "life-local",
+					"database_id": "local-life",
+					"migrations_dir": "worker/migrations"
+				}
+			],
+			"assets": {
+				"binding": "ASSETS",
+				"not_found_handling": "single-page-application",
+				"run_worker_first": true
+			}
+		},
+		"devprod": {
+			"name": "life-devprod",
+			"workers_dev": false,
+			"preview_urls": false,
+			"routes": [],
+			"vars": {
+				"RESOURCE_ENV": "development",
+				"ACCESS_TEAM_DOMAIN": "nocoo.cloudflareaccess.com",
+				"ACCESS_AUD": "life-local-only",
+				"APP_ORIGIN": "https://life.dev.hexly.ai",
+				"INGEST_HOST": "life.worker.hexly.ai",
+				"TEST_ACCESS_JWKS": ""
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "life",
+					"database_id": "50a1d276-d24b-4c07-82af-e14683116489",
+					"migrations_dir": "worker/migrations",
+					"remote": true
+				}
+			],
+			"assets": {
+				"binding": "ASSETS",
+				"not_found_handling": "single-page-application",
+				"run_worker_first": true
+			}
+		}
+	}
+}

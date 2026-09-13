@@ -18,8 +18,7 @@ except ImportError:
 # === Project-specific config ===
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "logo.png"
-PUBLIC = ROOT / "dashboard" / "public"
-APP = ROOT / "dashboard" / "src" / "app"
+PUBLIC = ROOT / "public"
 OG_BG = (15, 15, 15)  # Dark background for OG image
 
 
@@ -61,7 +60,6 @@ def main() -> None:
 
     # Ensure directories exist
     PUBLIC.mkdir(parents=True, exist_ok=True)
-    APP.mkdir(parents=True, exist_ok=True)
 
     # === public/ assets (for <img src> references) ===
     print("\npublic/ assets:")
@@ -70,24 +68,24 @@ def main() -> None:
         resize(img, size).save(out, "PNG", optimize=True)
         print(f"  ✓ {out.relative_to(ROOT)}")
 
-    # === src/app/ assets (Next.js file conventions) ===
-    print("\nsrc/app/ assets (Next.js metadata):")
+    # === Browser metadata assets ===
+    print("\nBrowser metadata assets:")
 
     # favicon: 32x32 PNG
-    icon_out = APP / "icon.png"
+    icon_out = PUBLIC / "icon.png"
     resize(img, 32).save(icon_out, "PNG", optimize=True)
     print(f"  ✓ {icon_out.relative_to(ROOT)}")
 
     # Apple touch icon: 180x180
-    apple_out = APP / "apple-icon.png"
+    apple_out = PUBLIC / "apple-icon.png"
     resize(square, 180).convert("RGB").save(apple_out, "PNG", optimize=True)
     print(f"  ✓ {apple_out.relative_to(ROOT)}")
 
     # favicon.ico: multi-resolution
-    generate_ico(img, APP / "favicon.ico")
+    generate_ico(img, PUBLIC / "favicon.ico")
 
     # OG image: 1200x630
-    generate_og_image(rounded, APP / "opengraph-image.png")
+    generate_og_image(rounded, PUBLIC / "opengraph-image.png")
 
     print("\n✅ All logo assets generated successfully!")
 

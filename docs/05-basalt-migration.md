@@ -1,3 +1,5 @@
+> 历史参考：本文涉及的旧运行时/数据库路径属于 0.2.x（Git `6cdb344`）。当前架构见 [08 重构记录](08-chronicle-rewrite.md)，UI 见 [09 Basalt UI](09-basalt-ui.md)。
+
 # 05 Basalt UI Migration Plan
 
 Migrate all life.ai dashboard UI to the basalt design system while preserving full functionality.

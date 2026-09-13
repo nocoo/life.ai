@@ -1,24 +1,21 @@
-# 00 概览
+# 00 产品与架构
 
-本项目将 Apple Health、footprint 和貔貅记账的导出数据导入 SQLite，并提供日、月、年视图的 Web Dashboard。首次安装、配置和测试入口见[项目 README](../README.md)。
+Life.ai 是一个人的生活实录。一天分成 24 个本地小时，把来自健康、足迹、记账和主动推送的记录放回它们发生的时间。
 
-## 文档导航
-- `docs/01-data-structure-apple-health.md`：Apple Health 数据结构说明
-- `docs/02-data-structure-footprint.md`：footprint 数据结构与数据库 schema
-- `docs/03-data-structure-pixiu.md`：pixiu 记账数据结构说明
-- `docs/04-scripts.md`：scripts 目录结构与导入说明
-- `docs/05-basalt-migration.md`：basalt UI 迁移工作计划（初版，已被 06 取代）
-- `docs/06-basalt-modernization.md`：**Basalt 现代化升级规划** — Next.js 16 升级 + B-0~B-5 规范对齐
-- [本地开发与 SQLite 驱动](07-development.md)：安装后的检查和原生模块构建
-- [English README](README.en.md)
+## 时间和来源
 
-## 数据库文件
-项目使用 SQLite 数据库存储结构化数据，位于 `db/` 目录：
-- `db/applehealth.sqlite`：Apple Health 数据（record、correlation、workout、activity_summary、ecg、workout_route）
-- `db/footprint.sqlite`：足迹数据（track_point、track_day_agg、track_week_agg、track_month_agg、track_year_agg）
-- `db/pixiu.sqlite`：记账数据（pixiu_transaction、pixiu_day_agg、pixiu_month_agg、pixiu_year_agg）
+数据库存 UTC 毫秒，API 返回 ISO `Z`。没有偏移量的时间按 UTC 处理；设备时区只影响展示和日期选择。保留 day/hour/minute/second 精度：仅有日期的记录锚定 UTC 午夜，在包含该时刻的本地日期显示为全天记录。区间可以跨多个小时；夏令时日仍有 24 个钟点标签，标明跳过或重复。
 
-## 关键约定
-- 数据源与数据库命名统一为对应模块名
-- 主要脚本入口在 `scripts/`
-- Dashboard 前端项目在 `dashboard/`
+导入键是来源与稳定外部键。Connect 键是 token 对应来源与 UTC 小时。同一键再次提交会覆盖内容，Connect 不限制未来时间。Access 只认证入口；数据不按 email/subject 分区。
+
+## 分层
+
+| 层 | 路径 | 责任 |
+| --- | --- | --- |
+| Model | `src/models` | UTC、精度、日时间线、流式导入、共享类型 |
+| Service | `src/services` | HTTP、分页、错误与取消 |
+| ViewModel | `src/viewmodels` | 与 DOM 无关的状态及操作 |
+| View | `src/views`、`src/components` | Basalt 页面、可访问交互、响应式布局 |
+| API | `worker` | Access JWT、Connect、D1 SQL、主机隔离 |
+
+一个 Vite 构建同时产出 SPA 和 Worker。生产不运行 Node 服务，数据库使用 D1 `life`。Google OAuth、Next.js 和旧本地 SQLite 服务已移除；旧实现可在 Git 提交 `6cdb344` 查看。

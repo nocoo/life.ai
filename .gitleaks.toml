@@ -1,8 +1,6 @@
-title = "gitleaks config"
+[extend]
+useDefault = true
 
-[allowlist]
-  paths = [
-    '.*\.test\.ts',
-    '.*\.spec\.ts',
-    '.*__tests__.*',
-  ]
+[[allowlists]]
+description = "Public Cloudflare Access application audience (not a credential)"
+regexes = ['''3d1df7c70e4cb094a5bd4a1c2ec7a81aad0d5265e93f8b89424a206859269503''']

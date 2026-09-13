@@ -2,3 +2,13 @@ data/
 coverage/
 .DS_Store
 node_modules/
+.wrangler/
+.env*
+.dev.vars*
+dist/
+.next/
+test-results/
+playwright-report/
+worker-configuration.d.ts
+*.tsbuildinfo
+db/

@@ -1,25 +1,21 @@
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-  test: {
-    include: ["scripts/test/**/*.test.ts"],
-    fileParallelism: false,
-    coverage: {
-      provider: "istanbul",
-      reporter: ["text", "lcov"],
-      include: ["scripts/import/**/*.ts", "scripts/verify/**/*.ts"],
-      exclude: [
-        "scripts/import/**/cli.ts",
-        "scripts/import/**/init.ts",
-        "scripts/import/**/refresh.ts",
-        "scripts/import/footprint/explore-gpx.ts",
-      ],
-      thresholds: {
-        lines: 95,
-        functions: 95,
-        branches: 95,
-        statements: 95,
-      },
-    },
-  },
+	test: {
+		include: ["tests/unit/**/*.test.{ts,tsx}", "tests/worker/**/*.test.ts"],
+		environment: "node",
+		restoreMocks: true,
+		unstubGlobals: true,
+		coverage: {
+			provider: "v8",
+			include: [
+				"src/models/**/*.ts",
+				"src/services/**/*.ts",
+				"src/viewmodels/**/*.ts",
+				"worker/**/*.ts",
+			],
+			reporter: ["text", "json-summary", "html"],
+			thresholds: { statements: 95, branches: 95, functions: 95, lines: 95 },
+		},
+	},
 });

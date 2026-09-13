@@ -1,0 +1,16 @@
+@source "../node_modules/@nocoo/basalt/dist/**/*.{js,jsx,ts,tsx}";
+/* biome-ignore lint/correctness/noInvalidPositionAtImportRule: Basalt requires @source before these imports */
+@import "@nocoo/basalt/styles/tailwind";
+/* biome-ignore lint/correctness/noInvalidPositionAtImportRule: Basalt requires @source before these imports */
+@import "tailwindcss";
+
+@layer base {
+	html,
+	body,
+	#root {
+		height: 100%;
+	}
+	body {
+		@apply bg-basalt-background text-basalt-foreground antialiased;
+	}
+}

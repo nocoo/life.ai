@@ -1,3 +1,5 @@
+> 历史参考：本文涉及的旧运行时/数据库路径属于 0.2.x（Git `6cdb344`）。当前架构见 [08 重构记录](08-chronicle-rewrite.md)，UI 见 [09 Basalt UI](09-basalt-ui.md)。
+
 # Basalt 公共组件升级
 
 Life.ai Dashboard 已从自建 Basalt 风格组件迁移到 npm 包 `@nocoo/basalt` 2.1.7。本文件记录当前架构与保留边界；旧的分阶段现代化计划已经完成并不再作为实现依据。
