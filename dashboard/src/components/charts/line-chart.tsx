@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { CHART_COLORS, chartAxis } from "@/lib/palette";
 import { LineChart as BasaltLineChart } from "@nocoo/basalt/charts/line";
 import type { XYPoint, XYSeriesDescriptor } from "@nocoo/basalt/charts/series";
+import { ChartTooltipContent } from "@nocoo/basalt/charts/tooltip";
 
 export interface LineChartDataPoint {
   label: string;
@@ -159,28 +160,7 @@ export function LineChart({
               tickFormatter={valueFormatter}
             />
           )}
-          <Tooltip
-            content={({ active, payload, label }) => {
-              if (!active || !payload?.length) return null;
-              return (
-                <div className="rounded-basalt-lg border border-basalt-border bg-basalt-card p-2 shadow-sm">
-                  <div className="text-sm font-medium text-basalt-foreground">{label}</div>
-                  {payload.map((item, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2 text-sm text-basalt-muted-foreground"
-                    >
-                      <div
-                        className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <span>{valueFormatter(item.value as number)}</span>
-                    </div>
-                  ))}
-                </div>
-              );
-            }}
-          />
+          <Tooltip content={<ChartTooltipContent formatter={valueFormatter} />} />
           {referenceLine !== undefined && (
             <ReferenceLine
               y={referenceLine}

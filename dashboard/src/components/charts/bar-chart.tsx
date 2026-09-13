@@ -12,6 +12,7 @@ import type { BarShapeProps } from "recharts";
 import { cn } from "@/lib/utils";
 import { chart, chartAxis } from "@/lib/palette";
 import { BarChart as BasaltBarChart } from "@nocoo/basalt/charts/bar";
+import { ChartTooltipContent } from "@nocoo/basalt/charts/tooltip";
 
 export interface BarChartDataPoint {
   label: string;
@@ -135,20 +136,7 @@ export function BarChart({
               )}
             </>
           )}
-          <Tooltip
-            content={({ active, payload }) => {
-              if (!active || !payload?.length) return null;
-              const item = payload[0];
-              return (
-                <div className="rounded-basalt-lg border border-basalt-border bg-basalt-card p-2 shadow-sm">
-                  <div className="text-sm font-medium text-basalt-foreground">{item.payload.name}</div>
-                  <div className="text-sm text-basalt-muted-foreground">
-                    {valueFormatter(item.value as number)}
-                  </div>
-                </div>
-              );
-            }}
-          />
+          <Tooltip content={<ChartTooltipContent formatter={valueFormatter} />} />
           <Bar dataKey="value" shape={barShape} />
         </RechartsBarChart>
       </ResponsiveContainer>
