@@ -44,17 +44,25 @@ function getInitials(name?: string): string {
 
 interface AppSidebarProps {
   collapsed: boolean;
+  enableShortcut?: boolean;
   onToggle: () => void;
   onNavigate?: () => void;
   user?: UserInfo;
 }
 
-export function AppSidebar({ collapsed, onToggle, onNavigate, user }: AppSidebarProps) {
+export function AppSidebar({
+  collapsed,
+  enableShortcut = true,
+  onToggle,
+  onNavigate,
+  user,
+}: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
+    if (!enableShortcut) return;
     const handleKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key === "k") {
         event.preventDefault();
@@ -63,7 +71,7 @@ export function AppSidebar({ collapsed, onToggle, onNavigate, user }: AppSidebar
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [enableShortcut]);
 
   const navigate = useCallback(
     (href: string) => {

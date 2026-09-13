@@ -81,4 +81,21 @@ describe("AppSidebar", () => {
     fireEvent.keyDown(document, { key: "k", ctrlKey: true });
     expect(screen.getByPlaceholderText("Search pages...")).toBeTruthy();
   });
+
+  test("supports collapsed navigation and command selection", () => {
+    render(
+      <TooltipProvider>
+        <AppSidebar collapsed onToggle={vi.fn()} />
+      </TooltipProvider>,
+    );
+
+    fireEvent.click(screen.getByLabelText("Search (⌘K)"));
+    expect(screen.getByPlaceholderText("Search pages...")).toBeTruthy();
+    const monthLabels = screen.getAllByText("月视图");
+    fireEvent.click(monthLabels[monthLabels.length - 1]);
+    expect(mockRouterPush).toHaveBeenCalledWith("/month");
+
+    fireEvent.click(screen.getByLabelText("年视图"));
+    expect(mockRouterPush).toHaveBeenCalledWith("/year");
+  });
 });

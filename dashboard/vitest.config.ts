@@ -28,7 +28,6 @@ export default defineConfig({
         // Platform-heavy components covered by build, integration, and E2E gates
         "src/components/icons/**",
         "src/components/ui/**",
-        "src/components/DashboardLayout.tsx",
         "src/views/**",
         // Modules with platform-specific or untested entry points
         "src/lib/auth.ts",

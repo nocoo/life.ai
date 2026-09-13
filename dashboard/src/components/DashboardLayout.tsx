@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Github } from "@/components/icons/github";
 import { AppSidebar } from "@/components/AppSidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { ROUTE_LABELS } from "@/lib/navigation";
 import {
   Button,
@@ -31,6 +32,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children, user }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isMobile = useIsMobile();
   const pathname = usePathname();
   const title = ROUTE_LABELS[pathname] ?? "Life.ai";
   const breadcrumbs = pathname === "/settings/storage"
@@ -42,6 +44,10 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
   }, [pathname]);
 
   useEffect(() => {
+    if (isMobile === false) setMobileOpen(false);
+  }, [isMobile]);
+
+  useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
@@ -51,14 +57,15 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
   return (
     <AppShell>
       <AppSkipLink>Skip to main content</AppSkipLink>
-      <div className="hidden md:block">
+      {isMobile !== true && <div className="hidden md:block">
         <AppSidebar
           collapsed={collapsed}
+          enableShortcut={isMobile === false}
           onToggle={() => setCollapsed((value) => !value)}
           user={user}
         />
-      </div>
-      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+      </div>}
+      {isMobile !== false && <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent
           side="left"
           className="w-[260px] max-w-[260px] border-0 bg-basalt-background p-0 md:hidden"
@@ -66,12 +73,13 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <AppSidebar
             collapsed={false}
+            enableShortcut={isMobile === true}
             onToggle={() => setMobileOpen(false)}
             onNavigate={() => setMobileOpen(false)}
             user={user}
           />
         </SheetContent>
-      </Sheet>
+      </Sheet>}
       <AppMain>
         <AppHeader
           leading={
