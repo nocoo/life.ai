@@ -49,6 +49,9 @@ export function testEnvironment(state?: string): Record<string, string | undefin
 	for (const key of Object.keys(env)) {
 		if (/^(CLOUDFLARE_|CF_)/.test(key) && key !== "CLOUDFLARE_ENV") delete env[key];
 	}
+	delete env.AI_SETTINGS_KEY;
+	delete env.OPENAI_API_KEY;
+	delete env.ANTHROPIC_API_KEY;
 	delete env.NO_COLOR;
 	delete env.FORCE_COLOR;
 	env.WRANGLER_SEND_METRICS = "false";

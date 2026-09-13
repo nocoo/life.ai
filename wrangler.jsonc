@@ -68,6 +68,9 @@
 				"binding": "ASSETS",
 				"not_found_handling": "single-page-application",
 				"run_worker_first": true
+			},
+			"secrets": {
+				"required": ["AI_SETTINGS_KEY"]
 			}
 		},
 		"devprod": {
@@ -96,7 +99,20 @@
 				"binding": "ASSETS",
 				"not_found_handling": "single-page-application",
 				"run_worker_first": true
+			},
+			"ai": {
+				"binding": "AI",
+				"remote": true
+			},
+			"secrets": {
+				"required": ["AI_SETTINGS_KEY"]
 			}
 		}
+	},
+	"ai": {
+		"binding": "AI"
+	},
+	"secrets": {
+		"required": ["AI_SETTINGS_KEY"]
 	}
 }

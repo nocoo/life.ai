@@ -12,6 +12,8 @@
 
 时间线按设备当前时区展示，支持选择日期、来源和查看记录详情。只有日期的记录放在全天区；小时、分钟、秒精度按原始精度保留。所有存储和比较都使用 UTC，没有偏移量的输入也按 UTC 解释。
 
+每日视图同时展示 GPS 地图、健康、运动和分币种收支概览。点击「生成摘要」可以保存当天的 AI 总结；数据变化后会提示重新生成。默认使用 Workers AI，也可以在「AI 设置」配置其他模型。侧栏使用 lizheng.blog 的姓名与头像服务。
+
 在「导入」选择 Apple Health `导出.xml`、GPS `.gpx`、貔貅 `.csv`，或日记 `.json` / `.ndjson`。XML、GPX、CSV、NDJSON 按块读取；普通 JSON 上限 10 MiB。导入可取消，重新导入同一数据不会增加副本。已完成的批次会保留。
 
 在「Connect」为数据来源命名并创建只写 token。明文只显示一次，保存在自己的推送端。同一个 token 在同一 UTC 小时的后续请求会替换该小时的标题、内容和数据，也支持未来的小时。撤销 token 不会删除历史记录。
@@ -47,4 +49,4 @@ bun run deploy       # 构建、dry run、迁移检查/执行、Worker 部署
 
 首次运行浏览器测试前执行 `bunx playwright install chromium`。测试每轮生成独立状态目录、缓存和签名密钥，运行及清理都校验 `_test_marker(env=test)`，不连接远程测试资源。
 
-详见 [文档索引](docs/README.md)、[项目规则](CLAUDE.md)、[重构与上线记录](docs/08-chronicle-rewrite.md)。
+详见 [文档索引](docs/README.md)、[项目规则](CLAUDE.md)、[重构与上线记录](docs/08-chronicle-rewrite.md)、[每日视图与 AI](docs/12-daily-view.md)。

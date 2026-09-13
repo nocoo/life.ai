@@ -1,6 +1,9 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import manifest from "../../package.json" with { type: "json" };
 import type { CreatedConnect, EventPage } from "../../src/models/types";
+
+const { version } = manifest;
 
 test.beforeEach(async ({ page }) => {
 	await page.clock.install({ time: new Date("2026-09-13T04:00:00Z") });
@@ -13,7 +16,7 @@ test("empty timeline keeps all 24 hours and uses Basalt responsive chrome", asyn
 	await expect(page.getByRole("heading", { name: "时间线", exact: true })).toBeVisible();
 	await expect(page.locator("[data-hour]")).toHaveCount(24);
 	await expect(page.getByText("没有全天记录", { exact: true })).toBeVisible();
-	await expect(page.getByText("v1.0.0", { exact: true })).toBeVisible();
+	await expect(page.getByText(`v${version}`, { exact: true })).toBeVisible();
 	await expect(page.locator('[data-hour="0"]')).toContainText("00:00");
 	await expect(page.locator('[data-hour="23"]')).toContainText("23:00");
 	await page.getByRole("button", { name: "收起侧栏", exact: true }).click();
@@ -162,6 +165,9 @@ test("mobile navigation, theme controls and wide data stay usable", async ({ pag
 	await expect(page.locator("html")).toHaveClass(/light/);
 	await page.getByRole("button", { name: "切换主题", exact: true }).click();
 	await expect(page.locator("html")).toHaveClass(/dark/);
+	await page.evaluate(() =>
+		Promise.allSettled(document.getAnimations().map((animation) => animation.finished)),
+	);
 	const accessibility = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
 	expect(accessibility.violations).toEqual([]);
 	expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(

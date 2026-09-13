@@ -38,6 +38,25 @@ function clockOptions(precision: Precision): Intl.DateTimeFormatOptions {
 	return { hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" };
 }
 
+export function formatDurationMinutes(value: number | null): string {
+	if (value === null || !Number.isFinite(value)) {
+		return "—";
+	}
+	const total = Math.round(value);
+	if (total < 0) {
+		return "—";
+	}
+	const hours = Math.floor(total / 60);
+	const rest = total % 60;
+	if (hours > 0 && rest > 0) {
+		return `${hours} 小时 ${rest} 分`;
+	}
+	if (hours > 0) {
+		return `${hours} 小时`;
+	}
+	return `${total} 分`;
+}
+
 export function formatLocalClock(iso: string, precision: Precision): string | null {
 	if (precision === "day") {
 		return null;

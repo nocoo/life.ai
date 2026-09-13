@@ -75,6 +75,8 @@ describe("worker/index router & host isolation", () => {
 		ACCESS_TEAM_DOMAIN: "nocoo.cloudflareaccess.com",
 		ACCESS_AUD: "3d1df7c70e4cb094a5bd4a1c2ec7a81aad0d5265e93f8b89424a206859269503",
 		TEST_ACCESS_JWKS: "",
+		AI: {} as Ai,
+		AI_SETTINGS_KEY: "",
 		DB: createTestDb(),
 		ASSETS: {
 			async fetch() {
@@ -82,6 +84,31 @@ describe("worker/index router & host isolation", () => {
 			},
 		} as unknown as Fetcher,
 	};
+
+	it("routes private AI settings and daily summaries only after authentication", async () => {
+		const env = {
+			...defaultEnv,
+			RESOURCE_ENV: "development",
+			AI: { run: async () => ({ response: "收到" }) } as unknown as Ai,
+		};
+		const origin = "http://localhost";
+		const query =
+			"date=2026-09-13&timeZone=UTC&start=2026-09-13T00:00:00Z&end=2026-09-14T00:00:00Z";
+		const cases = [
+			["/api/settings/ai", "GET", 200],
+			["/api/settings/ai", "PUT", 415],
+			["/api/settings/ai", "PATCH", 405],
+			["/api/settings/ai/test", "GET", 405],
+			["/api/settings/ai/test", "POST", 200],
+			[`/api/day-summary?${query}`, "GET", 200],
+			["/api/day-summary", "POST", 415],
+			["/api/day-summary", "DELETE", 405],
+		] as const;
+		for (const [path, method, status] of cases) {
+			const response = await handleRequest(new Request(`${origin}${path}`, { method }), env);
+			expect(response.status, `${method} ${path}`).toBe(status);
+		}
+	});
 
 	describe("validateHostAndRoute", () => {
 		it("rejects unauthorized host in dev/test environment", () => {

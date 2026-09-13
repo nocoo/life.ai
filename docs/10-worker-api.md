@@ -8,7 +8,7 @@ This document details the backend implementation, database schema, authenticatio
 
 - **Runtime**: Cloudflare Worker running natively on the V8 engine, backed by Cloudflare D1 (`life`).
 - **Domain Routing & Host Isolation**:
-  - `APP_ORIGIN` (`https://life.hexly.ai`): Dashboard SPA and authenticated API routes (`/api/session`, `/api/sources`, `/api/events`, `/api/imports`, `/api/connects`).
+  - `APP_ORIGIN` (`https://life.hexly.ai`): Dashboard SPA and authenticated APIs, including records, imports, Connect management, AI settings and daily summaries.
   - `INGEST_HOST` (`life.worker.hexly.ai`): Machine ingestion endpoint (`POST /api/ingest`) and health probe (`GET /api/live`). Disallows static assets, SPA dashboard, or any data reads.
   - Development (`life.dev.hexly.ai` or loopback `127.0.0.1` / `localhost` / `::1`): Development routing with local identity bypass under strict `RESOURCE_ENV === "development"`.
   - All foreign hostnames are blocked in production with `403 forbidden_host`.
@@ -131,7 +131,7 @@ ON life_events(source_id, occurred_at ASC, id ASC);
   ```json
   {
     "status": "ok",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "timestamp": "2026-09-13T17:35:00.000Z",
     "database": "ok"
   }
@@ -146,10 +146,14 @@ ON life_events(source_id, occurred_at ASC, id ASC);
     "data": {
       "email": "user@hexly.ai",
       "subject": "sub-12345",
-      "mode": "access"
+      "mode": "access",
+      "name": "Example User",
+      "avatar": "https://images.example.com/avatar.png"
     }
   }
   ```
+
+The profile uses SHA-256 of the normalized authenticated email with `lizheng.blog/api/authors/profile`. Missing or failed profiles return `name: null, avatar: null`; authentication and dataset ownership are unchanged.
 
 ### 4.3 `GET /api/sources`
 - Lists import and Connect sources with aggregated counts and `lastEventAt` (using `!= null` check so timestamp `0` is preserved). Revoked Connects remain available as historical sources.
@@ -200,3 +204,21 @@ ON life_events(source_id, occurred_at ASC, id ASC);
 | Max Events Range Window | 32 days |
 | Events Page Size | 200 records |
 | Max Import Batch Size | 100 records |
+
+## 6. AI settings and daily summaries
+
+All five AI method/path contracts require Access and the app hostname; browser writes also enforce origin checks. The machine hostname returns 404 for every AI route.
+
+| Endpoint | Behavior |
+| --- | --- |
+| `GET /api/settings/ai` | Returns `AiSettings` with `hasApiKey` / `configured`, never plaintext or ciphertext keys |
+| `PUT /api/settings/ai` | Saves provider, model, endpoint and protocol. Omitted keys only survive an unchanged provider/endpoint/SDK/auth tuple |
+| `POST /api/settings/ai/test` | Tests the saved configuration with a fixed prompt and 15-second timeout |
+| `GET /api/day-summary?date=...&timeZone=...&start=...&end=...` | Returns `{ summary, stale, eventCount }`; verifies the complete local-day UTC window |
+| `POST /api/day-summary` | Same fields as JSON; manually generates and persists the summary, with a 45-second model timeout |
+
+Migration `0002_daily_ai.sql` adds `ai_settings` (singleton `default`), `day_summaries` (primary key `date, timezone`) and `day_summary_leases` (same key, ownership token and expiry). Record timestamps stay UTC; local date/timezone are summary lookup metadata. API keys use AES-GCM with the separate `AI_SETTINGS_KEY` Worker secret.
+
+Default inference uses Workers AI Qwen; external providers use the next-ai registry and bounded AI SDK clients. Settings bodies are limited to 16 KiB, model names to 200 characters, URLs to 2,048, and keys to 4,096. External endpoints require HTTPS DNS names; only marked isolated tests can use loopback. HTTP redirects are never followed, model responses are capped at 512 KiB, and output text at 16,000 characters.
+
+Summaries cover all sources in the day. Paged UTC reads feed the shared numeric collector and incremental input hash; narrative samples are bounded across hours and sources. A 90-second D1 lease rejects concurrent generation with 409. The save statement checks lease ownership and expiry atomically; failed or expired generation keeps the last successful summary. A second input hash detects records arriving during generation. See [12 Daily views and AI](12-daily-view.md) for precision and sampling details.

@@ -5,10 +5,13 @@ vi.mock("../../../../src/services/session-service", () => ({
 	fetchSession: vi.fn(),
 }));
 
+import type { Session } from "../../../../src/models/types";
 import { ApiError } from "../../../../src/services/http";
 import { fetchSession } from "../../../../src/services/session-service";
 import {
+	sessionAvatarUrl,
 	sessionDisplayName,
+	sessionInitials,
 	sessionSecondaryText,
 	sessionStore,
 } from "../../../../src/viewmodels/session-view-model";
@@ -74,17 +77,30 @@ describe("sessionStore", () => {
 	});
 });
 
+function profile(overrides: Partial<Session> = {}): Session {
+	return { ...sessionFixture(), ...overrides };
+}
+
 describe("session labels", () => {
-	it("describes missing, local and access sessions", () => {
+	it("prefers profile name, then email, and never shows the subject", () => {
 		expect(sessionDisplayName(null)).toBe("未登录");
 		expect(sessionSecondaryText(null)).toBe("");
-		expect(sessionDisplayName(sessionFixture({ mode: "local", email: null }))).toBe("本地模式");
-		expect(sessionSecondaryText(sessionFixture({ mode: "local" }))).toBe("本地开发");
-		expect(sessionDisplayName(sessionFixture({ mode: "local", email: "dev@local" }))).toBe(
-			"dev@local",
+		expect(sessionAvatarUrl(null)).toBeNull();
+		expect(sessionDisplayName(profile({ name: "  Li Zheng  " }))).toBe("Li Zheng");
+		expect(sessionSecondaryText(profile({ name: "Li Zheng" }))).toBe("zheng@hexly.ai");
+		expect(sessionDisplayName(profile({ name: "   ", email: "dev@local" }))).toBe("dev@local");
+		expect(sessionDisplayName(profile({ mode: "local", email: null, name: null }))).toBe(
+			"本地模式",
 		);
-		expect(sessionDisplayName(sessionFixture({ email: null }))).toBe("已认证");
-		expect(sessionDisplayName(sessionFixture())).toBe("zheng@hexly.ai");
-		expect(sessionSecondaryText(sessionFixture())).toBe("access-subject");
+		expect(sessionSecondaryText(profile({ mode: "local", email: null }))).toBe("");
+		expect(sessionDisplayName(profile({ email: null, name: null }))).toBe("已认证");
+		expect(sessionSecondaryText(profile())).toBe("zheng@hexly.ai");
+		expect(sessionSecondaryText(profile())).not.toBe("access-subject");
+		expect(sessionAvatarUrl(profile({ avatar: " https://hexly.ai/me.png " }))).toBe(
+			"https://hexly.ai/me.png",
+		);
+		expect(sessionAvatarUrl(profile({ avatar: "  " }))).toBeNull();
+		expect(sessionInitials("Li Zheng")).toBe("LZ");
+		expect(sessionInitials("  ")).toBe("?");
 	});
 });

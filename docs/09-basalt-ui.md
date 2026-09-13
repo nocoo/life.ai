@@ -30,6 +30,7 @@ Not completed, and intentionally not ported:
 - Vite React SPA chrome that follows `../basalt/INTEGRATION.md` and the installed `@nocoo/basalt/ai/RECIPES.md`.
 - Product routes `/`, `/imports`, `/connect` in the sidebar, plus a not-found page. No `/login`.
 - Daily chronicle: all 24 local hours, all-day records, source filter, previous / next / today / date picker, empty / loading / error.
+- Daily overview: GPS map, health/workout/finance insights from unfiltered events, AI summary independent of the source filter.
 - Source-specific readable details from `LifeEvent.data` (Apple Health, footprint, Pixiu, journal, Connect).
 - Import of Apple Health XML, footprint GPX, Pixiu CSV, journal JSON/NDJSON, with preview, progress, errors, cancel, and `/api/imports` batches.
 - Connect list / create / revoke. Plaintext token and curl example are ephemeral. Copy targets `https://life.worker.hexly.ai/api/ingest`. Copy explains UTC-hour replacement and future hours.
@@ -49,6 +50,7 @@ src/services/sources-service.ts
 src/services/events-service.ts
 src/services/imports-service.ts
 src/services/connects-service.ts
+src/services/ai-service.ts
 src/viewmodels/errors.ts
 src/viewmodels/format.ts
 src/viewmodels/event-details.ts
@@ -57,6 +59,8 @@ src/viewmodels/timeline-view-model.ts
 src/viewmodels/import-view-model.ts
 src/viewmodels/connect-view-model.ts
 src/viewmodels/hour-slot.ts
+src/viewmodels/ai-settings-view-model.ts
+src/viewmodels/day-summary-view-model.ts
 src/components/hydrate-chrome.ts
 src/components/app-version.ts
 src/components/brand.ts
@@ -70,7 +74,11 @@ src/components/app-frame.tsx
 src/components/date-navigation.tsx
 src/components/event-card.tsx
 src/components/day-timeline.tsx
+src/components/day-insights.tsx
+src/components/day-map.tsx
+src/components/day-summary.tsx
 src/views/timeline-page.tsx
+src/views/ai-settings-page.tsx
 src/views/imports-page.tsx
 src/views/connect-page.tsx
 src/views/not-found-page.tsx
@@ -91,10 +99,15 @@ Views are not unit-tested here. Codex L3 covers timeline, import, Connect, respo
 - Hour slots with `instants.length === 0` are nonexistent (spring-forward skip). `state === "missing"` with `instants.length > 0` is a shortened hour (for example Australia/Lord_Howe half-hour DST) and still renders `slot.events`. Each row has `data-hour={slot.hour}` for L3 anchors.
 - Import preview is the selected file name, size and source. There is no fake parse of records in the UI; `importFile` owns parsing. Copy talks about replay safety (re-import updates existing records), not batch size or stable keys.
 - `importSourceMeta` reads a complete `Record<ImportSourceId, ImportSourceMeta>` map, so the Imports page never sees an undefined source.
+- Timeline always fetches the day's events without a source query. The source filter projects the hour list, GPS map, and health/workout/finance stats. AI summary stays all-source. Workouts use `precision` (全天 when the clock is null). Health stats include walking distance, flights and standing; duration text rounds total minutes before splitting hours.
+- Day map lazy-loads `leaflet` and `leaflet/dist/leaflet.css`, uses `preferCanvas`, OSM tiles at `https://tile.openstreetmap.org/{z}/{x}/{y}.png` with linked OpenStreetMap contributors attribution, keeps all polyline vertices, and only start/end markers (UTC min/max, not segment order). Import/init failures show a retry. ResizeObserver calls `invalidateSize`. Popups use `textContent` only. Optional global CSS: `@import "leaflet/dist/leaflet.css";`
+- AI: `GET/PUT /api/settings/ai`, test `POST /api/settings/ai/test` against the saved config. Default `workers-ai` needs no key. Builtins/custom come from `@nocoo/next-ai` `defaultRegistry` / `CUSTOM_PROVIDER_INFO`. Day summary `GET/POST /api/day-summary` is manual, all sources, plain-text paragraphs, stale flag, previous text kept on failure.
 - Created Connect secrets live only in store memory and disappear on dismiss or reset. They are never written to `localStorage`.
 - Accent picker is application composition on Basalt `DropdownMenu` + `useAccent`, not a copied ThemeToggle.
 - Router imports are from `react-router` 8.3.1 (`BrowserRouter`, `useLocation`, `Link`). Brand mark is `/logo-24.png`. Sidebar version is `package.json` `version` (`1.0.0`). lucide-react 1.43.0 has no `Github` export; the header repo control uses `ExternalLink`.
 - `AppHeader` uses `breadcrumbs={[{ label: meta.title }]}` and omits `title`, so the page `PageHeader` is the only `h1`. Unknown paths render a not-found page. Timeline, imports and Connect are `lazy()` route chunks so the XML/CSV parser stays off the main bundle.
+- Sidebar 24×24 mark uses Basalt `SidebarHeader` defaults (`h-14 px-3 items-center`) in both collapse and expand, with `data-sidebar-logo` and `h-6 w-6`. Do not center or zero-pad the collapsed header; that shifts x. Root owns coordinate tests.
+- Footer identity reads `Session.name` / `Session.avatar` directly. Prefer name, then email; secondary line is email only (never `subject`). `AvatarImage` plus initials fallback.
 - Session 401/403 sets `expired` and the chrome offers a full reload / re-auth, not another `/api/session` retry.
 - Chinese copy throughout. No production fixtures, mocks or placeholder events in Views.
 
@@ -104,6 +117,8 @@ Consumed as specified. No change required.
 
 - `src/models/time.ts`: `localDateKey`, `shiftLocalDate`, `localDayWindow`, `buildDayTimeline`, `normalizeTimestamp`.
 - `src/models/import.ts`: `importFile(file, source, onBatch, onProgress, signal?)`.
+- `src/models/day-insights.ts`: `buildDayInsights(events, window)`.
+- `src/models/ai.ts`: settings and day-summary types, `DEFAULT_AI_MODEL`.
 
 Assumptions:
 
@@ -113,21 +128,12 @@ Assumptions:
 
 If those assumptions are wrong, adjust the models rather than adding UI shims.
 
-## Additional dependencies
+## Runtime dependencies
 
-None. Root already has `react@19.2.8`, `react-router@8.3.1`, `zustand@5.0.15`, `@nocoo/basalt@2.1.7`, `lucide-react@1.43.0`, Tailwind 4.3.3. No `react-router-dom`, `date-fns`, `recharts`, or `react-day-picker`.
+Leaflet 1.9.4 is loaded only for a day with coordinates; its CSS is imported by the same map module. `@nocoo/next-ai` 0.4.0 supplies AI provider metadata. The backend uses AI SDK clients with bounded HTTP transport.
 
-## Test status
+The summary ViewModel ignores late responses from another day and reloads the selected day after returning from imports or settings. Source filtering does not reload summaries. Basalt's AvatarImage/AvatarFallback handle loading and failed images; no duplicate image state is kept. Leaflet instances and ResizeObservers are removed when the day or route changes.
 
-Integrated L1 passed: 261 tests; statements 99.08%, branches 96.55%, functions 99.39%, lines 99.13%. L2 and all 8 L3 scenarios passed. The release record in [08](08-chronicle-rewrite.md) is authoritative for deployment and final verification.
+## Validation
 
-Frontend-only L1 isolation, when re-run:
-
-```
-./node_modules/.bin/vitest run tests/unit/frontend --coverage \
-  --coverage.include=src/services/**/*.ts \
-  --coverage.include=src/viewmodels/**/*.ts \
-  --coverage.reportsDirectory=coverage/frontend
-```
-
-Thin Views and browser interactions are covered by L3.
+Thin Views are exercised by Playwright. L3 checks the exact logo x/y coordinates over repeated collapse/expand cycles, avatar fallback, mobile navigation, keyboard/zoom/resize on maps, source filtering, AI settings, persisted summaries and date-switch races. Model/Service/ViewModel coverage belongs to L1. Release results are recorded in [12 Daily views and AI](12-daily-view.md).

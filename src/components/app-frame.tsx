@@ -9,6 +9,7 @@ import { Suspense, useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router";
 import { useStore } from "zustand";
 import {
+	sessionAvatarUrl,
 	sessionDisplayName,
 	sessionSecondaryText,
 	sessionStore,
@@ -33,6 +34,7 @@ export function AppFrame() {
 	const meta = routeMeta(pathname);
 	const userName = sessionDisplayName(session);
 	const userEmail = sessionSecondaryText(session);
+	const userAvatar = sessionAvatarUrl(session);
 
 	useEffect(() => {
 		void sessionStore.getState().load();
@@ -99,6 +101,7 @@ export function AppFrame() {
 						onToggle={() => setCollapsed((value) => !value)}
 						userName={userName}
 						userEmail={userEmail}
+						userAvatar={userAvatar}
 					/>
 				</div>
 			)}
@@ -116,6 +119,7 @@ export function AppFrame() {
 							onNavigate={() => setMobileOpen(false)}
 							userName={userName}
 							userEmail={userEmail}
+							userAvatar={userAvatar}
 						/>
 					</SheetContent>
 				</Sheet>

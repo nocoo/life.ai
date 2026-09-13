@@ -2,6 +2,13 @@ import assert from "node:assert/strict";
 import { version } from "../../package.json";
 import { assertMarker, executeLocalSql } from "../../scripts/local-db";
 import type {
+	AiConnectionResult,
+	AiSettings,
+	AiSettingsInput,
+	DaySummaryQuery,
+	DaySummaryResult,
+} from "../../src/models/ai";
+import type {
 	Connect,
 	CreatedConnect,
 	EventPage,
@@ -118,6 +125,8 @@ await scenario(
 			email: "reader@example.test",
 			subject: "life-isolated-reader",
 			mode: "access",
+			name: null,
+			avatar: null,
 		});
 	},
 );
@@ -466,7 +475,229 @@ await scenario(
 	},
 );
 
+const aiBaseURL = process.env.LIFE_TEST_AI_URL;
+const aiKey = process.env.LIFE_TEST_AI_KEY;
+assert(aiBaseURL && aiKey && new URL(aiBaseURL).hostname === "127.0.0.1");
+const aiConfig: AiSettingsInput = {
+	provider: "custom",
+	model: "life-test-ok",
+	baseURL: aiBaseURL,
+	sdkType: "anthropic",
+	authType: "apiKey",
+};
+const summaryDay: DaySummaryQuery = {
+	date: "2099-06-15",
+	timeZone: "UTC",
+	start: "2099-06-15T00:00:00Z",
+	end: "2099-06-16T00:00:00Z",
+};
+const summaryPath = `/api/day-summary?${new URLSearchParams({ ...summaryDay })}`;
+async function saveAi(changes: Partial<AiSettingsInput> = {}) {
+	return data<AiSettings>(
+		await request("/api/settings/ai", { method: "PUT", body: { ...aiConfig, ...changes } }),
+	);
+}
+
+await scenario(
+	"all AI routes enforce Access, browser origin, host and method boundaries",
+	async () => {
+		for (const [path, method] of [
+			["/api/settings/ai", "GET"],
+			["/api/settings/ai", "PUT"],
+			["/api/settings/ai/test", "POST"],
+			[summaryPath, "GET"],
+			["/api/day-summary", "POST"],
+		]) {
+			assert(path && method);
+			await rejected(await request(path, { method, token: null }), 401);
+			await rejected(await request(path, { method, host: "life.worker.hexly.ai" }), 404);
+			if (method !== "GET")
+				await rejected(
+					await request(path, { method, origin: "https://outside.example.test" }),
+					403,
+				);
+		}
+		for (const path of ["/api/settings/ai", "/api/day-summary"])
+			await rejected(await request(path, { method: "PATCH" }), 405);
+		await rejected(await request("/api/settings/ai/test"), 405);
+		const settings = await data<AiSettings>(await request("/api/settings/ai"));
+		assert.equal(settings.provider, "workers-ai");
+		assert.equal(settings.hasApiKey, false);
+		const empty = await data<DaySummaryResult>(await request(summaryPath));
+		assert.equal(empty.summary, null);
+		assert.equal(empty.eventCount, 0);
+	},
+);
+
+await scenario(
+	"AI settings validate providers and URLs and never return or store a plaintext API key",
+	async () => {
+		for (const body of [
+			null,
+			[],
+			{ ...aiConfig, provider: "unsupported" },
+			{ ...aiConfig, sdkType: "ftp" },
+			{ ...aiConfig, authType: "basic" },
+			{ ...aiConfig, model: 4 },
+			{ ...aiConfig, model: "x".repeat(1000) },
+			{ ...aiConfig, baseURL: "https://127.0.0.2/v1" },
+			{ ...aiConfig, baseURL: "https://10.0.0.1/v1" },
+			{ ...aiConfig, baseURL: "https://a:b@ai.example.test/v1" },
+			{ ...aiConfig, baseURL: "https://ai.example.test/v1?token=test" },
+		]) {
+			await rejected(await request("/api/settings/ai", { method: "PUT", body }), 400);
+		}
+		const saved = await saveAi({ apiKey: aiKey });
+		assert.equal(saved.configured, true);
+		assert.equal(saved.hasApiKey, true);
+		assert(!JSON.stringify(saved).includes(aiKey));
+		assert(!("apiKey" in saved));
+		const sql = (await executeLocalSql(state, "SELECT encrypted_api_key FROM ai_settings;")) as {
+			results: { encrypted_api_key: string }[];
+		}[];
+		const encrypted = sql[0]?.results[0]?.encrypted_api_key;
+		assert(encrypted && encrypted !== aiKey && !encrypted.includes(aiKey));
+		await saveAi({ model: "life-test-ok" });
+		const connection = await data<AiConnectionResult>(
+			await request("/api/settings/ai/test", { method: "POST" }),
+		);
+		assert.equal(connection.success, true);
+		assert(connection.response.length > 0);
+	},
+);
+
+await scenario(
+	"daily summaries aggregate paginated records, use the selected UTC day, and persist across reads",
+	async () => {
+		for (let offset = 0; offset < 205; offset += 100) {
+			await data(
+				await importBatch(
+					"journal",
+					Array.from({ length: Math.min(100, 205 - offset) }, (_, index) => ({
+						key: `ai-journal-${offset + index}`,
+						occurredAt:
+							offset + index === 23
+								? "2099-06-15T23:59:00Z"
+								: `2099-06-15T${String((offset + index) % 24).padStart(2, "0")}:30:00Z`,
+						precision: "minute",
+						title: offset + index === 23 ? "夜间阅读" : `实录 ${offset + index}`,
+						content: "已记录的活动",
+					})),
+				),
+			);
+		}
+		await data(
+			await importBatch("apple-health", [
+				{
+					key: "ai-steps-1",
+					occurredAt: "2099-06-15T06:00:00Z",
+					title: "步数",
+					data: { type: "HKQuantityTypeIdentifierStepCount", value: "1000", unit: "count" },
+				},
+				{
+					key: "ai-steps-2",
+					occurredAt: "2099-06-15T16:00:00Z",
+					title: "步数",
+					data: { type: "HKQuantityTypeIdentifierStepCount", value: "500", unit: "count" },
+				},
+			]),
+		);
+		const result = await data<DaySummaryResult>(
+			await request("/api/day-summary", { method: "POST", body: summaryDay }),
+		);
+		assert(result.summary);
+		assert.equal(result.eventCount, 207);
+		assert.equal(result.summary.eventCount, 207);
+		assert.equal(result.stale, false);
+		assert.equal(result.summary.provider, "custom");
+		assert.match(result.summary.content, /晨间阅读/);
+		assert.match(result.summary.generatedAt, /Z$/);
+		const reread = await data<DaySummaryResult>(await request(summaryPath));
+		assert.deepEqual(reread, result);
+		const samples = (await (await fetch(`${new URL(aiBaseURL).origin}/requests`)).json()) as {
+			model: string;
+			input: string;
+		}[];
+		const prompt = samples.at(-1)?.input ?? "";
+		assert.match(prompt, /1500/);
+		assert.match(prompt, /207/);
+		assert.match(prompt, /2099-06-15/);
+		assert.match(prompt, /夜间阅读/);
+	},
+);
+
+await scenario(
+	"summary freshness notices replacements while failed generation retains the last success",
+	async () => {
+		const before = await data<DaySummaryResult>(await request(summaryPath));
+		await data(
+			await importBatch("journal", [
+				{ key: "ai-journal-0", occurredAt: "2099-06-15T00:30:00Z", title: "更新后的阅读记录" },
+			]),
+		);
+		const stale = await data<DaySummaryResult>(await request(summaryPath));
+		assert.equal(stale.stale, true);
+		assert.equal(stale.eventCount, 207);
+		assert.deepEqual(stale.summary, before.summary);
+		await saveAi({ model: "life-test-failure" });
+		const failure = await request("/api/day-summary", { method: "POST", body: summaryDay });
+		assert(!(await failure.clone().text()).includes(aiKey));
+		await rejected(failure, 502);
+		assert.deepEqual(
+			(await data<DaySummaryResult>(await request(summaryPath))).summary,
+			before.summary,
+		);
+		await saveAi();
+		const refreshed = await data<DaySummaryResult>(
+			await request("/api/day-summary", { method: "POST", body: summaryDay }),
+		);
+		assert.equal(refreshed.stale, false);
+		assert.notEqual(refreshed.summary?.inputHash, before.summary?.inputHash);
+	},
+);
+
+await scenario(
+	"concurrent summary generation has one D1 lease and releases it after success or failure",
+	async () => {
+		await saveAi({ model: "life-test-slow" });
+		const concurrent = await Promise.all(
+			[1, 2].map(() => request("/api/day-summary", { method: "POST", body: summaryDay })),
+		);
+		assert.deepEqual(concurrent.map((response) => response.status).sort(), [200, 409]);
+		await saveAi({ model: "life-test-empty" });
+		await rejected(await request("/api/day-summary", { method: "POST", body: summaryDay }), 502);
+		const leases = (await executeLocalSql(
+			state,
+			"SELECT COUNT(*) AS count FROM day_summary_leases;",
+		)) as { results: { count: number }[] }[];
+		assert.equal(leases[0]?.results[0]?.count, 0);
+	},
+);
+
+await scenario(
+	"provider changes require a new key and both supported SDK protocols work against a local fixture",
+	async () => {
+		const switched = await saveAi({ sdkType: "openai", authType: "bearer" });
+		assert.equal(switched.hasApiKey, false);
+		await rejected(await request("/api/settings/ai/test", { method: "POST" }), 400);
+		await saveAi({ sdkType: "openai", authType: "bearer", apiKey: aiKey });
+		assert.equal(
+			(await data<AiConnectionResult>(await request("/api/settings/ai/test", { method: "POST" })))
+				.success,
+			true,
+		);
+		for (const bad of [
+			{ ...summaryDay, start: "2099-06-15T01:00:00Z" },
+			{ ...summaryDay, timeZone: "Asia/Shanghai" },
+			{ ...summaryDay, date: "invalid" },
+		]) {
+			await rejected(await request("/api/day-summary", { method: "POST", body: bad }), 400);
+			await rejected(await request(`/api/day-summary?${new URLSearchParams(bad)}`), 400);
+		}
+	},
+);
+
 await assertMarker(state);
 console.log(
-	`L2 passed: ${scenarios} scenarios, all 9 method/path API contracts through real HTTP and local D1.`,
+	`L2 passed: ${scenarios} scenarios, all 14 method/path API contracts through real HTTP and local D1.`,
 );

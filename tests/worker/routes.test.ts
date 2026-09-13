@@ -391,26 +391,67 @@ function createWorkerEnv(db: D1Database): WorkerEnv {
 		ACCESS_TEAM_DOMAIN: "nocoo.cloudflareaccess.com",
 		ACCESS_AUD: "test-aud",
 		TEST_ACCESS_JWKS: "",
+		AI_SETTINGS_KEY: "",
 		DB: db,
 		ASSETS: {} as Fetcher,
 	};
 }
 
 describe("worker/routes", () => {
-	it("handleGetSession returns session info", async () => {
-		const res = await handleGetSession({
-			email: "person@example.com",
-			subject: "sub-123",
-			mode: "access",
-		});
-		const json = (await res.json()) as { data: { email: string; subject: string; mode: string } };
-		expect(json).toEqual({
-			data: {
-				email: "person@example.com",
+	it("handleGetSession returns session info with author profile if email present", async () => {
+		const mockFetch = async () =>
+			new Response(
+				JSON.stringify({
+					name: "Zheng Li",
+					avatar: "https://lizheng.blog/avatar.jpg",
+				}),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+
+		const res = await handleGetSession(
+			{
+				email: "architie@gmail.com",
 				subject: "sub-123",
 				mode: "access",
 			},
+			mockFetch,
+		);
+		const json = (await res.json()) as {
+			data: {
+				email: string;
+				subject: string;
+				mode: string;
+				name: string | null;
+				avatar: string | null;
+			};
+		};
+		expect(json).toEqual({
+			data: {
+				email: "architie@gmail.com",
+				subject: "sub-123",
+				mode: "access",
+				name: "Zheng Li",
+				avatar: "https://lizheng.blog/avatar.jpg",
+			},
 		});
+
+		// Email is null
+		const resNullEmail = await handleGetSession({
+			email: null,
+			subject: "sub-anon",
+			mode: "access",
+		});
+		const jsonNull = (await resNullEmail.json()) as {
+			data: {
+				email: string | null;
+				subject: string;
+				mode: string;
+				name: string | null;
+				avatar: string | null;
+			};
+		};
+		expect(jsonNull.data.name).toBeNull();
+		expect(jsonNull.data.avatar).toBeNull();
 	});
 
 	it("handleGetLive returns 200 when DB is ok and 503 when DB fails", async () => {

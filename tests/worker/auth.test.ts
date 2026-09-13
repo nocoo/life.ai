@@ -104,6 +104,8 @@ describe("worker/auth", () => {
 				APP_ORIGIN: "https://life.hexly.ai",
 				INGEST_HOST: "life.worker.hexly.ai",
 				TEST_ACCESS_JWKS: "",
+				AI: {} as Ai,
+				AI_SETTINGS_KEY: "",
 				DB: createMockDb(),
 				ASSETS: {} as Fetcher,
 			};
@@ -121,6 +123,8 @@ describe("worker/auth", () => {
 				APP_ORIGIN: "https://life.hexly.ai",
 				INGEST_HOST: "life.worker.hexly.ai",
 				TEST_ACCESS_JWKS: "",
+				AI: {} as Ai,
+				AI_SETTINGS_KEY: "",
 				DB: createMockDb(),
 				ASSETS: {} as Fetcher,
 			};
@@ -138,6 +142,8 @@ describe("worker/auth", () => {
 				APP_ORIGIN: "https://life.hexly.ai",
 				INGEST_HOST: "life.worker.hexly.ai",
 				TEST_ACCESS_JWKS: "",
+				AI: {} as Ai,
+				AI_SETTINGS_KEY: "",
 				DB: createMockDb("test"),
 				ASSETS: {} as Fetcher,
 			};
@@ -155,6 +161,8 @@ describe("worker/auth", () => {
 				APP_ORIGIN: "https://life.hexly.ai",
 				INGEST_HOST: "life.worker.hexly.ai",
 				TEST_ACCESS_JWKS: "",
+				AI: {} as Ai,
+				AI_SETTINGS_KEY: "",
 				DB: createMockDb(null), // no test marker in DB
 				ASSETS: {} as Fetcher,
 			};
@@ -184,6 +192,7 @@ describe("worker/auth", () => {
 				APP_ORIGIN: "https://life.hexly.ai",
 				INGEST_HOST: "life.worker.hexly.ai",
 				TEST_ACCESS_JWKS: JSON.stringify(jwks),
+				AI_SETTINGS_KEY: "",
 				DB: createMockDb("test"),
 				ASSETS: {} as Fetcher,
 			};
@@ -270,6 +279,8 @@ describe("worker/auth", () => {
 					APP_ORIGIN: "https://life.hexly.ai",
 					INGEST_HOST: "life.worker.hexly.ai",
 					TEST_ACCESS_JWKS: "",
+					AI: {} as Ai,
+					AI_SETTINGS_KEY: "",
 					DB: createMockDb(),
 					ASSETS: {} as Fetcher,
 				};
@@ -310,6 +321,8 @@ describe("worker/auth", () => {
 				APP_ORIGIN: "https://life.hexly.ai",
 				INGEST_HOST: "life.worker.hexly.ai",
 				TEST_ACCESS_JWKS: "",
+				AI: {} as Ai,
+				AI_SETTINGS_KEY: "",
 				DB: createMockDb(),
 				ASSETS: {} as Fetcher,
 			};

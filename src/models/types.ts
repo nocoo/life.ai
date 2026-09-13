@@ -56,6 +56,8 @@ export interface Session {
 	email: string | null;
 	subject: string;
 	mode: "access" | "local";
+	name?: string | null;
+	avatar?: string | null;
 }
 
 export interface EventPage {

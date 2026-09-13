@@ -1,6 +1,6 @@
 {
 	"name": "life.ai",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"private": true,
 	"type": "module",
 	"packageManager": "bun@1.4.0",
@@ -12,7 +12,7 @@
 		"build": "vite build",
 		"preview": "vite preview --host 127.0.0.1",
 		"deploy": "bun scripts/deploy.ts",
-		"cf-typegen": "wrangler types --env local --include-runtime=false --strict-vars=false",
+		"cf-typegen": "wrangler types --include-runtime=false --strict-vars=false",
 		"typecheck": "bun run cf-typegen && tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.worker.json && tsc --noEmit -p tsconfig.tools.json && tsc --noEmit -p tsconfig.test.json",
 		"lint": "biome check --error-on-warnings .",
 		"lint:fix": "biome check --write .",
@@ -28,8 +28,13 @@
 		"dev:prod": "CLOUDFLARE_ENV=devprod vite --host 127.0.0.1"
 	},
 	"dependencies": {
+		"@ai-sdk/anthropic": "4.0.53",
+		"@ai-sdk/openai": "4.0.66",
 		"@nocoo/basalt": "2.1.7",
+		"@nocoo/next-ai": "0.4.0",
+		"ai": "7.0.83",
 		"jose": "6.2.12",
+		"leaflet": "1.9.4",
 		"lucide-react": "1.43.0",
 		"papaparse": "5.7.0",
 		"react": "19.2.8",
@@ -48,6 +53,7 @@
 		"@tailwindcss/vite": "4.3.3",
 		"@testing-library/react": "16.3.3",
 		"@types/bun": "1.4.0",
+		"@types/leaflet": "1.9.22",
 		"@types/node": "22.20.2",
 		"@types/papaparse": "5.5.2",
 		"@types/react": "19.3.0",

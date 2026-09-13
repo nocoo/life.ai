@@ -1,5 +1,7 @@
 import pkg from "../package.json" with { type: "json" };
+import { handleGetAiSettings, handlePostAiTest, handlePutAiSettings } from "./ai.js";
 import { authenticateAccess, isLocalHost } from "./auth.js";
+import { handleGetDaySummary, handlePostDaySummary } from "./day-summary.js";
 import {
 	handleDeleteConnect,
 	handleGetConnects,
@@ -169,6 +171,32 @@ export async function handleRequest(request: Request, env: WorkerEnv): Promise<R
 				);
 			}
 			return await handleGetEvents(env, url);
+		}
+
+		if (url.pathname === "/api/settings/ai") {
+			if (method === "GET") return await handleGetAiSettings(env);
+			if (method === "PUT") return await handlePutAiSettings(request, env);
+			return jsonResponse(
+				{ error: { code: "method_not_allowed", message: "Method not allowed" } },
+				405,
+			);
+		}
+
+		if (url.pathname === "/api/settings/ai/test") {
+			if (method === "POST") return await handlePostAiTest(env);
+			return jsonResponse(
+				{ error: { code: "method_not_allowed", message: "Method not allowed" } },
+				405,
+			);
+		}
+
+		if (url.pathname === "/api/day-summary") {
+			if (method === "GET") return await handleGetDaySummary(env, url);
+			if (method === "POST") return await handlePostDaySummary(request, env);
+			return jsonResponse(
+				{ error: { code: "method_not_allowed", message: "Method not allowed" } },
+				405,
+			);
 		}
 
 		if (url.pathname === "/api/imports") {

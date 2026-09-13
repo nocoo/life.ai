@@ -25,3 +25,9 @@ Access team 为 `nocoo`，issuer 为 `https://nocoo.cloudflareaccess.com`；audi
 部署前运行 `bun run quality`。`bun run deploy` 构建和 dry run 后检查迁移列表、应用缺失迁移，再部署两个域名。先迁移再更新服务，避免缺表。当前版本必须同时显示于侧栏与 `/api/live`。
 
 部署后检查 `/api/live` 的 JSON / D1 / version、Access 入口跳转、拒绝未授权 API 与机器域名读取。生产环境只做只读上线检查，不运行测试 seed/reset。具体证据写入 [08 重构记录](08-chronicle-rewrite.md)。
+
+## AI 配置
+
+生产和 `devprod` 绑定 Workers AI，默认 Qwen 无需用户密钥；local 环境没有此绑定，避免测试调用远程模型。外部模型的密钥用 `AI_SETTINGS_KEY` 加密，值为随机 32 字节的 64 位十六进制编码。生产使用 Wrangler secret；生产数据开发使用同一值的 `.dev.vars.devprod`，文件权限为 600。纯本地开发可在 `.dev.vars.local` 使用独立密钥，切勿复制生产 D1 或生产模型密钥到测试环境。
+
+`AI_SETTINGS_KEY` 一旦用于已保存的外部密钥，就不能直接重新生成，否则旧密钥无法解密。轮换需要先解密旧值再用新 key 加密。测试脚本自行生成临时加密 key，启动回环 AI fixture，运行结束关闭服务并清理数据库。原生 AI 的上线连接检查只发送固定的「收到」提示，不写生活记录或总结。

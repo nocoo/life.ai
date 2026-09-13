@@ -64,18 +64,34 @@ export function sessionDisplayName(session: Session | null): string {
 	if (!session) {
 		return "未登录";
 	}
-	if (session.mode === "local") {
-		return session.email ?? "本地模式";
+	const name = session.name?.trim();
+	if (name) {
+		return name;
 	}
-	return session.email ?? "已认证";
+	const email = session.email?.trim();
+	if (email) {
+		return email;
+	}
+	return session.mode === "local" ? "本地模式" : "已认证";
 }
 
 export function sessionSecondaryText(session: Session | null): string {
-	if (!session) {
-		return "";
+	return session?.email?.trim() ?? "";
+}
+
+export function sessionAvatarUrl(session: Session | null): string | null {
+	const avatar = session?.avatar?.trim();
+	return avatar ? avatar : null;
+}
+
+export function sessionInitials(name: string): string {
+	const parts = name.trim().split(/\s+/).filter(Boolean);
+	if (parts.length === 0) {
+		return "?";
 	}
-	if (session.mode === "local") {
-		return "本地开发";
-	}
-	return session.subject;
+	return parts
+		.map((part) => part.slice(0, 1))
+		.join("")
+		.toUpperCase()
+		.slice(0, 2);
 }

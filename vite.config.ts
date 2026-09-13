@@ -23,6 +23,7 @@ export default defineConfig({
 							...config.vars,
 							RESOURCE_ENV: "test",
 							TEST_ACCESS_JWKS: process.env.LIFE_TEST_JWKS ?? "",
+							AI_SETTINGS_KEY: process.env.LIFE_TEST_AI_SETTINGS_KEY ?? "",
 						},
 					})
 				: undefined,

@@ -5,6 +5,7 @@ A single person's life chronicle. Import records or receive hourly snapshots fro
 ## Sources of truth
 
 - Product, API contract, ownership and implementation status: [docs/08-chronicle-rewrite.md](docs/08-chronicle-rewrite.md).
+- Daily GPS/health/finance views, lizheng.blog profile and AI summaries: [docs/12-daily-view.md](docs/12-daily-view.md).
 - Version: root `package.json`; show the same version in the sidebar and `/api/live`.
 - UI contract: installed `@nocoo/basalt/ai/RECIPES.md` and `../basalt/INTEGRATION.md`. Use the published package, its providers, application chrome and tokens.
 - Quality: 6DQ from nmem `af0daa0f-0a10-4b0b-b328-f2dc32137bdc` and September revision `crystal_0c9c31f7de97`.
@@ -20,6 +21,9 @@ A single person's life chronicle. Import records or receive hourly snapshots fro
 - `life.worker.hexly.ai` exposes only ingestion and `/api/live`; never serve the dashboard, records, imports or token management there.
 - Production verifies the Access JWT signature, issuer, audience and expiry. Never trust the presence of an Access header or asserted email alone.
 - MVVM: Views render and dispatch; ViewModels contain async state and transformations without View/DOM imports; services own HTTP; models own validation, UTC and import logic.
+- AI summaries are generated manually from all records in the validated local-day UTC window. Keep the last successful summary on failure; show stale data when its input hash changes. Source filtering only changes the timeline/map/overview.
+- Default AI uses the Workers AI binding. External keys are AES-GCM encrypted with `AI_SETTINGS_KEY`; keep that secret separate from D1 and never replace it without re-encrypting stored keys. External HTTP uses manual redirects and bounded reads.
+- Session profile uses the authenticated email's SHA-256 with lizheng.blog. Missing/failed profiles fall back to session identity and initials, without changing Access authentication.
 - Work on `main`, no branches/worktrees for this rewrite. Coordinating Codex owns integration and commits; collaborators touch only assigned files. Never stage all files indiscriminately.
 
 ## Environments and ports
@@ -45,7 +49,8 @@ Port allocation is confirmed by nmem `25b22d6b-1df5-4491-ae4d-269a556f6442`, not
 - L3: Playwright covers timeline, import, Connect creation/revocation, responsive chrome and auth boundaries.
 - G2: gitleaks and osv-scanner, plus a production bundle/deployment dry run.
 - D1 isolation: fresh per-run state and cache directories; loopback only; `_test_marker` with `env=test`; never remote bindings or production credentials for automated tests.
+- AI tests use a loopback model fixture and per-run encryption key. The local test environment deliberately has no Workers AI binding, because that binding always runs remotely. Production-data development stores its encryption key only in ignored `.dev.vars.devprod`.
 - Before deploy: inspect migration state, apply required migrations, validate config and bundle. After deploy: verify Access protection, public JSON health, ingestion host isolation and running production version.
 - The user explicitly authorized this rewrite and production deployment. Keep docs current and report only verified outcomes.
 
-Version 1.0.0 was deployed on 2026-09-13. `docs/08-chronicle-rewrite.md` records the completed checklist, quality results and production verification.
+Version 1.1.0 was deployed on 2026-09-13. `docs/12-daily-view.md` records its quality results and production verification; `docs/08-chronicle-rewrite.md` retains the original 1.0.0 rewrite and release evidence.

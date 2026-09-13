@@ -1,6 +1,7 @@
 import { createStore } from "zustand/vanilla";
+import { buildDayInsights, type DayInsights, type TrackPoint } from "../models/day-insights";
 import { buildDayTimeline, localDateKey, localDayWindow, shiftLocalDate } from "../models/time";
-import type { DayTimeline, Source } from "../models/types";
+import type { DayTimeline, LifeEvent, Source } from "../models/types";
 import { fetchAllEvents } from "../services/events-service";
 import { isAbortError } from "../services/http";
 import { fetchSources } from "../services/sources-service";
@@ -13,6 +14,7 @@ export interface TimelineViewState {
 	sourceId: string;
 	sources: Source[];
 	timeline: DayTimeline | null;
+	insights: DayInsights | null;
 	status: LoadStatus;
 	error: string | null;
 	load: () => Promise<void>;
@@ -26,18 +28,56 @@ export interface TimelineViewState {
 
 let loadGeneration = 0;
 let loadController: AbortController | null = null;
+let cachedDay = "";
+let cachedEvents: LifeEvent[] = [];
 
 function initialTimelineState(): Pick<
 	TimelineViewState,
-	"day" | "sourceId" | "sources" | "timeline" | "status" | "error"
+	"day" | "sourceId" | "sources" | "timeline" | "insights" | "status" | "error"
 > {
 	return {
 		day: localDateKey(),
 		sourceId: ALL_SOURCES,
 		sources: [],
 		timeline: null,
+		insights: null,
 		status: "idle",
 		error: null,
+	};
+}
+
+export function selectTrackEndpoints(segments: TrackPoint[][]): {
+	start: TrackPoint;
+	end: TrackPoint;
+} | null {
+	let start: TrackPoint | null = null;
+	let end: TrackPoint | null = null;
+	for (const segment of segments) {
+		for (const point of segment) {
+			if (!start || point.occurredAt < start.occurredAt) {
+				start = point;
+			}
+			if (!end || point.occurredAt > end.occurredAt) {
+				end = point;
+			}
+		}
+	}
+	return start && end ? { start, end } : null;
+}
+
+export function eventsForSource(events: LifeEvent[], sourceId: string): LifeEvent[] {
+	if (sourceId === ALL_SOURCES) {
+		return events;
+	}
+	return events.filter((event) => event.sourceId === sourceId);
+}
+
+function projectDay(day: string, sourceId: string, events: LifeEvent[]) {
+	const window = localDayWindow(day);
+	const visible = eventsForSource(events, sourceId);
+	return {
+		timeline: buildDayTimeline(day, visible),
+		insights: buildDayInsights(visible, window),
 	};
 }
 
@@ -49,25 +89,26 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 		loadController = controller;
 		const generation = ++loadGeneration;
 		const { day, sourceId } = get();
-		set({ status: "loading", error: null, timeline: null });
+		set({ status: "loading", error: null, timeline: null, insights: null });
 		try {
 			const window = localDayWindow(day);
-			const source = sourceId === ALL_SOURCES ? null : sourceId;
 			const [sources, events] = await Promise.all([
 				fetchSources(controller.signal),
 				fetchAllEvents({
 					start: window.start,
 					end: window.end,
-					source,
+					source: null,
 					signal: controller.signal,
 				}),
 			]);
 			if (generation !== loadGeneration) {
 				return;
 			}
+			cachedDay = day;
+			cachedEvents = events;
 			set({
 				sources,
-				timeline: buildDayTimeline(day, events),
+				...projectDay(day, sourceId, events),
 				status: "ready",
 				error: null,
 			});
@@ -75,6 +116,8 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 			if (generation !== loadGeneration || isAbortError(error)) {
 				return;
 			}
+			cachedDay = "";
+			cachedEvents = [];
 			set({
 				status: "error",
 				error: toErrorMessage(error),
@@ -104,6 +147,11 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 			return;
 		}
 		set({ sourceId: next });
+		const { day, status } = get();
+		if (status !== "idle" && cachedDay === day) {
+			set(projectDay(day, next, cachedEvents));
+			return;
+		}
 		await get().load();
 	},
 	async retry() {
@@ -113,6 +161,8 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 		loadController?.abort();
 		loadController = null;
 		loadGeneration += 1;
+		cachedDay = "";
+		cachedEvents = [];
 		set(initialTimelineState());
 	},
 }));

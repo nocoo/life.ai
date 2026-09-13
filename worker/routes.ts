@@ -12,6 +12,7 @@ import type {
 	SourceKind,
 } from "../src/models/types.js";
 import { authenticateConnect, generateConnectToken, sha256 } from "./auth.js";
+import { type FetchLike, fetchAuthorProfile } from "./author-profile.js";
 import { floorToUtcHour, normalizeTimestamp, timestampAtPrecision } from "./time.js";
 import { ApiError, type WorkerEnv } from "./types.js";
 import {
@@ -30,16 +31,30 @@ const VALID_PRECISIONS: Precision[] = ["day", "hour", "minute", "second"];
 /**
  * GET /api/session
  */
-export async function handleGetSession(session: {
-	email: string | null;
-	subject: string;
-	mode: "access" | "local";
-}): Promise<Response> {
+export async function handleGetSession(
+	session: {
+		email: string | null;
+		subject: string;
+		mode: "access" | "local";
+	},
+	fetchFn?: FetchLike,
+): Promise<Response> {
+	let name: string | null = null;
+	let avatar: string | null = null;
+
+	if (session.email) {
+		const profile = await fetchAuthorProfile(session.email, fetchFn);
+		name = profile.name;
+		avatar = profile.avatar;
+	}
+
 	const resp: { data: Session } = {
 		data: {
 			email: session.email,
 			subject: session.subject,
 			mode: session.mode,
+			name,
+			avatar,
 		},
 	};
 	return jsonResponse(resp);

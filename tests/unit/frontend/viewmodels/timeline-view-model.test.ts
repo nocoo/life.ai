@@ -30,6 +30,27 @@ const time = vi.hoisted(() => ({
 }));
 
 vi.mock("../../../../src/models/time", () => time);
+vi.mock("../../../../src/models/day-insights", () => ({
+	buildDayInsights: vi.fn((events: unknown[]) => ({
+		eventCount: Array.isArray(events) ? events.length : 0,
+		gps: { pointCount: 0, segments: [], distanceMeters: 0, firstAt: null, lastAt: null },
+		health: {
+			steps: null,
+			distanceMeters: null,
+			flights: null,
+			waterMl: null,
+			energyKcal: null,
+			exerciseMinutes: null,
+			standHours: null,
+			sleepMinutes: null,
+			sleepStages: [],
+			heartRate: null,
+		},
+		workoutCount: 0,
+		workouts: [],
+		finance: [],
+	})),
+}));
 vi.mock("../../../../src/services/events-service", () => ({
 	fetchAllEvents: vi.fn(),
 }));
@@ -41,8 +62,10 @@ import { fetchAllEvents } from "../../../../src/services/events-service";
 import { fetchSources } from "../../../../src/services/sources-service";
 import {
 	ALL_SOURCES,
+	eventsForSource,
 	isSelectedToday,
 	selectedSourceName,
+	selectTrackEndpoints,
 	timelineStore,
 } from "../../../../src/viewmodels/timeline-view-model";
 
@@ -72,14 +95,20 @@ describe("timelineStore", () => {
 		expect(timelineStore.getState().sources).toHaveLength(1);
 	});
 
-	it("passes a source filter to the API", async () => {
+	it("recomputes map statistics when the source filter changes", async () => {
+		const health = eventFixture({ id: "h", sourceId: "src-health" });
+		const other = eventFixture({ id: "o", sourceId: "src-other" });
 		fetchSourcesMock.mockResolvedValue([sourceFixture()]);
-		fetchAllEventsMock.mockResolvedValue([]);
+		fetchAllEventsMock.mockResolvedValue([health, other]);
+		await timelineStore.getState().load();
+		expect(fetchAllEventsMock).toHaveBeenCalledWith(expect.objectContaining({ source: null }));
+		expect(timelineStore.getState().insights?.eventCount).toBe(2);
+		fetchAllEventsMock.mockClear();
 		await timelineStore.getState().selectSource("src-health");
-		expect(fetchAllEventsMock).toHaveBeenCalledWith(
-			expect.objectContaining({ source: "src-health" }),
-		);
+		expect(fetchAllEventsMock).not.toHaveBeenCalled();
 		expect(timelineStore.getState().sourceId).toBe("src-health");
+		expect(timelineStore.getState().insights?.eventCount).toBe(1);
+		expect(timelineStore.getState().timeline?.totalEvents).toBe(1);
 	});
 
 	it("does not reload the same source", async () => {
@@ -110,6 +139,9 @@ describe("timelineStore", () => {
 		fetchAllEventsMock.mockResolvedValue([]);
 		await timelineStore.getState().selectDay("2026-09-13");
 		expect(fetchAllEventsMock).toHaveBeenCalledTimes(1);
+		timelineStore.getState().reset();
+		await timelineStore.getState().selectSource("src-health");
+		expect(fetchAllEventsMock).toHaveBeenCalledTimes(2);
 	});
 
 	it("surfaces load errors and retries", async () => {
@@ -137,5 +169,22 @@ describe("timeline helpers", () => {
 		expect(selectedSourceName([], ALL_SOURCES)).toBe("全部来源");
 		expect(selectedSourceName([sourceFixture()], "src-health")).toBe("Apple Health");
 		expect(selectedSourceName([], "missing")).toBe("missing");
+		const health = eventFixture({ sourceId: "src-health" });
+		const other = eventFixture({ id: "o", sourceId: "src-other" });
+		expect(eventsForSource([health, other], ALL_SOURCES)).toHaveLength(2);
+		expect(eventsForSource([health, other], "src-health")).toEqual([health]);
+		expect(selectTrackEndpoints([])).toBeNull();
+		const early = {
+			latitude: 1,
+			longitude: 1,
+			occurredAt: "2026-09-13T01:00:00Z",
+			precision: "second" as const,
+			sourceId: "a",
+			sourceName: "a",
+			elevation: null,
+			speed: null,
+		};
+		const late = { ...early, sourceId: "b", occurredAt: "2026-09-13T09:00:00Z", latitude: 2 };
+		expect(selectTrackEndpoints([[late], [early]])).toEqual({ start: early, end: late });
 	});
 });

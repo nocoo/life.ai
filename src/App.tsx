@@ -13,6 +13,9 @@ const ImportsPage = lazy(() =>
 const ConnectPage = lazy(() =>
 	import("./views/connect-page").then((module) => ({ default: module.ConnectPage })),
 );
+const AiSettingsPage = lazy(() =>
+	import("./views/ai-settings-page").then((module) => ({ default: module.AiSettingsPage })),
+);
 
 export function App() {
 	return (
@@ -23,6 +26,7 @@ export function App() {
 						<Route path="/" element={<TimelinePage />} />
 						<Route path="/imports" element={<ImportsPage />} />
 						<Route path="/connect" element={<ConnectPage />} />
+						<Route path="/settings/ai" element={<AiSettingsPage />} />
 						<Route path="*" element={<NotFoundPage />} />
 					</Route>
 				</Routes>

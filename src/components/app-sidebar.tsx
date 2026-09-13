@@ -1,6 +1,7 @@
 import {
 	Avatar,
 	AvatarFallback,
+	AvatarImage,
 	Button,
 	CommandEmpty,
 	CommandGroup,
@@ -24,21 +25,10 @@ import {
 import { PanelLeft, Search } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
+import { sessionInitials } from "../viewmodels/session-view-model";
 import { APP_VERSION } from "./app-version";
 import { APP_NAME, BRAND_MARK_SRC } from "./brand";
 import { NAV_ITEMS } from "./navigation";
-
-function initials(name: string): string {
-	const parts = name.trim().split(/\s+/).filter(Boolean);
-	if (parts.length === 0) {
-		return "?";
-	}
-	return parts
-		.map((part) => part.slice(0, 1))
-		.join("")
-		.toUpperCase()
-		.slice(0, 2);
-}
 
 export interface AppSidebarProps {
 	collapsed: boolean;
@@ -47,6 +37,7 @@ export interface AppSidebarProps {
 	onNavigate?: () => void;
 	userName: string;
 	userEmail?: string;
+	userAvatar?: string | null;
 }
 
 export function AppSidebar({
@@ -56,6 +47,7 @@ export function AppSidebar({
 	onNavigate,
 	userName,
 	userEmail,
+	userAvatar,
 }: AppSidebarProps) {
 	const location = useLocation();
 	const routerNavigate = useNavigate();
@@ -86,7 +78,8 @@ export function AppSidebar({
 
 	const avatar = (
 		<Avatar className="h-9 w-9 shrink-0">
-			<AvatarFallback>{initials(userName)}</AvatarFallback>
+			{userAvatar ? <AvatarImage src={userAvatar} alt={userName} /> : null}
+			<AvatarFallback>{sessionInitials(userName)}</AvatarFallback>
 		</Avatar>
 	);
 
@@ -94,8 +87,15 @@ export function AppSidebar({
 		<Sidebar collapsed={collapsed} aria-label="主导航">
 			{collapsed ? (
 				<>
-					<SidebarHeader className="justify-center px-0">
-						<img src={BRAND_MARK_SRC} alt={APP_NAME} width={24} height={24} />
+					<SidebarHeader>
+						<img
+							src={BRAND_MARK_SRC}
+							alt={APP_NAME}
+							width={24}
+							height={24}
+							data-sidebar-logo=""
+							className="h-6 w-6 shrink-0"
+						/>
 					</SidebarHeader>
 					<Button
 						variant="ghost"
@@ -155,7 +155,14 @@ export function AppSidebar({
 					<SidebarHeader>
 						<div className="flex w-full items-center justify-between">
 							<div className="flex min-w-0 items-center gap-3">
-								<img src={BRAND_MARK_SRC} alt="" width={24} height={24} className="shrink-0" />
+								<img
+									src={BRAND_MARK_SRC}
+									alt=""
+									width={24}
+									height={24}
+									data-sidebar-logo=""
+									className="h-6 w-6 shrink-0"
+								/>
 								<span className="truncate text-lg font-semibold text-basalt-foreground md:text-xl">
 									{APP_NAME}
 								</span>

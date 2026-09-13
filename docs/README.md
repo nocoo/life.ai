@@ -16,3 +16,4 @@
 | [09 Basalt UI](09-basalt-ui.md) | 当前组件使用与界面整理 |
 | [10 Worker API](10-worker-api.md) | 认证、接口与数据库 |
 | [11 质量与隔离](11-quality.md) | 6DQ、运行方法和隔离边界 |
+| [12 每日视图与 AI](12-daily-view.md) | 足迹、健康、运动、收支、作者资料与每日总结 |

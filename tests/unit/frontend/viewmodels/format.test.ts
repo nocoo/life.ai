@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	formatAbsoluteTime,
 	formatByteSize,
+	formatDurationMinutes,
 	formatInterval,
 	formatLocalClock,
 	formatLocalDate,
@@ -25,6 +26,19 @@ describe("formatLocalDate", () => {
 		expect(formatLocalDate("2026-09-13")).toContain("2026");
 		expect(formatLocalDate("2026-09-13")).toContain("13");
 		expect(formatLocalDate("not-a-date")).toBe("not-a-date");
+	});
+});
+
+describe("formatDurationMinutes", () => {
+	it("rounds total minutes before splitting hours", () => {
+		expect(formatDurationMinutes(null)).toBe("—");
+		expect(formatDurationMinutes(Number.NaN)).toBe("—");
+		expect(formatDurationMinutes(-1)).toBe("—");
+		expect(formatDurationMinutes(59.4)).toBe("59 分");
+		expect(formatDurationMinutes(59.6)).toBe("1 小时");
+		expect(formatDurationMinutes(60)).toBe("1 小时");
+		expect(formatDurationMinutes(90)).toBe("1 小时 30 分");
+		expect(formatDurationMinutes(119.6)).toBe("2 小时");
 	});
 });
 

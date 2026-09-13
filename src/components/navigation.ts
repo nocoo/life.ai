@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { CalendarClock, KeyRound, Upload } from "lucide-react";
+import { CalendarClock, KeyRound, Settings, Upload } from "lucide-react";
 
 export interface NavItem {
 	href: string;
@@ -11,6 +11,7 @@ export const NAV_ITEMS: NavItem[] = [
 	{ href: "/", label: "时间线", icon: CalendarClock },
 	{ href: "/imports", label: "导入", icon: Upload },
 	{ href: "/connect", label: "Connect", icon: KeyRound },
+	{ href: "/settings/ai", label: "AI 设置", icon: Settings },
 ];
 
 export const ROUTE_META: Record<string, { title: string; description: string }> = {
@@ -25,6 +26,10 @@ export const ROUTE_META: Record<string, { title: string; description: string }> 
 	"/connect": {
 		title: "Connect",
 		description: "签发只写令牌，按 UTC 小时覆盖写入",
+	},
+	"/settings/ai": {
+		title: "AI 设置",
+		description: "配置 Workers AI 或其他模型",
 	},
 };
 
