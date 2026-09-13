@@ -5,6 +5,7 @@ import type { DayTimeline, LifeEvent, Source } from "../models/types";
 import { fetchAllEvents } from "../services/events-service";
 import { isAbortError } from "../services/http";
 import { fetchSources } from "../services/sources-service";
+import { buildDayStory, type DayStory } from "./day-story";
 import { type LoadStatus, toErrorMessage } from "./errors";
 
 export const ALL_SOURCES = "all";
@@ -15,6 +16,7 @@ export interface TimelineViewState {
 	sources: Source[];
 	timeline: DayTimeline | null;
 	insights: DayInsights | null;
+	story: DayStory | null;
 	status: LoadStatus;
 	error: string | null;
 	load: () => Promise<void>;
@@ -33,7 +35,7 @@ let cachedEvents: LifeEvent[] = [];
 
 function initialTimelineState(): Pick<
 	TimelineViewState,
-	"day" | "sourceId" | "sources" | "timeline" | "insights" | "status" | "error"
+	"day" | "sourceId" | "sources" | "timeline" | "insights" | "story" | "status" | "error"
 > {
 	return {
 		day: localDateKey(),
@@ -41,6 +43,7 @@ function initialTimelineState(): Pick<
 		sources: [],
 		timeline: null,
 		insights: null,
+		story: null,
 		status: "idle",
 		error: null,
 	};
@@ -75,9 +78,12 @@ export function eventsForSource(events: LifeEvent[], sourceId: string): LifeEven
 function projectDay(day: string, sourceId: string, events: LifeEvent[]) {
 	const window = localDayWindow(day);
 	const visible = eventsForSource(events, sourceId);
+	const timeline = buildDayTimeline(day, visible);
+	const insights = buildDayInsights(visible, window);
 	return {
-		timeline: buildDayTimeline(day, visible),
-		insights: buildDayInsights(visible, window),
+		timeline,
+		insights,
+		story: buildDayStory(timeline, insights),
 	};
 }
 
@@ -89,7 +95,7 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 		loadController = controller;
 		const generation = ++loadGeneration;
 		const { day, sourceId } = get();
-		set({ status: "loading", error: null, timeline: null, insights: null });
+		set({ status: "loading", error: null, timeline: null, insights: null, story: null });
 		try {
 			const window = localDayWindow(day);
 			const [sources, events] = await Promise.all([

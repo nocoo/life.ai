@@ -13,9 +13,10 @@ test("empty timeline keeps all 24 hours and uses Basalt responsive chrome", asyn
 	const errors: string[] = [];
 	page.on("pageerror", (error) => errors.push(error.message));
 	await page.goto("/");
-	await expect(page.getByRole("heading", { name: "时间线", exact: true })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "每日实录", exact: true })).toBeVisible();
 	await expect(page.locator("[data-hour]")).toHaveCount(24);
-	await expect(page.getByText("没有全天记录", { exact: true })).toBeVisible();
+	await expect(page.getByText("这一天，留待记录", { exact: true })).toBeVisible();
+	await expect(page.getByRole("region", { name: "全天记录", exact: true })).toHaveCount(0);
 	await expect(page.getByText(`v${version}`, { exact: true })).toBeVisible();
 	await expect(page.locator('[data-hour="0"]')).toContainText("00:00");
 	await expect(page.locator('[data-hour="23"]')).toContainText("23:00");

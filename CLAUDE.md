@@ -6,6 +6,7 @@ A single person's life chronicle. Import records or receive hourly snapshots fro
 
 - Product, API contract, ownership and implementation status: [docs/08-chronicle-rewrite.md](docs/08-chronicle-rewrite.md).
 - Daily GPS/health/finance views, lizheng.blog profile and AI summaries: [docs/12-daily-view.md](docs/12-daily-view.md).
+- Current daily reading design and release: [docs/13-story-timeline.md](docs/13-story-timeline.md).
 - Version: root `package.json`; show the same version in the sidebar and `/api/live`.
 - UI contract: installed `@nocoo/basalt/ai/RECIPES.md` and `../basalt/INTEGRATION.md`. Use the published package, its providers, application chrome and tokens.
 - Quality: 6DQ from nmem `af0daa0f-0a10-4b0b-b328-f2dc32137bdc` and September revision `crystal_0c9c31f7de97`.
@@ -21,7 +22,8 @@ A single person's life chronicle. Import records or receive hourly snapshots fro
 - `life.worker.hexly.ai` exposes only ingestion and `/api/live`; never serve the dashboard, records, imports or token management there.
 - Production verifies the Access JWT signature, issuer, audience and expiry. Never trust the presence of an Access header or asserted email alone.
 - MVVM: Views render and dispatch; ViewModels contain async state and transformations without View/DOM imports; services own HTTP; models own validation, UTC and import logic.
-- AI summaries are generated manually from all records in the validated local-day UTC window. Keep the last successful summary on failure; show stale data when its input hash changes. Source filtering only changes the timeline/map/overview.
+- The daily timeline is the primary reading structure: 24 local hour ticks, body/spatial evidence on the left and narrative events on the right; mobile merges branches in time order. Do not put overview/map/AI cards ahead of it. High-frequency records keep an expandable raw record list; interval bodies appear once with continuation links. Daily totals and AI belong at the end.
+- AI summaries are generated manually from all records in the validated local-day UTC window. Keep the last successful summary on failure; show stale data when its input hash changes. Source filtering only changes the timeline/map/measured totals.
 - Default AI uses the Workers AI binding. External keys are AES-GCM encrypted with `AI_SETTINGS_KEY`; keep that secret separate from D1 and never replace it without re-encrypting stored keys. External HTTP uses manual redirects and bounded reads.
 - Session profile uses the authenticated email's SHA-256 with lizheng.blog. Missing/failed profiles fall back to session identity and initials, without changing Access authentication.
 - Work on `main`, no branches/worktrees for this rewrite. Coordinating Codex owns integration and commits; collaborators touch only assigned files. Never stage all files indiscriminately.
@@ -53,4 +55,4 @@ Port allocation is confirmed by nmem `25b22d6b-1df5-4491-ae4d-269a556f6442`, not
 - Before deploy: inspect migration state, apply required migrations, validate config and bundle. After deploy: verify Access protection, public JSON health, ingestion host isolation and running production version.
 - The user explicitly authorized this rewrite and production deployment. Keep docs current and report only verified outcomes.
 
-Version 1.1.0 was deployed on 2026-09-13. `docs/12-daily-view.md` records its quality results and production verification; `docs/08-chronicle-rewrite.md` retains the original 1.0.0 rewrite and release evidence.
+Version 1.2.0 was deployed on 2026-09-13, Worker version `eeb96c2d-2014-4250-9945-09b2d242c81f`. `docs/13-story-timeline.md` records the current design, quality results and production verification; `docs/12-daily-view.md` retains 1.1.0 daily views/AI evidence, and `docs/08-chronicle-rewrite.md` retains the original 1.0.0 rewrite and release evidence.

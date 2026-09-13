@@ -12,11 +12,8 @@ import {
 import { useEffect } from "react";
 import { useStore } from "zustand";
 import { DateNavigation } from "../components/date-navigation";
-import { DayInsightsCard } from "../components/day-insights";
-import { DayMap } from "../components/day-map";
-import { DaySummaryCard } from "../components/day-summary";
 import { DayTimelineView } from "../components/day-timeline";
-import { daySummaryStore, summaryQueryFromTimeline } from "../viewmodels/day-summary-view-model";
+import { daySummaryStore } from "../viewmodels/day-summary-view-model";
 import { formatLocalDate } from "../viewmodels/format";
 import { ALL_SOURCES, isSelectedToday, timelineStore } from "../viewmodels/timeline-view-model";
 
@@ -26,6 +23,7 @@ export function TimelinePage() {
 	const sources = useStore(timelineStore, (state) => state.sources);
 	const timeline = useStore(timelineStore, (state) => state.timeline);
 	const insights = useStore(timelineStore, (state) => state.insights);
+	const story = useStore(timelineStore, (state) => state.story);
 	const status = useStore(timelineStore, (state) => state.status);
 	const error = useStore(timelineStore, (state) => state.error);
 	const summaryDate = timeline?.date;
@@ -55,44 +53,46 @@ export function TimelinePage() {
 	}, [status, summaryDate, summaryStart, summaryEnd, summaryTimeZone]);
 
 	return (
-		<div className="space-y-6">
-			<PageHeader
-				title="时间线"
-				description={`${formatLocalDate(day)} · 24 个本地小时与全天记录`}
-				filters={
-					<FilterBar
-						label="时间线筛选"
-						active={sourceId !== ALL_SOURCES}
-						clearLabel="清除来源"
-						onClear={() => void timelineStore.getState().selectSource(ALL_SOURCES)}
-					>
-						<DateNavigation
-							day={day}
-							isToday={isSelectedToday(day)}
-							onPrevDay={() => void timelineStore.getState().shiftDay(-1)}
-							onNextDay={() => void timelineStore.getState().shiftDay(1)}
-							onToday={() => void timelineStore.getState().goToday()}
-							onSelectDay={(next) => void timelineStore.getState().selectDay(next)}
-						/>
-						<Select
-							value={sourceId}
-							onValueChange={(value) => void timelineStore.getState().selectSource(value)}
+		<div className="story-page">
+			<div className="story-page-header">
+				<PageHeader
+					title="每日实录"
+					description={formatLocalDate(day)}
+					filters={
+						<FilterBar
+							label="时间线筛选"
+							active={sourceId !== ALL_SOURCES}
+							clearLabel="清除来源"
+							onClear={() => void timelineStore.getState().selectSource(ALL_SOURCES)}
 						>
-							<SelectTrigger aria-label="按来源筛选" className="w-[220px]">
-								<SelectValue placeholder="全部来源" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value={ALL_SOURCES}>全部来源</SelectItem>
-								{sources.map((source) => (
-									<SelectItem key={source.id} value={source.id}>
-										{source.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</FilterBar>
-				}
-			/>
+							<DateNavigation
+								day={day}
+								isToday={isSelectedToday(day)}
+								onPrevDay={() => void timelineStore.getState().shiftDay(-1)}
+								onNextDay={() => void timelineStore.getState().shiftDay(1)}
+								onToday={() => void timelineStore.getState().goToday()}
+								onSelectDay={(next) => void timelineStore.getState().selectDay(next)}
+							/>
+							<Select
+								value={sourceId}
+								onValueChange={(value) => void timelineStore.getState().selectSource(value)}
+							>
+								<SelectTrigger aria-label="按来源筛选" className="w-[220px]">
+									<SelectValue placeholder="全部来源" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value={ALL_SOURCES}>全部来源</SelectItem>
+									{sources.map((source) => (
+										<SelectItem key={source.id} value={source.id}>
+											{source.name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</FilterBar>
+					}
+				/>
+			</div>
 			{status === "error" ? (
 				<Banner
 					variant="error"
@@ -110,10 +110,14 @@ export function TimelinePage() {
 					<LayerCard.Loading label="正在加载时间线" />
 				</LayerCard>
 			) : null}
-			{timeline ? <DaySummaryCard query={summaryQueryFromTimeline(timeline)} /> : null}
-			{insights ? <DayInsightsCard insights={insights} /> : null}
-			{insights ? <DayMap insights={insights} /> : null}
-			{timeline ? <DayTimelineView timeline={timeline} /> : null}
+			{timeline && story && insights ? (
+				<DayTimelineView
+					key={`${day}:${sourceId}`}
+					timeline={timeline}
+					story={story}
+					insights={insights}
+				/>
+			) : null}
 			{status === "ready" && !timeline ? (
 				<LayerCard>
 					<LayerCard.Empty

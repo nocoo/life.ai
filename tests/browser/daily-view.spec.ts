@@ -17,6 +17,11 @@ test.beforeEach(async ({ page }) => {
 	);
 });
 
+test.afterEach(async ({ page }) => {
+	// Finish profile/API handlers before Playwright closes their request context.
+	await page.unrouteAll({ behavior: "wait" });
+});
+
 test("sidebar preserves the exact logo anchor and shows profile name/avatar with a failed-image fallback", async ({
 	page,
 }) => {
@@ -137,14 +142,14 @@ test("daily GPX map, health, workouts and currency totals follow the same select
 	await page.getByRole("button", { name: "时间线", exact: true }).click();
 	await page.getByRole("button", { name: "后一天", exact: true }).click();
 	await page.getByRole("button", { name: "后一天", exact: true }).click();
-	await expect(page.getByText("900 步", { exact: true })).toBeVisible();
-	await expect(page.getByText("35.20", { exact: true })).toBeVisible();
-	await expect(page.getByText("9.99", { exact: true })).toBeVisible();
+	await expect(page.locator('[data-hour="8"]').getByText("900 步", { exact: true })).toBeVisible();
+	await expect(page.locator(".story-all-day").getByText("35.20", { exact: true })).toBeVisible();
+	await expect(page.locator(".story-all-day").getByText("9.99", { exact: true })).toBeVisible();
 	await expect(page.getByText("步行", { exact: true })).toBeVisible();
 	const map = page.getByRole("application", { name: "当日足迹地图" });
 	await expect(map).toBeVisible();
 	await expect(map).toHaveClass(/leaflet-container/);
-	await expect(page.getByText(/3 个点/)).toBeVisible();
+	await expect(page.locator(".story-map").getByText(/3 个点/)).toBeVisible();
 	await expect(page.locator('[data-hour="8"]')).toContainText("公园起点");
 	await map.getByRole("button", { name: "Zoom in" }).click();
 	await map.focus();
@@ -160,7 +165,7 @@ test("daily GPX map, health, workouts and currency totals follow the same select
 	await page.getByRole("combobox", { name: "按来源筛选" }).click();
 	await page.getByRole("option", { name: "Pixiu", exact: true }).click();
 	await expect(map).toHaveCount(0);
-	await expect(page.getByText("没有位置记录", { exact: true })).toBeVisible();
+	await expect(page.locator('[data-story-kind="journey"]')).toHaveCount(0);
 	await expect(page.getByText("900 步", { exact: true })).toHaveCount(0);
 	await page.getByRole("button", { name: "后一天", exact: true }).click();
 	await expect(page.locator("[data-hour]")).toHaveCount(24);

@@ -23,7 +23,15 @@ function popupNode(title: string, point: TrackPoint): HTMLElement {
 	return node;
 }
 
-export function DayMap({ insights }: { insights: DayInsights }) {
+export function DayMap({
+	insights,
+	compact = false,
+	label = "当日足迹地图",
+}: {
+	insights: DayInsights;
+	compact?: boolean;
+	label?: string;
+}) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [mapError, setMapError] = useState<string | null>(null);
 	const [attempt, setAttempt] = useState(0);
@@ -49,7 +57,7 @@ export function DayMap({ insights }: { insights: DayInsights }) {
 				}
 				const L = leaflet.default ?? leaflet;
 				map = L.map(containerRef.current, {
-					scrollWheelZoom: true,
+					scrollWheelZoom: false,
 					keyboard: true,
 					preferCanvas: true,
 				});
@@ -137,10 +145,10 @@ export function DayMap({ insights }: { insights: DayInsights }) {
 	}, [hasPoints, insights, attempt]);
 
 	return (
-		<LayerCard>
+		<LayerCard className="story-map">
 			<LayerCard.Header>
 				<Text as="h2" variant="heading" size="md">
-					足迹
+					{compact ? "全天足迹" : "足迹"}
 				</Text>
 				<Text as="p" size="sm" tone="muted">
 					{hasPoints
@@ -167,10 +175,10 @@ export function DayMap({ insights }: { insights: DayInsights }) {
 				{hasPoints ? (
 					<div
 						ref={containerRef}
-						className="h-80 w-full overflow-hidden rounded-md"
+						className={`story-map-canvas w-full overflow-hidden rounded-md${compact ? " story-map-compact" : ""}`}
 						hidden={Boolean(mapError)}
 						role="application"
-						aria-label="当日足迹地图"
+						aria-label={label}
 					/>
 				) : (
 					<Empty title="没有位置记录" description="导入 footprint GPX 后会显示轨迹。" />

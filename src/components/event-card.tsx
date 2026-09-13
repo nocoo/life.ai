@@ -30,16 +30,38 @@ function badgeVariant(event: LifeEvent): "teal" | "blue" | "orange" | "purple" |
 	return "secondary";
 }
 
+export function EventDetails({ event }: { event: LifeEvent }) {
+	const details = describeEventData(event);
+	return (
+		<div className="space-y-3">
+			{event.content ? (
+				<Text as="p" size="sm" className="whitespace-pre-wrap break-words">
+					{event.content}
+				</Text>
+			) : null}
+			{details.length > 0 ? (
+				<DescriptionList columns={2}>
+					{details.map((row) => (
+						<DescriptionList.Item key={`${event.id}-${row.term}`} term={row.term}>
+							{row.value}
+						</DescriptionList.Item>
+					))}
+				</DescriptionList>
+			) : null}
+		</div>
+	);
+}
+
 export function EventCard({ event }: { event: LifeEvent }) {
 	const clock = formatInterval(event);
 	const details = describeEventData(event);
 	const hasDetails = details.length > 0 || Boolean(event.content);
 
 	return (
-		<div className="flex flex-col gap-2 py-2">
+		<div className="story-event flex flex-col gap-2 py-2">
 			<div className="flex flex-wrap items-start justify-between gap-2">
 				<div className="min-w-0 space-y-1">
-					<Text as="p" bold className="truncate">
+					<Text as="p" bold className="story-event-title">
 						{event.title}
 					</Text>
 					{clock ? (
@@ -57,22 +79,7 @@ export function EventCard({ event }: { event: LifeEvent }) {
 				<Collapsible>
 					<CollapsibleTrigger>详情</CollapsibleTrigger>
 					<CollapsibleContent>
-						<div className="space-y-3">
-							{event.content ? (
-								<Text as="p" size="sm">
-									{event.content}
-								</Text>
-							) : null}
-							{details.length > 0 ? (
-								<DescriptionList columns={2}>
-									{details.map((row) => (
-										<DescriptionList.Item key={`${event.id}-${row.term}`} term={row.term}>
-											{row.value}
-										</DescriptionList.Item>
-									))}
-								</DescriptionList>
-							) : null}
-						</div>
+						<EventDetails event={event} />
 					</CollapsibleContent>
 				</Collapsible>
 			) : null}
