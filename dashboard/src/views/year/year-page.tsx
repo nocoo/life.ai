@@ -1,8 +1,12 @@
 "use client";
 
+import { LayerCard } from "@nocoo/basalt/components/layer-card";
+
 import { useEffect } from "react";
 
 import { SkeletonLine as Skeleton } from "@nocoo/basalt/components/skeleton-line";
+import { PageHeader } from "@nocoo/basalt/components/page-header";
+import { SectionRule } from "@nocoo/basalt/components/section-rule";
 
 import { useYearStore } from "@/viewmodels/year-store";
 import { YearNavigation } from "./year-navigation";
@@ -26,24 +30,24 @@ function LoadingSkeleton() {
     <div className="space-y-4">
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <LayerCard key={i} className="">
             <Skeleton className="h-3 w-20 mb-1.5" />
             <Skeleton className="h-6 w-28" />
-          </div>
+          </LayerCard>
         ))}
       </div>
 
-      <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+      <LayerCard className="">
         <Skeleton className="h-4 w-28 mb-3" />
         <Skeleton className="h-28 w-full" />
-      </div>
+      </LayerCard>
 
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <LayerCard key={i} className="">
             <Skeleton className="h-4 w-28 mb-3" />
             <Skeleton className="h-40 w-full" />
-          </div>
+          </LayerCard>
         ))}
       </div>
     </div>
@@ -113,8 +117,7 @@ function YearContent() {
   return (
     <div className="space-y-6">
       {/* Section 1: Overview Stats */}
-      <section>
-        <h2 className="text-sm font-normal text-basalt-muted-foreground mb-2">年度总览</h2>
+      <SectionRule title="年度总览">
         <StatGrid columns={4}>
           <StatCard
             title="总步数"
@@ -169,27 +172,24 @@ function YearContent() {
             />
           </StatGrid>
         </div>
-      </section>
+      </SectionRule>
 
       {/* Section 2: Health Data */}
-      <section>
-        <h2 className="text-sm font-normal text-basalt-muted-foreground mb-2">健康数据</h2>
+      <SectionRule title="健康数据">
         <YearHealthPanel data={health} year={selectedYear} />
-      </section>
+      </SectionRule>
 
       {/* Section 3: Footprint Data */}
       {(footprint.dailyDistance.length > 0 || footprint.byTransportMode.length > 0) && (
-        <section>
-          <h2 className="text-sm font-normal text-basalt-muted-foreground mb-2">轨迹数据</h2>
+        <SectionRule title="轨迹数据">
           <YearFootprintPanel data={footprint} year={selectedYear} />
-        </section>
+        </SectionRule>
       )}
 
       {/* Section 4: Finance Data */}
-      <section>
-        <h2 className="text-sm font-normal text-basalt-muted-foreground mb-2">财务数据</h2>
+      <SectionRule title="财务数据">
         <YearPixiuPanel data={pixiu} year={selectedYear} />
-      </section>
+      </SectionRule>
     </div>
   );
 }
@@ -203,7 +203,6 @@ export function YearPage() {
     goCurrentYear,
     goPrevYear,
     goNextYear,
-    toggleCalendar,
     loadData,
   } = useYearStore();
 
@@ -213,12 +212,17 @@ export function YearPage() {
 
   return (
     <div className="space-y-4">
-        <YearNavigation
-          selectedYear={selectedYear}
-          onPrevYear={goPrevYear}
-          onNextYear={goNextYear}
-          onCurrentYear={goCurrentYear}
-          onToggleCalendar={toggleCalendar}
+        <PageHeader
+          title="年度数据"
+          description="按年回顾健康、轨迹与财务变化。"
+          actions={
+            <YearNavigation
+              selectedYear={selectedYear}
+              onPrevYear={goPrevYear}
+              onNextYear={goNextYear}
+              onCurrentYear={goCurrentYear}
+            />
+          }
         />
 
         {loading && <LoadingSkeleton />}

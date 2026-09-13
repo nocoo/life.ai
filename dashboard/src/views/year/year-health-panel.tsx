@@ -1,5 +1,7 @@
 "use client";
 
+import { LayerCard } from "@nocoo/basalt/components/layer-card";
+
 import { StatCard, StatGrid } from "@nocoo/basalt/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
@@ -131,7 +133,7 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
 
       {/* Steps Heatmap */}
       {steps && steps.dailySteps.length > 0 && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        <LayerCard className="">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Footprints className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             年度步数分布
@@ -142,14 +144,14 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
             metricLabel="步数"
             valueFormatter={formatNumber}
           />
-        </div>
+        </LayerCard>
       )}
 
       {/* Monthly Trends Row */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* Monthly Steps Chart */}
         {steps && steps.monthlySteps.length > 0 && (
-          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <LayerCard className="">
             <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Footprints className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               月度步数趋势
@@ -160,12 +162,12 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
               color={chart.primary}
               valueFormatter={formatNumber}
             />
-          </div>
+          </LayerCard>
         )}
 
         {/* Monthly Heart Rate Chart */}
         {heartRate && heartRate.monthlyAvg.length > 0 && (
-          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <LayerCard className="">
             <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Heart className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               月度心率趋势
@@ -186,13 +188,13 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
               height={180}
               valueFormatter={(v) => `${Math.round(v)} bpm`}
             />
-          </div>
+          </LayerCard>
         )}
       </div>
 
       {/* Activity Heatmap */}
       {activity && activity.dailyActiveEnergy.length > 0 && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        <LayerCard className="">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Flame className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             年度活动能量分布
@@ -204,14 +206,14 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
             valueFormatter={(v) => `${Math.round(v)} kcal`}
             colorScale={heatmapColorScales.orange}
           />
-        </div>
+        </LayerCard>
       )}
 
       {/* Monthly Activity Charts */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* Monthly Active Energy Chart */}
         {activity && activity.monthlyActiveEnergy.length > 0 && (
-          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <LayerCard className="">
             <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Flame className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               月度活动能量
@@ -222,12 +224,12 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
               color={chart.jade}
               valueFormatter={(v) => `${formatNumber(Math.round(v))} kcal`}
             />
-          </div>
+          </LayerCard>
         )}
 
         {/* Monthly Exercise Minutes Chart */}
         {activity && activity.monthlyExerciseMinutes.length > 0 && (
-          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <LayerCard className="">
             <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Timer className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               月度运动时长
@@ -238,13 +240,13 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
               color={chart.sky}
               valueFormatter={(v) => formatDuration(v)}
             />
-          </div>
+          </LayerCard>
         )}
       </div>
 
       {/* Workout Breakdown */}
       {workouts && workouts.byType.length > 0 && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        <LayerCard className="">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Dumbbell className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             年度锻炼类型分布
@@ -259,12 +261,12 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
             color={chart.green}
             valueFormatter={(v) => `${v}次`}
           />
-        </div>
+        </LayerCard>
       )}
 
       {/* Monthly Workout Trends */}
       {workouts && workouts.monthlyWorkouts.length > 0 && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        <LayerCard className="">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Dumbbell className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             月度锻炼次数
@@ -276,7 +278,7 @@ export function YearHealthPanel({ data, year }: YearHealthPanelProps) {
             valueFormatter={(v) => `${v}次`}
             showDots
           />
-        </div>
+        </LayerCard>
       )}
     </div>
   );

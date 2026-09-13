@@ -1,16 +1,16 @@
 "use client";
 
-import { format } from "date-fns";
-import { zhCN } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@nocoo/basalt";
+import { DatePicker } from "@nocoo/basalt/components/date-picker";
 
 export interface DateNavigationProps {
   selectedDate: Date;
   onPrevDay: () => void;
   onNextDay: () => void;
   onToday: () => void;
-  onToggleCalendar?: () => void;
+  onSelectDate: (date: Date) => void;
 }
 
 /** Date navigation component - displays current date with prev/next controls */
@@ -19,7 +19,7 @@ export function DateNavigation({
   onPrevDay,
   onNextDay,
   onToday,
-  onToggleCalendar,
+  onSelectDate,
 }: DateNavigationProps) {
   const isToday =
     format(selectedDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
@@ -47,17 +47,13 @@ export function DateNavigation({
         <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
       </Button>
 
-      {/* Current Date Display */}
-      <Button
-        variant="ghost"
-        onClick={onToggleCalendar}
-        className="gap-2 text-lg font-medium"
-      >
-        <span>{format(selectedDate, "yyyy年M月d日 EEEE", { locale: zhCN })}</span>
-        {onToggleCalendar && (
-          <CalendarIcon className="h-4 w-4 text-basalt-muted-foreground" strokeWidth={1.5} />
-        )}
-      </Button>
+      <DatePicker
+        value={format(selectedDate, "yyyy-MM-dd")}
+        onChange={(value) => onSelectDate(parseISO(value))}
+        locale="zh-CN"
+        weekStartsOn={1}
+        aria-label="选择日期"
+      />
 
       {/* Next Day */}
       <Button

@@ -1,8 +1,9 @@
 "use client";
 
+import { LayerCard } from "@nocoo/basalt/components/layer-card";
+
 import { useMemo, useEffect, useState } from "react";
 import { MapPin, Dumbbell, Wallet, Route } from "lucide-react";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@nocoo/basalt";
 import { Separator } from "@nocoo/basalt";
 import {
@@ -134,7 +135,7 @@ export function TrackMapCard({ trackPoints, className }: { trackPoints: TrackPoi
   }
 
   return (
-    <Card className={`min-w-0 overflow-hidden rounded-basalt-lg border-0 bg-basalt-secondary shadow-none p-0 ${className ?? ""}`}>
+    <LayerCard className={`min-w-0 overflow-hidden p-0 ${className ?? ""}`}>
       {/* 16:9 aspect ratio container for better space utilization */}
       <div className="aspect-video w-full">
         {mapProvider === "google" ? (
@@ -161,7 +162,7 @@ export function TrackMapCard({ trackPoints, className }: { trackPoints: TrackPoi
           </LeafletMap>
         )}
       </div>
-    </Card>
+    </LayerCard>
   );
 }
 
@@ -174,7 +175,7 @@ export function ActivityPanel({
     <>
       {/* Workouts Card */}
       {workouts.length > 0 && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4 min-w-0 overflow-hidden">
+        <LayerCard className="min-w-0 overflow-hidden">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Dumbbell className="h-4 w-4" strokeWidth={1.5} />
             运动
@@ -220,12 +221,12 @@ export function ActivityPanel({
               </div>
             ))}
           </div>
-        </div>
+        </LayerCard>
       )}
 
       {/* Locations Card */}
       {footprint.locations.length > 0 && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4 min-w-0 overflow-hidden">
+        <LayerCard className="min-w-0 overflow-hidden">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <MapPin className="h-4 w-4" strokeWidth={1.5} />
             地点
@@ -248,12 +249,12 @@ export function ActivityPanel({
                 </div>
               ))}
           </div>
-        </div>
+        </LayerCard>
       )}
 
       {/* Track Summary Card */}
       {footprint.summary && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4 min-w-0 overflow-hidden">
+        <LayerCard className="min-w-0 overflow-hidden">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Route className="h-4 w-4" strokeWidth={1.5} />
             移动
@@ -334,12 +335,12 @@ export function ActivityPanel({
               </div>
             </div>
           </div>
-        </div>
+        </LayerCard>
       )}
 
       {/* Transactions Card */}
       {pixiu.transactions.length > 0 && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4 min-w-0 overflow-hidden">
+        <LayerCard className="min-w-0 overflow-hidden">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Wallet className="h-4 w-4" strokeWidth={1.5} />
             交易
@@ -435,7 +436,7 @@ export function ActivityPanel({
               ))}
             </div>
           </div>
-        </div>
+        </LayerCard>
       )}
     </>
   );

@@ -11,6 +11,7 @@ import {
 import type { BarShapeProps } from "recharts";
 import { cn } from "@/lib/utils";
 import { chart, chartAxis } from "@/lib/palette";
+import { BarChart as BasaltBarChart } from "@nocoo/basalt/charts/bar";
 
 export interface BarChartDataPoint {
   label: string;
@@ -57,6 +58,21 @@ export function BarChart({
     value: d.value,
     fill: d.color || color,
   }));
+
+  if (!horizontal && !data.some((item) => item.color)) {
+    return (
+      <div className={cn("w-full", className)} style={{ height }}>
+        <BasaltBarChart
+          data={data.map((item) => ({ x: item.label, y: item.value }))}
+          ariaLabel="Bar chart"
+          className="h-full w-full"
+          color={color}
+          showAxes={showGrid || showXAxis || showYAxis}
+          valueFormatter={valueFormatter}
+        />
+      </div>
+    );
+  }
 
   const barShape = createBarShape(chartData);
 

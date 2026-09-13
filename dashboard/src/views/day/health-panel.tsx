@@ -1,5 +1,7 @@
 "use client";
 
+import { LayerCard } from "@nocoo/basalt/components/layer-card";
+
 import { Moon, Heart, Footprints, Droplets, Activity } from "lucide-react";
 import type { DayHealthData, SleepStage, HeartRateRecord } from "@/models/apple-health";
 import { SLEEP_STAGE_COLORS, SLEEP_STAGE_LABELS, getHeartRateColor } from "@/lib/timeline-colors";
@@ -95,7 +97,7 @@ export function HealthPanel({ data }: HealthPanelProps) {
     <>
       {/* Sleep Card */}
       {data.sleep && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4 min-w-0 overflow-hidden">
+        <LayerCard className="min-w-0 overflow-hidden">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Moon className="h-4 w-4" strokeWidth={1.5} />
             睡眠
@@ -157,12 +159,12 @@ export function HealthPanel({ data }: HealthPanelProps) {
               </div>
             </div>
           </div>
-        </div>
+        </LayerCard>
       )}
 
       {/* Heart Rate Card */}
       {data.heartRate && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4 min-w-0 overflow-hidden">
+        <LayerCard className="min-w-0 overflow-hidden">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Heart className="h-4 w-4" strokeWidth={1.5} />
             心率
@@ -204,12 +206,12 @@ export function HealthPanel({ data }: HealthPanelProps) {
               </div>
             </div>
           </div>
-        </div>
+        </LayerCard>
       )}
 
       {/* Steps Card */}
       {data.steps.length > 0 && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4 min-w-0 overflow-hidden">
+        <LayerCard className="min-w-0 overflow-hidden">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Footprints className="h-4 w-4" strokeWidth={1.5} />
             步数
@@ -256,12 +258,12 @@ export function HealthPanel({ data }: HealthPanelProps) {
               </div>
             </div>
           </div>
-        </div>
+        </LayerCard>
       )}
 
       {/* Water Card */}
       {data.water.length > 0 && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4 min-w-0 overflow-hidden">
+        <LayerCard className="min-w-0 overflow-hidden">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Droplets className="h-4 w-4" strokeWidth={1.5} />
             饮水
@@ -280,12 +282,12 @@ export function HealthPanel({ data }: HealthPanelProps) {
               </div>
             ))}
           </div>
-        </div>
+        </LayerCard>
       )}
 
       {/* Activity Rings Card */}
       {data.activity && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4 min-w-0 overflow-hidden">
+        <LayerCard className="min-w-0 overflow-hidden">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Activity className="h-4 w-4" strokeWidth={1.5} />
             活动圆环
@@ -339,7 +341,7 @@ export function HealthPanel({ data }: HealthPanelProps) {
               </div>
             </div>
           </div>
-        </div>
+        </LayerCard>
       )}
     </>
   );

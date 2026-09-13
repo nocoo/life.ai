@@ -1,5 +1,7 @@
 "use client";
 
+import { LayerCard } from "@nocoo/basalt/components/layer-card";
+
 import { StatCard, StatGrid } from "@nocoo/basalt/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
@@ -113,7 +115,7 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
       <div className="grid gap-4 md:grid-cols-2">
         {/* Daily Steps Chart */}
         {steps && steps.dailySteps.length > 0 && (
-          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <LayerCard className="">
             <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Footprints className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               每日步数
@@ -126,12 +128,12 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
               referenceLine={steps.avgSteps}
               referenceLineLabel="平均"
             />
-          </div>
+          </LayerCard>
         )}
 
         {/* Daily Heart Rate Chart */}
         {heartRate && heartRate.dailyAvg.length > 0 && (
-          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <LayerCard className="">
             <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Heart className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               每日心率
@@ -152,12 +154,12 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
               height={180}
               valueFormatter={(v) => `${Math.round(v)} bpm`}
             />
-          </div>
+          </LayerCard>
         )}
 
         {/* Daily Sleep Chart */}
         {sleep && sleep.dailyDuration.length > 0 && (
-          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <LayerCard className="">
             <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Moon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               每日睡眠
@@ -168,12 +170,12 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
               color={chart.teal}
               valueFormatter={(v) => `${v.toFixed(1)}小时`}
             />
-          </div>
+          </LayerCard>
         )}
 
         {/* Daily Active Energy Chart */}
         {activity && activity.dailyActiveEnergy.length > 0 && (
-          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <LayerCard className="">
             <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Flame className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               每日活动能量
@@ -186,13 +188,13 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
               referenceLine={activity.avgActiveEnergy}
               referenceLineLabel="平均"
             />
-          </div>
+          </LayerCard>
         )}
       </div>
 
       {/* Workout Breakdown */}
       {workouts && workouts.byType.length > 0 && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        <LayerCard className="">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Dumbbell className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             锻炼类型分布
@@ -207,7 +209,7 @@ export function MonthHealthPanel({ data }: MonthHealthPanelProps) {
             color={chart.green}
             valueFormatter={(v) => `${v}次`}
           />
-        </div>
+        </LayerCard>
       )}
     </div>
   );

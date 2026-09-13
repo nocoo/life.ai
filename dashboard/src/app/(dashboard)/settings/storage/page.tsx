@@ -6,6 +6,9 @@ import { StatCard, StatGrid } from "@nocoo/basalt/charts/stat-card";
 import { DonutChart, type DonutChartDataPoint } from "@/components/charts/pie-chart";
 import { BarChart, type BarChartDataPoint } from "@/components/charts/bar-chart";
 import { SkeletonLine as Skeleton } from "@nocoo/basalt/components/skeleton-line";
+import { LayerCard } from "@nocoo/basalt/components/layer-card";
+import { PageHeader } from "@nocoo/basalt/components/page-header";
+import { SectionRule } from "@nocoo/basalt/components/section-rule";
 import type { StorageStats, DatabaseStats } from "@/services/storage-service";
 import { CHART_COLORS } from "@/lib/palette";
 
@@ -22,11 +25,11 @@ function StorageSkeleton() {
         <Skeleton className="h-5 w-40 mb-4" />
         <StatGrid columns={4}>
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="rounded-basalt-lg bg-basalt-secondary p-4 space-y-3">
+            <LayerCard key={i} className="space-y-3">
               <Skeleton className="h-3 w-20" />
               <Skeleton className="h-7 w-24" />
               <Skeleton className="h-3 w-16" />
-            </div>
+            </LayerCard>
           ))}
         </StatGrid>
       </div>
@@ -34,23 +37,23 @@ function StorageSkeleton() {
         <Skeleton className="h-5 w-40 mb-4" />
         <StatGrid columns={3}>
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="rounded-basalt-lg bg-basalt-secondary p-4 space-y-3">
+            <LayerCard key={i} className="space-y-3">
               <Skeleton className="h-4 w-28" />
               <Skeleton className="h-6 w-20" />
               <Skeleton className="h-3 w-32" />
-            </div>
+            </LayerCard>
           ))}
         </StatGrid>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        <LayerCard className="">
           <Skeleton className="h-4 w-32 mb-4" />
           <Skeleton className="h-[200px] w-full" />
-        </div>
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        </LayerCard>
+        <LayerCard className="">
           <Skeleton className="h-4 w-32 mb-4" />
           <Skeleton className="h-[200px] w-full" />
-        </div>
+        </LayerCard>
       </div>
     </div>
   );
@@ -58,7 +61,7 @@ function StorageSkeleton() {
 
 function DatabaseCard({ db, color }: { db: DatabaseStats; color: string }) {
   return (
-    <div className="rounded-basalt-lg bg-basalt-secondary p-4 md:p-5">
+    <LayerCard>
       <div className="flex items-start justify-between mb-3">
         <div>
           <p className="text-sm font-medium text-basalt-foreground">{db.displayName}</p>
@@ -86,7 +89,7 @@ function DatabaseCard({ db, color }: { db: DatabaseStats; color: string }) {
           </p>
         )}
       </div>
-    </div>
+    </LayerCard>
   );
 }
 
@@ -162,9 +165,9 @@ export default function StoragePage() {
 
   return (
     <div className="space-y-6">
+      <PageHeader title="存储" description="查看数据库、轨迹文件与记录数量。" />
       {/* Overview Stats */}
-      <section>
-        <h2 className="text-sm font-normal text-basalt-muted-foreground mb-2">存储概览</h2>
+      <SectionRule title="存储概览">
         <StatGrid columns={4}>
           <StatCard
             title="总大小"
@@ -195,21 +198,21 @@ export default function StoragePage() {
             iconColor="text-basalt-chart-4"
           />
         </StatGrid>
-      </section>
+      </SectionRule>
 
       {/* Database Details */}
-      <section>
-        <h2 className="text-sm font-normal text-basalt-muted-foreground mb-2">数据库详情</h2>
+      <SectionRule title="数据库详情">
         <StatGrid columns={3}>
           {databases.map((db, i) => (
             <DatabaseCard key={db.name} db={db} color={CHART_COLORS[i % CHART_COLORS.length]} />
           ))}
         </StatGrid>
-      </section>
+      </SectionRule>
 
       {/* Charts */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4 md:p-5">
+      <SectionRule title="数据分布">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <LayerCard>
           <h3 className="text-sm font-medium text-basalt-foreground mb-4">存储分布</h3>
           <DonutChart
             data={storageDistribution}
@@ -217,8 +220,8 @@ export default function StoragePage() {
             showLegend
             valueFormatter={(v) => `${(v / (1024 * 1024)).toFixed(1)} MB`}
           />
-        </div>
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4 md:p-5">
+        </LayerCard>
+        <LayerCard>
           <h3 className="text-sm font-medium text-basalt-foreground mb-4">记录数最多的表</h3>
           <BarChart
             data={recordsByType}
@@ -228,8 +231,9 @@ export default function StoragePage() {
             showYAxis
             showXAxis={false}
           />
+        </LayerCard>
         </div>
-      </section>
+      </SectionRule>
     </div>
   );
 }

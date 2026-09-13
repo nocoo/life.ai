@@ -9,6 +9,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@nocoo/basalt/components/select";
+import { LayerCard } from "@nocoo/basalt/components/layer-card";
+import { PageHeader } from "@nocoo/basalt/components/page-header";
+import { SectionRule } from "@nocoo/basalt/components/section-rule";
 
 const MAP_PROVIDERS: { value: MapProvider; label: string }[] = [
   { value: "carto", label: "CARTO（默认）" },
@@ -20,9 +23,9 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold mb-4">通用设置</h2>
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4 space-y-4">
+      <PageHeader title="设置" description="配置 Life.ai 的本地显示偏好。" />
+      <SectionRule title="通用设置">
+        <LayerCard>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="map-provider">地图服务商</Label>
@@ -46,8 +49,8 @@ export default function SettingsPage() {
               </SelectContent>
             </Select>
           </div>
-        </div>
-      </div>
+        </LayerCard>
+      </SectionRule>
     </div>
   );
 }

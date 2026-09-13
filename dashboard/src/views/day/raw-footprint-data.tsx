@@ -1,5 +1,7 @@
 "use client";
 
+import { LayerCard } from "@nocoo/basalt/components/layer-card";
+
 import { ScrollArea } from "@nocoo/basalt";
 import { Badge } from "@nocoo/basalt";
 import {
@@ -54,7 +56,7 @@ const formatCoord = (value: number, decimals = 6): string => {
 
 export function RawFootprintData({ data }: RawFootprintDataProps) {
   return (
-    <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+    <LayerCard className="">
       <div className="text-sm font-normal text-basalt-muted-foreground mb-3">
         Footprint 原始数据
       </div>
@@ -65,30 +67,30 @@ export function RawFootprintData({ data }: RawFootprintDataProps) {
               <div>
                 <h3 className="text-sm font-normal text-basalt-muted-foreground mb-2">轨迹概览</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="rounded-basalt-lg bg-basalt-secondary p-3">
+                  <LayerCard className="p-3">
                     <div className="text-xs text-basalt-muted-foreground">总距离</div>
                     <div className="text-xl font-semibold font-display tracking-tight">
                       {formatDistance(data.summary.totalDistance)}
                     </div>
-                  </div>
-                  <div className="rounded-basalt-lg bg-basalt-secondary p-3">
+                  </LayerCard>
+                  <LayerCard className="p-3">
                     <div className="text-xs text-basalt-muted-foreground">平均速度</div>
                     <div className="text-xl font-semibold font-display tracking-tight">
                       {formatSpeed(data.summary.avgSpeed)}
                     </div>
-                  </div>
-                  <div className="rounded-basalt-lg bg-basalt-secondary p-3">
+                  </LayerCard>
+                  <LayerCard className="p-3">
                     <div className="text-xs text-basalt-muted-foreground">轨迹点数</div>
                     <div className="text-xl font-semibold font-display tracking-tight">
                       {data.summary.pointCount.toLocaleString()}
                     </div>
-                  </div>
-                  <div className="rounded-basalt-lg bg-basalt-secondary p-3">
+                  </LayerCard>
+                  <LayerCard className="p-3">
                     <div className="text-xs text-basalt-muted-foreground">记录时间</div>
                     <div className="text-lg font-semibold">
                       {data.summary.minTime} - {data.summary.maxTime}
                     </div>
-                  </div>
+                  </LayerCard>
                 </div>
               </div>
             )}
@@ -215,6 +217,6 @@ export function RawFootprintData({ data }: RawFootprintDataProps) {
               )}
           </div>
         </ScrollArea>
-      </div>
+      </LayerCard>
   );
 }

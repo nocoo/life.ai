@@ -4,9 +4,10 @@ import { useEffect, useState, useCallback } from "react";
 
 import { SkeletonLine as Skeleton } from "@nocoo/basalt/components/skeleton-line";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@nocoo/basalt";
+import { LayerCard } from "@nocoo/basalt/components/layer-card";
+import { PageHeader } from "@nocoo/basalt/components/page-header";
 import { useDayStore } from "@/viewmodels/day-store";
 import { DateNavigation } from "./date-navigation";
-import { DayCalendar } from "./day-calendar";
 import { DayInfoCard } from "./day-info-card";
 import { EnhancedTimeline } from "./enhanced-timeline";
 import { HealthPanel } from "./health-panel";
@@ -22,35 +23,35 @@ function LoadingSkeleton() {
       {/* Two-column layout skeleton: Timeline primary, Cards sidebar */}
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         {/* Timeline Card skeleton */}
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        <LayerCard className="">
           <Skeleton className="h-4 w-24 mb-3" />
           <div className="space-y-2">
             {Array.from({ length: 12 }).map((_, i) => (
               <Skeleton key={i} className="h-7 w-full" />
             ))}
           </div>
-        </div>
+        </LayerCard>
         {/* Cards sidebar skeleton */}
         <div className="grid gap-3 auto-rows-min">
           {/* DayInfoCard skeleton */}
-          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <LayerCard className="">
             <Skeleton className="h-5 w-32" />
             <Skeleton className="h-4 w-48 mt-1" />
-          </div>
+          </LayerCard>
           {/* HealthPanel skeletons */}
-          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <LayerCard className="">
             <Skeleton className="h-4 w-20 mb-3" />
             <Skeleton className="h-14 w-full" />
-          </div>
-          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          </LayerCard>
+          <LayerCard className="">
             <Skeleton className="h-4 w-20 mb-3" />
             <Skeleton className="h-20 w-full" />
-          </div>
+          </LayerCard>
           {/* ActivityPanel skeleton */}
-          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <LayerCard className="">
             <Skeleton className="h-4 w-20 mb-3" />
             <Skeleton className="h-16 w-full" />
-          </div>
+          </LayerCard>
         </div>
       </div>
     </div>
@@ -76,12 +77,10 @@ export function DayPage() {
     data,
     timeSlots,
     location,
-    calendarOpen,
     setDate,
     goToday,
     goPrevDay,
     goNextDay,
-    toggleCalendar,
     loadData,
   } = useDayStore();
 
@@ -107,24 +106,19 @@ export function DayPage() {
 
   return (
     <div className="space-y-4">
-        {/* Date Navigation */}
-        <DateNavigation
-          selectedDate={selectedDate}
-          onPrevDay={goPrevDay}
-          onNextDay={goNextDay}
-          onToday={goToday}
-          onToggleCalendar={toggleCalendar}
-        />
-
-        {/* Calendar (collapsible) */}
-        {calendarOpen && (
-          <div className="flex justify-center">
-            <DayCalendar
+        <PageHeader
+          title="每日数据"
+          description="把健康、轨迹与财务记录放在同一天查看。"
+          actions={
+            <DateNavigation
               selectedDate={selectedDate}
+              onPrevDay={goPrevDay}
+              onNextDay={goNextDay}
+              onToday={goToday}
               onSelectDate={setDate}
             />
-          </div>
-        )}
+          }
+        />
 
         {/* Loading state */}
         {loading && <LoadingSkeleton />}
@@ -159,7 +153,7 @@ export function DayPage() {
                   />
 
                   {/* Enhanced Timeline in a Card */}
-                  <div className="rounded-basalt-lg bg-basalt-secondary p-4 min-w-0 overflow-hidden">
+                  <LayerCard className="min-w-0 overflow-hidden">
                     <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
                       <Clock className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
                       时间线
@@ -170,7 +164,7 @@ export function DayPage() {
                       latitude={location.latitude}
                       longitude={location.longitude}
                     />
-                  </div>
+                  </LayerCard>
                 </div>
 
                 {/* Right: Single-column cards sidebar */}

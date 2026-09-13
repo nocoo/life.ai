@@ -1,5 +1,7 @@
 "use client";
 
+import { LayerCard } from "@nocoo/basalt/components/layer-card";
+
 import { StatCard, StatGrid } from "@nocoo/basalt/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
@@ -148,7 +150,7 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
 
       {/* B. Trends - Daily Income/Expense/Net */}
       {(dailyIncome.length > 0 || dailyExpense.length > 0) && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        <LayerCard className="">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Calendar className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             每日收支趋势
@@ -168,12 +170,12 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
             height={200}
             valueFormatter={formatCurrencyCompact}
           />
-        </div>
+        </LayerCard>
       )}
 
       {/* C. Breakdown - Category Distribution (symmetric: left=income, right=expense) */}
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        <LayerCard className="">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowUpCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             收入 | 分类占比
@@ -190,8 +192,8 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
               暂无收入数据
             </div>
           )}
-        </div>
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        </LayerCard>
+        <LayerCard className="">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowDownCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             支出 | 分类占比
@@ -208,12 +210,12 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
               暂无支出数据
             </div>
           )}
-        </div>
+        </LayerCard>
       </div>
 
       {/* C. Breakdown - Account Distribution (symmetric: left=income, right=expense) */}
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        <LayerCard className="">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowUpCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             收入 | 按账户
@@ -231,8 +233,8 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
               暂无收入数据
             </div>
           )}
-        </div>
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        </LayerCard>
+        <LayerCard className="">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowDownCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             支出 | 按账户
@@ -250,12 +252,12 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
               暂无支出数据
             </div>
           )}
-        </div>
+        </LayerCard>
       </div>
 
       {/* D. Details - Top Expenses */}
       {topExpenses.length > 0 && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        <LayerCard className="">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <TrendingDown className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             大额支出
@@ -280,7 +282,7 @@ export function MonthPixiuPanel({ data }: MonthPixiuPanelProps) {
               </div>
             ))}
           </div>
-        </div>
+        </LayerCard>
       )}
     </div>
   );

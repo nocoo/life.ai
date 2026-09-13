@@ -10,6 +10,8 @@ import {
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { CHART_COLORS, chartAxis } from "@/lib/palette";
+import { LineChart as BasaltLineChart } from "@nocoo/basalt/charts/line";
+import type { XYPoint, XYSeriesDescriptor } from "@nocoo/basalt/charts/series";
 
 export interface LineChartDataPoint {
   label: string;
@@ -92,6 +94,39 @@ export function LineChart({
     });
     return point;
   });
+
+  if (referenceLine === undefined && !showArea && curved) {
+    const keys = ["y", "y2", "y3"] as const;
+    const basaltData: XYPoint[] = labels.map((label, index) => ({
+      x: label,
+      y: normalizedSeries[0]?.data[index]?.value ?? 0,
+      ...(normalizedSeries[1]
+        ? { y2: normalizedSeries[1].data[index]?.value ?? 0 }
+        : {}),
+      ...(normalizedSeries[2]
+        ? { y3: normalizedSeries[2].data[index]?.value ?? 0 }
+        : {}),
+    }));
+    const basaltSeries: XYSeriesDescriptor[] = normalizedSeries.map((item, index) => ({
+      key: keys[index],
+      label: item.name,
+      color: item.color,
+    }));
+
+    return (
+      <div className={cn("w-full", className)} style={{ height }}>
+        <BasaltLineChart
+          data={basaltData}
+          series={basaltSeries}
+          ariaLabel="Trend chart"
+          className="h-full w-full"
+          showAxes={showGrid || showXAxis || showYAxis}
+          showLegend={normalizedSeries.length > 1}
+          valueFormatter={valueFormatter}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={cn("w-full", className)} style={{ height }}>

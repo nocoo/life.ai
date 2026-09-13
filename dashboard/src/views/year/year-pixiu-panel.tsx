@@ -1,5 +1,7 @@
 "use client";
 
+import { LayerCard } from "@nocoo/basalt/components/layer-card";
+
 import { StatCard, StatGrid } from "@nocoo/basalt/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
@@ -160,7 +162,7 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
 
       {/* B. Trends - Monthly Income/Expense/Net */}
       {(monthlyIncome.length > 0 || monthlyExpense.length > 0) && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        <LayerCard className="">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <Calendar className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             月度收支趋势
@@ -181,12 +183,12 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
               valueFormatter={formatCurrencyCompact}
               showDots
             />
-        </div>
+        </LayerCard>
       )}
 
       {/* C. Breakdown - Category Distribution (symmetric: left=income, right=expense) */}
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        <LayerCard className="">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowUpCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             收入 | 分类占比
@@ -203,8 +205,8 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
                 暂无收入数据
               </div>
             )}
-        </div>
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        </LayerCard>
+        <LayerCard className="">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowDownCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             支出 | 分类占比
@@ -221,12 +223,12 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
                 暂无支出数据
               </div>
             )}
-        </div>
+        </LayerCard>
       </div>
 
       {/* C. Breakdown - Account Distribution (symmetric: left=income, right=expense) */}
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        <LayerCard className="">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowUpCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             收入 | 按账户
@@ -244,8 +246,8 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
                 暂无收入数据
               </div>
             )}
-        </div>
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        </LayerCard>
+        <LayerCard className="">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <ArrowDownCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             支出 | 按账户
@@ -263,12 +265,12 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
                 暂无支出数据
               </div>
             )}
-        </div>
+        </LayerCard>
       </div>
 
       {/* D. Details - Expense Heatmap */}
       {dailyExpense.length > 0 && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        <LayerCard className="">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <TrendingDown className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             支出日历
@@ -280,12 +282,12 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
               valueFormatter={formatCurrencyCompact}
               colorScale={heatmapColorScales.red}
             />
-        </div>
+        </LayerCard>
       )}
 
       {/* D. Details - Top Expense Months */}
       {topExpenseMonths.length > 0 && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        <LayerCard className="">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <TrendingDown className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             支出最高月份
@@ -300,7 +302,7 @@ export function YearPixiuPanel({ data, year }: YearPixiuPanelProps) {
               color={COLORS.expense}
               valueFormatter={formatCurrencyCompact}
             />
-        </div>
+        </LayerCard>
       )}
     </div>
   );

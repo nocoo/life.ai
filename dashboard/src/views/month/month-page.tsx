@@ -1,8 +1,12 @@
 "use client";
 
+import { LayerCard } from "@nocoo/basalt/components/layer-card";
+
 import { useEffect } from "react";
 
 import { SkeletonLine as Skeleton } from "@nocoo/basalt/components/skeleton-line";
+import { PageHeader } from "@nocoo/basalt/components/page-header";
+import { SectionRule } from "@nocoo/basalt/components/section-rule";
 import { useMonthStore } from "@/viewmodels/month-store";
 import { MonthNavigation } from "./month-navigation";
 import { MonthHealthPanel } from "./month-health-panel";
@@ -26,20 +30,20 @@ function LoadingSkeleton() {
       {/* Stats skeleton */}
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <LayerCard key={i} className="">
             <Skeleton className="h-3 w-20 mb-1.5" />
             <Skeleton className="h-6 w-28" />
-          </div>
+          </LayerCard>
         ))}
       </div>
 
       {/* Charts skeleton */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <LayerCard key={i} className="">
             <Skeleton className="h-4 w-28 mb-3" />
             <Skeleton className="h-40 w-full" />
-          </div>
+          </LayerCard>
         ))}
       </div>
     </div>
@@ -104,8 +108,7 @@ function MonthContent() {
   return (
     <div className="space-y-6">
       {/* ===== Section 1: Overview Stats ===== */}
-      <section>
-        <h2 className="text-sm font-normal text-basalt-muted-foreground mb-2">月度总览</h2>
+      <SectionRule title="月度总览">
         <StatGrid columns={4}>
           <StatCard
             title="总步数"
@@ -160,27 +163,24 @@ function MonthContent() {
             />
           </StatGrid>
         </div>
-      </section>
+      </SectionRule>
 
       {/* ===== Section 2: Health Charts ===== */}
-      <section>
-        <h2 className="text-sm font-normal text-basalt-muted-foreground mb-2">健康数据</h2>
+      <SectionRule title="健康数据">
         <MonthHealthPanel data={health} />
-      </section>
+      </SectionRule>
 
       {/* ===== Section 3: Footprint Charts ===== */}
       {(footprint.dailyDistance.length > 0 || footprint.byTransportMode.length > 0) && (
-        <section>
-          <h2 className="text-sm font-normal text-basalt-muted-foreground mb-2">轨迹数据</h2>
+        <SectionRule title="轨迹数据">
           <MonthFootprintPanel data={footprint} />
-        </section>
+        </SectionRule>
       )}
 
       {/* ===== Section 4: Finance Charts ===== */}
-      <section>
-        <h2 className="text-sm font-normal text-basalt-muted-foreground mb-2">财务数据</h2>
+      <SectionRule title="财务数据">
         <MonthPixiuPanel data={pixiu} />
-      </section>
+      </SectionRule>
     </div>
   );
 }
@@ -194,7 +194,6 @@ export function MonthPage() {
     goCurrentMonth,
     goPrevMonth,
     goNextMonth,
-    toggleCalendar,
     loadData,
   } = useMonthStore();
 
@@ -204,13 +203,17 @@ export function MonthPage() {
 
   return (
     <div className="space-y-4">
-        {/* Month Navigation */}
-        <MonthNavigation
-          selectedMonth={selectedMonth}
-          onPrevMonth={goPrevMonth}
-          onNextMonth={goNextMonth}
-          onCurrentMonth={goCurrentMonth}
-          onToggleCalendar={toggleCalendar}
+        <PageHeader
+          title="月度数据"
+          description="按月查看健康、轨迹与财务趋势。"
+          actions={
+            <MonthNavigation
+              selectedMonth={selectedMonth}
+              onPrevMonth={goPrevMonth}
+              onNextMonth={goNextMonth}
+              onCurrentMonth={goCurrentMonth}
+            />
+          }
         />
 
         {/* Loading state */}

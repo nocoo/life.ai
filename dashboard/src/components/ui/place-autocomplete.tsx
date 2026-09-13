@@ -13,7 +13,7 @@ import {
     InputGroupAddon,
     InputGroupInput,
 } from "@/components/ui/input-group"
-import { Spinner } from "@/components/ui/spinner"
+import { Loader as Spinner } from "@nocoo/basalt/components/loader"
 import type { BBox, Feature, FeatureCollection, Point } from "geojson"
 import { MapPinIcon, SearchIcon } from "lucide-react"
 import * as React from "react"
@@ -314,7 +314,7 @@ function PlaceAutocomplete({
                         {...props}
                     />
                     {isLoading && (
-                        <InputGroupAddon align="inline-end">
+                        <InputGroupAddon align="end">
                             <Spinner />
                         </InputGroupAddon>
                     )}

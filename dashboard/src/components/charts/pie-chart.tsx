@@ -1,13 +1,5 @@
-import {
-  PieChart as RechartsPieChart,
-  Pie,
-  Sector,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts";
-import type { PieSectorShapeProps } from "recharts";
-import { cn } from "@/lib/utils";
+import { DonutChart as BasaltDonutChart } from "@nocoo/basalt/charts/donut";
+import type { ChartSeriesDescriptor } from "@nocoo/basalt/charts/series";
 import { CHART_COLORS } from "@/lib/palette";
 
 export interface DonutChartDataPoint {
@@ -26,98 +18,29 @@ export interface DonutChartProps {
   className?: string;
 }
 
-interface PieChartProps extends DonutChartProps {
-  innerRadius?: number;
-}
-
-const defaultColors = CHART_COLORS;
-
-const createPieSectorShape = (chartData: Array<{ fill: string }>) => {
-  const PieSectorShape = (props: PieSectorShapeProps) => {
-    const fill = chartData[props.index]?.fill ?? defaultColors[props.index % defaultColors.length];
-    return <Sector {...props} fill={fill} />;
-  };
-  PieSectorShape.displayName = "PieSectorShape";
-  return PieSectorShape;
-};
-
-function PieChart({
+export function DonutChart({
   data,
   height = 200,
-  innerRadius = 0,
-  outerRadius = 80,
   showLegend = false,
-  showLabels = false,
-  valueFormatter = (v) => v.toLocaleString(),
+  valueFormatter = (value) => value.toLocaleString(),
   className,
-}: PieChartProps) {
-  const chartData = data.map((d, i) => ({
-    name: d.label,
-    value: d.value,
-    fill: d.color || defaultColors[i % defaultColors.length],
+}: DonutChartProps) {
+  const series: ChartSeriesDescriptor[] = data.map((item, index) => ({
+    key: item.label,
+    label: item.label,
+    color: item.color ?? CHART_COLORS[index % CHART_COLORS.length],
   }));
 
-  const total = data.reduce((sum, d) => sum + d.value, 0);
-  const sectorShape = createPieSectorShape(chartData);
-
   return (
-    <div className={cn("w-full", className)} style={{ height }}>
-      <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-        <RechartsPieChart>
-          <Pie
-            data={chartData}
-            cx="50%"
-            cy="50%"
-            innerRadius={innerRadius}
-            outerRadius={outerRadius}
-            paddingAngle={2}
-            dataKey="value"
-            shape={sectorShape}
-            label={
-              showLabels
-                ? ({ name, percent }) =>
-                    `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`
-                : false
-            }
-            labelLine={showLabels}
-          />
-          <Tooltip
-            content={({ active, payload }) => {
-              if (!active || !payload?.length) return null;
-              const item = payload[0];
-              const percent = total > 0 ? ((item.value as number) / total) * 100 : 0;
-              return (
-                <div className="rounded-basalt-lg border border-basalt-border bg-basalt-card p-2 shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="h-3 w-3 rounded-full"
-                      style={{ backgroundColor: item.payload.fill }}
-                    />
-                    <span className="text-sm font-medium text-basalt-foreground">{item.name}</span>
-                  </div>
-                  <div className="text-sm text-basalt-muted-foreground">
-                    {valueFormatter(item.value as number)} ({percent.toFixed(1)}%)
-                  </div>
-                </div>
-              );
-            }}
-          />
-          {showLegend && (
-            <Legend
-              layout="horizontal"
-              verticalAlign="bottom"
-              align="center"
-              formatter={(value) => (
-                <span className="text-sm text-basalt-muted-foreground">{value}</span>
-              )}
-            />
-          )}
-        </RechartsPieChart>
-      </ResponsiveContainer>
+    <div className={className} style={{ height }}>
+      <BasaltDonutChart
+        data={data.map((item) => ({ name: item.label, value: item.value }))}
+        series={series}
+        ariaLabel="Distribution chart"
+        className="h-full w-full"
+        showLegend={showLegend}
+        valueFormatter={valueFormatter}
+      />
     </div>
   );
-}
-
-export function DonutChart(props: DonutChartProps) {
-  return <PieChart {...props} innerRadius={60} />;
 }

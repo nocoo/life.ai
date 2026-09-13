@@ -1,5 +1,7 @@
 "use client";
 
+import { LayerCard } from "@nocoo/basalt/components/layer-card";
+
 import { StatCard, StatGrid } from "@nocoo/basalt/charts/stat-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { BarChart } from "@/components/charts/bar-chart";
@@ -106,7 +108,7 @@ export function MonthFootprintPanel({ data }: MonthFootprintPanelProps) {
       <div className="grid gap-4 md:grid-cols-2">
         {/* Daily Distance Chart */}
         {dailyDistance.length > 0 && (
-          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <LayerCard className="">
             <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Route className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               每日距离
@@ -119,12 +121,12 @@ export function MonthFootprintPanel({ data }: MonthFootprintPanelProps) {
               referenceLine={avgDailyDistance}
               referenceLineLabel="平均"
             />
-          </div>
+          </LayerCard>
         )}
 
         {/* Transport Mode Breakdown */}
         {byTransportMode.length > 0 && (
-          <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+          <LayerCard className="">
             <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
               <Car className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
               出行方式分布
@@ -138,21 +140,21 @@ export function MonthFootprintPanel({ data }: MonthFootprintPanelProps) {
               showLegend
               valueFormatter={(v) => formatDistance(v)}
             />
-          </div>
+          </LayerCard>
         )}
       </div>
 
       {/* Transport Mode Details */}
       {byTransportMode.length > 0 && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        <LayerCard className="">
           <div className="text-sm font-normal text-basalt-muted-foreground mb-3">出行方式详情</div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {byTransportMode.map((mode) => {
               const Icon = getTransportIcon(mode.mode);
               return (
-                <div
+                <LayerCard
                   key={mode.mode}
-                  className="flex items-center gap-2.5 rounded-basalt-lg bg-basalt-secondary p-2.5"
+                  className="flex items-center gap-2.5 p-2.5"
                 >
                   <div className="rounded-md bg-basalt-muted p-1.5">
                     <Icon className="h-4 w-4 text-basalt-muted-foreground" strokeWidth={1.5} aria-hidden="true" />
@@ -165,16 +167,16 @@ export function MonthFootprintPanel({ data }: MonthFootprintPanelProps) {
                       {formatDistance(mode.totalDistance)} · {mode.percentage.toFixed(0)}%
                     </p>
                   </div>
-                </div>
+                </LayerCard>
               );
             })}
           </div>
-        </div>
+        </LayerCard>
       )}
 
       {/* Distance by Transport Mode Bar Chart */}
       {byTransportMode.length > 0 && (
-        <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+        <LayerCard className="">
           <div className="flex items-center gap-2 text-sm font-normal text-basalt-muted-foreground mb-3">
             <BarChart3 className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             各出行方式距离
@@ -189,7 +191,7 @@ export function MonthFootprintPanel({ data }: MonthFootprintPanelProps) {
             color={chart.sky}
             valueFormatter={(v) => formatDistance(v)}
           />
-        </div>
+        </LayerCard>
       )}
     </div>
   );

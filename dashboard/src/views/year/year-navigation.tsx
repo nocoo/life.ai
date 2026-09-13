@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@nocoo/basalt";
 
 export interface YearNavigationProps {
@@ -9,7 +9,6 @@ export interface YearNavigationProps {
   onPrevYear: () => void;
   onNextYear: () => void;
   onCurrentYear: () => void;
-  onToggleCalendar?: () => void;
 }
 
 /** Check if the given year is the current year */
@@ -23,7 +22,6 @@ export function YearNavigation({
   onPrevYear,
   onNextYear,
   onCurrentYear,
-  onToggleCalendar,
 }: YearNavigationProps) {
   const isCurrent = isCurrentYear(selectedYear);
 
@@ -51,16 +49,9 @@ export function YearNavigation({
       </Button>
 
       {/* Current Year Display */}
-      <Button
-        variant="ghost"
-        onClick={onToggleCalendar}
-        className="gap-2 text-lg font-medium"
-      >
-        <span>{selectedYear}年</span>
-        {onToggleCalendar && (
-          <CalendarIcon className="h-4 w-4 text-basalt-muted-foreground" strokeWidth={1.5} />
-        )}
-      </Button>
+      <span className="min-w-20 text-center text-lg font-medium">
+        {selectedYear}年
+      </span>
 
       {/* Next Year */}
       <Button

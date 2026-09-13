@@ -2,7 +2,7 @@
 
 import { format, parse } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@nocoo/basalt";
 
 export interface MonthNavigationProps {
@@ -11,7 +11,6 @@ export interface MonthNavigationProps {
   onPrevMonth: () => void;
   onNextMonth: () => void;
   onCurrentMonth: () => void;
-  onToggleCalendar?: () => void;
 }
 
 /** Format month string to display format */
@@ -31,7 +30,6 @@ export function MonthNavigation({
   onPrevMonth,
   onNextMonth,
   onCurrentMonth,
-  onToggleCalendar,
 }: MonthNavigationProps) {
   const isCurrent = isCurrentMonth(selectedMonth);
 
@@ -59,16 +57,9 @@ export function MonthNavigation({
       </Button>
 
       {/* Current Month Display */}
-      <Button
-        variant="ghost"
-        onClick={onToggleCalendar}
-        className="gap-2 text-lg font-medium"
-      >
-        <span>{formatMonthDisplay(selectedMonth)}</span>
-        {onToggleCalendar && (
-          <CalendarIcon className="h-4 w-4 text-basalt-muted-foreground" strokeWidth={1.5} />
-        )}
-      </Button>
+      <span className="min-w-24 text-center text-lg font-medium">
+        {formatMonthDisplay(selectedMonth)}
+      </span>
 
       {/* Next Month */}
       <Button

@@ -1,5 +1,7 @@
 "use client";
 
+import { LayerCard } from "@nocoo/basalt/components/layer-card";
+
 import { ScrollArea } from "@nocoo/basalt";
 import { Badge } from "@nocoo/basalt";
 import {
@@ -24,7 +26,7 @@ const formatAmount = (amount: number, isIncome: boolean): string => {
 
 export function RawPixiuData({ data }: RawPixiuDataProps) {
   return (
-    <div className="rounded-basalt-lg bg-basalt-secondary p-4">
+    <LayerCard className="">
       <div className="text-sm font-normal text-basalt-muted-foreground mb-3">
         貔貅记账原始数据
       </div>
@@ -35,19 +37,19 @@ export function RawPixiuData({ data }: RawPixiuDataProps) {
               <div>
                 <h3 className="text-sm font-normal text-basalt-muted-foreground mb-2">日收支概览</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="rounded-basalt-lg bg-basalt-secondary p-3">
+                  <LayerCard className="p-3">
                     <div className="text-xs text-basalt-muted-foreground">收入</div>
                     <div className="text-xl font-semibold font-display tracking-tight text-green-600">
                       +¥{data.summary.income.toFixed(2)}
                     </div>
-                  </div>
-                  <div className="rounded-basalt-lg bg-basalt-secondary p-3">
+                  </LayerCard>
+                  <LayerCard className="p-3">
                     <div className="text-xs text-basalt-muted-foreground">支出</div>
                     <div className="text-xl font-semibold font-display tracking-tight text-red-500">
                       -¥{data.summary.expense.toFixed(2)}
                     </div>
-                  </div>
-                  <div className="rounded-basalt-lg bg-basalt-secondary p-3">
+                  </LayerCard>
+                  <LayerCard className="p-3">
                     <div className="text-xs text-basalt-muted-foreground">净收入</div>
                     <div
                       className={`text-xl font-semibold font-display tracking-tight ${
@@ -57,13 +59,13 @@ export function RawPixiuData({ data }: RawPixiuDataProps) {
                       {data.summary.net >= 0 ? "+" : ""}¥
                       {data.summary.net.toFixed(2)}
                     </div>
-                  </div>
-                  <div className="rounded-basalt-lg bg-basalt-secondary p-3">
+                  </LayerCard>
+                  <LayerCard className="p-3">
                     <div className="text-xs text-basalt-muted-foreground">交易笔数</div>
                     <div className="text-xl font-semibold font-display tracking-tight">
                       {data.summary.transactionCount}
                     </div>
-                  </div>
+                  </LayerCard>
                 </div>
               </div>
             )}
@@ -192,6 +194,6 @@ export function RawPixiuData({ data }: RawPixiuDataProps) {
             )}
           </div>
         </ScrollArea>
-      </div>
+      </LayerCard>
   );
 }
