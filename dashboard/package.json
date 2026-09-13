@@ -2,6 +2,7 @@
   "name": "dashboard",
   "version": "0.2.0",
   "private": true,
+  "type": "module",
   "engines": {
     "node": ">=22"
   },
@@ -77,10 +78,8 @@
     "minimatch": ">=3.1.4",
     "picomatch": ">=4.0.4",
     "nanoid": "^3.3.18",
-    "postcss": ">=8.5.23",
     "brace-expansion": ">=5.0.9",
     "vite": ">=8.0.16",
-    "@babel/core": ">=7.29.6",
     "baseline-browser-mapping": ">=2.11.0",
     "sharp": ">=0.35.4",
     "@types/leaflet": "^1.9.22"
