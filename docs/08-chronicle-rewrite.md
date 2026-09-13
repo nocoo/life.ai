@@ -65,7 +65,7 @@ Both collaborators handed off their files after their checks. Codex owns the int
 
 Verified on 2026-09-13:
 
-- L1 aggregate: 260 tests in 21 files passed. Statements 99.08%, branches 96.54%, functions 99.39%, lines 99.13%; all four enforced thresholds exceed 95%.
+- L1 aggregate: 261 tests in 21 files passed. Statements 99.08%, branches 96.55%, functions 99.39%, lines 99.13%; all four enforced thresholds exceed 95%.
 - L2: 15 scenarios passed against real local Worker + SQLite, covering all 9 method/path API contracts. Includes signed JWT claims, token hashing, future hour replacement, concurrent idempotency, per-token isolation, revoke/history, import validation/atomicity/precision, UTC boundaries, 200-record pagination and machine hostname denial.
 - G1: strict typecheck across web, Worker, tooling and tests passed; Biome has zero errors/warnings.
 - G2: gitleaks and OSV passed against the complete reviewable tree and all 380 lockfile packages. The only allowlist is the exact public Access audience.

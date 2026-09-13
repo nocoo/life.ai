@@ -180,6 +180,7 @@ ON life_events(source_id, occurred_at ASC, id ASC);
 
 ### 4.9 `POST /api/ingest`
 - Authenticated via `Authorization: Bearer <connect-token>`.
+- Other methods return 405 on the app host before token authentication; the machine hostname's strict route allowlist returns 404 for those methods.
 - Body: `{ "timestamp": "...", "title": "...", "content": "...", "data": {...} }`.
 - Floors timestamp to UTC hour boundary.
 - Atomic UPSERT on `(source_id, occurred_at)`: preserves record `id`, updates `title`, `content`, `data`, `updated_at`.

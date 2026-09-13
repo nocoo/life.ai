@@ -125,6 +125,12 @@ export async function handleRequest(request: Request, env: WorkerEnv): Promise<R
 
 		// 3. Machine ingestion route (Bearer token authentication, independent of browser origin)
 		if (url.pathname === "/api/ingest") {
+			if (method !== "POST") {
+				return jsonResponse(
+					{ error: { code: "method_not_allowed", message: "Method not allowed" } },
+					405,
+				);
+			}
 			return await handlePostIngest(request, env);
 		}
 

@@ -390,6 +390,17 @@ describe("worker/index router & host isolation", () => {
 			expect(res.status).toBe(404);
 		});
 
+		it("rejects non-POST ingestion on the dashboard host before token authentication", async () => {
+			for (const method of ["GET", "PUT"]) {
+				const response = await handleRequest(
+					new Request("https://life.hexly.ai/api/ingest", { method }),
+					defaultEnv,
+				);
+				expect(response.status).toBe(405);
+				expect(await response.json()).toMatchObject({ error: { code: "method_not_allowed" } });
+			}
+		});
+
 		it("exports default object with fetch handler", () => {
 			expect(typeof workerEntry.fetch).toBe("function");
 		});

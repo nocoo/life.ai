@@ -119,7 +119,7 @@ None. Root already has `react@19.2.8`, `react-router@8.3.1`, `zustand@5.0.15`, `
 
 ## Test status
 
-Integrated L1 passed: 260 tests; statements 99.08%, branches 96.54%, functions 99.39%, lines 99.13%. L2 and all 8 L3 scenarios passed. The release record in [08](08-chronicle-rewrite.md) is authoritative for deployment and final verification.
+Integrated L1 passed: 261 tests; statements 99.08%, branches 96.55%, functions 99.39%, lines 99.13%. L2 and all 8 L3 scenarios passed. The release record in [08](08-chronicle-rewrite.md) is authoritative for deployment and final verification.
 
 Frontend-only L1 isolation, when re-run:
 
