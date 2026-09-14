@@ -7,6 +7,114 @@ import type {
 } from "../models/data-management";
 import { apiGet, isAbortError } from "../services/http";
 import { isAuthFailure, type LoadStatus, toErrorMessage } from "./errors";
+import { formatByteSize } from "./format";
+
+export const OVERVIEW_METRICS = {
+	coverageDays: {
+		label: "覆盖天数",
+		unit: "天",
+		description: "每个来源实际有记录的 UTC 日数，缺失日期不计入覆盖。",
+	},
+	recordCount: {
+		label: "原始记录",
+		unit: "条",
+		description: "当前保存的原始记录总数，Footprint 的一条记录对应一个 GPS 点。",
+	},
+	dataRows: {
+		label: "数据行",
+		unit: "行",
+		description: "保存内容使用的 D1 数据行，不包含索引和导入状态记录。",
+	},
+	payloadBytes: {
+		label: "正文大小",
+		unit: "",
+		description: "JSON 正文的字节数，不等于 D1 全库物理占用。",
+	},
+} as const;
+
+export type OverviewMetric = keyof typeof OVERVIEW_METRICS;
+
+export function formatOverviewMetric(value: number, metric: OverviewMetric): string {
+	if (metric === "payloadBytes") {
+		return formatByteSize(value);
+	}
+	return `${value.toLocaleString("zh-CN")} ${OVERVIEW_METRICS[metric].unit}`;
+}
+
+export function summarizeProviders(providers: ProviderOverview[]) {
+	const coveredDays = new Set<number>();
+	let recordCount = 0;
+	let dataRows = 0;
+	let payloadBytes = 0;
+	for (const provider of providers) {
+		for (const day of provider.coverage) {
+			coveredDays.add(day.utcDay);
+		}
+		recordCount += provider.recordCount;
+		dataRows += provider.dataRows;
+		payloadBytes += provider.payloadBytes;
+	}
+	return {
+		coverageDays: coveredDays.size,
+		recordCount,
+		dataRows,
+		payloadBytes,
+		importedProviders: providers.filter(
+			(provider) => provider.recordCount > 0 || provider.dataRows > 0,
+		),
+	};
+}
+
+export function compareProviders(providers: ProviderOverview[], metric: OverviewMetric) {
+	const data = providers.map((provider) => ({
+		id: provider.id,
+		name: provider.name,
+		value: provider[metric],
+	}));
+	return {
+		data,
+		summary: data
+			.map((provider) => `${provider.name}：${formatOverviewMetric(provider.value, metric)}`)
+			.join("；"),
+	};
+}
+
+export function monthlyRecordCounts(providers: ProviderOverview[]) {
+	const counts = new Map<number, number>();
+	let first = Number.POSITIVE_INFINITY;
+	let last = Number.NEGATIVE_INFINITY;
+	for (const provider of providers) {
+		for (const day of provider.coverage) {
+			const date = new Date(day.utcDay);
+			const month = date.getUTCFullYear() * 12 + date.getUTCMonth();
+			counts.set(month, (counts.get(month) ?? 0) + day.recordCount);
+			first = Math.min(first, month);
+			last = Math.max(last, month);
+		}
+	}
+	const data: { month: string; recordCount: number }[] = [];
+	for (let month = first; month <= last; month += 1) {
+		const year = String(Math.floor(month / 12)).padStart(4, "0");
+		const monthNumber = String((month % 12) + 1).padStart(2, "0");
+		data.push({ month: `${year}-${monthNumber}`, recordCount: counts.get(month) ?? 0 });
+	}
+	return {
+		data,
+		summary: data
+			.map((month) => `${month.month}：${formatOverviewMetric(month.recordCount, "recordCount")}`)
+			.join("；"),
+	};
+}
+
+export function importChannelLabel(channel: ProviderOverview["lastImportChannel"]): string {
+	if (channel === "web") {
+		return "网页";
+	}
+	if (channel === "cli") {
+		return "本机";
+	}
+	return "尚未导入";
+}
 
 export interface DataOverviewViewState {
 	overview: DataOverview | null;
@@ -14,6 +122,8 @@ export interface DataOverviewViewState {
 	status: LoadStatus;
 	error: string | null;
 	expired: boolean;
+	metric: OverviewMetric;
+	setMetric: (metric: OverviewMetric) => void;
 	load: () => Promise<void>;
 	retry: () => Promise<void>;
 	reset: () => void;
@@ -24,7 +134,7 @@ let loadController: AbortController | null = null;
 
 function initialState(): Pick<
 	DataOverviewViewState,
-	"overview" | "target" | "status" | "error" | "expired"
+	"overview" | "target" | "status" | "error" | "expired" | "metric"
 > {
 	return {
 		overview: null,
@@ -32,6 +142,7 @@ function initialState(): Pick<
 		status: "idle",
 		error: null,
 		expired: false,
+		metric: "coverageDays",
 	};
 }
 
@@ -65,8 +176,12 @@ export interface CoverageMonth {
 	cells: { utcDay: number | null; key: string; filled: boolean; recordCount: number }[];
 }
 
-export function coverageCellLabel(utcDay: number, recordCount: number): string {
-	return `${utcDayKey(utcDay)} UTC，${recordCount} 点`;
+export function coverageCellLabel(
+	utcDay: number,
+	recordCount: number,
+	provider: ProviderOverview["id"] = "footprint",
+): string {
+	return `${utcDayKey(utcDay)} UTC，${recordCount} ${provider === "footprint" ? "点" : "条记录"}`;
 }
 
 export function groupCoverageMonths(days: ProviderCoverageDay[]): CoverageMonth[] {
@@ -115,6 +230,9 @@ export function groupCoverageMonths(days: ProviderCoverageDay[]): CoverageMonth[
 
 export const dataOverviewStore = createStore<DataOverviewViewState>((set, get) => ({
 	...initialState(),
+	setMetric(metric) {
+		set({ metric });
+	},
 	async load() {
 		loadController?.abort();
 		const controller = new AbortController();

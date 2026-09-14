@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
 import type { DataOverview, FootprintDaysResult } from "../../src/models/data-management";
+import { expect, test } from "./public-context-fixture";
 
 const range = "/api/data/footprint/days?start=2088-01-09&end=2088-01-11";
 
@@ -68,7 +68,13 @@ test("Footprint uploads are whole-day replacements, overview dates open real dai
 	await expect(page).toHaveURL(/\?day=2088-01-10/);
 	await expect(page.locator("[data-hour]")).toHaveCount(24);
 	await expect(page.getByRole("application", { name: "当日足迹地图" }).first()).toBeVisible();
-	await expect(page.locator('[data-hour="8"] [data-story-kind="journey"]')).toBeVisible();
+	await expect(page.locator('[data-hour="7"] [data-story-kind="journey"]')).toBeVisible();
+	await expect(page.locator('[data-hour="7"] [data-visit]')).toHaveAttribute("data-state", "open");
+	await expect(page.locator('[data-hour="8"] [data-visit]')).toHaveAttribute(
+		"data-state",
+		"closed",
+	);
+	await expect(page.locator('[data-hour="8"] [data-visit]')).toContainText("2 个点");
 	await page.getByRole("button", { name: "后一天", exact: true }).click();
 	await expect(page).toHaveURL(/\?day=2088-01-11/);
 	await page.getByRole("button", { name: "前一天", exact: true }).click();

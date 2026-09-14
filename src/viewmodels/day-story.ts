@@ -1,5 +1,13 @@
-import { buildDayInsights, type DayInsights } from "../models/day-insights";
+import { buildDayInsights, type DayInsights, gpsDistanceMeters } from "../models/day-insights";
+import {
+	buildDayPlaces,
+	computeObservedMinutes,
+	type DayPlaces,
+	type GpsPlace,
+	type GpsVisit,
+} from "../models/day-places";
 import type { DayTimeline, HourSlot, JsonValue, LifeEvent } from "../models/types";
+import type { SolarMoment } from "./day-context-view-model";
 import { formatDurationMinutes, formatInterval, formatLocalClock } from "./format";
 
 export type StoryKind = "sleep" | "health" | "workout" | "journey" | "money" | "note" | "connect";
@@ -36,12 +44,69 @@ export interface StoryHour {
 	branches: StoryBranch[];
 	continuing: StoryContinuation[];
 	activity: number;
+	visits: StoryVisit[];
 }
+
+export interface StoryVisit {
+	visit: Pick<GpsVisit, "id" | "startAt" | "endAt" | "points" | "pointCount" | "observedMinutes">;
+	stops: { id: string; placeIndex: number; at: string; clock: string }[];
+	places: GpsPlace[];
+	title: string;
+	period: string;
+	map: DayInsights;
+	repeatedPlace: boolean;
+}
+
+export type StoryHourEntry =
+	| { kind: "branch"; at: string; id: string; branch: StoryBranch }
+	| { kind: "visit"; at: string; id: string; visit: StoryVisit }
+	| { kind: "solar"; at: string; id: string; solar: SolarMoment };
+
+export type StoryHourBlock =
+	| Exclude<StoryHourEntry, { kind: "branch" }>
+	| { kind: "branches"; id: string; branches: StoryBranch[] };
 
 export interface DayStory {
 	hours: StoryHour[];
 	allDay: StoryBranch[];
-	mapHour: number | null;
+	places: DayPlaces;
+}
+
+export function storyHourEntries(row: StoryHour, solar: SolarMoment[]): StoryHourEntry[] {
+	const entries: StoryHourEntry[] = [
+		...row.branches.map((branch) => ({
+			kind: "branch" as const,
+			at: branch.events[0]?.occurredAt ?? "",
+			id: branch.id,
+			branch,
+		})),
+		...row.visits.map((visit) => ({
+			kind: "visit" as const,
+			at: visit.visit.startAt,
+			id: visit.visit.id,
+			visit,
+		})),
+		...solar
+			.filter((event) => event.hour === row.slot.hour)
+			.map((event) => ({
+				kind: "solar" as const,
+				at: event.occurredAt,
+				id: `${event.kind}:${event.occurredAt}`,
+				solar: event,
+			})),
+	];
+	return entries.sort((a, b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id));
+}
+
+export function storyHourBlocks(row: StoryHour, solar: SolarMoment[]): StoryHourBlock[] {
+	const blocks: StoryHourBlock[] = [];
+	for (const entry of storyHourEntries(row, solar)) {
+		const previous = blocks.at(-1);
+		if (entry.kind !== "branch") blocks.push(entry);
+		else if (previous?.kind === "branches") previous.branches.push(entry.branch);
+		else blocks.push({ kind: "branches", id: entry.id, branches: [entry.branch] });
+	}
+	return blocks;
 }
 
 function dataObject(value: JsonValue): Record<string, JsonValue> {
@@ -211,12 +276,23 @@ function groupBranches(events: LifeEvent[], timeline: DayTimeline): StoryBranch[
 }
 
 /** Project already-selected records; no source query, date reinterpretation or invented event times. */
-export function buildDayStory(timeline: DayTimeline, insights: DayInsights): DayStory {
+export function buildDayStory(
+	timeline: DayTimeline,
+	insights: DayInsights,
+	radiusKm: 5 | 10 = 5,
+): DayStory {
+	const places = buildDayPlaces(insights.gps, radiusKm);
+	const gpsSources = new Set(
+		insights.gps.segments.flatMap((segment) => segment.map((point) => point.sourceId)),
+	);
 	const firstHour = new Map<string, number>();
 	const hours = timeline.hours.map((slot) => {
 		const fresh: LifeEvent[] = [];
 		const continuing = new Map<string, StoryContinuation>();
 		for (const event of slot.events) {
+			if (storyKind(event) === "journey" && gpsSources.has(event.sourceId)) {
+				continue;
+			}
 			const anchorHour = firstHour.get(event.id);
 			if (anchorHour === undefined) {
 				firstHour.set(event.id, slot.hour);
@@ -239,18 +315,106 @@ export function buildDayStory(timeline: DayTimeline, insights: DayInsights): Day
 			branches: groupBranches(fresh, timeline),
 			continuing: [...continuing.values()],
 			activity: Math.min(1, Math.log2(slot.events.length + 1) / 6),
+			visits: [] as StoryVisit[],
 		};
 	});
-	let firstPoint: string | null = null;
-	for (const segment of insights.gps.segments) {
-		for (const point of segment) {
-			if (point.precision !== "day" && (firstPoint === null || point.occurredAt < firstPoint))
-				firstPoint = point.occurredAt;
+	const sampledHours = new Map<number, { visit: GpsVisit; points: GpsVisit["points"] }[]>();
+	for (const visit of places.visits) {
+		for (const point of visit.points) {
+			const hour = new Date(point.occurredAt).getHours();
+			const members = sampledHours.get(hour) ?? [];
+			let member = members.at(-1);
+			if (member?.visit !== visit) {
+				member = { visit, points: [] };
+				members.push(member);
+			}
+			member.points.push(point);
+			sampledHours.set(hour, members);
 		}
+	}
+	let previousPlaceId: string | null = null;
+	for (const [hour, members] of sampledHours) {
+		const row = hours[hour];
+		const firstMember = members[0];
+		const points = members.flatMap((member) => member.points);
+		const firstPoint = points[0];
+		const lastPoint = points.at(-1);
+		if (!row || !firstMember || !firstPoint || !lastPoint) continue;
+		const pointSet = new Set(points);
+		const placeIds = new Set(members.map((member) => member.visit.placeId));
+		const groupPlaces = places.places.filter((place) => placeIds.has(place.id));
+		const singlePlaceId = placeIds.size === 1 ? firstMember.visit.placeId : null;
+		// Compare successive sampled hours, never the day's full set of previously seen places.
+		// An empty hour provides no observation and contributes neither content nor elapsed stay time.
+		const repeatedPlace = singlePlaceId !== null && singlePlaceId === previousPlaceId;
+		previousPlaceId = singlePlaceId;
+		const segments: typeof insights.gps.segments = [];
+		// Keep native edges within this hour, including moves between areas; never bridge excluded points.
+		for (const original of insights.gps.segments) {
+			let segment: typeof points | null = null;
+			for (const point of original) {
+				if (!pointSet.has(point)) {
+					segment = null;
+					continue;
+				}
+				if (!segment) {
+					segment = [];
+					segments.push(segment);
+				}
+				segment.push(point);
+			}
+		}
+		let distanceMeters = 0;
+		for (const segment of segments) {
+			for (let index = 1; index < segment.length; index++) {
+				const previous = segment[index - 1] as (typeof points)[number];
+				const point = segment[index] as (typeof points)[number];
+				distanceMeters += gpsDistanceMeters(previous, point);
+			}
+		}
+		const start = formatLocalClock(firstPoint.occurredAt, firstPoint.precision);
+		const end = formatLocalClock(lastPoint.occurredAt, lastPoint.precision);
+		const title =
+			groupPlaces.length > 1
+				? `沿途经过 ${groupPlaces.length} 个区域`
+				: `${repeatedPlace ? "同一区域采样" : "位置采样"} · 区域 ${firstMember.visit.placeIndex} 附近`;
+		row.visits.push({
+			visit: {
+				id: `${firstMember.visit.id}:${hour}`,
+				startAt: firstPoint.occurredAt,
+				endAt: lastPoint.occurredAt,
+				points,
+				pointCount: points.length,
+				observedMinutes: computeObservedMinutes(segments),
+			},
+			stops: members.map((member) => {
+				const point = member.points[0] as (typeof points)[number];
+				return {
+					id: `${member.visit.id}:${hour}`,
+					placeIndex: member.visit.placeIndex,
+					at: point.occurredAt,
+					clock: formatLocalClock(point.occurredAt, point.precision) ?? "",
+				};
+			}),
+			places: groupPlaces,
+			title,
+			period: start === end ? String(start) : `${start} — ${end}`,
+			repeatedPlace,
+			map: {
+				...insights,
+				gps: {
+					pointCount: points.length,
+					segments,
+					firstAt: firstPoint.occurredAt,
+					lastAt: lastPoint.occurredAt,
+					distanceMeters,
+				},
+			},
+		});
 	}
 	return {
 		hours,
 		allDay: groupBranches(timeline.allDay, timeline),
-		mapHour: firstPoint === null ? null : new Date(firstPoint).getHours(),
+		places,
 	};
 }

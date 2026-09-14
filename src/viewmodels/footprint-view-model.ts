@@ -6,7 +6,7 @@ import {
 	type FootprintPreview,
 } from "../services/footprint-browser";
 import { apiGet, isAbortError } from "../services/http";
-import { toErrorMessage } from "./errors";
+import { type LoadStatus, toErrorMessage } from "./errors";
 
 export type FootprintStatus =
 	| "idle"
@@ -21,6 +21,8 @@ export interface FootprintViewState {
 	fileName: string | null;
 	fileSize: number | null;
 	target: DataTarget | null;
+	targetStatus: LoadStatus;
+	targetError: string | null;
 	status: FootprintStatus;
 	progress: FootprintParseProgress | null;
 	preview: FootprintPreview | null;
@@ -50,6 +52,7 @@ export type FootprintUploadFn = (
 	signal?: AbortSignal,
 ) => Promise<FootprintImportReceipt>;
 
+let targetGeneration = 0;
 let selectedFile: File | null = null;
 let parseGeneration = 0;
 let parseController: AbortController | null = null;
@@ -62,6 +65,8 @@ function initialState(): Pick<
 	| "fileName"
 	| "fileSize"
 	| "target"
+	| "targetStatus"
+	| "targetError"
 	| "status"
 	| "progress"
 	| "preview"
@@ -73,6 +78,8 @@ function initialState(): Pick<
 		fileName: null,
 		fileSize: null,
 		target: null,
+		targetStatus: "idle",
+		targetError: null,
 		status: "idle",
 		progress: null,
 		preview: null,
@@ -123,11 +130,14 @@ export function footprintParsePercent(progress: FootprintParseProgress | null): 
 export const footprintStore = createStore<FootprintViewState>((set, get) => ({
 	...initialState(),
 	async loadTarget() {
+		const generation = ++targetGeneration;
+		set({ targetStatus: "loading", targetError: null });
 		try {
 			const body = await apiGet<{ target: DataTarget }>("/api/data/target");
-			set({ target: body.target });
-		} catch {
-			set({ target: get().target });
+			if (generation === targetGeneration) set({ target: body.target, targetStatus: "ready" });
+		} catch (error) {
+			if (generation === targetGeneration)
+				set({ targetStatus: "error", targetError: toErrorMessage(error) });
 		}
 	},
 	async selectFile(file: File) {
@@ -267,10 +277,16 @@ export const footprintStore = createStore<FootprintViewState>((set, get) => ({
 		parseGeneration += 1;
 		const current = session;
 		session = null;
-		set({ ...initialState(), target: get().target });
+		set({
+			...initialState(),
+			target: get().target,
+			targetStatus: get().targetStatus,
+			targetError: get().targetError,
+		});
 		await current?.release();
 	},
 	async reset() {
+		targetGeneration++;
 		parseController?.abort();
 		parseController = null;
 		selectedFile = null;

@@ -9,6 +9,8 @@ import { buildDayStory, type DayStory } from "./day-story";
 import { type LoadStatus, toErrorMessage } from "./errors";
 
 export const ALL_SOURCES = "all";
+export type TimelineMapMode = "auto" | "all" | "none";
+export type TimelinePageTab = "timeline" | "locations" | "records";
 
 export interface TimelineViewState {
 	day: string;
@@ -17,6 +19,9 @@ export interface TimelineViewState {
 	timeline: DayTimeline | null;
 	insights: DayInsights | null;
 	story: DayStory | null;
+	radiusKm: 5 | 10;
+	mapMode: TimelineMapMode;
+	tab: TimelinePageTab;
 	status: LoadStatus;
 	error: string | null;
 	load: () => Promise<void>;
@@ -24,6 +29,9 @@ export interface TimelineViewState {
 	shiftDay: (amount: number) => Promise<void>;
 	goToday: () => Promise<void>;
 	selectSource: (sourceId: string) => Promise<void>;
+	selectRadius: (radiusKm: 5 | 10) => void;
+	selectMapMode: (mapMode: TimelineMapMode) => void;
+	selectTab: (tab: TimelinePageTab) => void;
 	retry: () => Promise<void>;
 	reset: () => void;
 }
@@ -35,7 +43,17 @@ let cachedEvents: LifeEvent[] = [];
 
 function initialTimelineState(): Pick<
 	TimelineViewState,
-	"day" | "sourceId" | "sources" | "timeline" | "insights" | "story" | "status" | "error"
+	| "day"
+	| "sourceId"
+	| "sources"
+	| "timeline"
+	| "insights"
+	| "story"
+	| "radiusKm"
+	| "mapMode"
+	| "tab"
+	| "status"
+	| "error"
 > {
 	return {
 		day: localDateKey(),
@@ -44,6 +62,9 @@ function initialTimelineState(): Pick<
 		timeline: null,
 		insights: null,
 		story: null,
+		radiusKm: 5,
+		mapMode: "auto",
+		tab: "timeline",
 		status: "idle",
 		error: null,
 	};
@@ -75,7 +96,7 @@ export function eventsForSource(events: LifeEvent[], sourceId: string): LifeEven
 	return events.filter((event) => event.sourceId === sourceId);
 }
 
-function projectDay(day: string, sourceId: string, events: LifeEvent[]) {
+function projectDay(day: string, sourceId: string, events: LifeEvent[], radiusKm: 5 | 10) {
 	const window = localDayWindow(day);
 	const visible = eventsForSource(events, sourceId);
 	const timeline = buildDayTimeline(day, visible);
@@ -83,7 +104,7 @@ function projectDay(day: string, sourceId: string, events: LifeEvent[]) {
 	return {
 		timeline,
 		insights,
-		story: buildDayStory(timeline, insights),
+		story: buildDayStory(timeline, insights, radiusKm),
 	};
 }
 
@@ -114,7 +135,7 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 			cachedEvents = events;
 			set({
 				sources,
-				...projectDay(day, sourceId, events),
+				...projectDay(day, sourceId, events, get().radiusKm),
 				status: "ready",
 				error: null,
 			});
@@ -137,11 +158,11 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 			}
 			return;
 		}
-		set({ day });
+		set({ day, mapMode: "auto" });
 		await get().load();
 	},
 	async shiftDay(amount: number) {
-		set({ day: shiftLocalDate(get().day, amount) });
+		set({ day: shiftLocalDate(get().day, amount), mapMode: "auto" });
 		await get().load();
 	},
 	async goToday() {
@@ -155,10 +176,24 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 		set({ sourceId: next });
 		const { day, status } = get();
 		if (status !== "idle" && cachedDay === day) {
-			set(projectDay(day, next, cachedEvents));
+			set(projectDay(day, next, cachedEvents, get().radiusKm));
 			return;
 		}
 		await get().load();
+	},
+	selectRadius(radiusKm) {
+		if ((radiusKm !== 5 && radiusKm !== 10) || radiusKm === get().radiusKm) return;
+		const { timeline, insights } = get();
+		set({
+			radiusKm,
+			...(timeline && insights ? { story: buildDayStory(timeline, insights, radiusKm) } : {}),
+		});
+	},
+	selectMapMode(mapMode) {
+		if (mapMode === "auto" || mapMode === "all" || mapMode === "none") set({ mapMode });
+	},
+	selectTab(tab) {
+		if (tab === "timeline" || tab === "locations" || tab === "records") set({ tab });
 	},
 	async retry() {
 		await get().load();

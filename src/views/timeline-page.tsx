@@ -9,15 +9,29 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@nocoo/basalt/components/select";
-import { useEffect } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@nocoo/basalt/components/tabs";
+import { lazy, Suspense, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router";
 import { useStore } from "zustand";
 import { DateNavigation } from "../components/date-navigation";
 import { DayTimelineView } from "../components/day-timeline";
 import { localDateKey, shiftLocalDate } from "../models/time";
+import {
+	dayContextQuery,
+	dayContextStore,
+	sameDayContext,
+} from "../viewmodels/day-context-view-model";
 import { daySummaryStore } from "../viewmodels/day-summary-view-model";
 import { formatLocalDate } from "../viewmodels/format";
-import { ALL_SOURCES, isSelectedToday, timelineStore } from "../viewmodels/timeline-view-model";
+import {
+	ALL_SOURCES,
+	isSelectedToday,
+	type TimelineMapMode,
+	type TimelinePageTab,
+	timelineStore,
+} from "../viewmodels/timeline-view-model";
+
+const DayRecords = lazy(() => import("../components/day-records"));
 
 export function TimelinePage() {
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -30,6 +44,14 @@ export function TimelinePage() {
 	const story = useStore(timelineStore, (state) => state.story);
 	const status = useStore(timelineStore, (state) => state.status);
 	const error = useStore(timelineStore, (state) => state.error);
+	const radiusKm = useStore(timelineStore, (state) => state.radiusKm);
+	const mapMode = useStore(timelineStore, (state) => state.mapMode);
+	const tab = useStore(timelineStore, (state) => state.tab);
+	const context = useStore(dayContextStore);
+	const contextQuery = useMemo(
+		() => (timeline && story ? dayContextQuery(timeline, story.places) : null),
+		[timeline, story],
+	);
 	const summaryDate = timeline?.date;
 	const summaryStart = timeline?.start;
 	const summaryEnd = timeline?.end;
@@ -48,6 +70,11 @@ export function TimelinePage() {
 		if (validDay && validDay !== state.day) void state.selectDay(validDay);
 		else void state.load();
 	}, [linkedDay]);
+
+	useEffect(() => {
+		void dayContextStore.getState().load(contextQuery);
+		return () => dayContextStore.getState().abort();
+	}, [contextQuery]);
 
 	const selectDay = (next: string) => {
 		setSearchParams((previous) => {
@@ -75,14 +102,18 @@ export function TimelinePage() {
 	}, [status, summaryDate, summaryStart, summaryEnd, summaryTimeZone]);
 
 	return (
-		<div className="story-page">
+		<Tabs
+			value={tab}
+			onValueChange={(value) => timelineStore.getState().selectTab(value as TimelinePageTab)}
+			className="story-page"
+		>
 			<div className="story-page-header">
 				<PageHeader
 					title="每日实录"
 					description={formatLocalDate(day)}
 					filters={
 						<FilterBar
-							label="时间线筛选"
+							label="每日记录筛选"
 							active={sourceId !== ALL_SOURCES}
 							clearLabel="清除来源"
 							onClear={() => void timelineStore.getState().selectSource(ALL_SOURCES)}
@@ -111,10 +142,48 @@ export function TimelinePage() {
 									))}
 								</SelectContent>
 							</Select>
+							{tab === "timeline" ? (
+								<>
+									<Select
+										value={String(radiusKm)}
+										onValueChange={(value) =>
+											timelineStore.getState().selectRadius(Number(value) as 5 | 10)
+										}
+									>
+										<SelectTrigger aria-label="位置分组范围" className="w-[160px]">
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="5">区域半径 5 km</SelectItem>
+											<SelectItem value="10">区域半径 10 km</SelectItem>
+										</SelectContent>
+									</Select>
+									<Select
+										value={mapMode}
+										onValueChange={(value) =>
+											timelineStore.getState().selectMapMode(value as TimelineMapMode)
+										}
+									>
+										<SelectTrigger aria-label="时间线地图" className="w-[200px]">
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="auto">展开地图 · 合并重复</SelectItem>
+											<SelectItem value="all">展开全部地图</SelectItem>
+											<SelectItem value="none">收起全部地图</SelectItem>
+										</SelectContent>
+									</Select>
+								</>
+							) : null}
 						</FilterBar>
 					}
 				/>
 			</div>
+			<TabsList aria-label="每日视图" className="mb-6">
+				<TabsTrigger value="timeline">时间线</TabsTrigger>
+				<TabsTrigger value="locations">位置记录</TabsTrigger>
+				<TabsTrigger value="records">其他记录</TabsTrigger>
+			</TabsList>
 			{status === "error" ? (
 				<Banner
 					variant="error"
@@ -129,16 +198,39 @@ export function TimelinePage() {
 			) : null}
 			{status === "loading" && !timeline ? (
 				<LayerCard>
-					<LayerCard.Loading label="正在加载时间线" />
+					<LayerCard.Loading label="正在加载当天记录" />
 				</LayerCard>
 			) : null}
 			{timeline && story && insights ? (
-				<DayTimelineView
-					key={`${day}:${sourceId}`}
-					timeline={timeline}
-					story={story}
-					insights={insights}
-				/>
+				<>
+					<TabsContent value="timeline">
+						{tab === "timeline" ? (
+							<DayTimelineView
+								key={`${day}:${sourceId}:${radiusKm}`}
+								timeline={timeline}
+								story={story}
+								mapMode={mapMode}
+								context={sameDayContext(context.query, contextQuery) ? context : null}
+								insights={insights}
+							/>
+						) : null}
+					</TabsContent>
+					{(["locations", "records"] as const).map((kind) => (
+						<TabsContent key={kind} value={kind}>
+							{tab === kind ? (
+								<Suspense
+									fallback={
+										<LayerCard>
+											<LayerCard.Loading label="正在加载记录表格" />
+										</LayerCard>
+									}
+								>
+									<DayRecords key={`${day}:${sourceId}:${kind}`} timeline={timeline} kind={kind} />
+								</Suspense>
+							) : null}
+						</TabsContent>
+					))}
+				</>
 			) : null}
 			{status === "ready" && !timeline ? (
 				<LayerCard>
@@ -149,6 +241,6 @@ export function TimelinePage() {
 					/>
 				</LayerCard>
 			) : null}
-		</div>
+		</Tabs>
 	);
 }

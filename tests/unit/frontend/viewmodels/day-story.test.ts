@@ -7,6 +7,8 @@ import {
 	healthMetrics,
 	heartTrace,
 	storyDistance,
+	storyHourBlocks,
+	storyHourEntries,
 	storyKind,
 } from "../../../../src/viewmodels/day-story";
 
@@ -296,7 +298,7 @@ describe("buildDayStory comprehensive contract", () => {
 		expect(branch?.heartTrace).not.toBeNull();
 	});
 
-	it("groups journey samples while preserving the recorded place title and route metrics", () => {
+	it("projects journey samples into an hourly visit without duplicating journey branches", () => {
 		const events: LifeEvent[] = [
 			makeEvent({
 				id: "gpx-1",
@@ -321,12 +323,13 @@ describe("buildDayStory comprehensive contract", () => {
 		const story = buildDayStory(timeline, insights);
 
 		const hour9 = story.hours.find((h) => h.slot.hour === 9);
-		expect(hour9?.branches).toHaveLength(1);
-		const branch = hour9?.branches[0];
-		expect(branch?.kind).toBe("journey");
-		expect(branch?.title).toBe("公园起点");
-		expect(branch?.metrics.some((m) => m.label === "位置")).toBe(true);
-		expect(branch?.metrics.some((m) => m.label === "记录轨迹")).toBe(true);
+		expect(hour9?.branches).toHaveLength(0);
+		expect(hour9?.visits).toHaveLength(1);
+		const visit = hour9?.visits[0];
+		expect(visit?.visit.pointCount).toBe(2);
+		expect(visit?.map.gps.distanceMeters).toBeGreaterThan(1000);
+		expect(visit?.visit.observedMinutes).toBe(15);
+		expect(hour9?.branches).toHaveLength(0);
 	});
 
 	it("shows multi-hour event content only at anchor hour and marks continuing in subsequent hours", () => {
@@ -426,7 +429,7 @@ describe("buildDayStory comprehensive contract", () => {
 		expect(story.allDay[0]?.fromPreviousDay).toBe(false);
 	});
 
-	it("anchors mapHour to the earliest valid timed GPS point, and keeps it null if only date-only locations exist", () => {
+	it("anchors a visit to its first timed GPS observation and keeps date-only locations in metadata", () => {
 		// Case 1: timed GPS point at 14:15 local time
 		const timedGps = makeEvent({
 			id: "gpx-timed",
@@ -440,7 +443,7 @@ describe("buildDayStory comprehensive contract", () => {
 		const story1 = buildDayStory(timeline1, insights1);
 
 		const expectedHour = new Date("2026-09-13T14:15:00.000Z").getHours();
-		expect(story1.mapHour).toBe(expectedHour);
+		expect(story1.hours[expectedHour]?.visits[0]?.visit.startAt).toBe(timedGps.occurredAt);
 
 		// Case 2: Only date-level precision GPS point
 		const dateOnlyGps = makeEvent({
@@ -454,7 +457,8 @@ describe("buildDayStory comprehensive contract", () => {
 		const insights2 = buildDayInsights([dateOnlyGps], timeline2);
 		const story2 = buildDayStory(timeline2, insights2);
 
-		expect(story2.mapHour).toBeNull();
+		expect(story2.hours.every((hour) => hour.visits.length === 0)).toBe(true);
+		expect(story2.allDay[0]?.insights.gps.pointCount).toBe(1);
 	});
 
 	it("preserves workout and finance categories with calculated metrics in story branches", () => {
@@ -523,5 +527,253 @@ describe("buildDayStory comprehensive contract", () => {
 		expect(
 			transferBranch?.metrics.some((m) => m.label.includes("转账") && m.value === "500.00"),
 		).toBe(true);
+	});
+});
+
+describe("GPS and solar chronology", () => {
+	function gps(clock: string, longitude: number): LifeEvent {
+		return makeEvent({
+			sourceId: "footprint",
+			occurredAt: `2026-09-13T${clock}:00.000Z`,
+			data: { latitude: 0, longitude },
+		});
+	}
+	function storyFor(events: LifeEvent[]) {
+		const timeline = buildDayTimeline("2026-09-13", events);
+		return buildDayStory(timeline, buildDayInsights(events, timeline));
+	}
+	it("combines a continuous hourly journey, preserves cross-area edges and every A → B → A visit", () => {
+		const events = [
+			gps("08:00", 0),
+			gps("08:10", 0.01),
+			gps("08:20", 0.07),
+			gps("08:30", 0.08),
+			gps("08:40", 0.01),
+			gps("08:50", 0),
+		];
+		const story = storyFor(events);
+		const item = story.hours[8]?.visits[0];
+		expect(story.places.visits.map((visit) => visit.placeIndex)).toEqual([1, 2, 1]);
+		expect(story.hours[8]?.visits).toHaveLength(1);
+		expect(item?.stops.map((stop) => stop.placeIndex)).toEqual([1, 2, 1]);
+		expect(item?.visit.pointCount).toBe(6);
+		expect(item?.map.gps.segments.map((segment) => segment.length)).toEqual([6]);
+		expect(item?.map.gps.distanceMeters).toBeGreaterThan(17_000);
+		expect(item?.visit.observedMinutes).toBe(50);
+		expect(item?.title).toBe("沿途经过 2 个区域");
+		expect(item?.repeatedPlace).toBe(false);
+	});
+	it("splits same-area observations into sampled hours without filling gaps or claiming a stay", () => {
+		const events = [
+			gps("08:00", 0),
+			gps("08:10", 0.0001),
+			gps("09:00", 0.0002),
+			gps("09:10", 0.0003),
+			gps("12:00", 0.0004),
+		];
+		const story = storyFor(events);
+		const maps = story.hours.flatMap((hour) => hour.visits);
+		expect(maps.map((item) => item.repeatedPlace)).toEqual([false, true, true]);
+		expect(maps.map((item) => item.visit.pointCount)).toEqual([2, 2, 1]);
+		expect(maps.map((item) => item.visit.observedMinutes)).toEqual([10, 10, 0]);
+		expect(maps.map((item) => item.period)).toEqual([
+			"08:00:00 — 08:10:00",
+			"09:00:00 — 09:10:00",
+			"12:00:00",
+		]);
+		expect(maps.map((item) => item.stops[0]?.clock)).toEqual(["08:00:00", "09:00:00", "12:00:00"]);
+		expect(new Set(maps.map((item) => item.visit.id)).size).toBe(3);
+		expect(story.hours[10]?.visits).toEqual([]);
+		expect(story.hours[11]?.visits).toEqual([]);
+		expect(story.hours.every((hour) => hour.continuing.length === 0)).toBe(true);
+		expect(story.hours[12]?.visits[0]?.title).toBe("同一区域采样 · 区域 1 附近");
+		expect(story.places.visits).toHaveLength(1);
+	});
+	it("expands a returning area again and folds only its following same-area observation", () => {
+		const story = storyFor([
+			gps("08:00", 0),
+			gps("09:00", 0.1),
+			gps("10:00", 0),
+			gps("11:00", 0.001),
+		]);
+		expect(story.hours.flatMap((hour) => hour.visits).map((item) => item.repeatedPlace)).toEqual([
+			false,
+			false,
+			false,
+			true,
+		]);
+		expect(story.hours[10]?.visits[0]?.title).toBe("位置采样 · 区域 1 附近");
+		expect(story.hours[11]?.visits[0]?.title).toBe("同一区域采样 · 区域 1 附近");
+		expect(
+			story.hours
+				.flatMap((hour) => hour.visits)
+				.reduce((sum, item) => sum + item.visit.pointCount, 0),
+		).toBe(4);
+		expect(story.places.visits.map((visit) => visit.placeIndex)).toEqual([1, 2, 1]);
+	});
+	it("keeps movement through multiple regions open and resets the next single-region hour", () => {
+		const story = storyFor([
+			gps("08:00", 0),
+			gps("09:00", 0),
+			gps("09:10", 0.1),
+			gps("09:20", 0),
+			gps("10:00", 0.1),
+			gps("10:10", 0),
+			gps("11:00", 0),
+			gps("12:00", 0),
+		]);
+		const maps = story.hours.flatMap((hour) => hour.visits);
+		expect(maps.map((item) => item.repeatedPlace)).toEqual([false, false, false, false, true]);
+		expect(story.hours[9]?.visits[0]?.stops.map((stop) => stop.placeIndex)).toEqual([1, 2, 1]);
+		expect(story.hours[10]?.visits[0]?.stops.map((stop) => stop.placeIndex)).toEqual([2, 1]);
+		expect(story.hours[9]?.visits).toHaveLength(1);
+		expect(story.hours[10]?.visits).toHaveLength(1);
+		expect(maps.flatMap((item) => item.visit.points)).toHaveLength(8);
+	});
+	it("clips points and edges to their own hour while preserving native breaks and sampling gaps", () => {
+		const broken = gps("08:20", 0.003);
+		broken.data = { latitude: 0, longitude: 0.003, breakBefore: true };
+		const events = [
+			gps("07:55", 0),
+			gps("08:05", 0.001),
+			gps("08:15", 0.002),
+			broken,
+			gps("08:25", 0.004),
+			gps("08:58", 0.005),
+			gps("09:02", 0.006),
+		];
+		const timeline = buildDayTimeline("2026-09-13", events);
+		const insights = buildDayInsights(events, timeline);
+		const original = structuredClone(insights);
+		const story = buildDayStory(timeline, insights);
+		const middle = story.hours[8]?.visits[0];
+		expect(middle?.visit.pointCount).toBe(5);
+		expect(middle?.visit.startAt).toBe("2026-09-13T08:05:00.000Z");
+		expect(middle?.visit.endAt).toBe("2026-09-13T08:58:00.000Z");
+		expect(middle?.map.gps.segments.map((segment) => segment.length)).toEqual([2, 2, 1]);
+		expect(middle?.visit.observedMinutes).toBe(15);
+		expect(middle?.map.gps.distanceMeters).toBeCloseTo(222.39, 1);
+		expect(story.hours[7]?.visits[0]?.map.gps.distanceMeters).toBe(0);
+		expect(story.hours[9]?.visits[0]?.visit.observedMinutes).toBe(0);
+		const allPoints = story.hours.flatMap((hour) => {
+			const points = hour.visits.flatMap((item) => item.visit.points);
+			expect(
+				points.every((point) => new Date(point.occurredAt).getHours() === hour.slot.hour),
+			).toBe(true);
+			return points;
+		});
+		expect(allPoints).toHaveLength(events.length);
+		expect(new Set(allPoints).size).toBe(events.length);
+		expect(allPoints).toEqual(expect.arrayContaining(insights.gps.segments.flat()));
+		expect(insights).toEqual(original);
+	});
+	it("preserves interleaved providers' original paths and unions observed time within one map", () => {
+		const events = [
+			gps("08:00", 0),
+			{ ...gps("08:05", 0.1), sourceId: "second-gps" },
+			gps("08:10", 0.001),
+			{ ...gps("08:15", 0.101), sourceId: "second-gps" },
+			gps("08:20", 0.002),
+		];
+		const item = storyFor(events).hours[8]?.visits[0];
+		expect(item?.stops.map((stop) => stop.placeIndex)).toEqual([1, 2, 1, 2, 1]);
+		expect(item?.map.gps.segments.map((segment) => segment.length)).toEqual([3, 2]);
+		expect(
+			item?.map.gps.segments.every((segment) => new Set(segment.map((p) => p.sourceId)).size === 1),
+		).toBe(true);
+		expect(item?.visit.observedMinutes).toBe(20);
+		expect(item?.map.gps.distanceMeters).toBeCloseTo(333.59, 1);
+		expect(item?.repeatedPlace).toBe(false);
+	});
+	it("assigns legacy array samples to local hours after interpreting offsetless times as UTC", () => {
+		process.env.TZ = "Asia/Shanghai";
+		const event = makeEvent({
+			sourceId: "footprint",
+			occurredAt: "2026-09-13T00:00:00.000Z",
+			data: {
+				points: [
+					{ latitude: 0, longitude: 0, time: "2026-09-12T23:59:30" },
+					{ latitude: 0, longitude: 0.001, time: "2026-09-13T00:00:00+00:00" },
+					{ latitude: 0, longitude: 0.002, time: "2026-09-13T00:10:00Z" },
+				],
+			},
+		});
+		const story = storyFor([event]);
+		const first = story.hours[7]?.visits[0];
+		const next = story.hours[8]?.visits[0];
+		expect(first?.visit.startAt).toBe("2026-09-12T23:59:30.000Z");
+		expect(first?.period).toBe("07:59:30");
+		expect(first?.visit.pointCount).toBe(1);
+		expect(next?.period).toBe("08:00:00 — 08:10:00");
+		expect(next?.visit.pointCount).toBe(2);
+		expect(next?.repeatedPlace).toBe(true);
+		expect(story.hours[0]?.visits).toEqual([]);
+		expect(story.hours[23]?.visits).toEqual([]);
+	});
+	it("keeps UTC point order inside a repeated local hour during the daylight-saving fallback", () => {
+		process.env.TZ = "America/New_York";
+		const events = ["05:50", "06:10", "07:00"].map((clock) =>
+			makeEvent({
+				sourceId: "footprint",
+				occurredAt: `2026-11-01T${clock}:00.000Z`,
+				data: { latitude: 0, longitude: 0 },
+			}),
+		);
+		const timeline = buildDayTimeline("2026-11-01", events);
+		const story = buildDayStory(timeline, buildDayInsights(events, timeline));
+		const repeatedHour = story.hours[1];
+		expect(repeatedHour?.slot.state).toBe("repeated");
+		expect(repeatedHour?.visits).toHaveLength(1);
+		expect(repeatedHour?.visits[0]?.visit.points.map((point) => point.occurredAt)).toEqual([
+			"2026-11-01T05:50:00.000Z",
+			"2026-11-01T06:10:00.000Z",
+		]);
+		expect(repeatedHour?.visits[0]?.visit.observedMinutes).toBe(20);
+		expect(repeatedHour?.visits[0]?.repeatedPlace).toBe(false);
+		expect(story.hours[2]?.visits[0]?.repeatedPlace).toBe(true);
+	});
+	it("orders original branches, astronomical instants and GPS together for narrow-screen reading", () => {
+		const events = [
+			makeEvent({ occurredAt: "2026-09-13T08:01:00.000Z" }),
+			gps("08:10", 0),
+			makeEvent({ occurredAt: "2026-09-13T08:30:00.000Z" }),
+			makeEvent({ occurredAt: "2026-09-13T08:40:00.000Z" }),
+		];
+		const row = storyFor(events).hours[8];
+		if (!row) throw new Error("Missing hour");
+		const solar = [
+			{
+				kind: "sunrise" as const,
+				occurredAt: "2026-09-13T08:05:00.000Z",
+				hour: 8,
+				clock: "08:05",
+				label: "日出",
+			},
+		];
+		expect(storyHourEntries(row, solar).map((entry) => entry.kind)).toEqual([
+			"branch",
+			"solar",
+			"visit",
+			"branch",
+			"branch",
+		]);
+		const blocks = storyHourBlocks(row, solar);
+		expect(blocks.map((block) => block.kind)).toEqual(["branches", "solar", "visit", "branches"]);
+		const last = blocks.at(-1);
+		expect(last?.kind === "branches" && last.branches).toHaveLength(2);
+	});
+	it("clips the local day before grouping even when UTC date differs", () => {
+		process.env.TZ = "Asia/Shanghai";
+		const events = [
+			makeEvent({
+				sourceId: "footprint",
+				occurredAt: "2026-09-12T16:10:00.000Z",
+				data: { latitude: 0, longitude: 0 },
+			}),
+			gps("16:01", 1),
+		];
+		const story = storyFor(events);
+		expect(story.hours[0]?.visits[0]?.period).toBe("00:10:00");
+		expect(story.places.totalPoints).toBe(1);
 	});
 });

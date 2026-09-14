@@ -53,10 +53,10 @@ export function ImportsPage() {
 	const running = status === "running";
 
 	return (
-		<div className="space-y-6">
+		<div className="min-w-0 space-y-6">
 			<PageHeader
 				title="导入"
-				description="选择 Apple Health、貔貅或日记文件。足迹请到数据管理中的 Footprint。同一文件再导一次会更新已有记录。可随时取消。"
+				description="将健康、账目和随记补充到每日实录。重复导入会更新已有记录。"
 			/>
 			<LayerCard>
 				<LayerCard.Header>

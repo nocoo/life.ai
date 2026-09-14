@@ -340,3 +340,54 @@ describe("footprintStore", () => {
 		expect(footprintStore.getState().error).toBe("请选择 GPX 文件。");
 	});
 });
+
+describe("Footprint environment loading", () => {
+	beforeEach(async () => {
+		await footprintStore.getState().reset();
+		vi.mocked(apiGet).mockReset();
+	});
+	it("shows a retryable environment failure and recovers", async () => {
+		vi.mocked(apiGet).mockRejectedValueOnce(new Error("offline"));
+		await footprintStore.getState().loadTarget();
+		expect(footprintStore.getState()).toMatchObject({
+			targetStatus: "error",
+			targetError: "offline",
+			target: null,
+		});
+		vi.mocked(apiGet).mockResolvedValue({ target: "production" });
+		await footprintStore.getState().loadTarget();
+		await footprintStore.getState().clear();
+		expect(footprintStore.getState()).toMatchObject({
+			targetStatus: "ready",
+			targetError: null,
+			target: "production",
+		});
+	});
+	it("discards a target response or failure after leaving the page", async () => {
+		let finish: (value: unknown) => void = () => {};
+		vi.mocked(apiGet).mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					finish = resolve;
+				}),
+		);
+		const pending = footprintStore.getState().loadTarget();
+		expect(footprintStore.getState().targetStatus).toBe("loading");
+		await footprintStore.getState().reset();
+		finish({ target: "production" });
+		await pending;
+		expect(footprintStore.getState().target).toBeNull();
+		let fail: (error: Error) => void = () => {};
+		vi.mocked(apiGet).mockImplementationOnce(
+			() =>
+				new Promise((_resolve, reject) => {
+					fail = reject;
+				}),
+		);
+		const failure = footprintStore.getState().loadTarget();
+		await footprintStore.getState().reset();
+		fail(new Error("late"));
+		await failure;
+		expect(footprintStore.getState().targetStatus).toBe("idle");
+	});
+});

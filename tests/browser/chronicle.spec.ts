@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
 import manifest from "../../package.json" with { type: "json" };
 import type { CreatedConnect, EventPage } from "../../src/models/types";
+import { expect, test } from "./public-context-fixture";
 
 const { version } = manifest;
 

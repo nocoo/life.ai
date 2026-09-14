@@ -109,7 +109,7 @@ const SLEEP_STAGES: Record<string, string> = {
 	HKCategoryValueSleepAnalysisAsleepREM: "REM",
 };
 
-function unionMinutes(intervals: Interval[]): number {
+export function unionMinutes(intervals: Interval[]): number {
 	let total = 0;
 	let right = -Infinity;
 	for (const [start, end] of [...intervals].sort((a, b) => a[0] - b[0])) {
@@ -119,7 +119,10 @@ function unionMinutes(intervals: Interval[]): number {
 	return total / 60_000;
 }
 
-function distance(a: TrackPoint, b: TrackPoint): number {
+export function gpsDistanceMeters(
+	a: Pick<TrackPoint, "latitude" | "longitude">,
+	b: Pick<TrackPoint, "latitude" | "longitude">,
+): number {
 	const radians = Math.PI / 180;
 	const latitude = Math.sin(((b.latitude - a.latitude) * radians) / 2) ** 2;
 	const longitude = Math.sin(((b.longitude - a.longitude) * radians) / 2) ** 2;
@@ -215,7 +218,7 @@ export function createDayInsightsCollector(window: Window, retainTrackPoints = f
 			gap <= 30 * 60_000 &&
 			Math.abs(previous.point.longitude - longitude) <= 180;
 		const segment = connected ? previous.segment : [];
-		if (connected) result.gps.distanceMeters += distance(previous.point, point);
+		if (connected) result.gps.distanceMeters += gpsDistanceMeters(previous.point, point);
 		if (retainTrackPoints) {
 			if (!connected) result.gps.segments.push(segment);
 			segment.push(point);

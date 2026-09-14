@@ -5,7 +5,7 @@ import { useNavigate } from "react-router";
 export function NotFoundPage() {
 	const navigate = useNavigate();
 	return (
-		<div className="space-y-6">
+		<div className="min-w-0 space-y-6">
 			<PageHeader title="未找到" description="没有这个页面。" />
 			<LayerCard>
 				<LayerCard.Empty

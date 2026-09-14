@@ -38,7 +38,7 @@ export function AiSettingsPage() {
 	}, []);
 
 	return (
-		<div className="space-y-6">
+		<div className="min-w-0 space-y-6">
 			<PageHeader
 				title="AI 设置"
 				description="默认使用 Cloudflare Workers AI，不必填写密钥。测试连接使用已保存的配置。"

@@ -1,10 +1,10 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
 import type { CreatedConnect } from "../../src/models/types";
 import { importFootprintFixture } from "./footprint-fixture";
+import { expect, test } from "./public-context-fixture";
 import { STORY_DAY, storyImports, storySnapshots } from "./story-fixture";
 
-test("a whole day reads along one trunk with grouped evidence, contextual maps and a closing summary", async ({
+test("a whole day reads along one trunk with grouped evidence, record tabs and contextual maps", async ({
 	page,
 }) => {
 	await page.clock.install({ time: new Date(`${STORY_DAY}T04:00:00Z`) });
@@ -60,56 +60,59 @@ test("a whole day reads along one trunk with grouped evidence, contextual maps a
 	if (!body || !moment || !clock) throw new Error("Missing story branches");
 	expect(body.x + body.width).toBeLessThan(clock.x);
 	expect(moment.x).toBeGreaterThan(clock.x + clock.width);
-	await seven
-		.locator('[data-story-kind="health"]')
-		.getByRole("button", { name: "查看 47 条原始记录" })
-		.click();
-	await expect(seven.locator(".story-record-list .story-event")).toHaveCount(47);
-	await seven
-		.locator('[data-story-kind="health"]')
-		.getByRole("button", { name: "查看 47 条原始记录" })
-		.click();
-	const eight = page.locator('[data-hour="8"]');
-	await expect(eight.getByRole("application", { name: "当日足迹地图", exact: true })).toHaveClass(
-		/leaflet-container/,
-	);
-	await eight.getByRole("button", { name: /查看08:20.*的足迹/ }).click();
-	const dialog = page.getByRole("dialog");
-	await expect(dialog).toContainText("这一段足迹");
-	await expect(
-		dialog.getByRole("application", { name: "所选时段足迹地图", exact: true }),
-	).toBeVisible();
-	await expect(dialog).toContainText("20 个点");
+	await expect(seven.locator('[data-story-kind="health"]')).toContainText("47 条记录");
+	await expect(page.getByRole("table", { name: "其他记录", exact: true })).toHaveCount(0);
+	await page.getByRole("tab", { name: "其他记录", exact: true }).click();
+	const records = page.getByRole("table", { name: "其他记录", exact: true });
+	await expect(records).toBeVisible();
+	await expect(page.locator("[data-hour]")).toHaveCount(0);
+	await records.getByRole("button", { name: "查看完整记录：夜间睡眠", exact: true }).click();
+	await expect(page.getByRole("dialog")).toContainText("HKCategoryValueSleepAnalysisAsleepCore");
 	await page.keyboard.press("Escape");
-	await expect(dialog).toHaveCount(0);
+	await page.getByRole("tab", { name: "时间线", exact: true }).click();
+	await expect(records).toHaveCount(0);
+	const eight = page.locator('[data-hour="8"]');
+	const inlineMap = eight.getByRole("application", { name: /08:20.*的足迹地图/ });
+	await inlineMap.scrollIntoViewIfNeeded();
+	await expect(inlineMap).toHaveClass(/leaflet-container/);
+	await expect(eight.locator(".story-map")).toContainText("20 个点");
+	await eight.getByRole("button", { name: /收起08:20.*的地图/ }).click();
+	await expect(inlineMap).toHaveCount(0);
+	await eight.getByRole("button", { name: /展开08:20.*的地图/ }).click();
+	await expect(inlineMap).toBeVisible();
+	await expect(page.locator('[data-hour="5"] [data-solar="sunrise"]')).toContainText("05:30");
+	await expect(page.locator('[data-hour="18"] [data-solar="sunset"]')).toContainText("18:15");
 	await page.getByRole("link", { name: "跳转至下午", exact: true }).click();
 	await expect(page).toHaveURL(/#life-hour-12$/);
 	await expect(page.locator('[data-hour="12"] .story-clock')).toBeInViewport();
 	const closing = page.getByRole("region", { name: "日终回看", exact: true });
-	await expect(closing.getByRole("heading", { name: "一日累计", exact: true })).toBeVisible();
+	await expect(
+		page.locator(".day-meta").getByRole("heading", { name: "一日累计", exact: true }),
+	).toBeVisible();
 	await expect(closing.getByRole("heading", { name: "当日摘要", exact: true })).toBeVisible();
-	const closingBox = await closing.boundingBox();
-	const lastHourBox = await page.locator('[data-hour="23"]').boundingBox();
-	expect(closingBox?.y ?? 0).toBeGreaterThan(lastHourBox?.y ?? Infinity);
+	const metaBox = await page.locator(".day-meta").boundingBox();
+	const treeBox = await page.locator(".day-story-column").boundingBox();
+	expect(metaBox && treeBox && metaBox.x > treeBox.x + treeBox.width).toBe(true);
+	expect(await allDay.locator("xpath=ancestor::aside").count()).toBe(1);
 	await page.getByRole("link", { name: "跳转至上午", exact: true }).click();
 	await page.screenshot({ path: "test-results/l3/story-desktop-morning.png", fullPage: true });
 	const desktopAxe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
 	expect(desktopAxe.violations).toEqual([]);
 	await page.setViewportSize({ width: 390, height: 844 });
-	await expect(eight.locator(".story-lane-both")).toHaveCount(1);
+	await expect(eight.locator(".story-lane-both")).toHaveCount(2);
 	expect(
 		await eight
 			.locator("[data-story-kind]")
 			.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-story-kind"))),
 	).toEqual(["money", "journey", "health"]);
-	await expect(eight.locator('[data-story-kind="journey"] + .story-map-branch')).toHaveCount(1);
+	await expect(eight.locator(".story-visit-map")).toHaveCount(1);
 	await eight.scrollIntoViewIfNeeded();
 	expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 	await page.screenshot({ path: "test-results/l3/story-mobile.png", fullPage: true });
 	await page.getByRole("button", { name: "切换主题" }).click();
 	await expect(page.locator("html")).toHaveClass(/dark/);
 	await page.evaluate(async () => {
-		await Promise.all(document.getAnimations().map((animation) => animation.finished));
+		await Promise.allSettled(document.getAnimations().map((animation) => animation.finished));
 	});
 	const mobileAxe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
 	expect(mobileAxe.violations).toEqual([]);

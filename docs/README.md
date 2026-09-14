@@ -19,4 +19,5 @@
 | [12 每日视图与 AI](12-daily-view.md) | 足迹、健康、运动、收支、作者资料与每日总结 |
 | [13 时间线设计](13-story-timeline.md) | 中轴与两侧枝条、时段叙事、关联地图、移动阅读与 1.2.0 发布 |
 | [14 Footprint 导入评估](14-footprint-import-analysis.md) | 实施前全量 GPX 实测、D1 占用与费用、UTC 日包选型 |
-| [15 数据管理与导入](15-data-management.md) | 概览与 provider 独立页面、整日替换、网页与本机共用导入、1.3.0 验证 |
+| [15 数据管理与导入](15-data-management.md) | 概览与 provider 独立页面、整日替换、网页与本机共用导入、1.3.0 发布及全量生产数据核验 |
+| [16 每日环境与记录页签](16-daily-context-and-record-tabs.md) | GPS 区域与速度、小时地图、天气及日出日落、Basalt/Recharts 整理、原始记录懒加载分页 |

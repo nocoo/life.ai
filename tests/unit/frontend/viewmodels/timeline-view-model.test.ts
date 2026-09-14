@@ -122,6 +122,39 @@ describe("timelineStore", () => {
 		expect(fetchAllEventsMock).not.toHaveBeenCalled();
 	});
 
+	it("switches record tabs without fetching or rebuilding the day", async () => {
+		fetchSourcesMock.mockResolvedValue([sourceFixture()]);
+		fetchAllEventsMock.mockResolvedValue([eventFixture()]);
+		await timelineStore.getState().load();
+		const { timeline, insights, story } = timelineStore.getState();
+		fetchAllEventsMock.mockClear();
+		fetchSourcesMock.mockClear();
+		expect(timelineStore.getState().tab).toBe("timeline");
+		for (const tab of ["locations", "records", "timeline"] as const) {
+			timelineStore.getState().selectTab(tab);
+			expect(timelineStore.getState().tab).toBe(tab);
+			expect(timelineStore.getState().timeline).toBe(timeline);
+			expect(timelineStore.getState().insights).toBe(insights);
+			expect(timelineStore.getState().story).toBe(story);
+		}
+		timelineStore.getState().selectTab("invalid" as "timeline");
+		expect(timelineStore.getState().tab).toBe("timeline");
+		expect(fetchAllEventsMock).not.toHaveBeenCalled();
+		expect(fetchSourcesMock).not.toHaveBeenCalled();
+	});
+
+	it("keeps the selected record tab across days and source filters, and resets on reset", async () => {
+		fetchSourcesMock.mockResolvedValue([sourceFixture()]);
+		fetchAllEventsMock.mockResolvedValue([eventFixture()]);
+		timelineStore.getState().selectTab("locations");
+		await timelineStore.getState().selectDay("2026-09-14");
+		expect(timelineStore.getState().tab).toBe("locations");
+		await timelineStore.getState().selectSource("src-health");
+		expect(timelineStore.getState().tab).toBe("locations");
+		timelineStore.getState().reset();
+		expect(timelineStore.getState().tab).toBe("timeline");
+	});
+
 	it("moves between days", async () => {
 		fetchSourcesMock.mockResolvedValue([]);
 		fetchAllEventsMock.mockResolvedValue([]);
@@ -186,5 +219,38 @@ describe("timeline helpers", () => {
 		};
 		const late = { ...early, sourceId: "b", occurredAt: "2026-09-13T09:00:00Z", latitude: 2 };
 		expect(selectTrackEndpoints([[late], [early]])).toEqual({ start: early, end: late });
+	});
+});
+
+describe("timeline map preferences", () => {
+	beforeEach(() => {
+		timelineStore.getState().reset();
+		vi.mocked(fetchSources).mockResolvedValue([]);
+		vi.mocked(fetchAllEvents).mockResolvedValue([]);
+	});
+	it("restores automatic expansion on each new day and preserves the choice within a day", async () => {
+		await timelineStore.getState().load();
+		timelineStore.getState().selectMapMode("none");
+		await timelineStore.getState().selectDay(timelineStore.getState().day);
+		expect(timelineStore.getState().mapMode).toBe("none");
+		await timelineStore.getState().shiftDay(1);
+		expect(timelineStore.getState().mapMode).toBe("auto");
+		timelineStore.getState().selectMapMode("all");
+		await timelineStore.getState().selectDay("2026-10-01");
+		expect(timelineStore.getState().mapMode).toBe("auto");
+	});
+	it("regroups cached points without HTTP requests and ignores invalid presentation settings", async () => {
+		timelineStore.getState().selectRadius(10);
+		expect(timelineStore.getState().story).toBeNull();
+		await timelineStore.getState().load();
+		vi.mocked(fetchAllEvents).mockClear();
+		timelineStore.getState().selectRadius(5);
+		expect(timelineStore.getState().story?.places.radiusKm).toBe(5);
+		timelineStore.getState().selectRadius(5);
+		timelineStore.getState().selectRadius(7 as 5);
+		timelineStore.getState().selectMapMode("invalid" as "all");
+		expect(timelineStore.getState().radiusKm).toBe(5);
+		expect(timelineStore.getState().mapMode).toBe("auto");
+		expect(fetchAllEvents).not.toHaveBeenCalled();
 	});
 });

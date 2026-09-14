@@ -19,6 +19,8 @@ AI 链路使用每轮启动的回环 fixture，支持 OpenAI Responses 与 Anthr
 
 测试结果位于 `test-results`、`playwright-report` 和 `coverage`，不提交生成结果。[08 重构记录](08-chronicle-rewrite.md) 保留 1.0.0 的执行结果与上线证据；[12 每日视图](12-daily-view.md) 记录 1.1.0 的验证与发布；[13 时间线设计](13-story-timeline.md) 记录 1.2.0 的密集每日场景、视觉复核与发布。[15 数据管理](15-data-management.md) 记录 1.3.0 的网页/CLI 导入、完整 GPS 保真与幂等验证。薄 View 和浏览器交互由 L3 覆盖，不纳入 L1 逻辑分母。
 
+[16 每日环境与记录页签](16-daily-context-and-record-tabs.md) 记录 GPS 分组与速度、公共天气/天文服务、按需挂载和分页表格的验证。L3 的天气、日出日落与地图瓦片使用固定响应；真实公共 API 与完整生产数据仅由本地 Caddy 进行只读复核。大记录量、分页、跨小时去重、页签切换及所有写入场景继续只用隔离 SQLite。
+
 Linux 测试会在隔离 XDG 缓存前固定已安装的 Playwright 浏览器路径；只复用浏览器程序，Wrangler OAuth 配置、缓存和 SQLite 仍使用本轮独立目录。自定义 G2 命令使用 Bun，因此复用的 security workflow 必须显式设置 `package-manager: bun`。
 
 Husky pre-commit 执行 L1 + G1；pre-push 并行执行 L2 + G2。CI 同时运行全部维度，所有 GitHub Actions 可复用工作流固定到具体 SHA。

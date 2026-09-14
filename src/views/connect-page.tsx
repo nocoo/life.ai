@@ -85,7 +85,7 @@ export function ConnectPage() {
 	}, []);
 
 	return (
-		<div className="space-y-6">
+		<div className="min-w-0 space-y-6">
 			<PageHeader
 				title="Connect"
 				description="只写令牌，明文只出现一次。同一 UTC 小时再次写入会替换该小时；未来小时有效。"
