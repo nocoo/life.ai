@@ -9,6 +9,14 @@ import type {
 	DaySummaryResult,
 } from "../../src/models/ai";
 import type {
+	DataOverview,
+	FootprintBatchReceipt,
+	FootprintDaysResult,
+	FootprintImportReceipt,
+	FootprintImportSession,
+} from "../../src/models/data-management";
+import { validateFootprintDay } from "../../src/models/footprint";
+import type {
 	Connect,
 	CreatedConnect,
 	EventPage,
@@ -360,8 +368,8 @@ await scenario(
 		);
 	},
 );
-await scenario("all import source adapters share the same validated D1 endpoint", async () => {
-	for (const source of ["apple-health", "footprint", "pixiu"]) {
+await scenario("remaining event import adapters share the validated D1 endpoint", async () => {
+	for (const source of ["apple-health", "pixiu"]) {
 		await data(
 			await importBatch(source, [
 				{ key: `${source}-sample`, occurredAt: "1970-01-01T00:00:00Z", title: source },
@@ -375,6 +383,169 @@ await scenario("all import source adapters share the same validated D1 endpoint"
 	);
 	assert.equal(sources.find((source) => source.id === "journal")?.recordCount, 6);
 });
+await scenario(
+	"Footprint complete-day APIs preserve points, replace days and retry idempotently",
+	async () => {
+		assert.deepEqual(await data(await request("/api/data/target")), { target: "test" });
+		await rejected(await importBatch("footprint", []), 410);
+		const utcDay = Date.parse("2099-02-01T00:00:00Z");
+		const original = await validateFootprintDay({
+			utcDay,
+			data: {
+				v: 1,
+				fields: ["offsetSeconds", "latitude", "longitude", "elevation", "speed", "course"],
+				points: [
+					[0, 0, 1, -5, -1, -1],
+					[86399.125, 1, 2, 12.5, 0.5, 40],
+				],
+			},
+		});
+		const nextDay = await validateFootprintDay({ utcDay: utcDay + 86400000, data: original.data });
+		const manifest = {
+			fileName: "l2.gpx",
+			totalDays: 2,
+			totalPoints: 4,
+			channel: "cli",
+			target: "test",
+		};
+		await rejected(
+			await request("/api/data/footprint/imports", {
+				method: "POST",
+				body: { ...manifest, target: "production" },
+			}),
+			409,
+		);
+		const session = await data<FootprintImportSession>(
+			await request("/api/data/footprint/imports", { method: "POST", body: manifest }),
+			201,
+		);
+		await rejected(
+			await request("/api/data/footprint/imports", {
+				method: "POST",
+				body: { ...manifest, channel: "web" },
+			}),
+			409,
+		);
+		const batchPath = `/api/data/footprint/imports/${session.id}/batches/1`;
+		const batch = await data<FootprintBatchReceipt>(
+			await request(batchPath, { method: "PUT", body: { days: [original, nextDay] } }),
+		);
+		assert.equal(batch.insertedDays, 2);
+		assert.deepEqual(
+			await data(await request(batchPath, { method: "PUT", body: { days: [original, nextDay] } })),
+			batch,
+		);
+		const finishPath = `/api/data/footprint/imports/${session.id}/finish`;
+		assert.equal(
+			(
+				await data<FootprintImportReceipt>(
+					await request(finishPath, { method: "POST", body: { status: "complete" } }),
+				)
+			).committedPoints,
+			4,
+		);
+		const rangePath = "/api/data/footprint/days?start=2099-02-01&end=2099-02-03";
+		const initial = await data<FootprintDaysResult>(await request(rangePath));
+		assert.equal(initial.days.length, 2);
+		assert.deepEqual(initial.days[0]?.data, original.data);
+		const eventPage = await data<EventPage>(
+			await request(
+				eventsQuery("footprint", undefined, "2099-02-01T16:00:00Z", "2099-02-02T16:00:00Z"),
+			),
+		);
+		assert.equal(eventPage.events.length, 0);
+		assert.equal(eventPage.footprintDays?.length, 2);
+		const repeated = await data<FootprintImportSession>(
+			await request("/api/data/footprint/imports", { method: "POST", body: manifest }),
+			201,
+		);
+		assert.equal(
+			(
+				await data<FootprintBatchReceipt>(
+					await request(`/api/data/footprint/imports/${repeated.id}/batches/1`, {
+						method: "PUT",
+						body: { days: [original, nextDay] },
+					}),
+				)
+			).unchangedDays,
+			2,
+		);
+		await data(
+			await request(`/api/data/footprint/imports/${repeated.id}/finish`, {
+				method: "POST",
+				body: { status: "complete" },
+			}),
+		);
+		assert.deepEqual(await data(await request(rangePath)), initial);
+		const replacement = await validateFootprintDay({
+			utcDay,
+			data: { ...original.data, points: [[3600, 9, 8, 7, 6, 5]] },
+		});
+		const update = await data<FootprintImportSession>(
+			await request("/api/data/footprint/imports", {
+				method: "POST",
+				body: { ...manifest, totalDays: 1, totalPoints: 1 },
+			}),
+			201,
+		);
+		await rejected(
+			await request(`/api/data/footprint/imports/${update.id}/finish`, {
+				method: "POST",
+				body: { status: "complete" },
+			}),
+			409,
+		);
+		await data(
+			await request(`/api/data/footprint/imports/${update.id}/batches/1`, {
+				method: "PUT",
+				body: { days: [replacement] },
+			}),
+		);
+		await data(
+			await request(`/api/data/footprint/imports/${update.id}/finish`, {
+				method: "POST",
+				body: { status: "complete" },
+			}),
+		);
+		const after = await data<FootprintDaysResult>(await request(rangePath));
+		assert.deepEqual(after.days[0]?.data, replacement.data);
+		assert.deepEqual(after.days[1], initial.days[1]);
+		const overview = await data<DataOverview>(await request("/api/data/overview"));
+		const footprint = overview.providers.find((provider) => provider.id === "footprint");
+		assert.equal(footprint?.coverageDays, 2);
+		assert.equal(footprint?.dataRows, 2);
+		assert.equal(footprint?.recordCount, 3);
+		assert.equal(footprint?.lastImportChannel, "cli");
+		const cancelled = await data<FootprintImportSession>(
+			await request("/api/data/footprint/imports", { method: "POST", body: manifest }),
+			201,
+		);
+		assert.equal(
+			(
+				await data<FootprintImportReceipt>(
+					await request(`/api/data/footprint/imports/${cancelled.id}/finish`, {
+						method: "POST",
+						body: { status: "cancelled" },
+					}),
+				)
+			).status,
+			"cancelled",
+		);
+		await rejected(
+			await request(`/api/data/footprint/imports/${session.id}/batches/1`, {
+				method: "PUT",
+				body: { days: [original, nextDay] },
+			}),
+			404,
+		);
+		for (const path of ["/api/data/target", "/api/data/overview", rangePath]) {
+			await rejected(await request(path, { token: null }), 401);
+			await rejected(await request(path, { host: "life.worker.hexly.ai" }), 404);
+			await rejected(await request(path, { method: "DELETE" }), 405);
+		}
+		await rejected(await request("/api/data/footprint/days?start=bad&end=2099-02-02"), 400);
+	},
+);
 await scenario(
 	"invalid import batches are rejected atomically without inserting records",
 	async () => {
@@ -415,12 +586,12 @@ await scenario(
 				title: `page-${offset + i}`,
 				occurredAt: "2099-01-01T12:00:00Z",
 			}));
-			await data(await importBatch("footprint", records));
+			await data(await importBatch("pixiu", records));
 		}
-		const first = await data<EventPage>(await request(eventsQuery("footprint")));
+		const first = await data<EventPage>(await request(eventsQuery("pixiu")));
 		assert.equal(first.events.length, 200);
 		assert(first.nextCursor);
-		const second = await data<EventPage>(await request(eventsQuery("footprint", first.nextCursor)));
+		const second = await data<EventPage>(await request(eventsQuery("pixiu", first.nextCursor)));
 		assert.equal(second.events.length, 5);
 		assert.equal(second.nextCursor, null);
 		assert.equal(new Set([...first.events, ...second.events].map((event) => event.id)).size, 205);
@@ -699,5 +870,5 @@ await scenario(
 
 await assertMarker(state);
 console.log(
-	`L2 passed: ${scenarios} scenarios, all 14 method/path API contracts through real HTTP and local D1.`,
+	`L2 passed: ${scenarios} scenarios, all 20 method/path API contracts through real HTTP and local D1.`,
 );

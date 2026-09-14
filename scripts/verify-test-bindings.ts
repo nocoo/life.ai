@@ -6,7 +6,11 @@ export function verifyLocalBindings(statePath: string): void {
 	const local = config.env.local;
 	const root = realpathSync(new URL("..", import.meta.url));
 	const state = realpathSync(statePath);
-	if (process.env.CLOUDFLARE_ENV !== "local" || local.vars.RESOURCE_ENV !== "development") {
+	if (
+		process.env.CLOUDFLARE_ENV !== "local" ||
+		local.vars.RESOURCE_ENV !== "development" ||
+		local.vars.DATA_TARGET !== "local"
+	) {
 		throw new Error("Tests require CLOUDFLARE_ENV=local");
 	}
 	if (!state.startsWith(resolve(root, ".wrangler/tests") + sep)) {

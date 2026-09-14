@@ -6,8 +6,11 @@ import {
 	validateSummaryQuery,
 } from "../src/models/ai.js";
 import { createDayInsightsCollector, type DayInsights } from "../src/models/day-insights.js";
-import type { LifeEvent, Precision, SourceKind } from "../src/models/types.js";
+import { footprintDayEvents } from "../src/models/footprint.js";
+import type { LifeEvent, Precision } from "../src/models/types.js";
 import { generateAiText } from "./ai.js";
+import { eventRowToEvent, readEventRows } from "./events.js";
+import { readFootprintDays } from "./footprint-read.js";
 import { ApiError, type WorkerEnv } from "./types.js";
 import { jsonResponse, readJsonBody } from "./utils.js";
 
@@ -60,83 +63,92 @@ export async function streamDayEvents(
 	withEvidence = true,
 ) {
 	const collector = createDayInsightsCollector(window, false);
-	const hash = createHash("sha256").update(JSON.stringify(["life-day-v1", startMs, endMs]));
+	const hash = createHash("sha256").update(JSON.stringify(["life-day-v2", startMs, endMs]));
 	const sourceCounts: Record<string, number> = Object.create(null);
 	const buckets = new Map<string, Map<number, NarrativeSample[]>>();
-	let cursor: { occurredAt: number; id: string } | null = null;
+	const footprint = (await readFootprintDays(env.DB, startMs, endMs)).flatMap((day) =>
+		footprintDayEvents(day, { start: startMs, end: endMs }),
+	);
+	let footprintIndex = 0;
+	let seenFootprint = false;
+	let cursor: { occurredAtMs: number; id: string } | null = null;
 	let eventCount = 0;
-	while (true) {
-		let sql =
-			"SELECT e.id, e.source_id, s.name as source_name, s.kind as source_kind, e.occurred_at, e.end_at, e.precision, e.title, e.content, e.data, e.updated_at FROM life_events e JOIN sources s ON e.source_id = s.id WHERE ((e.occurred_at >= ? AND e.occurred_at < ?) OR (e.precision != 'day' AND e.end_at IS NOT NULL AND e.end_at > e.occurred_at AND e.occurred_at < ? AND e.end_at > ?))";
-		const bindings: (string | number)[] = [startMs, endMs, endMs, startMs];
-		if (cursor) {
-			sql += " AND (e.occurred_at > ? OR (e.occurred_at = ? AND e.id > ?))";
-			bindings.push(cursor.occurredAt, cursor.occurredAt, cursor.id);
-		}
-		sql += " ORDER BY e.occurred_at ASC, e.id ASC LIMIT ?";
-		bindings.push(PAGE_SIZE);
-		const { results } = await env.DB.prepare(sql)
-			.bind(...bindings)
-			.all<{
-				id: string;
-				source_id: string;
-				source_name: string;
-				source_kind: SourceKind;
-				occurred_at: number;
-				end_at: number | null;
-				precision: Precision;
-				title: string;
-				content: string;
-				data: string;
-				updated_at: number;
-			}>();
-		for (const row of results) {
-			eventCount++;
-			// JSON encoding is unambiguous and includes source metadata and same-millisecond edits.
-			hash.update(JSON.stringify(row)).update("\n");
-			if (!withEvidence) continue;
-			const occurredAt = new Date(row.occurred_at).toISOString();
-			const source = row.source_name;
-			sourceCounts[source] = (sourceCounts[source] ?? 0) + 1;
-			if (!buckets.has(source) && buckets.size < MAX_SAMPLED_SOURCES)
-				buckets.set(source, new Map());
-			const sourceBuckets = buckets.get(source);
-			if (sourceBuckets) {
-				// Preserve the first and last event in each hour, plus a separate date-only bucket.
-				const bucket =
-					row.precision === "day"
-						? -1
-						: Math.max(0, Math.floor((row.occurred_at - startMs) / 3_600_000));
-				const samples = sourceBuckets.get(bucket) ?? [];
-				const sample: NarrativeSample = {
-					time: occurredAt,
-					precision: row.precision,
-					title: row.title.slice(0, MAX_SAMPLE_TITLE_LENGTH),
-					content: row.content.slice(0, MAX_SAMPLE_CONTENT_LENGTH),
-				};
-				if (samples.length < 2) samples.push(sample);
-				else samples[1] = sample;
-				sourceBuckets.set(bucket, samples);
+	const consume = (event: LifeEvent) => {
+		eventCount++;
+		// Virtual GPS IDs shift when earlier, out-of-window points change. Hash only the point's content.
+		if (event.sourceId === "footprint") {
+			let data = event.data;
+			if (!seenFootprint && data && typeof data === "object" && !Array.isArray(data)) {
+				data = { ...data };
+				// The first visible point has no visible predecessor for this boundary to disconnect.
+				delete data.breakBefore;
 			}
-			const event: LifeEvent = {
-				id: row.id,
-				sourceId: row.source_id,
-				sourceName: row.source_name,
-				sourceKind: row.source_kind,
-				occurredAt,
-				endAt: row.end_at === null ? null : new Date(row.end_at).toISOString(),
-				precision: row.precision,
-				title: row.title,
-				content: row.content,
-				data: JSON.parse(row.data),
-				updatedAt: new Date(row.updated_at).toISOString(),
+			seenFootprint = true;
+			hash.update(
+				JSON.stringify([
+					event.sourceId,
+					event.sourceName,
+					event.sourceKind,
+					event.occurredAt,
+					event.endAt,
+					event.precision,
+					event.title,
+					event.content,
+					data,
+				]),
+			);
+		} else hash.update(JSON.stringify(event));
+		hash.update("\n");
+		if (!withEvidence) return;
+		const source = event.sourceName;
+		sourceCounts[source] = (sourceCounts[source] ?? 0) + 1;
+		if (!buckets.has(source) && buckets.size < MAX_SAMPLED_SOURCES) buckets.set(source, new Map());
+		const sourceBuckets = buckets.get(source);
+		if (sourceBuckets) {
+			const bucket =
+				event.precision === "day"
+					? -1
+					: Math.max(0, Math.floor((Date.parse(event.occurredAt) - startMs) / 3_600_000));
+			const samples = sourceBuckets.get(bucket) ?? [];
+			const sample: NarrativeSample = {
+				time: event.occurredAt,
+				precision: event.precision,
+				title: event.title.slice(0, MAX_SAMPLE_TITLE_LENGTH),
+				content: event.content.slice(0, MAX_SAMPLE_CONTENT_LENGTH),
 			};
-			collector.add(event);
+			if (samples.length < 2) samples.push(sample);
+			else samples[1] = sample;
+			sourceBuckets.set(bucket, samples);
+		}
+		collector.add(event);
+	};
+	while (true) {
+		const results = await readEventRows(env.DB, {
+			start: startMs,
+			end: endMs,
+			cursor,
+			limit: PAGE_SIZE,
+		});
+		for (const row of results) {
+			const event = eventRowToEvent(row);
+			while (footprintIndex < footprint.length) {
+				const next = footprint[footprintIndex] as LifeEvent;
+				if (
+					next.occurredAt > event.occurredAt ||
+					(next.occurredAt === event.occurredAt && next.id > event.id)
+				)
+					break;
+				consume(next);
+				footprintIndex++;
+			}
+			consume(event);
 		}
 		const last = results.at(-1);
 		if (results.length < PAGE_SIZE || !last) break;
-		cursor = { occurredAt: last.occurred_at, id: last.id };
+		cursor = { occurredAtMs: last.occurred_at, id: last.id };
 	}
+	for (; footprintIndex < footprint.length; footprintIndex++)
+		consume(footprint[footprintIndex] as LifeEvent);
 	const samplesBySource: Record<string, NarrativeSample[]> = Object.create(null);
 	const perSource = Math.min(
 		MAX_SAMPLES_PER_SOURCE,

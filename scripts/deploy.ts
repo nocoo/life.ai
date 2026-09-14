@@ -14,6 +14,7 @@ if (
 if (
 	config.name !== "life" ||
 	config.vars.RESOURCE_ENV !== "production" ||
+	config.vars.DATA_TARGET !== "production" ||
 	!config.vars.ACCESS_AUD ||
 	config.vars.TEST_ACCESS_JWKS ||
 	config.workers_dev ||

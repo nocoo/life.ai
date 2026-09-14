@@ -21,8 +21,7 @@
 	--story-night: hsl(var(--basalt-chart-pink));
 	--story-money: hsl(var(--basalt-chart-yellow));
 	--story-rail: 84px;
-	max-width: 1160px;
-	margin-inline: auto;
+	container: day-story / inline-size;
 	padding: 4px 16px 24px;
 	overflow-wrap: anywhere;
 }
@@ -256,6 +255,7 @@
 }
 
 .story-lane {
+	position: relative;
 	grid-row: 1;
 	display: flex;
 	flex-direction: column;
@@ -274,6 +274,7 @@
 .story-branch {
 	--story-color: var(--story-route);
 	position: relative;
+	min-width: 0;
 	overflow: visible;
 	padding: 14px 18px;
 	border: 1px solid hsl(var(--basalt-border) / 0.6);
@@ -419,7 +420,7 @@
 
 .story-metrics {
 	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr));
 	gap: 14px 16px;
 	margin-top: 14px;
 }
@@ -748,6 +749,46 @@
 	outline-offset: 4px;
 }
 
+@container day-story (min-width: 1240px) {
+	.story-hour > .story-lane,
+	.story-all-day > .story-lane {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		align-items: start;
+	}
+
+	.story-continuation,
+	.story-dst-hint,
+	.story-lane > .story-branch:only-of-type {
+		grid-column: 1 / -1;
+	}
+
+	/* Wide-screen branches share an hour connector instead of crossing adjacent columns. */
+	:is(.story-hour, .story-all-day)
+	> .story-lane:has(> .story-branch, > .story-map-branch, > .story-map)::before {
+		content: "";
+		position: absolute;
+		top: 28px;
+		width: calc(var(--story-rail) / 2);
+		height: 1px;
+		background: hsl(var(--basalt-border));
+	}
+
+	.story-lane-left::before {
+		right: calc(var(--story-rail) / -2);
+	}
+
+	.story-lane-right::before {
+		left: calc(var(--story-rail) / -2);
+	}
+
+	.story-lane-left > .story-branch::after,
+	.story-lane-right > .story-branch::before,
+	.story-map-branch::before {
+		display: none;
+	}
+}
+
 @media (max-width: 1100px) {
 	.story-page {
 		padding-inline: 0;
@@ -869,6 +910,7 @@
 		font-size: 10px;
 	}
 	.story-metrics {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 10px 12px;
 	}
 	.story-metrics dd {
@@ -905,4 +947,94 @@
 	.story-ribbon > a {
 		transition: none;
 	}
+}
+
+.data-page {
+	width: min(100%, 1400px);
+	margin-inline: auto;
+}
+
+.data-compare-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.data-compare-table th,
+.data-compare-table td {
+	padding: 8px 10px;
+	text-align: left;
+	border-bottom: 1px solid hsl(var(--basalt-border) / 0.65);
+	white-space: nowrap;
+}
+
+.data-compare-card {
+	overflow-x: auto;
+}
+
+.data-coverage-fold {
+	margin-top: 4px;
+}
+
+.data-provider-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+	gap: 20px;
+}
+
+.data-coverage-months {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 16px;
+}
+
+.data-coverage-weekdays,
+.data-coverage-grid {
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+	gap: 3px;
+}
+
+.data-coverage-weekdays {
+	margin: 8px 0 4px;
+	font-size: 10px;
+	color: hsl(var(--basalt-muted-foreground));
+	text-align: center;
+}
+
+.data-coverage-cell {
+	display: block;
+	aspect-ratio: 1;
+	border-radius: 3px;
+	background: hsl(var(--basalt-muted) / 0.55);
+}
+
+.data-coverage-pad {
+	background: transparent;
+}
+
+.data-coverage-filled {
+	background: hsl(var(--basalt-chart-blue));
+}
+
+.data-coverage-filled:hover,
+.data-coverage-filled:focus-visible {
+	outline: 2px solid hsl(var(--basalt-ring));
+	outline-offset: 1px;
+}
+
+.data-preview-days {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 8px;
+	font-size: 13px;
+}
+
+.data-preview-day {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 8px 10px;
+	border: 1px solid hsl(var(--basalt-border) / 0.65);
+	border-radius: 8px;
 }

@@ -114,6 +114,9 @@ export function DayMap({
 				observer = new ResizeObserver(() => {
 					if (!cancelled) {
 						map?.invalidateSize();
+						if (latLngs.length > 1) {
+							map?.fitBounds(L.latLngBounds(latLngs), { padding: [28, 28], maxZoom: 16 });
+						}
 					}
 				});
 				observer.observe(containerRef.current);

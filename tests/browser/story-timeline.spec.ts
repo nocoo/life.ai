@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import type { CreatedConnect } from "../../src/models/types";
+import { importFootprintFixture } from "./footprint-fixture";
 import { STORY_DAY, storyImports, storySnapshots } from "./story-fixture";
 
 test("a whole day reads along one trunk with grouped evidence, contextual maps and a closing summary", async ({
@@ -18,6 +19,10 @@ test("a whole day reads along one trunk with grouped evidence, contextual maps a
 		}),
 	);
 	for (const [source, records] of Object.entries(storyImports)) {
+		if (source === "footprint") {
+			await importFootprintFixture(page.request, records);
+			continue;
+		}
 		for (let offset = 0; offset < records.length; offset += 100) {
 			const response = await page.request.post("/api/imports", {
 				data: { source, records: records.slice(offset, offset + 100) },

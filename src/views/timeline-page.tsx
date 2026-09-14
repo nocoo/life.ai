@@ -10,14 +10,18 @@ import {
 	SelectValue,
 } from "@nocoo/basalt/components/select";
 import { useEffect } from "react";
+import { useSearchParams } from "react-router";
 import { useStore } from "zustand";
 import { DateNavigation } from "../components/date-navigation";
 import { DayTimelineView } from "../components/day-timeline";
+import { localDateKey, shiftLocalDate } from "../models/time";
 import { daySummaryStore } from "../viewmodels/day-summary-view-model";
 import { formatLocalDate } from "../viewmodels/format";
 import { ALL_SOURCES, isSelectedToday, timelineStore } from "../viewmodels/timeline-view-model";
 
 export function TimelinePage() {
+	const [searchParams, setSearchParams] = useSearchParams();
+	const linkedDay = searchParams.get("day");
 	const day = useStore(timelineStore, (state) => state.day);
 	const sourceId = useStore(timelineStore, (state) => state.sourceId);
 	const sources = useStore(timelineStore, (state) => state.sources);
@@ -32,8 +36,26 @@ export function TimelinePage() {
 	const summaryTimeZone = timeline?.timezone;
 
 	useEffect(() => {
-		void timelineStore.getState().load();
-	}, []);
+		const state = timelineStore.getState();
+		let validDay: string | null = null;
+		if (linkedDay) {
+			try {
+				validDay = shiftLocalDate(linkedDay, 0);
+			} catch {
+				// A malformed bookmark must not replace the current valid selection.
+			}
+		}
+		if (validDay && validDay !== state.day) void state.selectDay(validDay);
+		else void state.load();
+	}, [linkedDay]);
+
+	const selectDay = (next: string) => {
+		setSearchParams((previous) => {
+			const params = new URLSearchParams(previous);
+			params.set("day", next);
+			return params;
+		});
+	};
 
 	useEffect(() => {
 		return () => {
@@ -68,10 +90,10 @@ export function TimelinePage() {
 							<DateNavigation
 								day={day}
 								isToday={isSelectedToday(day)}
-								onPrevDay={() => void timelineStore.getState().shiftDay(-1)}
-								onNextDay={() => void timelineStore.getState().shiftDay(1)}
-								onToday={() => void timelineStore.getState().goToday()}
-								onSelectDay={(next) => void timelineStore.getState().selectDay(next)}
+								onPrevDay={() => selectDay(shiftLocalDate(day, -1))}
+								onNextDay={() => selectDay(shiftLocalDate(day, 1))}
+								onToday={() => selectDay(localDateKey())}
+								onSelectDay={selectDay}
 							/>
 							<Select
 								value={sourceId}

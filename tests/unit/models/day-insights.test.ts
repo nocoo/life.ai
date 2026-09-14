@@ -78,7 +78,7 @@ describe("daily GPS projection", () => {
 			[
 				gps(window.start, { latitude: 0, longitude: 0 }, { precision: "day" }),
 				gps(window.start, { latitude: 0, longitude: 0 }),
-				gps("2026-09-13T00:10:00Z", { latitude: 0, longitude: 179.99 }),
+				gps("2026-09-13T00:10:00Z", { latitude: 0, longitude: 179.99, breakBefore: true }),
 				gps("2026-09-13T00:20:00Z", { latitude: 0, longitude: -179.99 }),
 				gps("2026-09-13T00:30:00Z", {
 					points: [
@@ -89,11 +89,28 @@ describe("daily GPS projection", () => {
 			],
 			window,
 		);
-		expect(result.gps.pointCount).toBe(5);
-		expect(result.gps.segments).toHaveLength(5);
+		expect(result.gps.pointCount).toBe(6);
+		expect(result.gps.segments).toHaveLength(6);
 		expect(result.gps.distanceMeters).toBe(0);
-		expect(result.gps.segments[3]?.[0]?.precision).toBe("day");
-		expect(result.gps.segments[4]?.[0]?.precision).toBe("hour");
+		expect(result.gps.segments[4]?.[0]?.precision).toBe("day");
+		expect(result.gps.segments[5]?.[0]?.precision).toBe("hour");
+	});
+	it("honors native segment breaks and retains coincident points with invalid speed sentinels", () => {
+		const first = gps("2026-09-13T01:00:00Z", { latitude: 0, longitude: 0, speed: -1 });
+		const coincident = gps("2026-09-13T01:00:00Z", { latitude: 0, longitude: 0, speed: 0 });
+		const separated = gps("2026-09-13T01:01:00Z", {
+			latitude: 0,
+			longitude: 0.01,
+			breakBefore: true,
+		});
+		const continued = gps("2026-09-13T01:02:00Z", { latitude: 0, longitude: 0.02 });
+		const result = buildDayInsights([first, coincident, separated, continued], window);
+		expect(result.gps.pointCount).toBe(4);
+		expect(result.gps.segments.map((segment) => segment.length)).toEqual([1, 1, 2]);
+		expect(result.gps.segments[0]?.[0]?.speed).toBeNull();
+		expect(result.gps.segments[1]?.[0]?.speed).toBe(0);
+		expect(result.gps.distanceMeters).toBeGreaterThan(1100);
+		expect(result.gps.distanceMeters).toBeLessThan(1120);
 	});
 	it("ignores invalid coordinates/times and points beyond half-open day boundaries", () => {
 		const invalid: JsonValue[] = [

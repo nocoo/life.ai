@@ -3,6 +3,11 @@ import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DaySummaryQuery, DaySummaryResult } from "../../src/models/ai.js";
 import { buildDayInsights, type DayInsights } from "../../src/models/day-insights.js";
+import {
+	FOOTPRINT_DAY_MS,
+	type FootprintPoint,
+	validateFootprintDay,
+} from "../../src/models/footprint.js";
 import type { LifeEvent } from "../../src/models/types.js";
 import {
 	buildDaySummaryPrompt,
@@ -32,7 +37,7 @@ function setup() {
 	sqlite.exec(
 		"CREATE TABLE _test_marker (key TEXT PRIMARY KEY, value TEXT); INSERT INTO _test_marker VALUES ('env', 'test');",
 	);
-	for (const name of ["0001_initial.sql", "0002_daily_ai.sql"])
+	for (const name of ["0001_initial.sql", "0002_daily_ai.sql", "0003_provider_days.sql"])
 		sqlite.exec(readFileSync(new URL(`../../worker/migrations/${name}`, import.meta.url), "utf8"));
 	const prepare = vi.fn((sql: string) => {
 		const statement = sqlite.prepare(sql);
@@ -56,6 +61,7 @@ function setup() {
 	const run = vi.fn(async () => ({ response: "当天记录了阅读与步行。" }));
 	const env: WorkerEnv = {
 		RESOURCE_ENV: "test",
+		DATA_TARGET: "local",
 		APP_ORIGIN: "http://localhost:17011",
 		INGEST_HOST: "life.worker.hexly.ai",
 		ACCESS_TEAM_DOMAIN: "nocoo.cloudflareaccess.com",
@@ -103,7 +109,37 @@ function setup() {
 			);
 		return event;
 	};
-	return { sqlite, env, run, insert, prepare };
+	const putDay = async (utcDay: number, points: FootprintPoint[], breaks: number[] = []) => {
+		const day = await validateFootprintDay({
+			utcDay,
+			data: {
+				v: 1,
+				fields: ["offsetSeconds", "latitude", "longitude", "elevation", "speed", "course"],
+				points,
+				breaks,
+			},
+		});
+		sqlite.exec(
+			"INSERT OR IGNORE INTO sources VALUES ('footprint', 'Footprint', 'import', 'footprint', 0)",
+		);
+		sqlite
+			.prepare(
+				"INSERT OR REPLACE INTO provider_days VALUES ('footprint', ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			)
+			.run(
+				day.utcDay,
+				day.recordCount,
+				day.firstAt,
+				day.lastAt,
+				day.payloadBytes,
+				JSON.stringify(day.summary),
+				JSON.stringify(day.data),
+				day.contentHash,
+				Date.now(),
+			);
+		return day;
+	};
+	return { sqlite, env, run, insert, prepare, putDay };
 }
 function request(query: unknown = day) {
 	return new Request("http://localhost:17011/api/day-summary", {
@@ -314,6 +350,108 @@ describe("daily summary evidence", () => {
 });
 
 describe("saved daily summaries", () => {
+	it("summarizes compact GPS-only days, keeps duplicates and respects original segment breaks", async () => {
+		const { env, putDay } = setup();
+		await putDay(
+			Date.parse("2026-09-13T00:00:00Z"),
+			[
+				[0, 0, 0, null, -1, null],
+				[0, 0, 0, null, 0, null],
+				[60, 0, 0.01, null, 1, null],
+				[120, 0, 0.02, null, 1, null],
+			],
+			[2],
+		);
+		const evidence = await scan(env);
+		expect(evidence.eventCount).toBe(4);
+		expect(evidence.insights.gps.pointCount).toBe(4);
+		expect(evidence.insights.gps.distanceMeters).toBeGreaterThan(1100);
+		expect(evidence.insights.gps.distanceMeters).toBeLessThan(1120);
+		expect(evidence.sourceCounts.Footprint).toBe(4);
+		expect(evidence.inputHash).toBe((await scan(env, false)).inputHash);
+		const result = await data(await handlePostDaySummary(request(), env));
+		expect(result.summary?.eventCount).toBe(4);
+		expect(result.stale).toBe(false);
+	});
+
+	it("merges compact GPS with paginated legacy records in UTC order and avoids covered legacy days", async () => {
+		const { env, putDay, insert } = setup();
+		const utcDay = Date.parse("2026-09-13T00:00:00Z");
+		await putDay(utcDay, [
+			[0, 0, 0, null, null, null],
+			[120, 0, 0.02, null, null, null],
+		]);
+		insert({
+			sourceId: "footprint",
+			sourceName: "Footprint",
+			occurredAt: "2026-09-13T00:01:00Z",
+			data: { latitude: 45, longitude: 90 },
+		});
+		insert({
+			sourceId: "footprint",
+			sourceName: "Footprint",
+			occurredAt: "2026-09-12T23:59:00Z",
+			data: { latitude: 0, longitude: -0.01 },
+		});
+		for (let index = 0; index < 205; index++)
+			insert({
+				id: `journal-${index}`,
+				occurredAt: index % 2 ? "2026-09-13T00:00:00Z" : "2026-09-13T00:02:00Z",
+			});
+		insert({ id: "z-last", occurredAt: "2026-09-13T00:02:00Z" });
+		const evidence = await scan(env);
+		expect(evidence.eventCount).toBe(209);
+		expect(evidence.insights.gps.pointCount).toBe(3);
+		expect(evidence.insights.gps.distanceMeters).toBeGreaterThan(3300);
+		expect(evidence.insights.gps.distanceMeters).toBeLessThan(3350);
+		expect(evidence.samplesBySource.Footprint?.map((sample) => sample.time)).toEqual([
+			"2026-09-12T23:59:00.000Z",
+			"2026-09-13T00:00:00.000Z",
+			"2026-09-13T00:02:00.000Z",
+		]);
+	});
+
+	it("keeps summaries fresh after outside-window edits or import-time changes, and supports A → B → A", async () => {
+		const { env, sqlite, putDay } = setup();
+		const currentDay = Date.parse("2026-09-13T00:00:00Z");
+		const previousDay = currentDay - FOOTPRINT_DAY_MS;
+		const inside: FootprintPoint[] = [
+			[57600, 0, 0, null, null, null],
+			[57660, 0, 0.01, null, null, null],
+		];
+		await putDay(previousDay, inside);
+		await putDay(currentDay, [
+			[1, 0, 0.02, null, null, null],
+			[57600, 0, 1, null, null, null],
+		]);
+		const original = await data(await handlePostDaySummary(request(), env));
+		const hashA = original.summary?.inputHash;
+		await putDay(previousDay, [[1, 1, 1, null, null, null], ...inside], [1]);
+		await putDay(currentDay, [
+			[1, 0, 0.02, null, null, null],
+			[57600, 5, 5, null, null, null],
+		]);
+		sqlite.exec(
+			"UPDATE provider_days SET updated_at = updated_at + 1000, content_hash = 'whole-day-changed'",
+		);
+		const outside = await data(await handleGetDaySummary(env, url()));
+		expect(outside.stale).toBe(false);
+		expect((await scan(env, false)).inputHash).toBe(hashA);
+		expect(outside.eventCount).toBe(3);
+		await putDay(previousDay, inside, [0]);
+		expect((await scan(env, false)).inputHash).toBe(hashA);
+		await putDay(previousDay, inside, [1]);
+		expect((await scan(env, false)).inputHash).not.toBe(hashA);
+		await putDay(previousDay, [[57600, 0, 0.5, null, null, null]]);
+		const changed = await data(await handleGetDaySummary(env, url()));
+		expect(changed.stale).toBe(true);
+		expect(changed.eventCount).toBe(2);
+		expect((await scan(env, false)).inputHash).not.toBe(hashA);
+		await putDay(previousDay, inside);
+		expect((await data(await handleGetDaySummary(env, url()))).stale).toBe(false);
+		expect((await scan(env, false)).inputHash).toBe(hashA);
+	});
+
 	it("reports empty days honestly, never calls AI and releases the lease on rejection", async () => {
 		const { env, sqlite, run } = setup();
 		expect(await data(await handleGetDaySummary(env, url()))).toEqual({

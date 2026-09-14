@@ -1,6 +1,6 @@
 {
 	"name": "life.ai",
-	"version": "1.2.0",
+	"version": "1.3.0",
 	"private": true,
 	"type": "module",
 	"packageManager": "bun@1.4.0",
@@ -25,7 +25,8 @@
 		"quality": "bun run typecheck && bun run lint && bun run test:coverage && bun run build && bun run test:l2 && bun run test:l3 && bun run gate:security",
 		"db:migrate": "wrangler d1 migrations apply life-local --config wrangler.jsonc --local --env local --persist-to .wrangler/state",
 		"prepare": "husky",
-		"dev:prod": "CLOUDFLARE_ENV=devprod vite --host 127.0.0.1"
+		"dev:prod": "CLOUDFLARE_ENV=devprod vite --host 127.0.0.1",
+		"data:import": "bun scripts/import-data.ts"
 	},
 	"dependencies": {
 		"@ai-sdk/anthropic": "4.0.53",

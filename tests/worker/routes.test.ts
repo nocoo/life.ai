@@ -1,3 +1,4 @@
+import type { SQLInputValue } from "node:sqlite";
 import { describe, expect, it } from "vitest";
 import type { Connect, EventPage, IngestReceipt, Source } from "../../src/models/types.js";
 import {
@@ -12,6 +13,7 @@ import {
 	handlePostIngest,
 } from "../../worker/routes.js";
 import type { WorkerEnv } from "../../worker/types.js";
+import { sqliteD1 } from "../helpers/sqlite-d1.js";
 
 function createInMemoryD1() {
 	const sources: {
@@ -177,59 +179,32 @@ function createInMemoryD1() {
 								return { results: res as unknown as T[] };
 							}
 							if (sql.includes("FROM life_events e")) {
-								const startMs = args[0] as number;
-								const endMs = args[1] as number;
-								let filtered = events.filter((e) => {
-									if (e.occurred_at >= startMs && e.occurred_at < endMs) {
-										return true;
-									}
-									if (
-										e.precision !== "day" &&
-										e.end_at !== null &&
-										e.end_at > e.occurred_at &&
-										e.occurred_at < endMs &&
-										e.end_at > startMs
-									) {
-										return true;
-									}
-									return false;
-								});
-								let argIdx = 4;
-								if (sql.includes("AND e.source_id = ?")) {
-									const src = args[argIdx++] as string;
-									filtered = filtered.filter((e) => e.source_id === src);
+								// Execute the production UNION/cursor SQL against actual SQLite.
+								const { sqlite } = sqliteD1();
+								try {
+									for (const source of sources)
+										sqlite
+											.prepare("INSERT INTO sources VALUES (?, ?, ?, ?, ?)")
+											.run(source.id, source.name, source.kind, source.provider, source.created_at);
+									for (const event of events)
+										sqlite
+											.prepare("INSERT INTO life_events VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+											.run(
+												event.id,
+												event.source_id,
+												event.external_key,
+												event.occurred_at,
+												event.end_at,
+												event.precision,
+												event.title,
+												event.content,
+												event.data,
+												event.updated_at,
+											);
+									return { results: sqlite.prepare(sql).all(...(args as SQLInputValue[])) as T[] };
+								} finally {
+									sqlite.close();
 								}
-								if (sql.includes("AND (e.occurred_at > ? OR (e.occurred_at = ? AND e.id > ?))")) {
-									const curMs = args[argIdx++] as number;
-									argIdx++;
-									const curId = args[argIdx++] as string;
-									filtered = filtered.filter(
-										(e) => e.occurred_at > curMs || (e.occurred_at === curMs && e.id > curId),
-									);
-								}
-								const limit = args[args.length - 1] as number;
-								filtered.sort((a, b) => a.occurred_at - b.occurred_at || a.id.localeCompare(b.id));
-								const sliced = filtered.slice(0, limit);
-								const mapped = sliced.map((e) => {
-									const s = sources.find((src) => src.id === e.source_id) || {
-										name: "Unknown",
-										kind: "import",
-									};
-									return {
-										id: e.id,
-										source_id: e.source_id,
-										source_name: s.name,
-										source_kind: s.kind,
-										occurred_at: e.occurred_at,
-										end_at: e.end_at,
-										precision: e.precision,
-										title: e.title,
-										content: e.content,
-										data: e.data,
-										updated_at: e.updated_at,
-									};
-								});
-								return { results: mapped as unknown as T[] };
 							}
 							return { results: [] };
 						},
@@ -386,6 +361,7 @@ function createInMemoryD1() {
 function createWorkerEnv(db: D1Database): WorkerEnv {
 	return {
 		RESOURCE_ENV: "production",
+		DATA_TARGET: "local",
 		APP_ORIGIN: "https://life.hexly.ai",
 		INGEST_HOST: "life.worker.hexly.ai",
 		ACCESS_TEAM_DOMAIN: "nocoo.cloudflareaccess.com",

@@ -1,6 +1,7 @@
 import pkg from "../package.json" with { type: "json" };
 import { handleGetAiSettings, handlePostAiTest, handlePutAiSettings } from "./ai.js";
 import { authenticateAccess, isLocalHost } from "./auth.js";
+import { handleDataRequest } from "./data-routes.js";
 import { handleGetDaySummary, handlePostDaySummary } from "./day-summary.js";
 import {
 	handleDeleteConnect,
@@ -141,6 +142,10 @@ export async function handleRequest(request: Request, env: WorkerEnv): Promise<R
 
 		// 5. Authenticate dashboard / API requests via Cloudflare Access
 		const auth = await authenticateAccess(request, env, url);
+
+		if (url.pathname.startsWith("/api/data/")) {
+			return await handleDataRequest(request, env, url);
+		}
 
 		// 6. Route API endpoints
 		if (url.pathname === "/api/session") {

@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { CalendarClock, KeyRound, Settings, Upload } from "lucide-react";
+import { CalendarClock, Database, KeyRound, MapPin, Settings, Upload } from "lucide-react";
 
 export interface NavItem {
 	href: string;
@@ -7,12 +7,34 @@ export interface NavItem {
 	icon: LucideIcon;
 }
 
-export const NAV_ITEMS: NavItem[] = [
-	{ href: "/", label: "时间线", icon: CalendarClock },
-	{ href: "/imports", label: "导入", icon: Upload },
-	{ href: "/connect", label: "Connect", icon: KeyRound },
-	{ href: "/settings/ai", label: "AI 设置", icon: Settings },
+export interface NavGroup {
+	id: string;
+	label: string;
+	items: NavItem[];
+}
+
+export const NAV_GROUPS: NavGroup[] = [
+	{
+		id: "chronicle",
+		label: "编年史",
+		items: [
+			{ href: "/", label: "时间线", icon: CalendarClock },
+			{ href: "/imports", label: "导入", icon: Upload },
+			{ href: "/connect", label: "Connect", icon: KeyRound },
+			{ href: "/settings/ai", label: "AI 设置", icon: Settings },
+		],
+	},
+	{
+		id: "data",
+		label: "数据管理",
+		items: [
+			{ href: "/data", label: "数据概览", icon: Database },
+			{ href: "/data/footprint", label: "Footprint", icon: MapPin },
+		],
+	},
 ];
+
+export const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((group) => group.items);
 
 export const ROUTE_META: Record<string, { title: string; description: string }> = {
 	"/": {
@@ -21,7 +43,7 @@ export const ROUTE_META: Record<string, { title: string; description: string }> 
 	},
 	"/imports": {
 		title: "导入",
-		description: "导入 Apple Health XML、足迹 GPX、貔貅 CSV 与日记 JSON/NDJSON",
+		description: "导入 Apple Health XML、貔貅 CSV 与日记 JSON/NDJSON",
 	},
 	"/connect": {
 		title: "Connect",
@@ -30,6 +52,14 @@ export const ROUTE_META: Record<string, { title: string; description: string }> 
 	"/settings/ai": {
 		title: "AI 设置",
 		description: "配置 Workers AI 或其他模型",
+	},
+	"/data": {
+		title: "数据概览",
+		description: "各来源的覆盖天数、记录与最近导入",
+	},
+	"/data/footprint": {
+		title: "Footprint",
+		description: "解析 GPX，按 UTC 日整日替换轨迹",
 	},
 };
 

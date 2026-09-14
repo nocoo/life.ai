@@ -56,7 +56,7 @@ export function ImportsPage() {
 		<div className="space-y-6">
 			<PageHeader
 				title="导入"
-				description="选择来源与导出文件。同一文件再导一次会更新已有记录，不会重复。可随时取消。"
+				description="选择 Apple Health、貔貅或日记文件。足迹请到数据管理中的 Footprint。同一文件再导一次会更新已有记录。可随时取消。"
 			/>
 			<LayerCard>
 				<LayerCard.Header>

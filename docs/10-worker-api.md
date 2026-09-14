@@ -156,16 +156,17 @@ ON life_events(source_id, occurred_at ASC, id ASC);
 The profile uses SHA-256 of the normalized authenticated email with `lizheng.blog/api/authors/profile`. Missing or failed profiles return `name: null, avatar: null`; authentication and dataset ownership are unchanged.
 
 ### 4.3 `GET /api/sources`
-- Lists import and Connect sources with aggregated counts and `lastEventAt` (using `!= null` check so timestamp `0` is preserved). Revoked Connects remain available as historical sources.
+- Lists import and Connect sources with cached totals and indexed `lastEventAt` boundary reads (timestamp `0` is preserved). Revoked Connects remain available as historical sources. It does not count the entire historical event table on each date change.
 
 ### 4.4 `GET /api/events?start=ISO&end=ISO&source=ID&cursor=STRING`
 - Half-open UTC window `[start, end)`.
 - Validates window width $\le 32$ days.
 - In-window occurrence condition includes point events and zero-length intervals at window start (`occurred_at >= start AND occurred_at < end`), plus non-day interval events overlapping the window (`precision != 'day' AND end_at > occurred_at AND occurred_at < end AND end_at > start`).
 - Paginated with page size 200 using opaque base64url cursor `base64url(occurredAtMs:id)`.
+- The first page also returns `footprintDays` containing compact UTC packages intersecting the window. The frontend decodes and clips their points to the same window; subsequent event pages do not repeat the packages. A UTC date with a compact package excludes legacy Footprint events for that date. Point and overlapping-interval branches use separate indexes.
 
 ### 4.5 `POST /api/imports`
-- Accepts batch of 1 to 100 records for built-in sources (`apple-health`, `footprint`, `pixiu`, `journal`).
+- Accepts batch of 1 to 100 records for `apple-health`, `pixiu`, and `journal`. Old `footprint` submissions return `410 footprint_import_moved`; use the dedicated complete-day API below.
 - Validates that records array contains only valid objects.
 - Precision defaults to `'hour'` only if `undefined`; explicit invalid values return `400 invalid_precision`.
 - Normalized and floored via shared `timestampAtPrecision`.
@@ -222,3 +223,22 @@ Migration `0002_daily_ai.sql` adds `ai_settings` (singleton `default`), `day_sum
 Default inference uses Workers AI Qwen; external providers use the next-ai registry and bounded AI SDK clients. Settings bodies are limited to 16 KiB, model names to 200 characters, URLs to 2,048, and keys to 4,096. External endpoints require HTTPS DNS names; only marked isolated tests can use loopback. HTTP redirects are never followed, model responses are capped at 512 KiB, and output text at 16,000 characters.
 
 Summaries cover all sources in the day. Paged UTC reads feed the shared numeric collector and incremental input hash; narrative samples are bounded across hours and sources. A 90-second D1 lease rejects concurrent generation with 409. The save statement checks lease ownership and expiry atomically; failed or expired generation keeps the last successful summary. A second input hash detects records arriving during generation. See [12 Daily views and AI](12-daily-view.md) for precision and sampling details.
+
+## 7. Data Management and Footprint
+
+These six contracts require the app hostname and Access; browser mutations also check origin. Connect credentials grant no import access, and the ingestion hostname returns 404 for every data route.
+
+| Endpoint | Behavior |
+| --- | --- |
+| `GET /api/data/target` | Returns `{ data: { target } }`; configured `local` / `production`, or `test` for isolated fixtures |
+| `GET /api/data/overview` | Current import-provider counts, occupied UTC dates, payload bytes, latest completed import/channel and content-change time |
+| `POST /api/data/footprint/imports` | `{ fileName, totalDays, totalPoints, channel, target }`; verifies target, returns a five-minute leased session |
+| `PUT /api/data/footprint/imports/:id/batches/:batchId` | `{ days }`; consecutive positive batch IDs, complete UTC days in ascending order, maximum 32 days / 768 KiB serialized body |
+| `POST /api/data/footprint/imports/:id/finish` | `{ status: "complete" \| "cancelled" }`; completion requires all manifest days and points to be committed |
+| `GET /api/data/footprint/days?start=ISO&end=ISO` | Complete packages intersecting a positive UTC window of at most 32 days; callers clip points to the requested window |
+
+Migration `0003_provider_days.sql` adds `provider_days` with key `(source_id, utc_day)`, `provider_state` with transactional totals and revision-checked coverage caching, and one `footprint_imports` lease/latest receipt per provider. Individual canonical day envelopes are limited to 512 KiB. The Worker validates all point fields, ordering and day membership, then recomputes hashes, counts, extents, bytes and hourly summaries.
+
+A batch atomically claims the lease, replaces its included days, maintains totals and removes their legacy Footprint rows. Missing dates remain untouched. Replaying the latest batch returns its receipt without accumulating counts. Unchanged content preserves package `updated_at`; A → B → A restores A. This is a per-batch transaction, so an interrupted full-file import can be resumed by rerunning the same file. The compact codec, CLI, Skill and complete verification contract are in [15 Data Management](15-data-management.md).
+
+GPS AI evidence follows the same local-day UTC window. Hashes ignore import timestamps, virtual point IDs and package contents outside that window, while preserving meaningful GPS fields and segment boundaries.

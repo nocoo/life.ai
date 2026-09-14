@@ -28,6 +28,7 @@
 	},
 	"vars": {
 		"RESOURCE_ENV": "production",
+		"DATA_TARGET": "production",
 		"ACCESS_TEAM_DOMAIN": "nocoo.cloudflareaccess.com",
 		"ACCESS_AUD": "3d1df7c70e4cb094a5bd4a1c2ec7a81aad0d5265e93f8b89424a206859269503",
 		"APP_ORIGIN": "https://life.hexly.ai",
@@ -50,6 +51,7 @@
 			"routes": [],
 			"vars": {
 				"RESOURCE_ENV": "development",
+				"DATA_TARGET": "local",
 				"ACCESS_TEAM_DOMAIN": "nocoo.cloudflareaccess.com",
 				"ACCESS_AUD": "life-local-only",
 				"APP_ORIGIN": "https://life.dev.hexly.ai",
@@ -80,6 +82,7 @@
 			"routes": [],
 			"vars": {
 				"RESOURCE_ENV": "development",
+				"DATA_TARGET": "production",
 				"ACCESS_TEAM_DOMAIN": "nocoo.cloudflareaccess.com",
 				"ACCESS_AUD": "life-local-only",
 				"APP_ORIGIN": "https://life.dev.hexly.ai",

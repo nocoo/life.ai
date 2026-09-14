@@ -1,3 +1,5 @@
+import { footprintDayEvents } from "../models/footprint";
+import { normalizeTimestamp } from "../models/time";
 import type { EventPage, LifeEvent } from "../models/types";
 import { ApiError, apiGet } from "./http";
 
@@ -40,8 +42,17 @@ export async function fetchAllEvents(query: FetchEventsQuery): Promise<LifeEvent
 		}
 		const batch = await fetchEventPage({ ...query, cursor });
 		events.push(...batch.events);
+		if (page === 0 && batch.footprintDays && (!query.source || query.source === "footprint")) {
+			const window = {
+				start: Date.parse(normalizeTimestamp(query.start)),
+				end: Date.parse(normalizeTimestamp(query.end)),
+			};
+			for (const day of batch.footprintDays) events.push(...footprintDayEvents(day, window));
+		}
 		if (!batch.nextCursor) {
-			return events;
+			return events.sort(
+				(a, b) => a.occurredAt.localeCompare(b.occurredAt) || a.id.localeCompare(b.id),
+			);
 		}
 		cursor = batch.nextCursor;
 	}

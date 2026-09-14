@@ -70,6 +70,7 @@ function createMockAiDb(initialRow?: Record<string, unknown>, testMarker = true)
 function createWorkerEnv(db: D1Database, opts: Partial<WorkerEnv> = {}): WorkerEnv {
 	return {
 		RESOURCE_ENV: "test",
+		DATA_TARGET: "local",
 		APP_ORIGIN: "https://life.hexly.ai",
 		INGEST_HOST: "life.worker.hexly.ai",
 		ACCESS_TEAM_DOMAIN: "nocoo.cloudflareaccess.com",

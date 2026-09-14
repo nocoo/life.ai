@@ -1,0 +1,3 @@
+interface:
+  display_name: Life Data Import
+  short_description: Import Life data via CLI

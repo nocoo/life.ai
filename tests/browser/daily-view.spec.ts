@@ -79,8 +79,7 @@ test("daily GPX map, health, workouts and currency totals follow the same select
 }) => {
 	const errors: string[] = [];
 	page.on("pageerror", (error) => errors.push(error.message));
-	await page.goto("/imports");
-	await page.getByRole("radio", { name: /GPS|footprint|足迹/i }).check();
+	await page.goto("/data/footprint");
 	await page.locator('input[type="file"]').setInputFiles({
 		name: "daily-route.gpx",
 		mimeType: "application/gpx+xml",
@@ -88,7 +87,7 @@ test("daily GPX map, health, workouts and currency totals follow the same select
 			'<gpx><trk><trkseg><trkpt lat="31.2304" lon="121.4737"><time>2026-09-15T00:05:00Z</time><name>公园起点</name></trkpt><trkpt lat="31.2350" lon="121.4800"><time>2026-09-15T00:15:00Z</time></trkpt><trkpt lat="31.2400" lon="121.4850"><time>2026-09-15T00:25:00Z</time></trkpt></trkseg></trk></gpx>',
 		),
 	});
-	await page.getByRole("button", { name: "开始导入", exact: true }).click();
+	await page.getByRole("button", { name: "开始上传", exact: true }).click();
 	await expect(page.getByText("导入完成", { exact: true })).toBeVisible();
 	const health = await page.request.post("/api/imports", {
 		data: {
@@ -150,7 +149,11 @@ test("daily GPX map, health, workouts and currency totals follow the same select
 	await expect(map).toBeVisible();
 	await expect(map).toHaveClass(/leaflet-container/);
 	await expect(page.locator(".story-map").getByText(/3 个点/)).toBeVisible();
-	await expect(page.locator('[data-hour="8"]')).toContainText("公园起点");
+	const journey = page.locator('[data-hour="8"] [data-story-kind="journey"]');
+	await journey.getByRole("button", { name: "查看 3 条原始记录", exact: true }).click();
+	await expect(journey.locator(".story-record-list .story-event")).toHaveCount(3);
+	await expect(journey).toContainText("GPS 轨迹点");
+	await journey.getByRole("button", { name: "查看 3 条原始记录", exact: true }).click();
 	await map.getByRole("button", { name: "Zoom in" }).click();
 	await map.focus();
 	await page.keyboard.press("ArrowRight");

@@ -99,6 +99,7 @@ describe("worker/auth", () => {
 		it("allows local dev bypass only for development env on local host", async () => {
 			const env: WorkerEnv = {
 				RESOURCE_ENV: "development",
+				DATA_TARGET: "local",
 				ACCESS_TEAM_DOMAIN: "nocoo.cloudflareaccess.com",
 				ACCESS_AUD: "test-aud",
 				APP_ORIGIN: "https://life.hexly.ai",
@@ -118,6 +119,7 @@ describe("worker/auth", () => {
 		it("never allows local bypass in production even on local host or spoofed host", async () => {
 			const env: WorkerEnv = {
 				RESOURCE_ENV: "production",
+				DATA_TARGET: "production",
 				ACCESS_TEAM_DOMAIN: "nocoo.cloudflareaccess.com",
 				ACCESS_AUD: "test-aud",
 				APP_ORIGIN: "https://life.hexly.ai",
@@ -137,6 +139,7 @@ describe("worker/auth", () => {
 		it("allows isolated test bypass with RESOURCE_ENV=test, loopback and DB test marker verification", async () => {
 			const env: WorkerEnv = {
 				RESOURCE_ENV: "test",
+				DATA_TARGET: "local",
 				ACCESS_TEAM_DOMAIN: "nocoo.cloudflareaccess.com",
 				ACCESS_AUD: "test-aud",
 				APP_ORIGIN: "https://life.hexly.ai",
@@ -156,6 +159,7 @@ describe("worker/auth", () => {
 		it("rejects isolated test bypass if DB marker table fails verification", async () => {
 			const env: WorkerEnv = {
 				RESOURCE_ENV: "test",
+				DATA_TARGET: "local",
 				ACCESS_TEAM_DOMAIN: "nocoo.cloudflareaccess.com",
 				ACCESS_AUD: "test-aud",
 				APP_ORIGIN: "https://life.hexly.ai",
@@ -187,6 +191,7 @@ describe("worker/auth", () => {
 
 			const env: WorkerEnv = {
 				RESOURCE_ENV: "test",
+				DATA_TARGET: "local",
 				ACCESS_TEAM_DOMAIN: teamDomain,
 				ACCESS_AUD: aud,
 				APP_ORIGIN: "https://life.hexly.ai",
@@ -274,6 +279,7 @@ describe("worker/auth", () => {
 			try {
 				const env: WorkerEnv = {
 					RESOURCE_ENV: "production",
+					DATA_TARGET: "production",
 					ACCESS_TEAM_DOMAIN: teamDomain,
 					ACCESS_AUD: aud,
 					APP_ORIGIN: "https://life.hexly.ai",
@@ -316,6 +322,7 @@ describe("worker/auth", () => {
 		it("throws 500 when access team domain or aud is missing for JWT check", async () => {
 			const env: WorkerEnv = {
 				RESOURCE_ENV: "production",
+				DATA_TARGET: "production",
 				ACCESS_TEAM_DOMAIN: "",
 				ACCESS_AUD: "",
 				APP_ORIGIN: "https://life.hexly.ai",

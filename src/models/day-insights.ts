@@ -183,6 +183,7 @@ export function createDayInsightsCollector(window: Window, retainTrackPoints = f
 		}
 		const instant = Date.parse(occurredAt);
 		if (instant < start || instant >= end) return;
+		const speed = numeric(data.speed);
 		const point: TrackPoint = {
 			latitude,
 			longitude,
@@ -200,20 +201,14 @@ export function createDayInsightsCollector(window: Window, retainTrackPoints = f
 								: "hour"
 					: event.precision,
 			elevation: numeric(data.elevation ?? data.ele),
-			speed: numeric(data.speed),
+			speed: speed !== null && speed >= 0 ? speed : null,
 		};
 		const previous = lastPoints.get(event.sourceId);
-		if (
-			previous &&
-			previous.point.occurredAt === occurredAt &&
-			previous.point.latitude === latitude &&
-			previous.point.longitude === longitude
-		)
-			return;
 		const gap = previous ? instant - Date.parse(previous.point.occurredAt) : Infinity;
 		// GPX gaps are separate paths: never invent travel through unrecorded periods or across the date line.
 		const connected =
 			previous &&
+			data.breakBefore !== true &&
 			point.precision !== "day" &&
 			previous.point.precision !== "day" &&
 			gap > 0 &&

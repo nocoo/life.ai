@@ -14,7 +14,18 @@
 
 高频健康和 GPS 样本按小时与来源归组，原始记录可展开；跨小时事件用持续标记连接。全天足迹地图放在第一段行迹旁，每段行迹也可单独打开地图。一日累计与 AI 总结在时间线末尾：点击「生成摘要」可以保存当天的总结，数据变化后会提示重新生成。默认使用 Workers AI，也可以在「AI 设置」配置其他模型。侧栏使用 lizheng.blog 的姓名与头像服务。
 
-在「导入」选择 Apple Health `导出.xml`、GPS `.gpx`、貔貅 `.csv`，或日记 `.json` / `.ndjson`。XML、GPX、CSV、NDJSON 按块读取；普通 JSON 上限 10 MiB。导入可取消，重新导入同一数据不会增加副本。已完成的批次会保留。
+「数据管理 → 数据概览」统一显示各来源的覆盖天数、记录数、数据行和正文大小。「Footprint」独立页面导入 GPS `.gpx`，后台解析完整文件后，以一个 UTC 日一行紧凑 JSON 保存全部点。同一天由新文件整日替换，未出现的日期保留；重导相同内容不会增加副本，也不会改变内容时间戳。覆盖日历可以跳转到每日地图。
+
+Apple Health `导出.xml`、貔貅 `.csv` 和日记 `.json` / `.ndjson` 保留「导入」入口。XML、GPX、CSV、NDJSON 按块读取；普通 JSON 上限 10 MiB。导入可取消，已完成的批次会保留。
+
+本机也可以用共享 CLI 或 `life-data-import` Skill 导入 Footprint：
+
+```sh
+bun run data:import --provider footprint --file /path/to/track.gpx --dry-run --json
+bun run data:import --provider footprint --file /path/to/track.gpx --target production --json
+```
+
+生产主域名使用 `cloudflared` 获取当前用户的 Access 凭据。已运行 `dev:prod` 时，可追加 `--base-url http://127.0.0.1:7011`；目标仍必须是 `production`，CLI 会核对实际绑定。
 
 在「Connect」为数据来源命名并创建只写 token。明文只显示一次，保存在自己的推送端。同一个 token 在同一 UTC 小时的后续请求会替换该小时的标题、内容和数据，也支持未来的小时。撤销 token 不会删除历史记录。
 
@@ -49,4 +60,4 @@ bun run deploy       # 构建、dry run、迁移检查/执行、Worker 部署
 
 首次运行浏览器测试前执行 `bunx playwright install chromium`。测试每轮生成独立状态目录、缓存和签名密钥，运行及清理都校验 `_test_marker(env=test)`，不连接远程测试资源。
 
-详见 [文档索引](docs/README.md)、[项目规则](CLAUDE.md)、[重构与上线记录](docs/08-chronicle-rewrite.md)、[每日视图与 AI](docs/12-daily-view.md)、[时间线设计](docs/13-story-timeline.md)。
+详见 [文档索引](docs/README.md)、[项目规则](CLAUDE.md)、[重构与上线记录](docs/08-chronicle-rewrite.md)、[每日视图与 AI](docs/12-daily-view.md)、[时间线设计](docs/13-story-timeline.md)、[数据管理与 Footprint](docs/15-data-management.md)。

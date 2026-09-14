@@ -70,6 +70,7 @@ function createTestDb() {
 describe("worker/index router & host isolation", () => {
 	const defaultEnv: WorkerEnv = {
 		RESOURCE_ENV: "production",
+		DATA_TARGET: "production",
 		APP_ORIGIN: "https://life.hexly.ai",
 		INGEST_HOST: "life.worker.hexly.ai",
 		ACCESS_TEAM_DOMAIN: "nocoo.cloudflareaccess.com",
@@ -89,6 +90,7 @@ describe("worker/index router & host isolation", () => {
 		const env = {
 			...defaultEnv,
 			RESOURCE_ENV: "development",
+			DATA_TARGET: "local",
 			AI: { run: async () => ({ response: "收到" }) } as unknown as Ai,
 		};
 		const origin = "http://localhost";
@@ -115,6 +117,7 @@ describe("worker/index router & host isolation", () => {
 			const devEnv: WorkerEnv = {
 				...defaultEnv,
 				RESOURCE_ENV: "development",
+				DATA_TARGET: "local",
 			};
 			const url = new URL("https://unrecognized.external.com/api/live");
 			expect(() => validateHostAndRoute(url, "GET", devEnv)).toThrow(
@@ -259,6 +262,7 @@ describe("worker/index router & host isolation", () => {
 			const devEnv: WorkerEnv = {
 				...defaultEnv,
 				RESOURCE_ENV: "development",
+				DATA_TARGET: "local",
 			};
 			const reqGet = new Request("https://life.dev.hexly.ai/api/session");
 			const resGet = await handleRequest(reqGet, devEnv);
@@ -273,6 +277,7 @@ describe("worker/index router & host isolation", () => {
 			const devEnv: WorkerEnv = {
 				...defaultEnv,
 				RESOURCE_ENV: "development",
+				DATA_TARGET: "local",
 			};
 			const reqGet = new Request("https://life.dev.hexly.ai/api/sources");
 			const resGet = await handleRequest(reqGet, devEnv);
@@ -287,6 +292,7 @@ describe("worker/index router & host isolation", () => {
 			const devEnv: WorkerEnv = {
 				...defaultEnv,
 				RESOURCE_ENV: "development",
+				DATA_TARGET: "local",
 			};
 			const reqGet = new Request(
 				"https://life.dev.hexly.ai/api/events?start=2026-09-13T00:00:00Z&end=2026-09-13T23:59:59Z",
@@ -303,6 +309,7 @@ describe("worker/index router & host isolation", () => {
 			const devEnv: WorkerEnv = {
 				...defaultEnv,
 				RESOURCE_ENV: "development",
+				DATA_TARGET: "local",
 			};
 			const reqPost = new Request("https://life.dev.hexly.ai/api/imports", {
 				method: "POST",
@@ -324,6 +331,7 @@ describe("worker/index router & host isolation", () => {
 			const devEnv: WorkerEnv = {
 				...defaultEnv,
 				RESOURCE_ENV: "development",
+				DATA_TARGET: "local",
 			};
 			const reqGet = new Request("https://life.dev.hexly.ai/api/connects");
 			const resGet = await handleRequest(reqGet, devEnv);
@@ -346,6 +354,7 @@ describe("worker/index router & host isolation", () => {
 			const devEnv: WorkerEnv = {
 				...defaultEnv,
 				RESOURCE_ENV: "development",
+				DATA_TARGET: "local",
 			};
 
 			const reqGet = new Request("https://life.dev.hexly.ai/api/connects/conn-123", {
@@ -371,6 +380,7 @@ describe("worker/index router & host isolation", () => {
 			const devEnv: WorkerEnv = {
 				...defaultEnv,
 				RESOURCE_ENV: "development",
+				DATA_TARGET: "local",
 				ASSETS: {
 					async fetch() {
 						return new Response("<html>SPA HTML</html>", {
@@ -393,6 +403,7 @@ describe("worker/index router & host isolation", () => {
 			const devEnv: WorkerEnv = {
 				...defaultEnv,
 				RESOURCE_ENV: "development",
+				DATA_TARGET: "local",
 				ASSETS: {
 					async fetch() {
 						assetCalled = true;

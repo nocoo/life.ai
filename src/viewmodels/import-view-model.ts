@@ -43,7 +43,6 @@ export const IMPORT_SOURCE_MAP: Record<ImportSourceId, ImportSourceMeta> = {
 
 export const IMPORT_SOURCES: ImportSourceMeta[] = [
 	IMPORT_SOURCE_MAP["apple-health"],
-	IMPORT_SOURCE_MAP.footprint,
 	IMPORT_SOURCE_MAP.pixiu,
 	IMPORT_SOURCE_MAP.journal,
 ];

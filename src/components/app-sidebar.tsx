@@ -28,7 +28,7 @@ import { useLocation, useNavigate } from "react-router";
 import { sessionInitials } from "../viewmodels/session-view-model";
 import { APP_VERSION } from "./app-version";
 import { APP_NAME, BRAND_MARK_SRC } from "./brand";
-import { NAV_ITEMS } from "./navigation";
+import { NAV_GROUPS } from "./navigation";
 
 export interface AppSidebarProps {
 	collapsed: boolean;
@@ -121,23 +121,25 @@ export function AppSidebar({
 						</TooltipContent>
 					</Tooltip>
 					<SidebarNav className="w-full items-center gap-1 pt-1">
-						{NAV_ITEMS.map((item) => (
-							<Tooltip key={item.href} delayDuration={0}>
-								<TooltipTrigger asChild>
-									<SidebarIconItem
-										active={location.pathname === item.href}
-										aria-label={item.label}
-										className="self-center"
-										onClick={() => navigate(item.href)}
-									>
-										<item.icon className="h-4 w-4" strokeWidth={1.5} />
-									</SidebarIconItem>
-								</TooltipTrigger>
-								<TooltipContent side="right" sideOffset={8}>
-									{item.label}
-								</TooltipContent>
-							</Tooltip>
-						))}
+						{NAV_GROUPS.flatMap((group) =>
+							group.items.map((item) => (
+								<Tooltip key={item.href} delayDuration={0}>
+									<TooltipTrigger asChild>
+										<SidebarIconItem
+											active={location.pathname === item.href}
+											aria-label={item.label}
+											className="self-center"
+											onClick={() => navigate(item.href)}
+										>
+											<item.icon className="h-4 w-4" strokeWidth={1.5} />
+										</SidebarIconItem>
+									</TooltipTrigger>
+									<TooltipContent side="right" sideOffset={8}>
+										{item.label}
+									</TooltipContent>
+								</Tooltip>
+							)),
+						)}
 					</SidebarNav>
 					<SidebarFooter className="flex w-full justify-center px-0">
 						<Tooltip delayDuration={0}>
@@ -185,19 +187,27 @@ export function AppSidebar({
 						<SidebarSearch onClick={() => setSearchOpen(true)}>搜索</SidebarSearch>
 					</div>
 					<SidebarNav className="pt-1">
-						<SidebarPartition>编年史</SidebarPartition>
-						<div className="flex flex-col gap-0.5 px-3">
-							{NAV_ITEMS.map((item) => (
-								<SidebarItem
-									key={item.href}
-									active={location.pathname === item.href}
-									onClick={() => navigate(item.href)}
-								>
-									<item.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
-									<span className="flex-1 truncate text-left">{item.label}</span>
-								</SidebarItem>
-							))}
-						</div>
+						{NAV_GROUPS.map((group) => (
+							<div key={group.id}>
+								<SidebarPartition>{group.label}</SidebarPartition>
+								<div className="flex flex-col gap-0.5 px-3">
+									{group.items.map((item) => (
+										<SidebarItem
+											key={item.href}
+											active={location.pathname === item.href}
+											onClick={() => navigate(item.href)}
+										>
+											<item.icon
+												className="h-4 w-4 shrink-0"
+												strokeWidth={1.5}
+												aria-hidden="true"
+											/>
+											<span className="flex-1 truncate text-left">{item.label}</span>
+										</SidebarItem>
+									))}
+								</div>
+							</div>
+						))}
 					</SidebarNav>
 					<SidebarFooter>
 						<SidebarUser name={userName} email={userEmail} avatar={avatar} />
@@ -209,14 +219,20 @@ export function AppSidebar({
 				<CommandInput placeholder="搜索页面…" />
 				<CommandList>
 					<CommandEmpty>没有匹配的页面</CommandEmpty>
-					<CommandGroup heading="编年史">
-						{NAV_ITEMS.map((item) => (
-							<CommandItem key={item.href} value={item.label} onSelect={() => navigate(item.href)}>
-								<item.icon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
-								<span>{item.label}</span>
-							</CommandItem>
-						))}
-					</CommandGroup>
+					{NAV_GROUPS.map((group) => (
+						<CommandGroup key={group.id} heading={group.label}>
+							{group.items.map((item) => (
+								<CommandItem
+									key={item.href}
+									value={`${group.label} ${item.label}`}
+									onSelect={() => navigate(item.href)}
+								>
+									<item.icon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+									<span>{item.label}</span>
+								</CommandItem>
+							))}
+						</CommandGroup>
+					))}
 				</CommandList>
 			</CommandPalette>
 		</Sidebar>

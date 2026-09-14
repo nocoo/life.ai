@@ -7,6 +7,7 @@ A single person's life chronicle. Import records or receive hourly snapshots fro
 - Product, API contract, ownership and implementation status: [docs/08-chronicle-rewrite.md](docs/08-chronicle-rewrite.md).
 - Daily GPS/health/finance views, lizheng.blog profile and AI summaries: [docs/12-daily-view.md](docs/12-daily-view.md).
 - Current daily reading design and release: [docs/13-story-timeline.md](docs/13-story-timeline.md).
+- Data Management, compact Footprint storage, CLI/Skill and 1.3.0 verification: [docs/15-data-management.md](docs/15-data-management.md).
 - Version: root `package.json`; show the same version in the sidebar and `/api/live`.
 - UI contract: installed `@nocoo/basalt/ai/RECIPES.md` and `../basalt/INTEGRATION.md`. Use the published package, its providers, application chrome and tokens.
 - Quality: 6DQ from nmem `af0daa0f-0a10-4b0b-b328-f2dc32137bdc` and September revision `crystal_0c9c31f7de97`.
@@ -18,11 +19,15 @@ A single person's life chronicle. Import records or receive hourly snapshots fro
 - No Next.js, Google OAuth, local SQLite production server, or compatibility API in the new runtime.
 - Persist and compare UTC instants. An absent offset means UTC, never server/browser local time. Convert only at presentation boundaries.
 - Preserve day/hour/minute/second precision. Date-only records have no invented displayed clock time.
+- Footprint stores one complete compact JSON package per UTC day. Later imports replace included days completely; absent days remain. Parse the entire input before uploading, preserve all six GPS values and native segments, and compare current hashes for idempotence, including A → B → A. Maps and AI clip decoded points to the requested local-day UTC window.
+- Web and CLI share the Footprint model/client. The Skill calls `bun run data:import`; an explicit `--target` must match `/api/data/target` before writes. `dev:prod` is always `production`, regardless of its local/Caddy hostname.
+- Footprint uses `/data/footprint` and its dedicated Access-protected API; old `/api/imports` Footprint writes return 410. Cumulative provider statistics belong to `/data`. Keep raw exports, coordinates, tokens and private backups out of Git.
 - Connect is write-only: a random token, SHA-256 digest at rest, plaintext shown once, revocable. It can only upsert its own UTC hour. Later writes replace that hour; future hours are valid.
 - `life.worker.hexly.ai` exposes only ingestion and `/api/live`; never serve the dashboard, records, imports or token management there.
 - Production verifies the Access JWT signature, issuer, audience and expiry. Never trust the presence of an Access header or asserted email alone.
 - MVVM: Views render and dispatch; ViewModels contain async state and transformations without View/DOM imports; services own HTTP; models own validation, UTC and import logic.
 - The daily timeline is the primary reading structure: 24 local hour ticks, body/spatial evidence on the left and narrative events on the right; mobile merges branches in time order. Do not put overview/map/AI cards ahead of it. High-frequency records keep an expandable raw record list; interval bodies appear once with continuation links. Daily totals and AI belong at the end.
+- The daily view fills the content island. On wide screens, each hour's branches form responsive columns on both sides of the trunk; use available container width so sidebar collapse also frees space. Keep mobile reading order intact.
 - AI summaries are generated manually from all records in the validated local-day UTC window. Keep the last successful summary on failure; show stale data when its input hash changes. Source filtering only changes the timeline/map/measured totals.
 - Default AI uses the Workers AI binding. External keys are AES-GCM encrypted with `AI_SETTINGS_KEY`; keep that secret separate from D1 and never replace it without re-encrypting stored keys. External HTTP uses manual redirects and bounded reads.
 - Session profile uses the authenticated email's SHA-256 with lizheng.blog. Missing/failed profiles fall back to session identity and initials, without changing Access authentication.

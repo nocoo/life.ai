@@ -11,6 +11,7 @@ vi.mock("../../../../src/services/imports-service", () => ({
 import { importFile } from "../../../../src/models/import";
 import { postImportBatch } from "../../../../src/services/imports-service";
 import {
+	IMPORT_SOURCES,
 	importProgressPercent,
 	importSourceMeta,
 	importStore,
@@ -158,6 +159,7 @@ describe("import helpers", () => {
 		expect(importSourceMeta("apple-health").id).toBe("apple-health");
 		expect(importSourceMeta("footprint").hint).toContain("GPX");
 		expect(importSourceMeta("journal").accept).toContain(".ndjson");
+		expect(IMPORT_SOURCES.map((item) => item.id)).toEqual(["apple-health", "pixiu", "journal"]);
 		expect(importProgressPercent(null)).toBeUndefined();
 		expect(
 			importProgressPercent({ bytesRead: 0, totalBytes: 0, processed: 0, accepted: 0 }),

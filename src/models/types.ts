@@ -1,3 +1,5 @@
+import type { FootprintDay } from "./footprint";
+
 export type Precision = "day" | "hour" | "minute" | "second";
 export type ImportSourceId = "apple-health" | "footprint" | "pixiu" | "journal";
 export type SourceKind = "import" | "connect";
@@ -63,6 +65,7 @@ export interface Session {
 export interface EventPage {
 	events: LifeEvent[];
 	nextCursor: string | null;
+	footprintDays?: (FootprintDay & { updatedAt: number })[];
 }
 
 export interface CreatedConnect {

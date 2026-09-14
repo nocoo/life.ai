@@ -1,11 +1,9 @@
 import type {
 	Connect,
 	CreatedConnect,
-	EventPage,
 	ImportRecord,
 	ImportSourceId,
 	IngestReceipt,
-	LifeEvent,
 	Precision,
 	Session,
 	Source,
@@ -15,15 +13,7 @@ import { authenticateConnect, generateConnectToken, sha256 } from "./auth.js";
 import { type FetchLike, fetchAuthorProfile } from "./author-profile.js";
 import { floorToUtcHour, normalizeTimestamp, timestampAtPrecision } from "./time.js";
 import { ApiError, type WorkerEnv } from "./types.js";
-import {
-	decodeCursor,
-	encodeCursor,
-	jsonResponse,
-	LIMITS,
-	readJsonBody,
-	validateDataField,
-	validateString,
-} from "./utils.js";
+import { jsonResponse, LIMITS, readJsonBody, validateDataField, validateString } from "./utils.js";
 
 const VALID_IMPORT_SOURCES: ImportSourceId[] = ["apple-health", "footprint", "pixiu", "journal"];
 const VALID_PRECISIONS: Precision[] = ["day", "hour", "minute", "second"];
@@ -66,16 +56,12 @@ export async function handleGetSession(
  */
 export async function handleGetSources(env: WorkerEnv): Promise<Response> {
 	const query = `
-		SELECT
-			s.id,
-			s.name,
-			s.kind,
-			s.provider,
-			COUNT(e.id) as record_count,
-			MAX(e.occurred_at) as last_event_at
-		FROM sources s
-		LEFT JOIN life_events e ON s.id = e.source_id
-		GROUP BY s.id
+		SELECT s.id, s.name, s.kind, s.provider, COALESCE(p.record_count, 0) AS record_count,
+		CASE WHEN e.occurred_at IS NULL THEN d.last_at WHEN d.last_at IS NULL THEN e.occurred_at
+			ELSE MAX(e.occurred_at, d.last_at) END AS last_event_at
+		FROM sources s LEFT JOIN provider_state p ON p.source_id = s.id
+		LEFT JOIN life_events e ON e.id = (SELECT id FROM life_events WHERE source_id = s.id ORDER BY occurred_at DESC, id DESC LIMIT 1)
+		LEFT JOIN provider_days d ON d.source_id = s.id AND d.utc_day = (SELECT utc_day FROM provider_days WHERE source_id = s.id ORDER BY utc_day DESC LIMIT 1)
 		ORDER BY s.created_at ASC
 	`;
 
@@ -100,142 +86,7 @@ export async function handleGetSources(env: WorkerEnv): Promise<Response> {
 	return jsonResponse({ data: sources });
 }
 
-/**
- * GET /api/events?start=ISO&end=ISO&source=ID&cursor=...
- * Half-open UTC window [start, end).
- * Max window: 32 days.
- * Page size: 200.
- *
- * Occurrence in window condition:
- * - Any event whose occurred_at is in [start, end) is included (covers point events AND zero-length intervals at range start).
- * - Interval events with non-day precision overlapping [start, end): (precision != 'day' AND end_at > occurred_at AND occurred_at < end AND end_at > start).
- * - Day records anchor to UTC midnight and should not span into other days via end_at.
- */
-export async function handleGetEvents(env: WorkerEnv, url: URL): Promise<Response> {
-	const startParam = url.searchParams.get("start");
-	const endParam = url.searchParams.get("end");
-	const sourceParam = url.searchParams.get("source");
-	const cursorParam = url.searchParams.get("cursor");
-
-	if (!startParam || !endParam) {
-		throw new ApiError(400, "missing_parameter", "start and end query parameters are required");
-	}
-
-	let startMs: number;
-	let endMs: number;
-	try {
-		startMs = new Date(normalizeTimestamp(startParam)).getTime();
-		endMs = new Date(normalizeTimestamp(endParam)).getTime();
-	} catch (e: unknown) {
-		const msg = e instanceof Error ? e.message : "Invalid timestamp";
-		throw new ApiError(400, "invalid_timestamp", msg);
-	}
-
-	if (startMs >= endMs) {
-		throw new ApiError(400, "invalid_range", "start must be strictly before end");
-	}
-
-	const maxWindowMs = LIMITS.maxWindowDays * 24 * 60 * 60 * 1000;
-	if (endMs - startMs > maxWindowMs) {
-		throw new ApiError(
-			400,
-			"range_too_large",
-			`Time window cannot exceed ${LIMITS.maxWindowDays} days`,
-		);
-	}
-
-	let cursorData: { occurredAtMs: number; id: string } | null = null;
-	if (cursorParam) {
-		cursorData = decodeCursor(cursorParam);
-	}
-
-	const limit = LIMITS.pageSize;
-	const fetchLimit = limit + 1;
-
-	let sql = `
-		SELECT
-			e.id,
-			e.source_id,
-			s.name as source_name,
-			s.kind as source_kind,
-			e.occurred_at,
-			e.end_at,
-			e.precision,
-			e.title,
-			e.content,
-			e.data,
-			e.updated_at
-		FROM life_events e
-		JOIN sources s ON e.source_id = s.id
-		WHERE (
-			(e.occurred_at >= ? AND e.occurred_at < ?)
-			OR (e.precision != 'day' AND e.end_at IS NOT NULL AND e.end_at > e.occurred_at AND e.occurred_at < ? AND e.end_at > ?)
-		)
-	`;
-
-	const bindings: (string | number)[] = [startMs, endMs, endMs, startMs];
-
-	if (sourceParam) {
-		sql += " AND e.source_id = ?";
-		bindings.push(sourceParam);
-	}
-
-	if (cursorData) {
-		sql += " AND (e.occurred_at > ? OR (e.occurred_at = ? AND e.id > ?))";
-		bindings.push(cursorData.occurredAtMs, cursorData.occurredAtMs, cursorData.id);
-	}
-
-	sql += " ORDER BY e.occurred_at ASC, e.id ASC LIMIT ?";
-	bindings.push(fetchLimit);
-
-	const stmt = env.DB.prepare(sql).bind(...bindings);
-	const rows = await stmt.all<{
-		id: string;
-		source_id: string;
-		source_name: string;
-		source_kind: SourceKind;
-		occurred_at: number;
-		end_at: number | null;
-		precision: Precision;
-		title: string;
-		content: string;
-		data: string;
-		updated_at: number;
-	}>();
-
-	const resultRows = rows.results || [];
-	const hasMore = resultRows.length > limit;
-	const itemsToReturn = hasMore ? resultRows.slice(0, limit) : resultRows;
-
-	let nextCursor: string | null = null;
-	if (hasMore) {
-		const lastItem = itemsToReturn[itemsToReturn.length - 1];
-		if (lastItem) {
-			nextCursor = encodeCursor(lastItem.occurred_at, lastItem.id);
-		}
-	}
-
-	const events: LifeEvent[] = itemsToReturn.map((row) => ({
-		id: row.id,
-		sourceId: row.source_id,
-		sourceName: row.source_name,
-		sourceKind: row.source_kind,
-		occurredAt: new Date(row.occurred_at).toISOString(),
-		endAt: row.end_at != null ? new Date(row.end_at).toISOString() : null,
-		precision: row.precision,
-		title: row.title,
-		content: row.content,
-		data: JSON.parse(row.data),
-		updatedAt: new Date(row.updated_at).toISOString(),
-	}));
-
-	const page: EventPage = {
-		events,
-		nextCursor,
-	};
-
-	return jsonResponse({ data: page });
-}
+export { handleGetEvents } from "./events.js";
 
 /**
  * Ensure an import source exists in `sources` table.
@@ -297,6 +148,13 @@ export async function handlePostImports(request: Request, env: WorkerEnv): Promi
 	}
 
 	const source = typedBody.source as ImportSourceId;
+	if (source === "footprint") {
+		throw new ApiError(
+			410,
+			"footprint_import_moved",
+			"Use Data Management → Footprint to replace complete UTC days",
+		);
+	}
 	if (!VALID_IMPORT_SOURCES.includes(source)) {
 		throw new ApiError(400, "invalid_source", `Unsupported source: ${typedBody.source}`);
 	}
@@ -447,6 +305,11 @@ export async function handlePostImports(request: Request, env: WorkerEnv): Promi
 		statements.push(stmt);
 	}
 
+	statements.push(
+		env.DB.prepare(
+			"UPDATE provider_state SET last_imported_at = ?, last_import_channel = 'web' WHERE source_id = ?",
+		).bind(now, source),
+	);
 	await env.DB.batch(statements);
 
 	return jsonResponse({ data: { accepted: validatedRecords.length } });
