@@ -41,7 +41,7 @@ bun run data:import --provider pixiu --file /path/to/貔貅记账 --target produ
 
 ## 本地开发
 
-需要 Bun 1.4 与 Node.js 22.20+。
+需要 Bun 1.4 与 Node.js 22.20.x、24.x 或 26+；Node 23 / 25 不在 Vitest 5 的支持范围内。
 
 ```sh
 bun install --frozen-lockfile
