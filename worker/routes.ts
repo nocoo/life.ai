@@ -11,6 +11,7 @@ import type {
 } from "../src/models/types.js";
 import { authenticateConnect, generateConnectToken, sha256 } from "./auth.js";
 import { type FetchLike, fetchAuthorProfile } from "./author-profile.js";
+import { withD1Retry } from "./database.js";
 import { floorToUtcHour, normalizeTimestamp, timestampAtPrecision } from "./time.js";
 import { ApiError, type WorkerEnv } from "./types.js";
 import { jsonResponse, LIMITS, readJsonBody, validateDataField, validateString } from "./utils.js";
@@ -65,14 +66,16 @@ export async function handleGetSources(env: WorkerEnv): Promise<Response> {
 		ORDER BY s.created_at ASC
 	`;
 
-	const results = await env.DB.prepare(query).all<{
-		id: string;
-		name: string;
-		kind: SourceKind;
-		provider: string;
-		record_count: number;
-		last_event_at: number | null;
-	}>();
+	const results = await withD1Retry(() =>
+		env.DB.prepare(query).all<{
+			id: string;
+			name: string;
+			kind: SourceKind;
+			provider: string;
+			record_count: number;
+			last_event_at: number | null;
+		}>(),
+	);
 
 	const sources: Source[] = (results.results || []).map((row) => ({
 		id: row.id,

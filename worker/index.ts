@@ -2,6 +2,7 @@ import pkg from "../package.json" with { type: "json" };
 import { handleGetAiSettings, handlePostAiTest, handlePutAiSettings } from "./ai.js";
 import { authenticateAccess, isLocalHost } from "./auth.js";
 import { handleDataRequest } from "./data-routes.js";
+import { handleDaySourceSettings, handleGetDaySources } from "./day-sources.js";
 import { handleGetDaySummary, handlePostDaySummary } from "./day-summary.js";
 import { handleGetGeneralSettings, handlePutGeneralSettings } from "./general-settings.js";
 import { handleContextRequest } from "./public-context.js";
@@ -189,6 +190,17 @@ export async function handleRequest(request: Request, env: WorkerEnv): Promise<R
 			);
 		}
 
+		if (
+			url.pathname === "/api/settings/sources" ||
+			url.pathname.startsWith("/api/settings/sources/")
+		) {
+			return await handleDaySourceSettings(request, env, url);
+		}
+		if (url.pathname === "/api/day-sources") {
+			if (method !== "GET") throw new ApiError(405, "method_not_allowed", "Method not allowed");
+			return await handleGetDaySources(request, env, url);
+		}
+
 		if (url.pathname === "/api/settings/ai") {
 			if (method === "GET") return await handleGetAiSettings(env);
 			if (method === "PUT") return await handlePutAiSettings(request, env);
@@ -264,6 +276,24 @@ export async function handleRequest(request: Request, env: WorkerEnv): Promise<R
 		// Cloudflare Access dashboard auth gates static assets as well.
 		return await env.ASSETS.fetch(request);
 	} catch (err: unknown) {
+		if (!(err instanceof ApiError)) {
+			// Error messages can contain upstream payloads; log only the route and call sites.
+			console.error(
+				JSON.stringify({
+					event: "request_error",
+					method: request.method,
+					path: new URL(request.url).pathname,
+					name: err instanceof Error ? err.name : typeof err,
+					frames:
+						err instanceof Error
+							? err.stack
+									?.split("\n")
+									.filter((line) => /^\s+at /.test(line))
+									.slice(0, 8)
+							: undefined,
+				}),
+			);
+		}
 		return errorResponse(err);
 	}
 }

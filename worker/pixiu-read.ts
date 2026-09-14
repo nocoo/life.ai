@@ -1,4 +1,5 @@
 import { PIXIU_DAY_MS, PIXIU_OFFSET_MS, type PixiuDay } from "../src/models/pixiu.js";
+import { withD1Retry } from "./database.js";
 
 /** Index scan by technical date key; only the display day containing the +8 period start owns its total. */
 export async function readPixiuDays(
@@ -8,21 +9,23 @@ export async function readPixiuDays(
 ): Promise<PixiuDay[]> {
 	const firstKey = Math.ceil((start + PIXIU_OFFSET_MS) / PIXIU_DAY_MS) * PIXIU_DAY_MS;
 	const endKey = Math.ceil((end + PIXIU_OFFSET_MS) / PIXIU_DAY_MS) * PIXIU_DAY_MS;
-	const result = await db
-		.prepare(
-			"SELECT * FROM provider_days WHERE source_id = 'pixiu' AND utc_day >= ? AND utc_day < ? ORDER BY utc_day",
-		)
-		.bind(firstKey, endKey)
-		.all<{
-			utc_day: number;
-			record_count: number;
-			first_at: number;
-			last_at: number;
-			payload_bytes: number;
-			content_hash: string;
-			summary_json: string;
-			data_json: string;
-		}>();
+	const result = await withD1Retry(() =>
+		db
+			.prepare(
+				"SELECT * FROM provider_days WHERE source_id = 'pixiu' AND utc_day >= ? AND utc_day < ? ORDER BY utc_day",
+			)
+			.bind(firstKey, endKey)
+			.all<{
+				utc_day: number;
+				record_count: number;
+				first_at: number;
+				last_at: number;
+				payload_bytes: number;
+				content_hash: string;
+				summary_json: string;
+				data_json: string;
+			}>(),
+	);
 	return result.results.map((row) => ({
 		utcDay: row.utc_day,
 		recordCount: row.record_count,

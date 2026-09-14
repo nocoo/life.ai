@@ -14,6 +14,7 @@ import { CodeBlock } from "@nocoo/basalt/components/code";
 import { PageHeader } from "@nocoo/basalt/components/page-header";
 import { useEffect, useState } from "react";
 import { useStore } from "zustand";
+import { ConnectListSkeleton } from "../components/page-skeletons";
 import type { Connect } from "../models/types";
 import { CONNECT_NAME_MAX, connectStore, INGEST_URL } from "../viewmodels/connect-view-model";
 import { formatAbsoluteTime } from "../viewmodels/format";
@@ -176,8 +177,8 @@ export function ConnectPage() {
 					</Text>
 				</LayerCard.Header>
 				<LayerCard.Body className="space-y-3">
-					{status === "loading" && connects.length === 0 ? (
-						<LayerCard.Loading label="正在加载令牌" />
+					{(status === "idle" || status === "loading") && connects.length === 0 ? (
+						<ConnectListSkeleton />
 					) : null}
 					{status === "ready" && connects.length === 0 ? (
 						<LayerCard.Empty

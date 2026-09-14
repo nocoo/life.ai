@@ -17,6 +17,11 @@ import type {
 	FootprintImportSession,
 } from "../../src/models/data-management";
 import type { DayContextQuery, DaySun, DayWeather } from "../../src/models/day-context";
+import type {
+	DaySourceConnection,
+	DaySourceSettings,
+	DaySourcesResult,
+} from "../../src/models/day-sources";
 import { validateFootprintDay } from "../../src/models/footprint";
 import type { GeneralSettings } from "../../src/models/general-settings";
 import type { HealthImportReceipt } from "../../src/models/health-types";
@@ -1486,6 +1491,88 @@ await scenario(
 			"SELECT COUNT(*) AS count FROM general_settings;",
 		)) as { results: { count: number }[] }[];
 		assert.equal(finalRows[0]?.results[0]?.count, 0);
+	},
+);
+
+await scenario(
+	"Gecko/Firefly settings and daily reads authenticate, aggregate, cache and erase connections",
+	async () => {
+		const root = "/api/settings/sources";
+		const query = {
+			date: "2026-09-10",
+			timeZone: "Asia/Shanghai",
+			start: "2026-09-09T16:00:00.000Z",
+			end: "2026-09-10T16:00:00.000Z",
+		};
+		const path = `/api/day-sources?${new URLSearchParams(query)}`;
+		for (const [endpoint, method] of [
+			[root, "GET"],
+			[`${root}/gecko`, "PUT"],
+			[`${root}/firefly`, "DELETE"],
+			[`${root}/gecko/test`, "POST"],
+			[path, "GET"],
+		]) {
+			await rejected(await request(endpoint as string, { method, token: null }), 401);
+			await rejected(
+				await request(endpoint as string, { method, host: "life.worker.hexly.ai" }),
+				404,
+			);
+		}
+		await rejected(
+			await request(`${root}/firefly`, {
+				method: "PUT",
+				origin: "https://foreign.test",
+				body: { enabled: true },
+			}),
+			403,
+		);
+		await rejected(await request(`${root}/gecko`, { method: "PUT", body: { enabled: true } }), 400);
+		await rejected(await request(`${root}/gecko/test`), 405);
+		await rejected(await request(`${root}/firefly/test`, { method: "POST", body: query }), 400);
+		await rejected(await request("/api/day-sources?date=invalid"), 400);
+		const fixtureKey = `gk_${"a".repeat(64)}`;
+		const saved = await data<DaySourceSettings[]>(
+			await request(`${root}/gecko`, {
+				method: "PUT",
+				body: { enabled: true, apiKey: fixtureKey },
+			}),
+		);
+		assert(saved.find((source) => source.provider === "gecko")?.hasApiKey);
+		assert(!JSON.stringify(saved).includes(fixtureKey));
+		await data(await request(`${root}/firefly`, { method: "PUT", body: { enabled: true } }));
+		assert.equal(
+			(await data<DaySourceSettings[]>(await request(root))).filter((source) => source.enabled)
+				.length,
+			2,
+		);
+		for (const provider of ["gecko", "firefly"]) {
+			const test = await data<DaySourceConnection>(
+				await request(`${root}/${provider}/test`, { method: "POST", body: query }),
+			);
+			assert(test.success);
+			assert.equal(test.eventCount, provider === "gecko" ? 2 : 1);
+		}
+		const result = await data<DaySourcesResult>(await request(path));
+		assert.equal(result.events.filter((event) => event.sourceId === "gecko").length, 2);
+		assert(!JSON.stringify(result).includes("loginwindow"));
+		const article = result.events.find((event) => event.sourceId === "firefly");
+		assert.equal(article?.occurredAt, "2026-09-10T02:23:45.000Z");
+		assert.match(JSON.stringify(article?.data), /fixture-cover|测试作者/);
+		assert.deepEqual(await data(await request(path)), result);
+		await data(await request(`${root}/gecko`, { method: "PUT", body: { enabled: false } }));
+		assert.equal((await data<DaySourcesResult>(await request(path))).events.length, 1);
+		for (const provider of ["gecko", "firefly"])
+			await data(await request(`${root}/${provider}`, { method: "DELETE" }));
+		assert.equal(
+			(await data<DaySourceSettings[]>(await request(root))).filter(
+				(source) => source.enabled || source.hasApiKey,
+			).length,
+			0,
+		);
+		const rows = (await executeLocalSql(state, "SELECT COUNT(*) AS n FROM day_source_cache;")) as {
+			results: { n: number }[];
+		}[];
+		assert.equal(rows[0]?.results[0]?.n, 0);
 	},
 );
 

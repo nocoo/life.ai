@@ -24,6 +24,7 @@ import { ArrowUpRight } from "lucide-react";
 import { useEffect } from "react";
 import { Link } from "react-router";
 import { useStore } from "zustand";
+import { TargetSkeleton } from "../components/page-skeletons";
 import { dataTargetLabel, utcDayKey } from "../viewmodels/data-overview-view-model";
 import { footprintParsePercent, footprintStore } from "../viewmodels/footprint-view-model";
 import { formatAbsoluteTime, formatByteSize } from "../viewmodels/format";
@@ -257,7 +258,9 @@ export function FootprintPage() {
 								</Text>
 							</LayerCard.Body>
 						) : targetStatus === "loading" ? (
-							<LayerCard.Loading label="正在确认数据环境" />
+							<LayerCard.Body>
+								<TargetSkeleton />
+							</LayerCard.Body>
 						) : null}
 						{targetStatus === "error" ? (
 							<LayerCard.Body>

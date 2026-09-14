@@ -7,6 +7,7 @@ import { ArrowUpRight, CalendarDays, Wallet } from "lucide-react";
 import { useEffect } from "react";
 import { Link } from "react-router";
 import { useStore } from "zustand";
+import { TargetSkeleton } from "../components/page-skeletons";
 import { dataTargetLabel, timelineDayHref } from "../viewmodels/data-overview-view-model";
 import { formatByteSize } from "../viewmodels/format";
 import { pixiuStore } from "../viewmodels/pixiu-view-model";
@@ -211,7 +212,9 @@ export function PixiuPage() {
 								/>
 							</LayerCard.Body>
 						) : (
-							<LayerCard.Loading label="正在确认数据环境" />
+							<LayerCard.Body>
+								<TargetSkeleton />
+							</LayerCard.Body>
 						)}
 					</LayerCard>
 				</div>

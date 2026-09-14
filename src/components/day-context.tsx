@@ -4,6 +4,7 @@ import { CloudRain, CloudSun, SunMoon, Sunrise, Sunset, Wind } from "lucide-reac
 import { weatherDescription } from "../models/day-context";
 import { type DayContextState, dayContextStore } from "../viewmodels/day-context-view-model";
 import { formatDurationMinutes } from "../viewmodels/format";
+import { SolarSkeleton, WeatherSkeleton } from "./page-skeletons";
 import { StoryCardHeading, StoryMetricLabel } from "./story-card-heading";
 
 export function DayContextCard({
@@ -33,8 +34,8 @@ export function DayContextCard({
 				/>
 			) : (
 				<LayerCard.Body className="space-y-5">
-					{!context || context.weatherStatus === "loading" ? (
-						<LayerCard.Loading label="正在读取天气" />
+					{(!context || context.weatherStatus === "loading") && !weather ? (
+						<WeatherSkeleton />
 					) : null}
 					{weather ? (
 						<>
@@ -79,7 +80,7 @@ export function DayContextCard({
 							这一天超出了天气服务的可用日期范围。
 						</Text>
 					) : null}
-					{context?.sunStatus === "loading" ? <LayerCard.Loading label="正在读取日出日落" /> : null}
+					{(!context || context.sunStatus === "loading") && !sun ? <SolarSkeleton /> : null}
 					{sun ? (
 						<div className="space-y-3">
 							<div className="day-solar-times">

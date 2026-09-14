@@ -44,6 +44,72 @@ function makeEvent(overrides: Partial<LifeEvent> = {}): LifeEvent {
 }
 
 describe("storyKind classification", () => {
+	it("renders validated computer and article payloads as distinct narrative cards", () => {
+		const events = [
+			makeEvent({
+				sourceId: "gecko",
+				sourceKind: "external",
+				data: {
+					type: "computer-activity",
+					activeSeconds: 1200,
+					sessionCount: 2,
+					apps: [{ name: "Editor", seconds: 1200, titles: ["Life.ai"] }],
+				},
+			}),
+			makeEvent({
+				sourceId: "firefly",
+				sourceKind: "external",
+				data: {
+					type: "published-article",
+					url: "https://lizheng.blog/2026/09/article",
+					image: null,
+					author: "作者",
+				},
+			}),
+		];
+		const timeline = buildDayTimeline("2026-09-13", events);
+		const story = buildDayStory(timeline, buildDayInsights(events, timeline));
+		const branches = story.hours.flatMap((hour) => hour.branches);
+		expect(branches.map((branch) => branch.kind)).toEqual(["computer", "article"]);
+		expect(branches[0]?.computer?.apps[0]?.name).toBe("Editor");
+		expect(branches[1]?.article?.author).toBe("作者");
+	});
+	it("anchors cross-hour movement once with a continuation and keeps each map inside its hour", () => {
+		const events = Array.from({ length: 11 }, (_, i) =>
+			makeEvent({
+				sourceId: "footprint",
+				occurredAt: new Date(Date.parse("2026-09-13T08:55:00Z") + i * 60000).toISOString(),
+				data: { latitude: 0, longitude: i * 0.01 },
+			}),
+		);
+		const timeline = buildDayTimeline("2026-09-13", events);
+		const story = buildDayStory(
+			timeline,
+			buildDayInsights(events, timeline),
+			5,
+			[],
+			[
+				{ id: "home", label: "家", latitude: 0, longitude: 0, radiusMeters: 100 },
+				{ id: "work", label: "公司", latitude: 0, longitude: 0.1, radiusMeters: 100 },
+			],
+		);
+		expect(story.hours[8]?.journeys).toHaveLength(1);
+		expect(story.hours[8]?.journeys?.[0]?.commute).toBe("outbound");
+		expect(story.hours.flatMap((hour) => hour.journeys ?? [])).toHaveLength(1);
+		expect(story.hours[9]?.continuing).toContainEqual(
+			expect.objectContaining({ anchorHour: 8, title: "可能的通勤持续" }),
+		);
+		const row = story.hours[8];
+		if (!row) throw new Error("hour missing");
+		expect(storyHourEntries(row, []).filter((entry) => entry.kind === "travel")).toHaveLength(1);
+		for (const hour of story.hours)
+			for (const visit of hour.visits)
+				expect(
+					visit.map.gps.segments
+						.flat()
+						.every((point) => new Date(point.occurredAt).getUTCHours() === hour.slot.hour),
+				).toBe(true);
+	});
 	it("classifies workout events when workoutActivityType is present", () => {
 		const ev = makeEvent({
 			data: { workoutActivityType: "HKWorkoutActivityTypeRunning", totalDistance: 5 },

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { DaySourcesResult } from "../../../../src/models/day-sources";
 import type { SleepLocation } from "../../../../src/models/health-location";
 import type { DayTimeline, LifeEvent } from "../../../../src/models/types";
 import { abortError, eventFixture, sourceFixture } from "../helpers";
@@ -23,7 +24,9 @@ vi.mock("../../../../src/services/health-location", () => ({
 vi.mock("../../../../src/services/sources-service", () => ({
 	fetchSources: vi.fn(),
 }));
+vi.mock("../../../../src/services/day-sources-service", () => ({ fetchDaySources: vi.fn() }));
 
+import { fetchDaySources } from "../../../../src/services/day-sources-service";
 import { fetchAllEvents } from "../../../../src/services/events-service";
 import { fetchHealthEvents } from "../../../../src/services/health-evidence";
 import { fetchSleepLocations } from "../../../../src/services/health-location";
@@ -80,6 +83,9 @@ function healthEvent(overrides: Partial<LifeEvent> = {}): LifeEvent {
 
 beforeEach(() => {
 	process.env.TZ = "UTC";
+	vi.mocked(fetchDaySources)
+		.mockReset()
+		.mockResolvedValue({ events: [], sources: [], configuration: "[]" });
 	fetchHealthEventsMock.mockReset();
 	fetchSleepLocationsMock.mockReset().mockResolvedValue({});
 });
@@ -96,6 +102,116 @@ describe("timelineStore", () => {
 		fetchAllEventsMock.mockReset();
 		fetchSourcesMock.mockReset();
 		time.localDateKey.mockReturnValue("2026-09-13");
+	});
+
+	it("shows base data before external sources, keeps maps stable, and filters cached remote cards", async () => {
+		const remote = deferred<DaySourcesResult>();
+		vi.mocked(fetchDaySources).mockReturnValueOnce(remote.promise);
+		fetchSourcesMock.mockResolvedValue([sourceFixture({ id: "footprint" })]);
+		fetchAllEventsMock.mockResolvedValue([
+			eventFixture({ sourceId: "footprint", data: { latitude: 31, longitude: 121 } }),
+		]);
+		const load = timelineStore.getState().load();
+		await vi.waitFor(() => expect(timelineStore.getState().status).toBe("ready"));
+		const map = timelineStore.getState().insights?.gps;
+		const visits = timelineStore.getState().story?.hours.map((hour) => hour.visits);
+		expect(timelineStore.getState().daySourcesStatus).toBe("loading");
+		const event = eventFixture({
+			id: "gecko:one",
+			sourceId: "gecko",
+			sourceName: "Gecko",
+			sourceKind: "external",
+			data: {
+				type: "computer-activity",
+				activeSeconds: 600,
+				sessionCount: 2,
+				apps: [{ name: "Editor", seconds: 600, titles: ["day log"] }],
+			},
+		});
+		remote.resolve({
+			events: [event],
+			sources: [{ provider: "gecko", state: "ready", stale: false }],
+			configuration: '["gecko"]',
+		});
+		await load;
+		expect(timelineStore.getState().timeline?.totalEvents).toBe(2);
+		expect(timelineStore.getState().insights?.gps).toBe(map);
+		timelineStore.getState().story?.hours.forEach((hour, i) => {
+			expect(hour.visits).toBe(visits?.[i]);
+		});
+		await timelineStore.getState().selectSource("gecko");
+		expect(rawRecords(timelineStore.getState().timeline)).toEqual([event]);
+		expect(
+			timelineStore.getState().story?.hours.flatMap((hour) => hour.branches)[0]?.computer
+				?.activeSeconds,
+		).toBe(600);
+		expect(fetchAllEventsMock).toHaveBeenCalledOnce();
+		expect(fetchDaySources).toHaveBeenCalledOnce();
+	});
+	it("merges late external records into an already-open raw Health cache without duplicates", async () => {
+		const remote = deferred<DaySourcesResult>();
+		vi.mocked(fetchDaySources).mockReturnValueOnce(remote.promise);
+		fetchSourcesMock.mockResolvedValue([sourceFixture({ id: "apple-health", recordCount: 1 })]);
+		fetchAllEventsMock.mockResolvedValue([healthEvent()]);
+		fetchHealthEventsMock.mockResolvedValue([healthEvent()]);
+		const load = timelineStore.getState().load();
+		await vi.waitFor(() => expect(timelineStore.getState().status).toBe("ready"));
+		await timelineStore.getState().loadRecords();
+		const article = eventFixture({ id: "firefly:one", sourceId: "firefly" });
+		remote.resolve({
+			events: [article],
+			sources: [{ provider: "firefly", state: "ready", stale: false }],
+			configuration: '["firefly"]',
+		});
+		await load;
+		expect(
+			rawRecords(timelineStore.getState().recordsTimeline).filter(
+				(event) => event.sourceId === "firefly",
+			),
+		).toEqual([article]);
+		await timelineStore.getState().loadRecords();
+		expect(fetchHealthEventsMock).toHaveBeenCalledOnce();
+	});
+	it("keeps failures and stale source warnings separate from a successfully loaded day", async () => {
+		fetchSourcesMock.mockResolvedValue([]);
+		fetchAllEventsMock.mockResolvedValue([eventFixture()]);
+		vi.mocked(fetchDaySources).mockRejectedValueOnce(new Error("source unavailable"));
+		await timelineStore.getState().load();
+		expect(timelineStore.getState()).toMatchObject({
+			status: "ready",
+			error: null,
+			daySourcesStatus: "error",
+			daySourcesError: "source unavailable",
+		});
+		vi.mocked(fetchDaySources).mockResolvedValueOnce({
+			events: [],
+			sources: [{ provider: "gecko", state: "error", stale: true, message: "Gecko 暂不可用。" }],
+			configuration: '["gecko"]',
+		});
+		await timelineStore.getState().retry();
+		expect(timelineStore.getState().daySourcesError).toContain("显示上次读取的数据");
+		expect(timelineStore.getState().timeline?.totalEvents).toBe(1);
+	});
+	it("ignores a remote response from a previously selected day", async () => {
+		const old = deferred<DaySourcesResult>();
+		vi.mocked(fetchDaySources).mockReturnValueOnce(old.promise);
+		fetchSourcesMock.mockResolvedValue([]);
+		fetchAllEventsMock.mockResolvedValue([]);
+		const load = timelineStore.getState().load();
+		await vi.waitFor(() => expect(timelineStore.getState().status).toBe("ready"));
+		await timelineStore.getState().selectDay("2026-09-12");
+		old.resolve({
+			events: [eventFixture({ sourceId: "firefly" })],
+			sources: [{ provider: "firefly", state: "ready", stale: false }],
+			configuration: '["firefly"]',
+		});
+		await load;
+		expect(timelineStore.getState()).toMatchObject({
+			day: "2026-09-12",
+			daySourcesStatus: "ready",
+			sources: [],
+		});
+		expect(timelineStore.getState().timeline?.totalEvents).toBe(0);
 	});
 
 	it("loads the previous night and next morning while projecting only the selected day", async () => {

@@ -15,6 +15,7 @@ import { useSearchParams } from "react-router";
 import { useStore } from "zustand";
 import { DateNavigation } from "../components/date-navigation";
 import { DayTimelineView } from "../components/day-timeline";
+import { RecordsSkeleton, TimelineSkeleton } from "../components/page-skeletons";
 import { EMPTY_NAMED_PLACES } from "../models/general-settings";
 import { localDateKey, shiftLocalDate } from "../models/time";
 import {
@@ -50,6 +51,8 @@ export function TimelinePage() {
 	const recordsError = useStore(timelineStore, (state) => state.recordsError);
 	const status = useStore(timelineStore, (state) => state.status);
 	const error = useStore(timelineStore, (state) => state.error);
+	const daySourcesStatus = useStore(timelineStore, (state) => state.daySourcesStatus);
+	const daySourcesError = useStore(timelineStore, (state) => state.daySourcesError);
 	const radiusKm = useStore(timelineStore, (state) => state.radiusKm);
 	const mapMode = useStore(timelineStore, (state) => state.mapMode);
 	const tab = useStore(timelineStore, (state) => state.tab);
@@ -106,6 +109,7 @@ export function TimelinePage() {
 	useEffect(() => {
 		if (
 			status === "ready" &&
+			daySourcesStatus !== "loading" &&
 			summaryDate &&
 			summaryStart &&
 			summaryEnd &&
@@ -123,6 +127,7 @@ export function TimelinePage() {
 		void generalSettings;
 	}, [
 		status,
+		daySourcesStatus,
 		summaryDate,
 		summaryStart,
 		summaryEnd,
@@ -215,6 +220,23 @@ export function TimelinePage() {
 				<TabsTrigger value="finance">账目记录</TabsTrigger>
 				<TabsTrigger value="records">其他记录</TabsTrigger>
 			</TabsList>
+			{status === "ready" && daySourcesStatus === "loading" ? (
+				<p role="status" className="text-sm text-basalt-muted-foreground">
+					正在读取已连接的数据源…
+				</p>
+			) : null}
+			{status === "ready" && daySourcesError ? (
+				<Banner
+					variant="alert"
+					title="部分数据源暂未更新"
+					description={daySourcesError}
+					action={
+						<Banner.Action onClick={() => void timelineStore.getState().retry()}>
+							重试
+						</Banner.Action>
+					}
+				/>
+			) : null}
 			{status === "error" ? (
 				<Banner
 					variant="error"
@@ -227,10 +249,12 @@ export function TimelinePage() {
 					}
 				/>
 			) : null}
-			{status === "loading" && !timeline ? (
-				<LayerCard>
-					<LayerCard.Loading label="正在加载当天记录" />
-				</LayerCard>
+			{(status === "idle" || status === "loading") && !timeline ? (
+				tab === "timeline" ? (
+					<TimelineSkeleton />
+				) : (
+					<RecordsSkeleton kind={tab} />
+				)
 			) : null}
 			{timeline && story && insights ? (
 				<>
@@ -250,17 +274,9 @@ export function TimelinePage() {
 					{(["locations", "finance", "records"] as const).map((kind) => (
 						<TabsContent key={kind} value={kind}>
 							{tab === kind ? (
-								<Suspense
-									fallback={
-										<LayerCard>
-											<LayerCard.Loading label="正在加载记录表格" />
-										</LayerCard>
-									}
-								>
+								<Suspense fallback={<RecordsSkeleton kind={kind} />}>
 									{kind === "records" && recordsStatus === "loading" ? (
-										<LayerCard>
-											<LayerCard.Loading label="正在加载全部健康维度" />
-										</LayerCard>
+										<RecordsSkeleton kind={kind} />
 									) : kind === "records" && recordsStatus === "error" ? (
 										<Banner
 											variant="error"

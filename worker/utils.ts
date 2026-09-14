@@ -15,7 +15,7 @@ export const LIMITS = {
  * Validates Content-Type header is application/json (allows charset suffix).
  * Returns 415 unsupported_media_type otherwise.
  */
-export function validateContentType(request: Request): void {
+export function validateContentType(request: Pick<Request, "headers">): void {
 	const contentType = request.headers.get("content-type");
 	if (!contentType) {
 		throw new ApiError(415, "unsupported_media_type", "Content-Type must be application/json");
@@ -33,7 +33,7 @@ export function validateContentType(request: Request): void {
  * - Non-empty and valid JSON (returns 400 if malformed)
  */
 export async function readJsonBody<T>(
-	request: Request,
+	request: Pick<Request, "headers" | "body">,
 	maxBytes = LIMITS.requestBodyBytes,
 ): Promise<T> {
 	validateContentType(request);

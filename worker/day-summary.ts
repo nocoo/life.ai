@@ -19,9 +19,12 @@ import { applyHealthStoryInsights } from "../src/models/health-quantities.js";
 import { pixiuDayEvents } from "../src/models/pixiu.js";
 import type { LifeEvent, Precision } from "../src/models/types.js";
 import { generateAiText } from "./ai.js";
+import { withD1Retry } from "./database.js";
+import { readDaySources } from "./day-sources.js";
 import {
 	cachedPublicContextFingerprint,
 	collectDiaryEvidence,
+	formatDaySourceEvidence,
 	formatEvidenceTime,
 	formatHealthDimensionsEvidence,
 	formatPersonalContext,
@@ -35,7 +38,8 @@ import { readPixiuDays } from "./pixiu-read.js";
 import { ApiError, type WorkerEnv } from "./types.js";
 import { jsonResponse, readJsonBody } from "./utils.js";
 
-const LEASE_DURATION_MS = 180_000;
+// Covers both 45-second source reads, public context, and the 90-second model budget.
+const LEASE_DURATION_MS = 300_000;
 export const DIARY_GENERATION_TIMEOUT_MS = 90_000;
 export const DIARY_OUTPUT_TOKENS = 8_192;
 const MAX_SAMPLES_PER_SOURCE = 24;
@@ -93,6 +97,7 @@ export async function streamDayEvents(
 	endMs: number,
 	window: { start: string; end: string },
 	withEvidence = true,
+	additionalEvents: LifeEvent[] = [],
 ) {
 	const collector = createDayInsightsCollector(window, true);
 	const hash = createHash("sha256").update(JSON.stringify([DIARY_PROMPT_VERSION, startMs, endMs]));
@@ -130,6 +135,7 @@ export async function streamDayEvents(
 		...footprintContext.filter((event) => Date.parse(event.occurredAt) >= startMs),
 		...healthEvents,
 		...pixiuEvents,
+		...additionalEvents,
 	].sort(compareEvents);
 	let footprintIndex = 0;
 	let seenFootprint = false;
@@ -326,10 +332,12 @@ async function foldSummaryInputHash(
 	eventsHash: string,
 	insights: DayInsights,
 	settings: GeneralSettings,
+	sourceConfiguration = "[]",
 ): Promise<string> {
 	return createHash("sha256")
 		.update(eventsHash)
 		.update(JSON.stringify(settings))
+		.update(sourceConfiguration)
 		.update(await cachedPublicContextFingerprint(env, query, insights, settings.places))
 		.digest("hex");
 }
@@ -482,12 +490,14 @@ async function acquireLease(
 	now: number,
 ): Promise<string | null> {
 	const token = crypto.randomUUID();
-	const result = await db
-		.prepare(
-			"INSERT INTO day_summary_leases (date, timezone, lease_token, leased_until) VALUES (?, ?, ?, ?) ON CONFLICT(date, timezone) DO UPDATE SET lease_token = excluded.lease_token, leased_until = excluded.leased_until WHERE day_summary_leases.leased_until <= ?",
-		)
-		.bind(date, timezone, token, now + LEASE_DURATION_MS, now)
-		.run();
+	const result = await withD1Retry(() =>
+		db
+			.prepare(
+				"INSERT INTO day_summary_leases (date, timezone, lease_token, leased_until) VALUES (?, ?, ?, ?) ON CONFLICT(date, timezone) DO UPDATE SET lease_token = excluded.lease_token, leased_until = excluded.leased_until WHERE day_summary_leases.leased_until <= ? OR day_summary_leases.lease_token = excluded.lease_token",
+			)
+			.bind(date, timezone, token, now + LEASE_DURATION_MS, now)
+			.run(),
+	);
 	return result.meta.changes > 0 ? token : null;
 }
 
@@ -499,10 +509,14 @@ async function releaseLease(
 	leaseToken: string,
 ): Promise<void> {
 	try {
-		await db
-			.prepare("DELETE FROM day_summary_leases WHERE date = ? AND timezone = ? AND lease_token = ?")
-			.bind(date, timezone, leaseToken)
-			.run();
+		await withD1Retry(() =>
+			db
+				.prepare(
+					"DELETE FROM day_summary_leases WHERE date = ? AND timezone = ? AND lease_token = ?",
+				)
+				.bind(date, timezone, leaseToken)
+				.run(),
+		);
 	} catch {
 		// ignore
 	}
@@ -519,18 +533,21 @@ export async function handleGetDaySummary(env: WorkerEnv, url: URL): Promise<Res
 		end: url.searchParams.get("end"),
 	});
 
-	const row = await env.DB.prepare(`
+	const row = await withD1Retry(() =>
+		env.DB.prepare(`
 		SELECT date, timezone, start_at, end_at, content, provider, model, input_hash, event_count, generated_at
 		FROM day_summaries
 		WHERE date = ? AND timezone = ?
 	`)
-		.bind(query.date, query.timeZone)
-		.first<StoredSummaryRow>();
+			.bind(query.date, query.timeZone)
+			.first<StoredSummaryRow>(),
+	);
 
 	const startMs = new Date(query.start).getTime();
 	const endMs = new Date(query.end).getTime();
+	const external = await readDaySources(env, query, "cached-only");
 	const [streamed, settings] = await Promise.all([
-		streamDayEvents(env, startMs, endMs, query, false),
+		streamDayEvents(env, startMs, endMs, query, false, external.events),
 		readGeneralSettings(env),
 	]);
 	const inputHash = await foldSummaryInputHash(
@@ -539,6 +556,7 @@ export async function handleGetDaySummary(env: WorkerEnv, url: URL): Promise<Res
 		streamed.inputHash,
 		streamed.insights,
 		settings,
+		external.configuration,
 	);
 	const eventCount = streamed.eventCount;
 
@@ -604,8 +622,15 @@ export async function handlePostDaySummary(request: Request, env: WorkerEnv): Pr
 
 	try {
 		// Stream events page-by-page, accumulating bounded evidence & hash
+		const external = await readDaySources(env, query);
+		if (external.sources.some((source) => source.state !== "ready"))
+			throw new ApiError(
+				503,
+				"source_unavailable",
+				"部分数据源暂时无法读取，日记未更新，请稍后重试。",
+			);
 		const [streamed, settings] = await Promise.all([
-			streamDayEvents(env, startMs, endMs, query),
+			streamDayEvents(env, startMs, endMs, query, true, external.events),
 			readGeneralSettings(env),
 		]);
 		const {
@@ -626,9 +651,11 @@ export async function handlePostDaySummary(request: Request, env: WorkerEnv): Pr
 
 		// Feedback may refer to the previous wording. A fresh generation uses only source evidence.
 		const previousRow = query.revision
-			? await env.DB.prepare("SELECT content FROM day_summaries WHERE date = ? AND timezone = ?")
-					.bind(query.date, query.timeZone)
-					.first<{ content: string }>()
+			? await withD1Retry(() =>
+					env.DB.prepare("SELECT content FROM day_summaries WHERE date = ? AND timezone = ?")
+						.bind(query.date, query.timeZone)
+						.first<{ content: string }>(),
+				)
 			: null;
 		const diaryEvidence = await collectDiaryEvidence(env, {
 			date: query.date,
@@ -640,12 +667,14 @@ export async function handlePostDaySummary(request: Request, env: WorkerEnv): Pr
 			pixiuEvents,
 			settings,
 		});
+		diaryEvidence.push(...formatDaySourceEvidence(external.events, query.timeZone));
 		const inputHashWithContext = await foldSummaryInputHash(
 			env,
 			query,
 			inputHash,
 			insights,
 			settings,
+			external.configuration,
 		);
 		const prompt = buildDaySummaryPrompt(
 			query.date,
@@ -674,8 +703,15 @@ export async function handlePostDaySummary(request: Request, env: WorkerEnv): Pr
 			DIARY_OUTPUT_TOKENS,
 			{ system: DIARY_SYSTEM_PROMPT, reasoning: true },
 		);
+		const currentExternal = await readDaySources(env, query);
+		if (currentExternal.sources.some((source) => source.state !== "ready"))
+			throw new ApiError(
+				503,
+				"source_unavailable",
+				"部分数据源暂时无法读取，日记未更新，请稍后重试。",
+			);
 		const [current, currentSettings] = await Promise.all([
-			streamDayEvents(env, startMs, endMs, query, false),
+			streamDayEvents(env, startMs, endMs, query, false, currentExternal.events),
 			readGeneralSettings(env),
 		]);
 		const currentHash = await foldSummaryInputHash(
@@ -684,6 +720,7 @@ export async function handlePostDaySummary(request: Request, env: WorkerEnv): Pr
 			current.inputHash,
 			current.insights,
 			currentSettings,
+			currentExternal.configuration,
 		);
 
 		const generatedAt = Date.now();
@@ -707,24 +744,26 @@ export async function handlePostDaySummary(request: Request, env: WorkerEnv): Pr
 				generated_at = excluded.generated_at
 		`;
 
-		const saved = await env.DB.prepare(saveQuery)
-			.bind(
-				query.date,
-				query.timeZone,
-				query.start,
-				query.end,
-				content,
-				provider,
-				model,
-				inputHashWithContext,
-				eventCount,
-				generatedAt,
-				query.date,
-				query.timeZone,
-				leaseToken,
-				generatedAt,
-			)
-			.run();
+		const saved = await withD1Retry(() =>
+			env.DB.prepare(saveQuery)
+				.bind(
+					query.date,
+					query.timeZone,
+					query.start,
+					query.end,
+					content,
+					provider,
+					model,
+					inputHashWithContext,
+					eventCount,
+					generatedAt,
+					query.date,
+					query.timeZone,
+					leaseToken,
+					generatedAt,
+				)
+				.run(),
+		);
 
 		if (saved.meta.changes === 0)
 			throw new ApiError(409, "generation_expired", "生成已过期，请重新生成");

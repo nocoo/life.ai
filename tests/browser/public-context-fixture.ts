@@ -6,6 +6,12 @@ export { expect } from "@playwright/test";
 export const test = base.extend<{ publicContext: undefined }>({
 	publicContext: [
 		async ({ page }, use) => {
+			await page.route("https://lizheng.blog/fixture-cover.svg", (route) =>
+				route.fulfill({
+					contentType: "image/svg+xml",
+					body: '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350"><path fill="#507da2" d="M0 0h800v350H0z"/></svg>',
+				}),
+			);
 			await page.route("**://tile.openstreetmap.org/**", (route) =>
 				route.fulfill({
 					contentType: "image/svg+xml",

@@ -72,6 +72,7 @@ function setup() {
 		"0004_apple_health.sql",
 		"0005_public_context.sql",
 		"0006_general_settings.sql",
+		"0007_day_sources.sql",
 	])
 		sqlite.exec(readFileSync(new URL(`../../worker/migrations/${name}`, import.meta.url), "utf8"));
 	const prepare = vi.fn((sql: string) => {
@@ -242,6 +243,159 @@ async function data(response: Response): Promise<DaySummaryResult> {
 function scan(env: WorkerEnv, evidence = true) {
 	return streamDayEvents(env, Date.parse(day.start), Date.parse(day.end), day, evidence);
 }
+
+describe("diary data sources and movement", () => {
+	it("retains its generation lease across source/context work in addition to the model budget", async () => {
+		const { env, insert, run } = setup();
+		insert();
+		const now = Date.now();
+		const clock = vi.spyOn(Date, "now").mockReturnValue(now);
+		run.mockImplementationOnce(async () => {
+			clock.mockReturnValue(now + 190_000);
+			return { response: "较慢的完整资料仍可成功保存。" };
+		});
+		expect((await data(await handlePostDaySummary(request(), env))).summary?.content).toBe(
+			"较慢的完整资料仍可成功保存。",
+		);
+		expect(run).toHaveBeenCalledOnce();
+	});
+	function seedExternal(sqlite: DatabaseSync) {
+		const common = {
+			sourceKind: "external" as const,
+			occurredAt: "2026-09-13T01:02:03.000Z",
+			endAt: null,
+			precision: "second" as const,
+			updatedAt: day.start,
+		};
+		const events: LifeEvent[] = [
+			{
+				...common,
+				id: "gecko:sample",
+				sourceId: "gecko",
+				sourceName: "Gecko",
+				title: "电脑活动",
+				content: "Editor",
+				precision: "hour",
+				data: {
+					type: "computer-activity",
+					activeSeconds: 1200,
+					sessionCount: 3,
+					apps: [{ name: "Editor", seconds: 1200, titles: ["Life.ai 出行记录"] }],
+				},
+			},
+			{
+				...common,
+				id: "firefly:sample",
+				sourceId: "firefly",
+				sourceName: "Firefly",
+				title: "记录一段通勤",
+				content: "从行迹理解一天",
+				data: {
+					type: "published-article",
+					url: "https://lizheng.blog/2026/09/commute",
+					image: "https://lizheng.blog/cover.jpg",
+					author: "测试作者",
+				},
+			},
+		];
+		for (const event of events) {
+			sqlite.prepare("INSERT INTO day_source_settings VALUES (?, 1, NULL, 1)").run(event.sourceId);
+			sqlite
+				.prepare("INSERT INTO day_source_cache VALUES (?, ?, ?, ?, ?, 1, ?, ?)")
+				.run(
+					event.sourceId,
+					day.date,
+					day.timeZone,
+					day.start,
+					day.end,
+					JSON.stringify([event]),
+					Date.now(),
+				);
+		}
+		return events;
+	}
+	it("uses external-only evidence, cached GETs and stable hashes; disabling a source marks the diary stale", async () => {
+		const { env, sqlite, run } = setup();
+		seedExternal(sqlite);
+		const fetch = vi.fn();
+		vi.stubGlobal("fetch", fetch);
+		const saved = await data(await handlePostDaySummary(request(), env));
+		expect(saved).toMatchObject({ eventCount: 2, stale: false });
+		const userPrompt =
+			run.mock.calls[0]?.[1].messages.find((message) => message.role === "user")?.content ?? "";
+		expect(userPrompt).toContain("电脑前台活动");
+		expect(userPrompt).toContain("Life.ai 出行记录");
+		expect(userPrompt).toContain("公开发表文章");
+		expect(userPrompt).toContain("09:02:03");
+		expect(userPrompt).toContain("测试作者");
+		expect(userPrompt).toContain("https://lizheng.blog/2026/09/commute");
+		expect(await data(await handleGetDaySummary(env, url()))).toEqual(saved);
+		sqlite.exec("UPDATE day_source_cache SET fetched_at = fetched_at + 1");
+		expect((await data(await handleGetDaySummary(env, url()))).stale).toBe(false);
+		sqlite.exec("UPDATE day_source_settings SET enabled = 0 WHERE provider = 'firefly'");
+		const disabled = await data(await handleGetDaySummary(env, url()));
+		expect(disabled.stale).toBe(true);
+		expect(disabled.summary).toEqual(saved.summary);
+		expect(fetch).not.toHaveBeenCalled();
+	});
+	it("keeps the previous diary when an enabled source fails before or after AI runs", async () => {
+		const { env, sqlite, run } = setup();
+		seedExternal(sqlite);
+		const saved = await data(await handlePostDaySummary(request(), env));
+		sqlite.exec("UPDATE day_source_cache SET fetched_at = 0 WHERE provider = 'firefly'");
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () => new Response("failure", { status: 503 })),
+		);
+		await expect(handlePostDaySummary(request(), env)).rejects.toMatchObject({
+			status: 503,
+			code: "source_unavailable",
+		});
+		expect(run).toHaveBeenCalledOnce();
+		expect((await data(await handleGetDaySummary(env, url()))).summary).toEqual(saved.summary);
+		sqlite.prepare("UPDATE day_source_cache SET fetched_at = ?").run(Date.now());
+		run.mockImplementationOnce(async () => {
+			sqlite.exec("UPDATE day_source_cache SET fetched_at = 0 WHERE provider = 'firefly'");
+			return { response: "Do not replace the saved diary" };
+		});
+		await expect(handlePostDaySummary(request(), env)).rejects.toMatchObject({ status: 503 });
+		expect((await data(await handleGetDaySummary(env, url()))).summary).toEqual(saved.summary);
+		expect(sqlite.prepare("SELECT COUNT(*) AS n FROM day_summary_leases").get()?.n).toBe(0);
+	});
+	it("provides named POIs, moving average, excluded stops and commute reasoning to the AI", async () => {
+		const { env, run, putDay } = setup();
+		const positions = [0, 0.01, 0.02, 0.03, 0.03, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09];
+		await putDay(
+			Date.parse("2026-09-13"),
+			positions.map((longitude, i) => [i * 60, 0, longitude, null, null, null]),
+		);
+		await handlePutGeneralSettings(
+			new Request("http://localhost/api/settings/general", {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					places: [
+						{ id: "home", label: "家", latitude: 0, longitude: 0, radiusMeters: 100 },
+						{ id: "work", label: "公司", latitude: 0, longitude: 0.09, radiusMeters: 100 },
+						{ id: "poi", label: "图书馆", latitude: 0, longitude: 0.03, radiusMeters: 100 },
+					],
+					routine: null,
+				}),
+			}),
+			env,
+		);
+		await handlePostDaySummary(request(), env);
+		const userPrompt =
+			run.mock.calls[0]?.[1].messages.find((message) => message.role === "user")?.content ?? "";
+		expect(userPrompt).toContain("连续移动 2026/09/13 08:00:00 至 2026/09/13 08:11:00");
+		expect(userPrompt).toContain('"movingAverageKmh":66.7');
+		expect(userPrompt).toContain('"excludedStopMinutes":2');
+		expect(userPrompt).toContain("可能的通勤去程");
+		expect(userPrompt).toContain("仅凭 GPS 无法区分");
+		expect(userPrompt).toContain('"label":"图书馆"');
+		expect(userPrompt).toContain("不证明入内或消费");
+	});
+});
 function prompt(evidence: Awaited<ReturnType<typeof scan>>) {
 	return buildDaySummaryPrompt(
 		day.date,
@@ -1160,6 +1314,44 @@ describe("saved daily summaries", () => {
 			.prepare("INSERT INTO day_summary_leases VALUES (?, ?, 'expired', 0)")
 			.run(day.date, day.timeZone);
 		expect((await data(await handlePostDaySummary(request(), env))).stale).toBe(false);
+	});
+
+	it("recovers lost lease/save acknowledgements and transient reads without repeating AI", async () => {
+		const { env, sqlite, insert, run, prepare } = setup();
+		insert();
+		vi.spyOn(console, "warn").mockImplementation(() => {});
+		const original = prepare.getMockImplementation();
+		const interrupted = new Set<string>();
+		prepare.mockImplementation((sql) => {
+			if (!original) throw new Error("missing test implementation");
+			const statement = original(sql);
+			if (sql.includes("FROM general_settings") && !interrupted.has("read")) {
+				interrupted.add("read");
+				throw new Error("Network connection lost.");
+			}
+			const write = statement.run.bind(statement);
+			const kind = sql.includes("INSERT INTO day_summary_leases")
+				? "lease"
+				: sql.includes("INSERT INTO day_summaries")
+					? "save"
+					: null;
+			if (kind)
+				statement.run = async () => {
+					const result = await write();
+					if (!interrupted.has(kind)) {
+						interrupted.add(kind);
+						throw new Error("Network connection lost.");
+					}
+					return result;
+				};
+			return statement;
+		});
+		const result = await data(await handlePostDaySummary(request(), env));
+		expect(result.summary?.content).toBe("当天记录了阅读与步行。");
+		expect(run).toHaveBeenCalledOnce();
+		expect(interrupted.size).toBe(3);
+		expect(sqlite.prepare("SELECT COUNT(*) AS n FROM day_summaries").get()?.n).toBe(1);
+		expect(sqlite.prepare("SELECT COUNT(*) AS n FROM day_summary_leases").get()?.n).toBe(0);
 	});
 
 	it("never reports success or deletes another request's lease after losing ownership", async () => {

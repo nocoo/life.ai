@@ -1,4 +1,5 @@
 import { FOOTPRINT_DAY_MS, type FootprintDay } from "../src/models/footprint.js";
+import { withD1Retry } from "./database.js";
 
 interface StoredFootprintDay {
 	utc_day: number;
@@ -21,15 +22,17 @@ export async function readFootprintDays(
 	if (start >= end) return [];
 	const firstDay = Math.floor(start / FOOTPRINT_DAY_MS) * FOOTPRINT_DAY_MS;
 	const lastDay = Math.floor((end - 1) / FOOTPRINT_DAY_MS) * FOOTPRINT_DAY_MS;
-	const { results } = await db
-		.prepare(
-			`SELECT utc_day, record_count, first_at, last_at, payload_bytes,
+	const { results } = await withD1Retry(() =>
+		db
+			.prepare(
+				`SELECT utc_day, record_count, first_at, last_at, payload_bytes,
 			 summary_json, data_json, content_hash, updated_at
 			 FROM provider_days WHERE source_id = 'footprint' AND utc_day >= ? AND utc_day <= ?
 			 ORDER BY utc_day`,
-		)
-		.bind(firstDay, lastDay)
-		.all<StoredFootprintDay>();
+			)
+			.bind(firstDay, lastDay)
+			.all<StoredFootprintDay>(),
+	);
 	return results.map((row) => ({
 		utcDay: row.utc_day,
 		recordCount: row.record_count,

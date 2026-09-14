@@ -1,4 +1,5 @@
 import type { EventPage, LifeEvent, Precision, SourceKind } from "../src/models/types.js";
+import { withD1Retry } from "./database.js";
 import { readFootprintDays } from "./footprint-read.js";
 import { readHealthSeries } from "./health-read.js";
 import { readPixiuDays } from "./pixiu-read.js";
@@ -58,10 +59,12 @@ export async function readEventRows(db: D1Database, query: EventRowsQuery): Prom
 		WHERE e.precision != 'day' AND e.end_at > e.occurred_at
 		AND e.occurred_at < ?1 AND e.end_at > ?1 ${conditions}
 		ORDER BY occurred_at, id LIMIT ?${bindings.length}`;
-	const { results } = await db
-		.prepare(sql)
-		.bind(...bindings)
-		.all<EventRow>();
+	const { results } = await withD1Retry(() =>
+		db
+			.prepare(sql)
+			.bind(...bindings)
+			.all<EventRow>(),
+	);
 	return results;
 }
 

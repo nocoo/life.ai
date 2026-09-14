@@ -55,8 +55,10 @@ import { EventDetails } from "./event-card";
 import { FinanceDayCard } from "./finance-day";
 import { HealthDayCard } from "./health-story";
 import { HealthTimelineEntry } from "./health-timeline-entry";
+import { SourceStoryCard } from "./source-story-card";
 import { StoryCardHeading } from "./story-card-heading";
 import { StoryCardInfo } from "./story-card-info";
+import { TravelStoryCard } from "./travel-story-card";
 import { useIsMobile } from "./use-is-mobile";
 
 const CHAPTERS = [
@@ -74,6 +76,8 @@ const BRANCH_ICONS = {
 	money: Wallet,
 	note: NotebookPen,
 	connect: Plug,
+	computer: Plug,
+	article: BookOpen,
 } satisfies Record<StoryKind, typeof Moon>;
 
 const BRANCH_LABELS: Record<StoryKind, string> = {
@@ -84,6 +88,8 @@ const BRANCH_LABELS: Record<StoryKind, string> = {
 	money: "收支",
 	note: "随记",
 	connect: "连接记录",
+	computer: "电脑活动",
+	article: "发表文章",
 };
 
 function StoryBranchView({
@@ -95,6 +101,7 @@ function StoryBranchView({
 	onOpenMap: (branch: StoryBranch) => void;
 	embedded?: boolean;
 }) {
+	if (branch.computer || branch.article) return <SourceStoryCard branch={branch} />;
 	const Icon = BRANCH_ICONS[branch.kind];
 	const grouped = branch.kind === "sleep" || branch.kind === "health" || branch.kind === "journey";
 	const source = branch.events[0];
@@ -297,6 +304,8 @@ function HourRow({
 					</div>
 				) : null}
 				{blocks.map((block) => {
+					if (block.kind === "travel")
+						return <TravelStoryCard key={block.id} journey={block.journey} />;
 					if (block.kind === "health")
 						return (
 							<HealthTimelineEntry

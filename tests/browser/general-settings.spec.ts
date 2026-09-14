@@ -104,8 +104,18 @@ test("named places can be drawn, resized on the same map, saved, edited and dele
 	await expect(page.getByText("家", { exact: true })).toBeVisible();
 	await expect(page.getByText("工作室", { exact: true })).toBeVisible();
 	await page.getByRole("button", { name: "编辑", exact: true }).first().click();
+	// A saved center must render its circle before any edits or map clicks.
+	await expect(map).toBeVisible();
+	await expect(map.locator("canvas")).toBeVisible();
+	const editedMapId = await map.evaluate(
+		(node) => (node as HTMLElement & { _leaflet_id?: number })._leaflet_id,
+	);
 	await page.getByLabel("地点名称").fill("河边的家");
 	await page.getByLabel("地点范围（米）").fill("1200");
+	await expect(map.locator("canvas")).toBeVisible();
+	expect(
+		await map.evaluate((node) => (node as HTMLElement & { _leaflet_id?: number })._leaflet_id),
+	).toBe(editedMapId);
 	await page.getByRole("button", { name: "保存地点", exact: true }).click();
 	await expect(page.getByText("河边的家", { exact: true })).toBeVisible();
 	await page.getByRole("button", { name: "删除", exact: true }).first().click();

@@ -154,6 +154,15 @@ export function PlaceRegionEditor({
 					return;
 				}
 				mapRef.current = map;
+				const seed = centerRef.current;
+				// Leaflet projects circle bounds only after the map has an initial view.
+				map.setView(seed ? [seed.latitude, seed.longitude] : UNSELECTED_VIEW, UNSELECTED_ZOOM, {
+					animate: false,
+				});
+				if (seed) {
+					syncCircle(L, map, seed, radiusRef.current, circleRef, markerRef, containerRef.current);
+					fitCircle(map, circleRef.current);
+				}
 				const tiles = L.tileLayer(OSM_TILE, { attribution: OSM_ATTRIBUTION }).addTo(map);
 				let tileErrors = 0;
 				tiles.on("tileerror", () => {
@@ -162,13 +171,6 @@ export function PlaceRegionEditor({
 						setMapError("地图底图未能加载，请检查网络后重试。");
 					}
 				});
-				const seed = centerRef.current;
-				if (seed) {
-					syncCircle(L, map, seed, radiusRef.current, circleRef, markerRef, containerRef.current);
-					fitCircle(map, circleRef.current);
-				} else {
-					map.setView(UNSELECTED_VIEW, UNSELECTED_ZOOM, { animate: false });
-				}
 				map.on("click", (event: { latlng: { lat: number; lng: number } }) => {
 					if (disabledRef.current) return;
 					const wrapped = L.latLng(event.latlng.lat, event.latlng.lng).wrap();

@@ -6,14 +6,30 @@ import {
 	type GpsPlace,
 	type GpsVisit,
 } from "../models/day-places";
+import {
+	type ComputerActivity,
+	computerActivitySchema,
+	type PublishedArticle,
+	publishedArticleSchema,
+} from "../models/day-sources";
 import { buildFinanceDay, type FinanceDay } from "../models/finance";
 import type { NamedPlace } from "../models/general-settings";
+import { buildGpsJourneys, type GpsJourney, TRAVEL_MODE_LABELS } from "../models/gps-journeys";
 import type { DayTimeline, HourSlot, JsonValue, LifeEvent } from "../models/types";
 import type { SolarMoment } from "./day-context-view-model";
 import { formatDurationMinutes, formatInterval, formatLocalClock } from "./format";
 import type { HealthTimelineItem } from "./health-timeline";
 
-export type StoryKind = "sleep" | "health" | "workout" | "journey" | "money" | "note" | "connect";
+export type StoryKind =
+	| "sleep"
+	| "health"
+	| "workout"
+	| "journey"
+	| "money"
+	| "note"
+	| "connect"
+	| "computer"
+	| "article";
 
 export interface StoryMetric {
 	label: string;
@@ -32,6 +48,8 @@ export interface StoryBranch {
 	metrics: StoryMetric[];
 	heartTrace: string | null;
 	fromPreviousDay: boolean;
+	computer?: ComputerActivity;
+	article?: PublishedArticle;
 }
 
 export interface StoryContinuation {
@@ -49,6 +67,7 @@ export interface StoryHour {
 	activity: number;
 	visits: StoryVisit[];
 	health?: HealthTimelineItem[];
+	journeys?: GpsJourney[];
 }
 
 export interface StoryVisit {
@@ -65,6 +84,7 @@ export type StoryHourEntry =
 	| { kind: "branch"; at: string; id: string; branch: StoryBranch }
 	| { kind: "visit"; at: string; id: string; visit: StoryVisit }
 	| { kind: "health"; at: string; id: string; health: HealthTimelineItem }
+	| { kind: "travel"; at: string; id: string; journey: GpsJourney }
 	| { kind: "solar"; at: string; id: string; solar: SolarMoment };
 
 export type StoryHourBlock =
@@ -80,6 +100,12 @@ export interface DayStory {
 
 export function storyHourEntries(row: StoryHour, solar: SolarMoment[]): StoryHourEntry[] {
 	const entries: StoryHourEntry[] = [
+		...(row.journeys ?? []).map((journey) => ({
+			kind: "travel" as const,
+			at: journey.startAt,
+			id: journey.id,
+			journey,
+		})),
 		...(row.health ?? []).map((health) => ({
 			kind: "health" as const,
 			at: health.occurredAt,
@@ -127,6 +153,8 @@ function dataObject(value: JsonValue): Record<string, JsonValue> {
 
 export function storyKind(event: LifeEvent): StoryKind {
 	const data = dataObject(event.data);
+	if (event.sourceId === "gecko" && data.type === "computer-activity") return "computer";
+	if (event.sourceId === "firefly" && data.type === "published-article") return "article";
 	if (typeof data.workoutActivityType === "string") return "workout";
 	if (typeof data.type === "string" && data.type.endsWith("SleepAnalysis")) return "sleep";
 	if (event.sourceId === "pixiu") return "money";
@@ -235,6 +263,8 @@ function groupBranches(events: LifeEvent[], timeline: DayTimeline): StoryBranch[
 		const event = records[0] as LifeEvent;
 		const kind = storyKind(event);
 		const insights = buildDayInsights(records, timeline);
+		const computer = kind === "computer" ? computerActivitySchema.safeParse(event.data) : null;
+		const article = kind === "article" ? publishedArticleSchema.safeParse(event.data) : null;
 		let title = event.title;
 		let metrics: StoryMetric[] = [];
 		if (kind === "health" || kind === "sleep") {
@@ -283,6 +313,8 @@ function groupBranches(events: LifeEvent[], timeline: DayTimeline): StoryBranch[
 			metrics,
 			heartTrace: kind === "health" ? heartTrace(records) : null,
 			fromPreviousDay: event.precision !== "day" && event.occurredAt < timeline.start,
+			...(computer?.success ? { computer: computer.data } : {}),
+			...(article?.success ? { article: article.data } : {}),
 		};
 	});
 }
@@ -296,11 +328,12 @@ export function buildDayStory(
 	namedPlaces: readonly NamedPlace[] = [],
 ): DayStory {
 	const places = buildDayPlaces(insights.gps, radiusKm, namedPlaces);
+	const journeys = buildGpsJourneys(insights.gps, namedPlaces);
 	const gpsSources = new Set(
 		insights.gps.segments.flatMap((segment) => segment.map((point) => point.sourceId)),
 	);
 	const firstHour = new Map<string, number>();
-	const hours = timeline.hours.map((slot) => {
+	const hours: StoryHour[] = timeline.hours.map((slot) => {
 		const fresh: LifeEvent[] = [];
 		const continuing = new Map<string, StoryContinuation>();
 		for (const event of slot.events) {
@@ -332,6 +365,29 @@ export function buildDayStory(
 			visits: [] as StoryVisit[],
 		};
 	});
+	for (const journey of journeys) {
+		const anchorHour = new Date(journey.startAt).getHours();
+		const anchor = hours[anchorHour];
+		if (!anchor) continue;
+		anchor.journeys ??= [];
+		anchor.journeys.push(journey);
+		for (const row of hours) {
+			if (
+				row === anchor ||
+				!row.slot.instants.some(
+					(instant) => instant > Date.parse(journey.startAt) && instant < Date.parse(journey.endAt),
+				)
+			)
+				continue;
+			row.continuing.push({
+				id: journey.id,
+				title: `${journey.commute ? "可能的通勤" : TRAVEL_MODE_LABELS[journey.mode]}持续`,
+				kind: "journey",
+				side: "right",
+				anchorHour,
+			});
+		}
+	}
 	const sampledHours = new Map<number, { visit: GpsVisit; points: GpsVisit["points"] }[]>();
 	for (const visit of places.visits) {
 		for (const point of visit.points) {

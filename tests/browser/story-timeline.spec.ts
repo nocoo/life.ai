@@ -115,7 +115,7 @@ test("a whole day reads along one trunk with grouped evidence, record tabs and c
 		await eight
 			.locator("[data-story-kind]")
 			.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-story-kind"))),
-	).toEqual(["journey"]);
+	).toEqual(["travel", "journey"]);
 	await expect(eight.locator(".story-visit-map")).toHaveCount(1);
 	await eight.scrollIntoViewIfNeeded();
 	expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

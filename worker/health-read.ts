@@ -5,6 +5,7 @@ import {
 	type StoredHealthSeries,
 } from "../src/models/health-types.js";
 import type { LifeEvent } from "../src/models/types.js";
+import { withD1Retry } from "./database.js";
 
 /** Frequent/rare story evidence; dense engineering and gait metrics load in the raw-record tab. */
 export const HEALTH_STORY_DIMENSIONS = [
@@ -111,14 +112,16 @@ export async function readHealthSeries(
 	const filter = dimensions.length
 		? ` AND dimension IN (${dimensions.map(() => "?").join(",")})`
 		: "";
-	const { results } = await db
-		.prepare(`SELECT * FROM health_series
+	const { results } = await withD1Retry(() =>
+		db
+			.prepare(`SELECT * FROM health_series
 		WHERE utc_day >= ? AND utc_day <= ? ${filter}
 		UNION ALL SELECT * FROM health_series INDEXED BY idx_health_series_overlap
 		WHERE last_at >= utc_day + 86400000 AND utc_day < ? AND first_at < ? AND last_at > ? ${filter}
 		ORDER BY utc_day, dimension, part`)
-		.bind(dayStart, dayEnd, ...dimensions, dayStart, end, start, ...dimensions)
-		.all<SeriesRow>();
+			.bind(dayStart, dayEnd, ...dimensions, dayStart, end, start, ...dimensions)
+			.all<SeriesRow>(),
+	);
 	return results.map((row) => ({
 		utcDay: row.utc_day,
 		dimension: row.dimension,

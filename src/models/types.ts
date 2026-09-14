@@ -1,10 +1,11 @@
+import type { DaySourceProvider } from "./day-sources";
 import type { FootprintDay } from "./footprint";
 import type { StoredHealthSeries } from "./health-types";
 import type { PixiuDay } from "./pixiu";
 
 export type Precision = "day" | "hour" | "minute" | "second";
 export type ImportSourceId = "apple-health" | "footprint" | "pixiu" | "journal";
-export type SourceKind = "import" | "connect";
+export type SourceKind = "import" | "connect" | "external";
 export type JsonValue =
 	| null
 	| boolean
@@ -41,7 +42,7 @@ export interface Source {
 	id: string;
 	name: string;
 	kind: SourceKind;
-	provider: ImportSourceId | "connect";
+	provider: ImportSourceId | "connect" | DaySourceProvider;
 	recordCount: number;
 	lastEventAt: string | null;
 }

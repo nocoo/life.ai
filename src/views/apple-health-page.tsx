@@ -16,6 +16,7 @@ import { ArrowUpRight, FolderUp } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { Link } from "react-router";
 import { useStore } from "zustand";
+import { TargetSkeleton } from "../components/page-skeletons";
 import { healthProgressPercent, healthStore } from "../viewmodels/apple-health-view-model";
 import { dataTargetLabel } from "../viewmodels/data-overview-view-model";
 import { formatAbsoluteTime, formatByteSize } from "../viewmodels/format";
@@ -337,7 +338,9 @@ export function AppleHealthPage() {
 								</Text>
 							</LayerCard.Body>
 						) : targetStatus === "loading" ? (
-							<LayerCard.Loading label="正在确认数据环境" />
+							<LayerCard.Body>
+								<TargetSkeleton />
+							</LayerCard.Body>
 						) : null}
 						{targetStatus === "error" ? (
 							<LayerCard.Body>

@@ -128,32 +128,41 @@ export function AppSidebar({
 		));
 
 	return (
-		<Sidebar collapsed={collapsed} aria-label="主导航">
+		<Sidebar collapsed={collapsed} aria-label="主导航" className="life-sidebar">
+			<SidebarHeader className="life-sidebar-region gap-3 pl-6">
+				<img
+					src={BRAND_MARK_SRC}
+					alt={APP_NAME}
+					width={24}
+					height={24}
+					data-sidebar-logo=""
+					className="h-6 w-6 shrink-0"
+				/>
+				<div className="flex min-w-0 items-center gap-3" hidden={collapsed}>
+					<span className="whitespace-nowrap text-lg font-semibold text-basalt-foreground md:text-xl">
+						{APP_NAME}
+					</span>
+					<span className="shrink-0 rounded-md bg-basalt-secondary px-1.5 py-0.5 text-[10px] leading-none font-medium text-basalt-muted-foreground">
+						v{APP_VERSION}
+					</span>
+				</div>
+				<Button
+					variant="ghost"
+					size="icon"
+					className="life-sidebar-toggle"
+					onClick={onToggle}
+					aria-label={collapsed ? "展开侧栏" : "收起侧栏"}
+					aria-expanded={!collapsed}
+				>
+					<PanelLeft aria-hidden="true" />
+				</Button>
+			</SidebarHeader>
 			{collapsed ? (
 				<>
-					<SidebarHeader>
-						<img
-							src={BRAND_MARK_SRC}
-							alt={APP_NAME}
-							width={24}
-							height={24}
-							data-sidebar-logo=""
-							className="h-6 w-6 shrink-0"
-						/>
-					</SidebarHeader>
-					<Button
-						variant="ghost"
-						size="icon"
-						className="mb-1 self-center"
-						onClick={onToggle}
-						aria-label="展开侧栏"
-					>
-						<PanelLeft aria-hidden="true" />
-					</Button>
 					<Tooltip delayDuration={0}>
 						<TooltipTrigger asChild>
 							<SidebarIconItem
-								className="mb-2 self-center"
+								className="mt-11 mb-2 ml-[14px] shrink-0 self-start"
 								onClick={() => setSearchOpen(true)}
 								aria-label="搜索 (⌘K)"
 							>
@@ -164,7 +173,7 @@ export function AppSidebar({
 							搜索 (⌘K)
 						</TooltipContent>
 					</Tooltip>
-					<div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+					<div className="life-sidebar-region life-sidebar-scroll flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
 						<SidebarNav className="w-full items-center gap-1 pt-1">
 							{collapsedIcons(MAIN_GROUPS)}
 						</SidebarNav>
@@ -174,52 +183,13 @@ export function AppSidebar({
 							</div>
 						) : null}
 					</div>
-					<SidebarFooter className="flex w-full justify-center px-0">
-						<Tooltip delayDuration={0}>
-							<TooltipTrigger asChild>
-								<span className="inline-flex">{avatar}</span>
-							</TooltipTrigger>
-							<TooltipContent side="right" sideOffset={8}>
-								{userName}
-							</TooltipContent>
-						</Tooltip>
-					</SidebarFooter>
 				</>
 			) : (
 				<>
-					<SidebarHeader>
-						<div className="flex w-full items-center justify-between">
-							<div className="flex min-w-0 items-center gap-3">
-								<img
-									src={BRAND_MARK_SRC}
-									alt=""
-									width={24}
-									height={24}
-									data-sidebar-logo=""
-									className="h-6 w-6 shrink-0"
-								/>
-								<span className="truncate text-lg font-semibold text-basalt-foreground md:text-xl">
-									{APP_NAME}
-								</span>
-								<span className="shrink-0 rounded-md bg-basalt-secondary px-1.5 py-0.5 text-[10px] leading-none font-medium text-basalt-muted-foreground">
-									v{APP_VERSION}
-								</span>
-							</div>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-7 w-7 shrink-0"
-								onClick={onToggle}
-								aria-label="收起侧栏"
-							>
-								<PanelLeft aria-hidden="true" />
-							</Button>
-						</div>
-					</SidebarHeader>
-					<div className="px-3 pb-1">
+					<div className="life-sidebar-region px-3 pb-1">
 						<SidebarSearch onClick={() => setSearchOpen(true)}>搜索</SidebarSearch>
 					</div>
-					<div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+					<div className="life-sidebar-region life-sidebar-scroll flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
 						<SidebarNav className="pt-1">{expandedGroups(MAIN_GROUPS)}</SidebarNav>
 						{SETTINGS_GROUP ? (
 							<div className="mt-auto border-t border-basalt-border/70 pb-1">
@@ -227,11 +197,25 @@ export function AppSidebar({
 							</div>
 						) : null}
 					</div>
-					<SidebarFooter>
-						<SidebarUser name={userName} email={userEmail} avatar={avatar} />
-					</SidebarFooter>
 				</>
 			)}
+			<SidebarFooter className="life-sidebar-region">
+				<SidebarUser
+					className="life-sidebar-user"
+					name={userName}
+					email={userEmail}
+					avatar={
+						<Tooltip delayDuration={0}>
+							<TooltipTrigger asChild>
+								<span className="inline-flex shrink-0">{avatar}</span>
+							</TooltipTrigger>
+							<TooltipContent side="right" sideOffset={8}>
+								{userName}
+							</TooltipContent>
+						</Tooltip>
+					}
+				/>
+			</SidebarFooter>
 
 			<CommandPalette open={searchOpen} onOpenChange={setSearchOpen}>
 				<CommandInput placeholder="搜索页面…" />

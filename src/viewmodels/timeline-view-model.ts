@@ -1,11 +1,13 @@
 import { createStore } from "zustand/vanilla";
 import { buildDayInsights, type DayInsights, type TrackPoint } from "../models/day-insights";
+import { DAY_SOURCE_NAMES } from "../models/day-sources";
 import type { NamedPlace } from "../models/general-settings";
 import { buildHealthStory, type HealthStory } from "../models/health-insights";
 import { namedSleepLocation, type SleepLocation } from "../models/health-location";
 import { applyHealthStoryInsights } from "../models/health-quantities";
 import { buildDayTimeline, localDateKey, localDayWindow, shiftLocalDate } from "../models/time";
 import type { DayTimeline, LifeEvent, Source } from "../models/types";
+import { fetchDaySources } from "../services/day-sources-service";
 import { fetchAllEvents } from "../services/events-service";
 import { fetchHealthEvents } from "../services/health-evidence";
 import { fetchSleepLocations } from "../services/health-location";
@@ -36,6 +38,8 @@ export interface TimelineViewState {
 	tab: TimelinePageTab;
 	status: LoadStatus;
 	error: string | null;
+	daySourcesStatus: LoadStatus;
+	daySourcesError: string | null;
 	load: () => Promise<void>;
 	loadRecords: () => Promise<void>;
 	selectDay: (day: string) => Promise<void>;
@@ -77,6 +81,8 @@ function initialTimelineState(): Pick<
 	| "tab"
 	| "status"
 	| "error"
+	| "daySourcesStatus"
+	| "daySourcesError"
 > {
 	return {
 		day: localDateKey(),
@@ -95,6 +101,8 @@ function initialTimelineState(): Pick<
 		tab: "timeline",
 		status: "idle",
 		error: null,
+		daySourcesStatus: "idle",
+		daySourcesError: null,
 	};
 }
 
@@ -181,9 +189,18 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 			recordsTimeline: null,
 			recordsStatus: "idle",
 			recordsError: null,
+			daySourcesStatus: "loading",
+			daySourcesError: null,
 		});
 		try {
 			const window = localDayWindow(day);
+			const sourceRequest = fetchDaySources(
+				{ date: day, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, ...window },
+				controller.signal,
+			).then(
+				(result) => ({ result }),
+				(error: unknown) => ({ error }),
+			);
 			const [sources, events] = await Promise.all([
 				fetchSources(controller.signal),
 				fetchAllEvents({
@@ -206,6 +223,59 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 				status: "ready",
 				error: null,
 			});
+			const sourceUpdate = sourceRequest
+				.then((response) => {
+					if (generation !== loadGeneration) return;
+					if ("error" in response) throw response.error;
+					const remote = response.result;
+					cachedEvents = [...events, ...remote.events];
+					if (cachedRawEvents) {
+						const merged = new Map(
+							[...cachedRawEvents, ...remote.events].map((event) => [event.id, event]),
+						);
+						cachedRawEvents = [...merged.values()];
+					}
+					const externalSources: Source[] = remote.sources.map((source) => {
+						const records = remote.events.filter((event) => event.sourceId === source.provider);
+						return {
+							id: source.provider,
+							name: DAY_SOURCE_NAMES[source.provider],
+							kind: "external",
+							provider: source.provider,
+							recordCount: records.length,
+							lastEventAt: records.at(-1)?.occurredAt ?? null,
+						};
+					});
+					const current = get();
+					const projection = remote.events.length
+						? projectDay(day, current.sourceId, cachedEvents, current.radiusKm, current.namedPlaces)
+						: null;
+					// External records cannot change spatial/health evidence. Keep mounted maps stable.
+					if (projection && current.story && current.insights) {
+						projection.insights.gps = current.insights.gps;
+						projection.story.places = current.story.places;
+						projection.story.hours = projection.story.hours.map((hour, index) => ({
+							...hour,
+							visits: current.story?.hours[index]?.visits ?? hour.visits,
+							journeys: current.story?.hours[index]?.journeys,
+							health: current.story?.hours[index]?.health,
+						}));
+					}
+					set({
+						sources: [...sources, ...externalSources],
+						...projection,
+						daySourcesStatus: "ready",
+						daySourcesError:
+							remote.sources
+								.filter((source) => source.state === "error")
+								.map((source) => `${source.message}${source.stale ? " 显示上次读取的数据。" : ""}`)
+								.join(" ") || null,
+					});
+				})
+				.catch((error: unknown) => {
+					if (generation === loadGeneration && !isAbortError(error))
+						set({ daySourcesStatus: "error", daySourcesError: toErrorMessage(error) });
+				});
 			const health = get().health;
 			if (health?.nights.some((night) => night.place)) {
 				try {
@@ -240,6 +310,7 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 					/* Location inference is optional; recorded sleep remains readable. */
 				}
 			}
+			await sourceUpdate;
 			if (generation !== loadGeneration) return;
 			if (get().tab === "records") await get().loadRecords();
 		} catch (error) {
@@ -247,6 +318,7 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 				return;
 			}
 			cachedDay = "";
+			controller.abort();
 			cachedEvents = [];
 			set({
 				status: "error",

@@ -7,6 +7,7 @@ import {
 	readDayWeather,
 } from "../src/models/day-context.js";
 import { shiftLocalDate } from "../src/models/time.js";
+import { withD1Retry } from "./database.js";
 import { ApiError, type WorkerEnv } from "./types.js";
 import { jsonResponse } from "./utils.js";
 
@@ -103,11 +104,13 @@ async function readValidCache<T>(
 	kind: "sun" | "weather" | "place",
 	cacheKey: string,
 ): Promise<T | null> {
-	const row = await env.DB.prepare(
-		"SELECT data_json, expires_at FROM public_context_cache WHERE kind = ? AND cache_key = ?",
-	)
-		.bind(kind, cacheKey)
-		.first<CacheRow>();
+	const row = await withD1Retry(() =>
+		env.DB.prepare(
+			"SELECT data_json, expires_at FROM public_context_cache WHERE kind = ? AND cache_key = ?",
+		)
+			.bind(kind, cacheKey)
+			.first<CacheRow>(),
+	);
 
 	if (!row?.data_json) return null;
 	const now = Date.now();

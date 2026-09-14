@@ -42,6 +42,8 @@ import {
 } from "../models/health-insights";
 import { formatDurationMinutes, formatLocalClock } from "../viewmodels/format";
 import { healthDimensionLabel } from "../viewmodels/health-format";
+import { EcgSkeleton } from "./page-skeletons";
+import { SleepStageChart } from "./sleep-stage-chart";
 import { StoryCardHeading, StoryMetricLabel } from "./story-card-heading";
 import { StoryCardInfo } from "./story-card-info";
 import "./health-story.css";
@@ -71,65 +73,56 @@ export function SleepStoryCard({ night }: { night: SleepNight | null }) {
 				<StoryCardHeading icon={MoonStar} title="睡眠" subtitle="这一夜，醒来后回看" />
 			</LayerCard.Header>
 			<LayerCard.Body>
-				<dl className="health-story-times">
-					<div>
-						<dt>
-							<StoryMetricLabel icon={Moon}>入睡</StoryMetricLabel>
-						</dt>
-						<dd>
-							<time dateTime={night.fellAsleepAt}>{clock(night.fellAsleepAt)}</time>
-						</dd>
-					</div>
-					<div>
-						<dt>
-							<StoryMetricLabel icon={Sunrise}>起床</StoryMetricLabel>
-						</dt>
-						<dd>
-							<time dateTime={night.wokeAt}>{clock(night.wokeAt)}</time>
-						</dd>
-					</div>
-				</dl>
-				<DescriptionList columns={2}>
-					<DescriptionList.Item
-						term={<StoryMetricLabel icon={MoonStar}>实际睡眠</StoryMetricLabel>}
-					>
-						{formatDurationMinutes(night.asleepMinutes)}
-					</DescriptionList.Item>
-					<DescriptionList.Item term={<StoryMetricLabel icon={BedDouble}>在床</StoryMetricLabel>}>
-						{night.inBedMinutes === null ? "未记录" : formatDurationMinutes(night.inBedMinutes)}
-					</DescriptionList.Item>
-					<DescriptionList.Item term={<StoryMetricLabel icon={Eye}>清醒</StoryMetricLabel>}>
-						{night.awakeMinutes === null ? "未记录" : formatDurationMinutes(night.awakeMinutes)}
-					</DescriptionList.Item>
-				</DescriptionList>
-				{night.timeline.length > 0 ? (
-					<div className="health-story-hypnogram" role="img" aria-label="睡眠阶段">
-						{night.timeline.map((segment) => {
-							const origin = Date.parse(night.fellAsleepAt);
-							const span = Math.max(Date.parse(night.wokeAt) - origin, 1);
-							const start = Date.parse(segment.startAt) - origin;
-							const width = Date.parse(segment.endAt) - Date.parse(segment.startAt);
-							return (
-								<span
-									key={`${segment.eventId}:${segment.startAt}:${segment.kind}`}
-									className={`health-story-stage-${segment.kind}`}
-									style={{
-										left: `${(start / span) * 100}%`,
-										width: `${Math.max((width / span) * 100, 0)}%`,
-									}}
-									title={`${clock(segment.startAt)}–${clock(segment.endAt)} ${segment.label}`}
-								/>
-							);
+				<div className="health-sleep-summary">
+					<Text as="p" size="sm" tone="muted">
+						睡眠时间
+					</Text>
+					<p className="health-sleep-duration">{formatDurationMinutes(night.asleepMinutes)}</p>
+					<time dateTime={night.wokeAt}>
+						{new Date(night.wokeAt).toLocaleDateString("zh-CN", {
+							year: "numeric",
+							month: "long",
+							day: "numeric",
 						})}
-					</div>
-				) : null}
+					</time>
+				</div>
+				<SleepStageChart night={night} />
 				<div className="health-sleep-legend">
 					{night.stages.map((stage) => (
 						<span key={stage.kind}>
 							<i className={`health-story-stage-${stage.kind}`} />
-							{stage.label} {formatDurationMinutes(stage.minutes)}
+							{stage.kind === "asleep" ? "睡眠（未分期）" : stage.label}{" "}
+							{formatDurationMinutes(stage.minutes)}
 						</span>
 					))}
+				</div>
+				<div className="mt-5">
+					<dl className="health-story-times">
+						<div>
+							<dt>
+								<StoryMetricLabel icon={Moon}>入睡</StoryMetricLabel>
+							</dt>
+							<dd>
+								<time dateTime={night.fellAsleepAt}>{clock(night.fellAsleepAt)}</time>
+							</dd>
+						</div>
+						<div>
+							<dt>
+								<StoryMetricLabel icon={Sunrise}>起床</StoryMetricLabel>
+							</dt>
+							<dd>
+								<time dateTime={night.wokeAt}>{clock(night.wokeAt)}</time>
+							</dd>
+						</div>
+					</dl>
+					<DescriptionList columns={2}>
+						<DescriptionList.Item term={<StoryMetricLabel icon={BedDouble}>在床</StoryMetricLabel>}>
+							{night.inBedMinutes === null ? "未记录" : formatDurationMinutes(night.inBedMinutes)}
+						</DescriptionList.Item>
+						<DescriptionList.Item term={<StoryMetricLabel icon={Eye}>清醒</StoryMetricLabel>}>
+							{night.awakeMinutes === null ? "未记录" : formatDurationMinutes(night.awakeMinutes)}
+						</DescriptionList.Item>
+					</DescriptionList>
 				</div>
 			</LayerCard.Body>
 		</LayerCard>
@@ -371,10 +364,12 @@ export function EcgStoryCard({
 	ecg,
 	waveform,
 	samplingHz,
+	loading = false,
 }: {
 	ecg: EcgRecording;
 	waveform?: number[];
 	samplingHz?: number;
+	loading?: boolean;
 }) {
 	const [page, setPage] = useState(0);
 	const hz = resolveEcgHertz(
@@ -443,9 +438,11 @@ export function EcgStoryCard({
 						</Button>
 					</div>
 				</div>
+			) : loading ? (
+				<EcgSkeleton />
 			) : (
 				<Text as="p" size="sm" tone="muted">
-					{ecg.filePath ? "正在准备波形" : "没有波形附件"}
+					{ecg.filePath ? "没有可显示的波形数据" : "没有波形附件"}
 				</Text>
 			)}
 		</article>

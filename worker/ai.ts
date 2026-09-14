@@ -1,6 +1,7 @@
 import { defaultRegistry } from "@nocoo/next-ai";
 import { type AiConnectionResult, type AiSettings, DEFAULT_AI_MODEL } from "../src/models/ai.js";
 import { verifyTestMarker } from "./auth.js";
+import { withD1Retry } from "./database.js";
 import { ApiError, type WorkerEnv } from "./types.js";
 import { jsonResponse, readJsonBody, validateString } from "./utils.js";
 
@@ -109,9 +110,11 @@ interface StoredAiRow {
 }
 
 function readSettings(env: WorkerEnv) {
-	return env.DB.prepare(
-		"SELECT provider, model, base_url, sdk_type, auth_type, encrypted_api_key FROM ai_settings WHERE id = 'default'",
-	).first<StoredAiRow>();
+	return withD1Retry(() =>
+		env.DB.prepare(
+			"SELECT provider, model, base_url, sdk_type, auth_type, encrypted_api_key FROM ai_settings WHERE id = 'default'",
+		).first<StoredAiRow>(),
+	);
 }
 
 export async function getDecryptedAiConfig(env: WorkerEnv): Promise<AiConfig> {

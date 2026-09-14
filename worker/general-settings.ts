@@ -3,13 +3,16 @@ import {
 	type GeneralSettings,
 	validateGeneralSettings,
 } from "../src/models/general-settings.js";
+import { withD1Retry } from "./database.js";
 import { ApiError, type WorkerEnv } from "./types.js";
 import { jsonResponse, readJsonBody } from "./utils.js";
 
 export async function readGeneralSettings(env: WorkerEnv): Promise<GeneralSettings> {
-	const row = await env.DB.prepare(
-		"SELECT data_json FROM general_settings WHERE id = 'default'",
-	).first<{ data_json: string }>();
+	const row = await withD1Retry(() =>
+		env.DB.prepare("SELECT data_json FROM general_settings WHERE id = 'default'").first<{
+			data_json: string;
+		}>(),
+	);
 	return row ? validateGeneralSettings(JSON.parse(row.data_json)) : emptyGeneralSettings();
 }
 

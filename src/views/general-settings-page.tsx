@@ -4,6 +4,7 @@ import { PageHeader } from "@nocoo/basalt/components/page-header";
 import { MapPinned, Moon, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useStore } from "zustand";
+import { PlaceListSkeleton, RoutineSkeleton } from "../components/page-skeletons";
 import { PlaceRegionEditor } from "../components/place-region-editor";
 import {
 	MAX_NAMED_PLACES,
@@ -26,6 +27,7 @@ export function GeneralSettingsPage() {
 	const routineEnabled = useStore(generalSettingsStore, (state) => state.routineEnabled);
 	const [pendingDelete, setPendingDelete] = useState<NamedPlace | null>(null);
 	const busy = saving || status !== "ready";
+	const loading = !settings && (status === "idle" || status === "loading");
 	const places = settings?.places ?? [];
 	const canAdd = places.length < MAX_NAMED_PLACES;
 	const duration =
@@ -47,11 +49,6 @@ export function GeneralSettingsPage() {
 				title="通用设置"
 				description="记下常去的地方，以及你习惯的入睡和起床时间。日记会用它们理解一天的节奏，而不会替你下结论。"
 			/>
-			{status === "loading" && !settings ? (
-				<LayerCard>
-					<LayerCard.Loading label="正在读取通用设置" />
-				</LayerCard>
-			) : null}
 			{status === "error" ? (
 				<Banner
 					variant="error"
@@ -74,130 +71,129 @@ export function GeneralSettingsPage() {
 			{message ? <Banner variant="default" title={message} /> : null}
 			<div className="general-settings-layout">
 				<LayerCard>
-					<LayerCard.Header>
-						<div className="flex items-start justify-between gap-3">
-							<div className="flex min-w-0 items-start gap-3">
-								<MapPinned
-									className="mt-0.5 h-5 w-5 shrink-0"
-									strokeWidth={1.6}
-									aria-hidden="true"
-								/>
-								<div className="min-w-0">
-									<Text as="h2" variant="heading" size="md">
-										常用地点
-									</Text>
-									<Text as="p" size="sm" tone="muted">
-										给家、公司或其他常去的地方起名，并画出大概范围。这些名称会出现在时间线与日记里。
-									</Text>
-								</div>
-							</div>
-							<Button
-								size="sm"
-								variant="outline"
-								disabled={busy || !canAdd || Boolean(placeDraft)}
-								onClick={() => {
-									const seed = timelineStore.getState().story?.places.representativePlace?.anchor;
-									generalSettingsStore.getState().beginPlace(undefined, seed);
-								}}
-							>
-								<Plus size={14} strokeWidth={1.6} aria-hidden="true" />
-								添加地点
-							</Button>
+					<LayerCard.Header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2">
+						<div className="flex min-w-0 items-center gap-3">
+							<MapPinned className="h-5 w-5 shrink-0" strokeWidth={1.6} aria-hidden="true" />
+							<Text as="h2" variant="heading" size="md">
+								常用地点
+							</Text>
 						</div>
+						<Button
+							size="sm"
+							variant="outline"
+							className="shrink-0 whitespace-nowrap text-basalt-foreground"
+							disabled={busy || !canAdd || Boolean(placeDraft)}
+							onClick={() => {
+								const seed = timelineStore.getState().story?.places.representativePlace?.anchor;
+								generalSettingsStore.getState().beginPlace(undefined, seed);
+							}}
+						>
+							<Plus size={14} strokeWidth={1.6} aria-hidden="true" />
+							添加地点
+						</Button>
+						<Text as="p" size="sm" tone="muted" className="col-span-2">
+							给家、公司或其他常去的地方起名，并画出大概范围。这些名称会出现在时间线与日记里。
+						</Text>
 					</LayerCard.Header>
 					<LayerCard.Body className="space-y-4">
-						{places.length === 0 && !placeDraft ? (
-							<Text as="p" size="sm" tone="muted">
-								还没有常用地点。添加后，足迹会更容易对上你熟悉的地方。
-							</Text>
-						) : (
-							<ul className="space-y-2">
-								{places.map((place) => (
-									<li key={place.id}>
-										<LayerCard.Well>
-											<div className="flex flex-wrap items-start justify-between gap-3">
-												<div className="min-w-0">
-													<Text as="p" bold>
-														{place.label}
-													</Text>
-													<Text as="p" size="sm" tone="muted">
-														{place.latitude.toFixed(4)}, {place.longitude.toFixed(4)} ·{" "}
-														{place.radiusMeters} 米
-													</Text>
-												</div>
-												<div className="flex flex-wrap gap-2">
-													<Button
-														size="sm"
-														variant="ghost"
-														disabled={busy}
-														onClick={() => generalSettingsStore.getState().beginPlace(place)}
-													>
-														编辑
-													</Button>
-													<Button
-														size="sm"
-														variant="ghost"
-														disabled={busy}
-														onClick={() => setPendingDelete(place)}
-													>
-														删除
-													</Button>
-												</div>
-											</div>
-										</LayerCard.Well>
-									</li>
-								))}
-							</ul>
-						)}
-						{!canAdd ? (
-							<Text as="p" size="sm" tone="muted">
-								最多保存 {MAX_NAMED_PLACES} 个地点。
-							</Text>
-						) : null}
-						{placeDraft ? (
-							<form
-								className="space-y-4 border-t border-basalt-border/70 pt-4"
-								onSubmit={(event) => {
-									event.preventDefault();
-									void generalSettingsStore.getState().savePlace();
-								}}
-							>
-								<Text as="h3" variant="heading" size="sm">
-									{placeDraft.id ? "编辑地点" : "新地点"}
-								</Text>
-								<PlaceRegionEditor
-									label={placeDraft.label}
-									center={placeDraft.center}
-									radiusMeters={placeDraft.radiusMeters}
-									disabled={busy}
-									onLabelChange={(value) =>
-										generalSettingsStore.getState().setPlaceDraft({ label: value })
-									}
-									onCenterChange={(value) =>
-										generalSettingsStore.getState().setPlaceDraft({ center: value })
-									}
-									onRadiusChange={(value) =>
-										generalSettingsStore.getState().setPlaceDraft({ radiusMeters: value })
-									}
-								/>
-								<div className="flex flex-wrap gap-2">
-									<Button
-										type="submit"
-										loading={saving}
-										disabled={busy || !placeDraft.center || !placeDraft.label.trim()}
+						{loading ? (
+							<PlaceListSkeleton />
+						) : settings ? (
+							<>
+								{places.length === 0 && !placeDraft ? (
+									<Text as="p" size="sm" tone="muted">
+										还没有常用地点。添加后，足迹会更容易对上你熟悉的地方。
+									</Text>
+								) : (
+									<ul className="space-y-2">
+										{places.map((place) => (
+											<li key={place.id}>
+												<LayerCard.Well>
+													<div className="flex flex-wrap items-start justify-between gap-3">
+														<div className="min-w-0">
+															<Text as="p" bold>
+																{place.label}
+															</Text>
+															<Text as="p" size="sm" tone="muted">
+																{place.latitude.toFixed(4)}, {place.longitude.toFixed(4)} ·{" "}
+																{place.radiusMeters} 米
+															</Text>
+														</div>
+														<div className="flex flex-wrap gap-2">
+															<Button
+																size="sm"
+																variant="ghost"
+																disabled={busy}
+																onClick={() => generalSettingsStore.getState().beginPlace(place)}
+															>
+																编辑
+															</Button>
+															<Button
+																size="sm"
+																variant="ghost"
+																disabled={busy}
+																onClick={() => setPendingDelete(place)}
+															>
+																删除
+															</Button>
+														</div>
+													</div>
+												</LayerCard.Well>
+											</li>
+										))}
+									</ul>
+								)}
+								{!canAdd ? (
+									<Text as="p" size="sm" tone="muted">
+										最多保存 {MAX_NAMED_PLACES} 个地点。
+									</Text>
+								) : null}
+								{placeDraft ? (
+									<form
+										className="space-y-4 border-t border-basalt-border/70 pt-4"
+										onSubmit={(event) => {
+											event.preventDefault();
+											void generalSettingsStore.getState().savePlace();
+										}}
 									>
-										保存地点
-									</Button>
-									<Button
-										type="button"
-										variant="ghost"
-										disabled={saving}
-										onClick={() => generalSettingsStore.getState().cancelPlace()}
-									>
-										取消
-									</Button>
-								</div>
-							</form>
+										<Text as="h3" variant="heading" size="sm">
+											{placeDraft.id ? "编辑地点" : "新地点"}
+										</Text>
+										<PlaceRegionEditor
+											label={placeDraft.label}
+											center={placeDraft.center}
+											radiusMeters={placeDraft.radiusMeters}
+											disabled={busy}
+											onLabelChange={(value) =>
+												generalSettingsStore.getState().setPlaceDraft({ label: value })
+											}
+											onCenterChange={(value) =>
+												generalSettingsStore.getState().setPlaceDraft({ center: value })
+											}
+											onRadiusChange={(value) =>
+												generalSettingsStore.getState().setPlaceDraft({ radiusMeters: value })
+											}
+										/>
+										<div className="flex flex-wrap gap-2">
+											<Button
+												type="submit"
+												loading={saving}
+												disabled={busy || !placeDraft.center || !placeDraft.label.trim()}
+											>
+												保存地点
+											</Button>
+											<Button
+												type="button"
+												variant="ghost"
+												disabled={saving}
+												onClick={() => generalSettingsStore.getState().cancelPlace()}
+											>
+												取消
+											</Button>
+										</div>
+									</form>
+								) : null}
+							</>
 						) : null}
 					</LayerCard.Body>
 				</LayerCard>
@@ -217,68 +213,76 @@ export function GeneralSettingsPage() {
 						</div>
 					</LayerCard.Header>
 					<LayerCard.Body className="space-y-4">
-						<div className="flex items-center justify-between gap-3">
-							<Text as="p" size="sm">
-								记录惯常作息
-							</Text>
-							<Switch
-								checked={routineEnabled}
-								disabled={busy}
-								aria-label="记录惯常作息"
-								onCheckedChange={(checked) =>
-									generalSettingsStore.getState().setRoutineEnabled(checked)
-								}
-							/>
-						</div>
-						<Field label="入睡时间" htmlFor="routine-bedtime">
-							<Input
-								id="routine-bedtime"
-								type="time"
-								value={routineDraft.bedtime}
-								disabled={busy || !routineEnabled}
-								onChange={(event) =>
-									generalSettingsStore.getState().setRoutineDraft({ bedtime: event.target.value })
-								}
-							/>
-						</Field>
-						<Field label="起床时间" htmlFor="routine-waketime">
-							<Input
-								id="routine-waketime"
-								type="time"
-								value={routineDraft.wakeTime}
-								disabled={busy || !routineEnabled}
-								onChange={(event) =>
-									generalSettingsStore.getState().setRoutineDraft({
-										wakeTime: event.target.value,
-									})
-								}
-							/>
-						</Field>
-						<Field label="时区" htmlFor="routine-timezone">
-							<Input
-								id="routine-timezone"
-								value={routineDraft.timeZone}
-								disabled={busy || !routineEnabled}
-								onChange={(event) =>
-									generalSettingsStore.getState().setRoutineDraft({
-										timeZone: event.target.value,
-									})
-								}
-								placeholder="例如 Asia/Shanghai"
-							/>
-						</Field>
-						{duration !== null && duration > 0 ? (
-							<Text as="p" size="sm" tone="muted">
-								这段惯常作息大约 {formatDuration(duration)}。跨过午夜也没问题。
-							</Text>
+						{loading ? (
+							<RoutineSkeleton />
+						) : settings ? (
+							<>
+								<div className="flex items-center justify-between gap-3">
+									<Text as="p" size="sm">
+										记录惯常作息
+									</Text>
+									<Switch
+										checked={routineEnabled}
+										disabled={busy}
+										aria-label="记录惯常作息"
+										onCheckedChange={(checked) =>
+											generalSettingsStore.getState().setRoutineEnabled(checked)
+										}
+									/>
+								</div>
+								<Field label="入睡时间" htmlFor="routine-bedtime">
+									<Input
+										id="routine-bedtime"
+										type="time"
+										value={routineDraft.bedtime}
+										disabled={busy || !routineEnabled}
+										onChange={(event) =>
+											generalSettingsStore
+												.getState()
+												.setRoutineDraft({ bedtime: event.target.value })
+										}
+									/>
+								</Field>
+								<Field label="起床时间" htmlFor="routine-waketime">
+									<Input
+										id="routine-waketime"
+										type="time"
+										value={routineDraft.wakeTime}
+										disabled={busy || !routineEnabled}
+										onChange={(event) =>
+											generalSettingsStore.getState().setRoutineDraft({
+												wakeTime: event.target.value,
+											})
+										}
+									/>
+								</Field>
+								<Field label="时区" htmlFor="routine-timezone">
+									<Input
+										id="routine-timezone"
+										value={routineDraft.timeZone}
+										disabled={busy || !routineEnabled}
+										onChange={(event) =>
+											generalSettingsStore.getState().setRoutineDraft({
+												timeZone: event.target.value,
+											})
+										}
+										placeholder="例如 Asia/Shanghai"
+									/>
+								</Field>
+								{duration !== null && duration > 0 ? (
+									<Text as="p" size="sm" tone="muted">
+										这段惯常作息大约 {formatDuration(duration)}。跨过午夜也没问题。
+									</Text>
+								) : null}
+								<Button
+									onClick={() => void generalSettingsStore.getState().saveRoutine()}
+									loading={saving}
+									disabled={busy}
+								>
+									保存作息
+								</Button>
+							</>
 						) : null}
-						<Button
-							onClick={() => void generalSettingsStore.getState().saveRoutine()}
-							loading={saving}
-							disabled={busy}
-						>
-							保存作息
-						</Button>
 					</LayerCard.Body>
 				</LayerCard>
 			</div>

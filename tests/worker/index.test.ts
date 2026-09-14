@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import workerEntry, {
 	APP_VERSION,
 	handleRequest,
@@ -97,6 +97,13 @@ describe("worker/index router & host isolation", () => {
 		const query =
 			"date=2026-09-13&timeZone=UTC&start=2026-09-13T00:00:00Z&end=2026-09-14T00:00:00Z";
 		const cases = [
+			["/api/settings/sources", "GET", 200],
+			["/api/settings/sources", "POST", 405],
+			["/api/settings/sources/gecko", "PUT", 415],
+			["/api/settings/sources/firefly", "DELETE", 200],
+			["/api/settings/sources/gecko/test", "POST", 415],
+			[`/api/day-sources?${query}`, "GET", 200],
+			["/api/day-sources", "POST", 405],
 			["/api/settings/general", "GET", 200],
 			["/api/settings/general", "PUT", 415],
 			["/api/settings/general", "PATCH", 405],
@@ -422,6 +429,37 @@ describe("worker/index router & host isolation", () => {
 			expect(assetCalled).toBe(true);
 			expect(res.status).toBe(200);
 			expect(await res.text()).toBe("<html>SPA</html>");
+		});
+
+		it("logs unexpected failures without request secrets or upstream messages", async () => {
+			const log = vi.spyOn(console, "error").mockImplementation(() => {});
+			const env = {
+				...defaultEnv,
+				RESOURCE_ENV: "development",
+				ASSETS: {
+					fetch: async () => {
+						throw new Error("private upstream contents");
+					},
+				} as unknown as Fetcher,
+			};
+			const response = await handleRequest(
+				new Request("https://life.dev.hexly.ai/index.html?key=private-query", {
+					headers: { Authorization: "Bearer private-header" },
+				}),
+				env,
+			);
+			expect(response.status).toBe(500);
+			expect(log).toHaveBeenCalledOnce();
+			const entry = JSON.parse(String(log.mock.calls[0]?.[0]));
+			expect(entry).toMatchObject({
+				event: "request_error",
+				method: "GET",
+				path: "/index.html",
+				name: "Error",
+			});
+			expect(entry.frames.length).toBeGreaterThan(0);
+			expect(JSON.stringify(log.mock.calls)).not.toContain("private-");
+			expect(JSON.stringify(log.mock.calls)).not.toContain("private upstream");
 		});
 
 		it("disallows non-POST on /api/ingest", async () => {

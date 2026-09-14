@@ -44,6 +44,7 @@ import { Link } from "react-router";
 import { Bar, BarChart, CartesianGrid, LabelList, Tooltip, XAxis, YAxis } from "recharts";
 import { useStore } from "zustand";
 import { HealthProviderOverview } from "../components/health-provider-overview";
+import { DataOverviewSkeleton } from "../components/page-skeletons";
 import type { ProviderOverview } from "../models/data-management";
 import {
 	compareProviders,
@@ -464,11 +465,7 @@ export function DataOverviewPage() {
 					}
 				/>
 			) : null}
-			{loading && !overview ? (
-				<LayerCard>
-					<LayerCard.Loading label="正在读取数据概览" />
-				</LayerCard>
-			) : null}
+			{loading && !overview ? <DataOverviewSkeleton /> : null}
 			{overview ? (
 				<>
 					<div className="space-y-3">

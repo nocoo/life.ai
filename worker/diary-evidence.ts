@@ -6,15 +6,18 @@ import type { DayContextQuery, DaySun, DayWeather } from "../src/models/day-cont
 import { weatherDescription } from "../src/models/day-context.js";
 import type { DayInsights } from "../src/models/day-insights.js";
 import { buildDayPlaces, type DayPlaces, type GpsPlace } from "../src/models/day-places.js";
+import { computerActivitySchema, publishedArticleSchema } from "../src/models/day-sources.js";
 import { buildFinanceDay, formatMinor } from "../src/models/finance.js";
 import {
 	type GeneralSettings,
 	matchNamedPlace,
 	type NamedPlace,
 } from "../src/models/general-settings.js";
+import { buildGpsJourneys, TRAVEL_MODE_LABELS } from "../src/models/gps-journeys.js";
 import type { HealthStory } from "../src/models/health-insights.js";
 import { PIXIU_COLUMNS } from "../src/models/pixiu.js";
 import type { LifeEvent, Precision } from "../src/models/types.js";
+import { withD1Retry } from "./database.js";
 import {
 	buildPlaceCacheKey,
 	buildSunCacheKey,
@@ -27,6 +30,32 @@ import {
 import type { WorkerEnv } from "./types.js";
 
 export const MAX_DIARY_PLACES = 4;
+
+export function formatDaySourceEvidence(events: LifeEvent[], timeZone: string): string[] {
+	return events.flatMap((event) => {
+		const clock = formatEvidenceTime(event.occurredAt, event.precision, timeZone);
+		const computer =
+			event.sourceId === "gecko" ? computerActivitySchema.safeParse(event.data) : null;
+		if (computer?.success)
+			return [
+				`- 电脑前台活动 ${clock} 这一小时（不等同于连续工作，已过滤闲置）：${JSON.stringify({
+					activeSeconds: computer.data.activeSeconds,
+					apps: computer.data.apps.map((app, index) => ({
+						name: app.name,
+						seconds: app.seconds,
+						titles: index < 6 ? app.titles.slice(0, 3).map((title) => title.slice(0, 160)) : [],
+					})),
+				})}`,
+			];
+		const article =
+			event.sourceId === "firefly" ? publishedArticleSchema.safeParse(event.data) : null;
+		if (article?.success)
+			return [
+				`- ${clock} 公开发表文章：${JSON.stringify({ title: event.title, summary: event.content, author: article.data.author, url: article.data.url })}`,
+			];
+		return [];
+	});
+}
 
 export interface DiaryPublicApi {
 	getDaySun(env: WorkerEnv, query: DayContextQuery): Promise<DaySun>;
@@ -352,6 +381,40 @@ export async function collectDiaryEvidence(
 			}),
 		),
 	];
+	const pointLabels = new Map(
+		built.visits.flatMap((visit) =>
+			visit.points.map(
+				(point) =>
+					[
+						point,
+						placeLabels.get(visit.placeId) ?? `区域 ${visit.placeIndex}（场所未知）`,
+					] as const,
+			),
+		),
+	);
+	const journeyLines = buildGpsJourneys(input.insights.gps, input.settings?.places).map(
+		(journey) =>
+			`- 连续移动 ${formatEvidenceTime(journey.startAt, journey.startPoint.precision, input.timeZone)} 至 ${formatEvidenceTime(journey.endAt, journey.endPoint.precision, input.timeZone)}：${JSON.stringify(
+				{
+					from: journey.startPlace ?? pointLabels.get(journey.startPoint),
+					to: journey.endPlace ?? pointLabels.get(journey.endPoint),
+					distanceKm: Number((journey.distanceMeters / 1000).toFixed(2)),
+					movingMinutes: Number(journey.movingMinutes.toFixed(1)),
+					excludedStopMinutes: Number(journey.stoppedMinutes.toFixed(1)),
+					movingAverageKmh: Number(journey.averageKmh.toFixed(1)),
+					likelyMode: TRAVEL_MODE_LABELS[journey.mode],
+					modeEvidence: journey.modeReason,
+					commute: journey.commute
+						? `可能的通勤${journey.commute === "outbound" ? "去程" : "返程"}`
+						: null,
+					commuteEvidence: journey.commuteReason,
+					pointsOfInterest: journey.pointsOfInterest.map((point) => ({
+						label: point.label,
+						sampledAt: formatEvidenceTime(point.at, "minute", input.timeZone),
+					})),
+				},
+			)}`,
+	);
 	return [
 		...formatWeatherEvidence(weather, input.timeZone),
 		...formatSunEvidence(sun, input.timeZone),
@@ -361,6 +424,12 @@ export async function collectDiaryEvidence(
 				]
 			: []),
 		...placeLines,
+		...(journeyLines.length
+			? [
+					"- 以下交通方式与通勤均为候选解释：均速按有效采样距离 / 移动时间估算，排除短暂停等；超过 5 分钟的断档、停留拆段，不能补全未采样行程。途经兴趣点只表示命名范围内有采样，不证明入内或消费；与同段健康运动不要重复算作另一次出行。",
+					...journeyLines,
+				]
+			: []),
 		...(dailyNames.length
 			? [
 					`- 只有日期、没有时刻的位置采样命中用户命名范围：${JSON.stringify(dailyNames)}，不能安排日内顺序。`,
@@ -376,11 +445,13 @@ async function readCacheJson(
 	cacheKey: string,
 ): Promise<string | null> {
 	try {
-		const row = await env.DB.prepare(
-			"SELECT data_json, expires_at FROM public_context_cache WHERE kind = ? AND cache_key = ?",
-		)
-			.bind(kind, cacheKey)
-			.first<{ data_json: string; expires_at: number | null }>();
+		const row = await withD1Retry(() =>
+			env.DB.prepare(
+				"SELECT data_json, expires_at FROM public_context_cache WHERE kind = ? AND cache_key = ?",
+			)
+				.bind(kind, cacheKey)
+				.first<{ data_json: string; expires_at: number | null }>(),
+		);
 		if (!row?.data_json) return null;
 		if (row.expires_at !== null && row.expires_at <= Date.now()) return null;
 		return row.data_json;

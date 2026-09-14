@@ -5,6 +5,7 @@ import {
 	HeartPulse,
 	KeyRound,
 	MapPin,
+	Plug,
 	Settings,
 	Settings2,
 	Upload,
@@ -44,6 +45,7 @@ export const NAV_GROUPS: NavGroup[] = [
 		label: "设置",
 		items: [
 			{ href: "/settings/general", label: "通用设置", icon: Settings2 },
+			{ href: "/settings/sources", label: "数据源", icon: Plug },
 			{ href: "/settings/ai", label: "AI 设置", icon: Settings },
 			{ href: "/connect", label: "Connect", icon: KeyRound },
 			{ href: "/imports", label: "导入", icon: Upload },
@@ -62,33 +64,38 @@ export const ROUTE_META: Record<string, { title: string; description: string }> 
 	},
 	"/imports": {
 		title: "导入",
-		description: "导入日记 JSON/NDJSON",
+		description: "导入 JSON 或 NDJSON 随记，补充每日实录里的文字与片刻。",
 	},
 	"/connect": {
 		title: "Connect",
-		description: "签发只写令牌，按 UTC 小时覆盖写入",
+		description: "只写令牌，明文只出现一次。同一 UTC 小时再次写入会替换该小时；未来小时有效。",
 	},
 	"/settings/general": {
 		title: "通用设置",
-		description: "常用地点与惯常作息",
+		description:
+			"记下常去的地方，以及你习惯的入睡和起床时间。日记会用它们理解一天的节奏，而不会替你下结论。",
 	},
 	"/settings/ai": {
 		title: "AI 设置",
-		description: "配置 Workers AI 或其他模型",
+		description: "默认使用 Cloudflare Workers AI，不必填写密钥。测试连接使用已保存的配置。",
+	},
+	"/settings/sources": {
+		title: "数据源",
+		description: "连接电脑活动与公开文章，按天读入时间线和日记。",
 	},
 	"/data": {
 		title: "数据概览",
-		description: "各来源的覆盖天数、记录与最近导入",
+		description: "汇总每一种来源留下的记录，回看它们覆盖的日子。",
 	},
 	"/data/apple-health": {
 		title: "Apple Health",
-		description: "导入完整健康档案，回看身体与生活的节律",
+		description: "导入 Apple 健康导出记录，完整保留体征、睡眠、锻炼及路线细节。",
 	},
 	"/data/footprint": {
 		title: "Footprint",
-		description: "解析 GPX，按 UTC 日整日替换轨迹",
+		description: "导入 GPS 足迹，在每日实录中回看走过的地方。",
 	},
-	"/data/pixiu": { title: "貔貅记账", description: "按北京时间记账日导入完整账目" },
+	"/data/pixiu": { title: "貔貅记账", description: "把一日的花费与收获，放回生活的故事里。" },
 };
 
 export function routeMeta(pathname: string): { title: string; description: string } {

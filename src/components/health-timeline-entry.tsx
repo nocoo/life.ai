@@ -31,6 +31,7 @@ import {
 	SleepStoryCard,
 	WorkoutStoryCard,
 } from "./health-story";
+import { MapSkeleton } from "./page-skeletons";
 import { StoryCardHeading } from "./story-card-heading";
 import { StoryCardInfo } from "./story-card-info";
 
@@ -99,9 +100,7 @@ function WorkoutEntry({
 								label="锻炼与足迹合并地图"
 							/>
 						) : state.status === "loading" ? (
-							<LayerCard>
-								<LayerCard.Loading label="正在读取运动路线" />
-							</LayerCard>
+							<MapSkeleton />
 						) : null}
 						{state.status === "error" ? (
 							<Banner
@@ -141,12 +140,8 @@ function EcgEntry({ item }: { item: Extract<HealthTimelineItem, { kind: "ecg" }>
 				ecg={item.ecg}
 				waveform={state.waveform}
 				samplingHz={state.samplingHz ?? undefined}
+				loading={Boolean(path) && (state.status === "idle" || state.status === "loading")}
 			/>
-			{state.status === "loading" ? (
-				<Text as="p" size="xs" tone="muted">
-					正在读取波形…
-				</Text>
-			) : null}
 			{state.error ? (
 				<Banner
 					variant="error"

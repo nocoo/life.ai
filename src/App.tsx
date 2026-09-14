@@ -21,6 +21,9 @@ const GeneralSettingsPage = lazy(() =>
 		default: module.GeneralSettingsPage,
 	})),
 );
+const DaySourcesPage = lazy(() =>
+	import("./views/day-sources-page").then((module) => ({ default: module.DaySourcesPage })),
+);
 const DataOverviewPage = lazy(() =>
 	import("./views/data-overview-page").then((module) => ({ default: module.DataOverviewPage })),
 );
@@ -46,6 +49,7 @@ export function App() {
 						<Route path="/connect" element={<ConnectPage />} />
 						<Route path="/settings/ai" element={<AiSettingsPage />} />
 						<Route path="/settings/general" element={<GeneralSettingsPage />} />
+						<Route path="/settings/sources" element={<DaySourcesPage />} />
 						<Route path="/data" element={<DataOverviewPage />} />
 						<Route path="/data/footprint" element={<FootprintPage />} />
 						<Route path="/data/apple-health" element={<AppleHealthPage />} />

@@ -30,40 +30,140 @@
 	font-variant-numeric: tabular-nums;
 }
 
-.health-story-hypnogram {
+.health-sleep-summary {
+	display: grid;
+	gap: 4px;
+	margin-bottom: 18px;
+}
+
+.health-sleep-summary time {
+	font-size: 13px;
+	color: hsl(var(--basalt-muted-foreground));
+}
+
+.health-sleep-duration {
+	margin: 0;
+	font-size: clamp(26px, 3cqw, 36px);
+	font-weight: 580;
+	line-height: 1.25;
+	letter-spacing: -0.025em;
+	font-variant-numeric: tabular-nums;
+}
+
+.health-sleep-chart {
+	min-width: 0;
+	margin: 20px 0 0;
+}
+
+.health-sleep-plot {
 	position: relative;
-	height: 36px;
-	margin: 16px 0 8px;
-	border-radius: 4px;
-	background: hsl(var(--basalt-muted-foreground) / 0.12);
+	border-bottom: 1px solid hsl(var(--basalt-border));
 }
 
-.health-story-hypnogram span {
+.health-sleep-grid {
 	position: absolute;
-	top: 6px;
-	bottom: 6px;
-	min-width: 1px;
-	border-radius: 3px;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
 }
 
-.health-story-stage-core {
-	background: hsl(var(--basalt-chart-blue));
+.health-sleep-gridline {
+	stroke: hsl(var(--basalt-muted-foreground) / 0.22);
+	stroke-width: 1;
+	stroke-dasharray: 3 4;
 }
 
-.health-story-stage-deep {
-	background: hsl(var(--basalt-chart-pearl));
+.health-sleep-connection {
+	stroke: var(--sleep-stage-color);
+	stroke-width: 3;
+	stroke-linecap: round;
+	opacity: 0.35;
 }
 
-.health-story-stage-rem {
-	background: hsl(var(--basalt-chart-pink));
+.health-sleep-row {
+	position: relative;
+	border-top: 1px solid hsl(var(--basalt-border));
+	pointer-events: none;
 }
 
-.health-story-stage-asleep {
-	background: hsl(var(--basalt-chart-green));
+.health-sleep-row span {
+	display: inline-block;
+	padding: 4px 6px 0 2px;
+	font-size: 12px;
+	line-height: 18px;
+	color: hsl(var(--basalt-muted-foreground));
+}
+
+.health-sleep-segment {
+	position: absolute;
+	height: 36px;
+	min-width: 2px;
+	padding: 0;
+	border: 0;
+	border-radius: 6px;
+	background: var(--sleep-stage-color);
+	box-shadow: inset 0 0 0 1px hsl(var(--basalt-foreground) / 0.1);
+	cursor: pointer;
+}
+
+.health-sleep-segment:focus-visible,
+.health-sleep-segment[aria-pressed="true"] {
+	z-index: 1;
+	outline: 2px solid hsl(var(--basalt-foreground) / 0.65);
+	outline-offset: 2px;
+}
+
+.health-sleep-axis {
+	position: relative;
+	height: 26px;
+	margin-top: 5px;
+	font-size: 11px;
+	font-variant-numeric: tabular-nums;
+	color: hsl(var(--basalt-muted-foreground));
+}
+
+.health-sleep-axis span {
+	position: absolute;
+	transform: translateX(-50%);
+	white-space: nowrap;
+}
+
+.health-sleep-axis span:first-child {
+	transform: none;
+}
+
+.health-sleep-axis span:last-child {
+	transform: translateX(-100%);
+}
+
+.health-sleep-detail {
+	min-height: 40px;
+	font-size: 12px;
+	line-height: 1.6;
+	color: hsl(var(--basalt-muted-foreground));
+	font-variant-numeric: tabular-nums;
+	overflow-wrap: anywhere;
 }
 
 .health-story-stage-awake {
-	background: hsl(var(--basalt-chart-yellow));
+	--sleep-stage-color: hsl(var(--basalt-accent-8));
+}
+
+.health-story-stage-rem {
+	--sleep-stage-color: hsl(var(--basalt-accent-2));
+}
+
+.health-story-stage-core {
+	--sleep-stage-color: hsl(var(--basalt-chart-blue));
+}
+
+.health-story-stage-deep {
+	--sleep-stage-color: hsl(var(--basalt-accent-11));
+}
+
+.health-story-stage-asleep {
+	--sleep-stage-color: hsl(var(--basalt-chart-pearl));
 }
 
 .health-story-notes,
@@ -149,6 +249,7 @@
 	width: 8px;
 	height: 8px;
 	border-radius: 2px;
+	background: var(--sleep-stage-color);
 }
 .health-pressure-reading {
 	display: flex;
