@@ -35,9 +35,19 @@ import {
 
 const DayRecords = lazy(() => import("../components/day-records"));
 
+function validDayParameter(value: string | null): string | null {
+	if (!value) return null;
+	try {
+		return shiftLocalDate(value, 0);
+	} catch {
+		return null;
+	}
+}
+
 export function TimelinePage() {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const linkedDay = searchParams.get("day");
+	const validLinkedDay = validDayParameter(linkedDay);
 	const day = useStore(timelineStore, (state) => state.day);
 	const sourceId = useStore(timelineStore, (state) => state.sourceId);
 	const sources = useStore(timelineStore, (state) => state.sources);
@@ -72,17 +82,9 @@ export function TimelinePage() {
 
 	useEffect(() => {
 		const state = timelineStore.getState();
-		let validDay: string | null = null;
-		if (linkedDay) {
-			try {
-				validDay = shiftLocalDate(linkedDay, 0);
-			} catch {
-				// A malformed bookmark must not replace the current valid selection.
-			}
-		}
-		if (validDay && validDay !== state.day) void state.selectDay(validDay);
+		if (validLinkedDay && validLinkedDay !== state.day) void state.selectDay(validLinkedDay);
 		else void state.load();
-	}, [linkedDay]);
+	}, [validLinkedDay]);
 
 	useEffect(() => {
 		void dayContextStore.getState().load(contextQuery);
@@ -95,6 +97,10 @@ export function TimelinePage() {
 			params.set("day", next);
 			return params;
 		});
+	};
+	const selectedDayForNavigation = () => {
+		const locationDay = new URLSearchParams(window.location.search).get("day");
+		return validDayParameter(locationDay) ?? day;
 	};
 
 	useEffect(() => {
@@ -151,8 +157,8 @@ export function TimelinePage() {
 							<DateNavigation
 								day={day}
 								isToday={isSelectedToday(day)}
-								onPrevDay={() => selectDay(shiftLocalDate(day, -1))}
-								onNextDay={() => selectDay(shiftLocalDate(day, 1))}
+								onPrevDay={() => selectDay(shiftLocalDate(selectedDayForNavigation(), -1))}
+								onNextDay={() => selectDay(shiftLocalDate(selectedDayForNavigation(), 1))}
 								onToday={() => selectDay(localDateKey())}
 								onSelectDay={selectDay}
 							/>
