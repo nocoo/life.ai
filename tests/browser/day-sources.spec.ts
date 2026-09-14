@@ -13,12 +13,13 @@ test.afterEach(async ({ request }) => {
 	await request.put("/api/settings/general", { data: { places: [], routine: null } });
 });
 
-test("GitHub settings accept a PAT, query a selected date, and display cached commits and PRs in both themes", async ({
+test("GitHub settings save only the connection, and the selected timeline day loads cached commits and PRs with Lucide icons", async ({
 	page,
 	request,
 }) => {
 	const errors: string[] = [];
 	page.on("pageerror", (error) => errors.push(error.message));
+	await page.setViewportSize({ width: 2560, height: 1440 });
 	await page.goto("/settings/sources");
 	const github = page.locator('[data-day-source="github"]');
 	await expect(github.getByRole("button", { name: "添加 GitHub", exact: true })).toBeDisabled();
@@ -30,18 +31,24 @@ test("GitHub settings accept a PAT, query a selected date, and display cached co
 	await github.getByRole("button", { name: "添加 GitHub", exact: true }).click();
 	await expect(github.getByLabel("GitHub PAT", { exact: true })).toHaveValue("");
 	await expect(github.getByText("已连接 @life-fixture")).toBeVisible();
-	await github.getByLabel("GitHub 查询日期").fill("2026-09-10");
-	await github.getByRole("button", { name: "查询当天", exact: true }).click();
-	await expect(page.getByText("GitHub 查询完成", { exact: true })).toBeVisible();
-	await expect(
-		page.getByText("2026-09-10：5 条 Commit / PR 活动。", { exact: true }),
-	).toBeVisible();
+	await expect(github.locator('input[type="date"]')).toHaveCount(0);
+	await expect(github.getByRole("button", { name: /查询|测试/ })).toHaveCount(0);
+	await expect(github.locator("svg.lucide-git-fork")).toBeVisible();
 	expect(await (await request.get("/api/settings/sources")).text()).not.toContain(githubFixtureKey);
-	await github.getByRole("link", { name: "查看当天 GitHub 卡片" }).click();
+	expect(
+		(
+			await request.put("/api/settings/sources/gecko", { data: { enabled: true, apiKey: key } })
+		).ok(),
+	).toBe(true);
+	await page.goto("/?day=2026-09-11");
+	await expect(page.locator("[data-github-empty]")).toContainText("当天没有 Commits 或 PR 活动。");
+	await expect(page.locator("[data-github-empty] svg.lucide-git-fork")).toBeVisible();
+	await page.getByRole("button", { name: "前一天", exact: true }).click();
+	await expect(page).toHaveURL(/day=2026-09-10/);
 	const cards = page.locator('[data-story-kind="github"]');
 	await expect(cards).toHaveCount(5);
 	const commit = cards.filter({ hasText: "GitHub · Commit" });
-	await expect(commit).toContainText("🐙");
+	await expect(commit.locator(".story-card-icon svg.lucide-git-fork")).toBeVisible();
 	await expect(commit).toContainText("09:02:03");
 	await expect(commit).toContainText("life-fixture/app");
 	await expect(commit.getByRole("link")).toHaveAttribute(
@@ -50,6 +57,13 @@ test("GitHub settings accept a PAT, query a selected date, and display cached co
 	);
 	await expect(cards.filter({ hasText: "GitHub · 合并 PR" })).toContainText("12:00:00");
 	await expect(cards.filter({ hasText: "GitHub · 关闭 PR" })).toContainText("13:00:00");
+	const computer = page.locator('[data-hour="9"] [data-story-kind="computer"]');
+	await expect(computer).toBeVisible();
+	const commitBox = await commit.boundingBox();
+	const computerBox = await computer.boundingBox();
+	expect(commitBox && computerBox).toBeTruthy();
+	expect(Math.abs((commitBox?.y ?? 0) - (computerBox?.y ?? 0))).toBeLessThanOrEqual(1);
+	expect(Math.abs((commitBox?.height ?? 0) - (computerBox?.height ?? 0))).toBeLessThanOrEqual(1);
 	for (const theme of ["light", "dark"]) {
 		await page.evaluate((value) => {
 			localStorage.setItem("theme", value);

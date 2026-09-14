@@ -9,6 +9,7 @@ import type {
 	DaySummaryResult,
 } from "../../src/models/ai";
 import { decodeHealthSeries } from "../../src/models/apple-health";
+import { CACHE_KINDS, type CacheClearResult, type CacheOverview } from "../../src/models/cache";
 import type {
 	DataOverview,
 	FootprintBatchReceipt,
@@ -1657,6 +1658,77 @@ await scenario(
 			"SELECT COUNT(*) AS n FROM github_day_cache WHERE data_json IS NOT NULL;",
 		)) as { results: { n: number }[] }[];
 		assert.equal(cache[0]?.results[0]?.n, 2);
+	},
+);
+
+await scenario(
+	"cache management authenticates, scopes deletion, preserves settings and refetches GitHub only after explicit invalidation",
+	async () => {
+		const listPath = "/api/cache?scope=day&date=2026-09-10";
+		const clearPath = "/api/cache/github?scope=day&date=2026-09-10";
+		for (const [endpoint, method] of [
+			[listPath, "GET"],
+			[clearPath, "DELETE"],
+		]) {
+			await rejected(await request(endpoint as string, { method, token: null }), 401);
+			await rejected(
+				await request(endpoint as string, { method, host: "life.worker.hexly.ai" }),
+				404,
+			);
+		}
+		await rejected(
+			await request(clearPath, { method: "DELETE", origin: "https://foreign.test" }),
+			403,
+		);
+		await rejected(await request("/api/cache/github", { method: "DELETE" }), 400);
+		await rejected(await request("/api/cache/day_summaries?scope=all", { method: "DELETE" }), 404);
+		await rejected(await request("/api/cache?scope=day&date=2026-02-30"), 400);
+		await rejected(await request("/api/cache?scope=all", { method: "DELETE" }), 405);
+		const fixture = process.env.LIFE_TEST_CONTEXT_URL;
+		assert(fixture && new URL(fixture).hostname === "127.0.0.1");
+		const upstreamCalls = async () =>
+			((await (await fetch(`${fixture}/requests`)).json()) as unknown[]).length;
+		const settings = await data<DaySourceSettings[]>(
+			await request("/api/settings/sources/github", {
+				method: "PUT",
+				body: { enabled: true, apiKey: githubFixtureKey },
+			}),
+		);
+		const beforeCalls = await upstreamCalls();
+		const daily = await data<CacheOverview>(await request(listPath));
+		assert.equal(daily.entries.find((entry) => entry.kind === "github")?.count, 1);
+		assert(!JSON.stringify(daily).includes(githubFixtureKey));
+		const cleared = await data<CacheClearResult>(await request(clearPath, { method: "DELETE" }));
+		assert.equal(cleared.cleared, 1);
+		assert.equal(cleared.overview.entries.find((entry) => entry.kind === "github")?.count, 0);
+		assert.equal(
+			(await data<CacheOverview>(await request("/api/cache?scope=all"))).entries.find(
+				(entry) => entry.kind === "github",
+			)?.count,
+			1,
+		);
+		assert.equal(await upstreamCalls(), beforeCalls);
+		assert.deepEqual(await data(await request("/api/settings/sources")), settings);
+		const dayPath = `/api/day-sources?${new URLSearchParams(githubFixtureQuery)}`;
+		assert.equal((await data<DaySourcesResult>(await request(dayPath))).events.length, 5);
+		assert.equal(await upstreamCalls(), beforeCalls + 3);
+		await data(await request(dayPath));
+		assert.equal(await upstreamCalls(), beforeCalls + 3);
+		const preservedSql =
+			"SELECT (SELECT COUNT(*) FROM life_events) AS events, (SELECT COUNT(*) FROM provider_days) AS provider_days, (SELECT COUNT(*) FROM health_series) AS health_series, (SELECT COUNT(*) FROM day_summaries) AS diaries, (SELECT data_json FROM general_settings LIMIT 1) AS settings";
+		const preserved = (await executeLocalSql(state, preservedSql)) as { results: unknown[] }[];
+		for (const kind of CACHE_KINDS)
+			await data(await request(`/api/cache/${kind}?scope=all`, { method: "DELETE" }));
+		assert(
+			(await data<CacheOverview>(await request("/api/cache?scope=all"))).entries.every(
+				(entry) => entry.count === 0,
+			),
+		);
+		assert.deepEqual(
+			((await executeLocalSql(state, preservedSql)) as { results: unknown[] }[])[0]?.results,
+			preserved[0]?.results,
+		);
+		assert.deepEqual(await data(await request("/api/settings/sources")), settings);
 	},
 );
 

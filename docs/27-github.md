@@ -1,6 +1,6 @@
 # GitHub 按日记录 — 2.0.0
 
-在「设置 → 数据源 → GitHub」填写已有 Personal Access Token，保存时由 Worker 调用 GitHub `/user` 验证并识别账号。支持指定查询日期，也会随每天的时间线自动读取。此功能不创建 PAT。
+在「设置 → 数据源 → GitHub」填写已有 Personal Access Token，保存时由 Worker 调用 GitHub `/user` 验证并识别账号。设置仅管理凭据与连接状态；查询日期直接沿用当天页面的日期选择，自动读取相应记录。此功能不创建 PAT。
 
 ## 查询范围
 
@@ -19,17 +19,19 @@ Classic PAT 只查公开仓库时无须 scope；包含私有仓库时需要 `rep
 
 `0008_github.sql` 保留原数据源配置和密文，扩展 provider 约束及账号字段，新增 `github_day_cache`。
 
-- 缓存键为 GitHub 数字账号 ID、日期、规范化时区和 UTC 窗口，与 PAT 和配置版本无关。完整成功结果永久保存，包括空日；命中不访问 GitHub、不写 D1。
+- 缓存键为 GitHub 数字账号 ID、日期、规范化时区和 UTC 窗口，与 PAT 和配置版本无关。完整成功结果永久保存，包括空日；命中不访问 GitHub、不写 D1。用户可通过内容区右上角的[缓存管理](28-cache-management.md)手动清除，下次读取才重新查询。
 - 今天同样以首次成功查询为准，不自动刷新。换同账号 PAT、停用/启用、移除后再添加同账号，均复用既有日快照。不同账号及日期窗口分别缓存。
 - 移除删除 PAT 与账号配置，保留历史快照；未启用该账号时不展示缓存。
 - 原子 D1 租约协调并发首次查询，等待者只查 D1；租约 60 秒后可接管，失败释放未完成行。停用、移除或切换账号后，旧账号的在途请求不能写回；同账号重新保存配置不丢弃正在读取的快照。
 - 幂等 SQL 使用有界瞬态重试，保存后读取确认，不重试整个 GitHub 查询。健康检查也复用同一读取重试。
 
-接口沿用 `GET /api/settings/sources`、`PUT/DELETE /api/settings/sources/github`、`POST /api/settings/sources/github/test`、`GET /api/day-sources`。查询按钮提交所选日窗口；GitHub `/test` 同样遵守缓存，不强制刷新。
+接口沿用 `GET /api/settings/sources`、`PUT/DELETE /api/settings/sources/github`、`POST /api/settings/sources/github/test`、`GET /api/day-sources`。当天页面提交当前日期的窗口；设置没有独立的日期或查询控件。GitHub `/test` 供 API 检查使用，同样遵守缓存，不强制刷新。
 
 ## 当天阅读
 
-时间线显示 🐙 GitHub 卡片、仓库、标题、短 SHA/PR 编号、原文链接与动作时间。卡片采用 GitHub 中性色，PR 状态使用绿色、紫色、红色和草稿灰色，兼容明暗主题且有文字标签。信息面板说明 PR 状态是首次查询时的快照。空日显示 GitHub 空状态卡片，不伪造零点事件。
+时间线显示 GitHub 卡片、仓库、标题、短 SHA/PR 编号、原文链接与动作时间。设置、记录及空日卡片统一采用 Lucide `GitFork`，动作使用 `GitCommitHorizontal`、`GitPullRequest`、`GitMerge` 和 `GitPullRequestClosed`，不使用 emoji。卡片采用 GitHub 中性色，PR 状态使用绿色、紫色、红色和草稿灰色，兼容明暗主题且有文字标签。信息面板说明 PR 状态是首次查询时的快照。空日显示 GitHub 空状态卡片，不伪造零点事件。
+
+宽屏同一横排的卡片填满所在行高度，仍保留短卡片的自然宽度；手机按时间纵向排列，使用内容自然高度。
 
 日记证据包含账号、仓库、动作、标题、链接和时间，不据此断言连续工作时长或合并操作者；沿用既有输入指纹和旧日记保留机制。
 
@@ -37,7 +39,7 @@ Classic PAT 只查公开仓库时无须 scope；包含私有仓库时需要 `rep
 
 自动化测试使用隔离 Worker/SQLite、合成凭据和 loopback GitHub fixture，不使用真实 PAT。
 
-合并远端 Node 运行时与日期导航修复后，发布前检查：84 个 L1 文件、1,544 项测试通过，语句 98.92%、分支 96.39%、函数 99.09%、行 99.29%；28 个真实 HTTP 场景、35 个浏览器用例通过。严格类型检查、Biome、gitleaks、OSV、生产构建和 Wrangler dry run 通过。浏览器覆盖明暗状态色、PAT 清空、日期跳转、原文链接、空日卡片、手机布局和可访问性。
+合并远端 Node 运行时与日期导航修复、完成缓存管理和卡片调整后，发布前检查：87 个 L1 文件、1,561 项测试通过，语句 98.92%、分支 96.40%、函数 99.10%、行 99.28%；29 个真实 HTTP 场景、36 个浏览器用例通过。严格类型检查、Biome、gitleaks、OSV 和生产构建通过。浏览器覆盖明暗状态色、PAT 清空、日期自动查询、横排等高、原文链接、空日卡片、缓存范围及清除重试、手机布局和可访问性。
 
 2026-09-15 已从代码提交 `5cd1fa0` 部署 2.0.0，Worker 版本 `798e448c-1165-47cb-a7c1-986238ddf930`。原有 2.0.0 提交和远端 main 提交均保留。
 
@@ -46,4 +48,4 @@ Classic PAT 只查公开仓库时无须 scope；包含私有仓库时需要 `rep
 - Caddy 的七项只读 API 检查通过，包括数据源、通用/AI 设置、真实日期记录和生产数据目标。桌面及手机浏览器确认 GitHub 设置存在、PAT 输入默认隐藏且为空、无横向溢出、无页面错误和写入操作。Gecko、Firefly 的既有启用状态保留。
 - `bun run dev:prod` 继续在 `127.0.0.1:7011` 服务 `https://life.dev.hexly.ai`；原有 `.dev.vars.devprod` 内容及 600 权限不变。未替换 `AI_SETTINGS_KEY`，未重导入数据或生成日记。
 
-本次未提供或保存真实 GitHub PAT；首次连接可在「设置 → 数据源 → GitHub」填写已有 PAT。真实凭据未输出或提交；自动化查询与缓存验证使用合成凭据和隔离上游 fixture。
+实现与发布验证未获取、填写或输出真实 GitHub PAT；用户可自行在设置中填写已有 PAT。真实凭据不提交；自动化查询与缓存验证使用合成凭据和隔离上游 fixture。

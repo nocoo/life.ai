@@ -1,6 +1,7 @@
 import pkg from "../package.json" with { type: "json" };
 import { handleGetAiSettings, handlePostAiTest, handlePutAiSettings } from "./ai.js";
 import { authenticateAccess, isLocalHost } from "./auth.js";
+import { handleCacheRequest } from "./cache.js";
 import { handleDataRequest } from "./data-routes.js";
 import { handleDaySourceSettings, handleGetDaySources } from "./day-sources.js";
 import { handleGetDaySummary, handlePostDaySummary } from "./day-summary.js";
@@ -148,6 +149,9 @@ export async function handleRequest(request: Request, env: WorkerEnv): Promise<R
 
 		if (url.pathname.startsWith("/api/data/")) {
 			return await handleDataRequest(request, env, url);
+		}
+		if (url.pathname === "/api/cache" || url.pathname.startsWith("/api/cache/")) {
+			return await handleCacheRequest(request, env, url);
 		}
 
 		// 6. Route API endpoints

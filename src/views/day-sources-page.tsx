@@ -1,11 +1,10 @@
-import { Badge, Button, Field, Input, LayerCard, Text } from "@nocoo/basalt";
+import { Badge, Button, Field, LayerCard, Text } from "@nocoo/basalt";
 import { Banner } from "@nocoo/basalt/components/banner";
 import { PageHeader } from "@nocoo/basalt/components/page-header";
 import { SensitiveInput } from "@nocoo/basalt/components/sensitive-input";
-import { Monitor, Newspaper } from "lucide-react";
+import { GitFork, Monitor, Newspaper } from "lucide-react";
 import { useEffect } from "react";
 import { useStore } from "zustand";
-import { AppLink } from "../components/app-link";
 import { DaySourcesSkeleton } from "../components/page-skeletons";
 import { DAY_SOURCE_NAMES, DAY_SOURCE_PROVIDERS } from "../models/day-sources";
 import { daySourcesSettingsStore } from "../viewmodels/day-sources-view-model";
@@ -37,10 +36,10 @@ export function DaySourcesPage() {
 			{state.connection ? (
 				<Banner
 					variant={state.connection.success ? "default" : "error"}
-					title={`${DAY_SOURCE_NAMES[state.connection.provider]} ${state.connection.success ? (state.connection.provider === "github" ? "查询完成" : "连接成功") : "读取失败"}`}
+					title={`${DAY_SOURCE_NAMES[state.connection.provider]} ${state.connection.success ? "连接成功" : "读取失败"}`}
 					description={
 						state.connection.success
-							? `${state.connection.date}：${state.connection.eventCount} ${state.connection.provider === "gecko" ? "个小时有电脑活动" : state.connection.provider === "github" ? "条 Commit / PR 活动" : "篇公开文章"}。`
+							? `${state.connection.date}：${state.connection.eventCount} ${state.connection.provider === "gecko" ? "个小时有电脑活动" : "篇公开文章"}。`
 							: state.connection.message
 					}
 				/>
@@ -52,18 +51,15 @@ export function DaySourcesPage() {
 					{DAY_SOURCE_PROVIDERS.map((provider) => {
 						const setting = state.settings.find((value) => value.provider === provider);
 						const enabled = setting?.enabled === true;
-						const Icon = provider === "gecko" ? Monitor : Newspaper;
+						const Icon =
+							provider === "github" ? GitFork : provider === "gecko" ? Monitor : Newspaper;
 						const needsKey = provider !== "firefly";
 						const keyLabel = provider === "github" ? "GitHub PAT" : "Gecko API Key";
 						return (
 							<LayerCard key={provider} data-day-source={provider}>
 								<LayerCard.Header className="flex items-center justify-between gap-3">
 									<div className="flex items-center gap-3">
-										{provider === "github" ? (
-											<span aria-hidden="true">🐙</span>
-										) : (
-											<Icon size={20} aria-hidden="true" />
-										)}
+										<Icon size={20} aria-hidden="true" />
 										<Text as="h2" variant="heading" size="md">
 											{DAY_SOURCE_NAMES[provider]}
 										</Text>
@@ -77,7 +73,7 @@ export function DaySourcesPage() {
 										{provider === "gecko"
 											? "汇总每小时的电脑活动、应用与窗口内容，自动隐藏闲置、锁屏和屏保。"
 											: provider === "github"
-												? "按所选日期查询该账号的 Commits，以及该账号创建的 PR 当天的创建、合并和关闭记录。"
+												? "随当天页面选择的日期，自动读取该账号的 Commits，以及该账号创建的 PR 当天的创建、合并和关闭记录。"
 												: "读取 lizheng.blog 当天公开发表的文章，展示封面、摘要、作者和发表时间。"}
 									</p>
 									{setting?.account ? (
@@ -118,23 +114,12 @@ export function DaySourcesPage() {
 										</p>
 									)}
 									{provider === "github" ? (
-										<>
-											<p className="text-sm leading-relaxed text-basalt-muted-foreground">
-												Commits 使用 GitHub 搜索收录的默认分支提交，按作者时间归属。私有仓库需 PAT
-												授权。
-												同一账号和日期在当前时区首次查询后保存结果（包括空日），之后不自动刷新。移除连接会删除
-												PAT，保留已查询记录。
-											</p>
-											<Field label="GitHub 查询日期" htmlFor="github-query-date">
-												<Input
-													id="github-query-date"
-													type="date"
-													value={state.queryDate}
-													onChange={(event) => state.setQueryDate(event.target.value)}
-													disabled={Boolean(state.busy)}
-												/>
-											</Field>
-										</>
+										<p className="text-sm leading-relaxed text-basalt-muted-foreground">
+											Commits 使用 GitHub 搜索收录的默认分支提交，按作者时间归属。私有仓库需 PAT
+											授权。
+											同一账号和日期在当前时区首次查询后保存结果（包括空日），之后不自动刷新。移除连接会删除
+											PAT，保留已查询记录。
+										</p>
 									) : null}
 									<div className="flex flex-wrap gap-2">
 										<Button
@@ -149,17 +134,18 @@ export function DaySourcesPage() {
 										</Button>
 										{enabled ? (
 											<>
-												<Button
-													variant="outline"
-													onClick={() => void state.test(provider)}
-													disabled={
-														Boolean(state.busy) ||
-														(needsKey && Boolean(state.apiKeys[provider].trim())) ||
-														(provider === "github" && !state.queryDate)
-													}
-												>
-													{provider === "github" ? "查询当天" : "测试连接"}
-												</Button>
+												{provider !== "github" ? (
+													<Button
+														variant="outline"
+														onClick={() => void state.test(provider)}
+														disabled={
+															Boolean(state.busy) ||
+															(needsKey && Boolean(state.apiKeys[provider].trim()))
+														}
+													>
+														测试连接
+													</Button>
+												) : null}
 												<Button
 													variant="ghost"
 													onClick={() => void state.save(provider, false)}
@@ -180,11 +166,6 @@ export function DaySourcesPage() {
 											</Button>
 										) : null}
 									</div>
-									{provider === "github" &&
-									state.connection?.provider === "github" &&
-									state.connection.success ? (
-										<AppLink href={`/?day=${state.connection.date}`}>查看当天 GitHub 卡片</AppLink>
-									) : null}
 									{state.busy === provider ? (
 										<p role="status" className="text-sm text-basalt-muted-foreground">
 											正在处理…

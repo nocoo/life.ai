@@ -133,7 +133,7 @@ export function DaySourcesSkeleton() {
 			</SkeletonCard>
 			<SkeletonCard title="GitHub">
 				<TextLines />
-				<FormSkeleton fields={["GitHub PAT", "查询日期"]} />
+				<FormSkeleton fields={["GitHub PAT"]} />
 			</SkeletonCard>
 		</LoadingRegion>
 	);

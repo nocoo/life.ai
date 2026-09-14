@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@nocoo/basalt/componen
 import { lazy, Suspense, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router";
 import { useStore } from "zustand";
+import { CacheManager } from "../components/cache-manager";
 import { DateNavigation } from "../components/date-navigation";
 import { DayTimelineView } from "../components/day-timeline";
 import { RecordsSkeleton, TimelineSkeleton } from "../components/page-skeletons";
@@ -152,6 +153,7 @@ export function TimelinePage() {
 				<PageHeader
 					title="每日实录"
 					description={formatLocalDate(day)}
+					actions={<CacheManager day={day} />}
 					filters={
 						<FilterBar
 							label="每日记录筛选"

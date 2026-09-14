@@ -2,6 +2,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger, LayerCard } from "
 import {
 	ArrowUpRight,
 	GitCommitHorizontal,
+	GitFork,
 	GitMerge,
 	GitPullRequest,
 	GitPullRequestClosed,
@@ -18,7 +19,7 @@ export function SourceStoryCard({ branch }: { branch: StoryBranch }) {
 	const [failedImage, setFailedImage] = useState<string | null>(null);
 	const { computer, article, github } = branch;
 	const event = branch.events[0];
-	const Icon = computer ? Monitor : Newspaper;
+	const Icon = github ? GitFork : computer ? Monitor : Newspaper;
 	const GitHubIcon =
 		github?.action === "commit"
 			? GitCommitHorizontal
@@ -49,7 +50,7 @@ export function SourceStoryCard({ branch }: { branch: StoryBranch }) {
 			/>
 			<div className="story-branch-eyebrow">
 				<span className="story-card-icon" aria-hidden="true">
-					{github ? "🐙" : <Icon size={17} strokeWidth={1.6} />}
+					<Icon size={17} strokeWidth={1.6} />
 				</span>
 				<span>
 					{computer

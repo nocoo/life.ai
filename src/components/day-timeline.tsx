@@ -19,6 +19,7 @@ import {
 	CalendarDays,
 	Footprints,
 	GitCommitHorizontal,
+	GitFork,
 	Leaf,
 	MapPin,
 	Moon,
@@ -502,8 +503,8 @@ export function DayTimelineView({
 					{githubEmpty ? (
 						<LayerCard className="story-card story-github" data-github-empty="">
 							<LayerCard.Header>
-								<Text as="h3" variant="heading" size="md">
-									<span aria-hidden="true">🐙</span> GitHub
+								<Text as="h3" variant="heading" size="md" className="flex items-center gap-2">
+									<GitFork size={20} aria-hidden="true" /> GitHub
 								</Text>
 							</LayerCard.Header>
 							<LayerCard.Body>

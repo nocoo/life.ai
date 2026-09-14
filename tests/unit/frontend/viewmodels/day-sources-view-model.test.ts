@@ -41,7 +41,7 @@ beforeEach(() => {
 afterEach(() => store.getState().reset());
 
 describe("data source settings", () => {
-	it("keeps PAT drafts separate and queries the explicitly selected GitHub date", async () => {
+	it("keeps PAT drafts separate and saves the connection without querying a day", async () => {
 		await store.getState().load();
 		store.getState().setApiKey("gecko", "other-provider-draft");
 		store.getState().setApiKey("github", " fixture-credential ");
@@ -52,15 +52,7 @@ describe("data source settings", () => {
 		});
 		expect(store.getState().apiKeys.github).toBe("");
 		expect(store.getState().apiKeys.gecko).toBe("other-provider-draft");
-		store.getState().setQueryDate("2026-09-10");
-		await store.getState().test("github");
-		expect(testDaySource).toHaveBeenLastCalledWith(
-			"github",
-			expect.objectContaining({ date: "2026-09-10" }),
-		);
-		store.getState().setQueryDate("invalid");
-		await store.getState().test("github");
-		expect(store.getState().error).not.toBeNull();
+		expect(testDaySource).not.toHaveBeenCalled();
 		store.getState().clearSecrets();
 		expect(Object.values(store.getState().apiKeys).every((value) => value === "")).toBe(true);
 	});
