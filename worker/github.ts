@@ -6,7 +6,11 @@ import {
 	githubAccountSchema,
 	githubCommitSchema,
 	githubDayEvents,
+	githubIssueSchema,
 	githubPullRequestSchema,
+	githubReleaseSchema,
+	githubRepositorySchema,
+	type RepositoryRelease,
 } from "../src/models/github.js";
 import type { LifeEvent } from "../src/models/types.js";
 import { decryptApiKey } from "./ai.js";
@@ -91,7 +95,7 @@ async function search<T>(
 			await fetchGitHub(`/search/${kind}?${params}`, apiKey, signal),
 		);
 		if (!parsed.success)
-			throw new ApiError(502, "source_invalid_response", "GitHub 返回的提交或 PR 格式无效。");
+			throw new ApiError(502, "source_invalid_response", "GitHub 返回的活动格式无效。");
 		const data = parsed.data;
 		if (
 			data.incomplete_results ||
@@ -117,6 +121,39 @@ async function search<T>(
 			items.set(id, item);
 		}
 		if (items.size === total) return [...items.values()];
+	}
+}
+
+async function list<T extends { id: number }>(
+	path: string,
+	schema: z.ZodType<T>,
+	apiKey: string,
+	signal: AbortSignal,
+	include: (item: T) => boolean = () => true,
+): Promise<T[]> {
+	const pageSchema = z.array(schema).max(PAGE_SIZE);
+	const seen = new Set<number>();
+	const items: T[] = [];
+	const url = new URL(path, GITHUB_ENDPOINT);
+	url.searchParams.set("per_page", String(PAGE_SIZE));
+	for (let page = 1; ; page++) {
+		url.searchParams.set("page", String(page));
+		const parsed = pageSchema.safeParse(
+			await fetchGitHub(`${url.pathname}${url.search}`, apiKey, signal),
+		);
+		if (!parsed.success)
+			throw new ApiError(502, "source_invalid_response", "GitHub 返回的仓库或 Release 格式无效。");
+		for (const item of parsed.data) {
+			if (seen.has(item.id) || seen.size >= MAX_RESULTS)
+				throw new ApiError(
+					502,
+					"source_incomplete",
+					"GitHub 仓库或 Release 分页不完整，或超过 1,000 条，本次未缓存。",
+				);
+			seen.add(item.id);
+			if (include(item)) items.push(item);
+		}
+		if (parsed.data.length < PAGE_SIZE) return items;
 	}
 }
 
@@ -154,7 +191,61 @@ export async function fetchGitHubDay(
 		apiKey,
 		signal,
 	);
-	return githubDayEvents(account, commits, [...opened, ...closed], query);
+	const openedIssues = await search(
+		"issues",
+		`is:issue author:${account.login} created:${range}`,
+		githubIssueSchema,
+		(item) => String(item.id),
+		apiKey,
+		signal,
+	);
+	const closedIssues = await search(
+		"issues",
+		`is:issue author:${account.login} closed:${range}`,
+		githubIssueSchema,
+		(item) => String(item.id),
+		apiKey,
+		signal,
+	);
+	// Releases have no global author/date search. Read all pages from accessible repositories;
+	// recent user events alone cannot establish that an older day had no releases.
+	const repositories = await list(
+		"/user/repos?sort=full_name&direction=asc",
+		githubRepositorySchema,
+		apiKey,
+		signal,
+	);
+	const releases: RepositoryRelease[] = [];
+	for (let index = 0; index < repositories.length; index += 6) {
+		const batch = await Promise.allSettled(
+			repositories.slice(index, index + 6).map(async (repository) => {
+				const selected = await list(
+					`/repos/${repository.full_name}/releases`,
+					githubReleaseSchema,
+					apiKey,
+					signal,
+					(release) => {
+						const at = Date.parse(release.published_at ?? "");
+						return (
+							release.author?.id === account.id &&
+							!release.draft &&
+							at >= Date.parse(query.start) &&
+							at < Date.parse(query.end)
+						);
+					},
+				);
+				return selected.map((release) => ({ repository: repository.full_name, release }));
+			}),
+		);
+		for (const result of batch) {
+			if (result.status === "rejected") throw result.reason;
+			releases.push(...result.value);
+		}
+	}
+	return githubDayEvents(account, commits, [...opened, ...closed], query, {
+		issues: [...openedIssues, ...closedIssues],
+		releases,
+	});
 }
 
 interface CacheRow {

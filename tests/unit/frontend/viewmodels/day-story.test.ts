@@ -86,7 +86,54 @@ describe("storyKind classification", () => {
 		expect(branches.map((branch) => branch.kind)).toEqual(["computer", "article", "github"]);
 		expect(branches[0]?.computer?.apps[0]?.name).toBe("Editor");
 		expect(branches[1]?.article?.author).toBe("作者");
-		expect(branches[2]?.github?.repository).toBe("fixture/app");
+		expect(branches[2]?.github?.[0]?.activity.repository).toBe("fixture/app");
+	});
+	it("groups GitHub within each hour, counts unique PRs per repository and preserves every action and body", () => {
+		const github = (
+			minute: number,
+			action: "commit" | "opened" | "merged" | "issue-opened" | "issue-closed" | "released",
+			repository = "fixture/app",
+		) =>
+			makeEvent({
+				sourceId: "github",
+				sourceKind: "external",
+				occurredAt: new Date(Date.parse("2026-09-13T08:00:00Z") + minute * 60_000).toISOString(),
+				content: `Complete description ${minute}`,
+				data: {
+					type: "github-activity",
+					account: { id: 7, login: "fixture" },
+					repository,
+					url: `https://github.com/${repository}/pull/1`,
+					action,
+					number: 1,
+				},
+			});
+		const events = [
+			github(2, "commit"),
+			github(5, "opened"),
+			github(9, "merged"),
+			github(20, "opened", "fixture/other"),
+			github(35, "commit"),
+			github(40, "issue-opened"),
+			github(45, "issue-closed"),
+			github(50, "released"),
+			github(60, "commit"),
+		];
+		const original = JSON.stringify(events);
+		const timeline = buildDayTimeline("2026-09-13", events);
+		const story = buildDayStory(timeline, buildDayInsights(events, timeline));
+		expect(story.hours[8]?.branches).toHaveLength(1);
+		const group = story.hours[8]?.branches[0];
+		expect(group?.title).toBe("8 条动态 · 2 个仓库");
+		expect(group?.metrics).toEqual([
+			{ label: "Commit", value: "2" },
+			{ label: "PR", value: "2" },
+			{ label: "Issue", value: "1" },
+			{ label: "Release", value: "1" },
+		]);
+		expect(group?.github?.map((item) => item.event)).toEqual(events.slice(0, 8));
+		expect(story.hours[9]?.branches[0]?.events).toEqual(events.slice(8));
+		expect(JSON.stringify(events)).toBe(original);
 	});
 	it("anchors cross-hour movement once with a continuation and keeps each map inside its hour", () => {
 		const events = Array.from({ length: 11 }, (_, i) =>

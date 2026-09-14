@@ -3,17 +3,90 @@ import {
 	githubActivitySchema,
 	githubCommitSchema,
 	githubDayEvents,
+	githubIssueSchema,
 	githubPullRequestSchema,
+	githubReleaseSchema,
 } from "../../../src/models/github";
 import { formatDaySourceEvidence } from "../../../worker/diary-evidence";
 import {
 	githubFixtureAccount as account,
 	githubCommit,
+	githubIssue,
 	githubPull,
+	githubRelease,
 	githubFixtureQuery as query,
 } from "../../github-fixture";
 
 describe("GitHub daily events", () => {
+	it("retains distinct Issue actions and full published Release notes, including historical dates", () => {
+		const issue = githubIssue();
+		const release = githubRelease(41, {
+			body: `## Notes\n${"Full release details.\n".repeat(400)}Final note.`,
+		});
+		const repository = "life-fixture/app";
+		const events = githubDayEvents(account, [], [], query, {
+			issues: [
+				issue,
+				issue,
+				githubIssue(32, { state: "open", closed_at: null, body: null }),
+				githubIssue(33, { created_at: "2020-01-01T00:00:00Z", body: null }),
+				githubIssue(34, { user: null }),
+				githubIssue(35, { user: { id: 1, login: "other" } }),
+				githubIssue(36, { html_url: "https://github.com/" }),
+			],
+			releases: [
+				release,
+				release,
+				githubRelease(42, { name: null, body: null, prerelease: true }),
+				githubRelease(43, { author: null }),
+				githubRelease(44, { draft: true }),
+				githubRelease(45, { published_at: null }),
+				githubRelease(46, { published_at: query.end }),
+			]
+				.map((item) => ({ repository, release: item }))
+				.concat([{ repository: "invalid", release }]),
+		});
+		expect(events).toHaveLength(6);
+		const records = events.map((event) => ({
+			...event,
+			data: githubActivitySchema.parse(event.data),
+		}));
+		expect(records.filter((event) => event.data.action === "issue-opened")).toHaveLength(2);
+		expect(records.filter((event) => event.data.action === "issue-closed")).toHaveLength(2);
+		expect(records.find((event) => event.data.number === 31)?.content).toBe(issue.body);
+		expect(records.find((event) => event.data.number === 32)?.data.state).toBe("issue-open");
+		expect(records.find((event) => event.data.tag === "v2.0.41")).toMatchObject({
+			content: release.body,
+			data: { state: "released", target: "main" },
+		});
+		expect(records.find((event) => event.data.tag === "v2.0.42")).toMatchObject({
+			title: "v2.0.42",
+			content: "",
+			data: { state: "prerelease" },
+		});
+		expect(githubIssueSchema.safeParse(githubPull()).success).toBe(false);
+		expect(
+			githubReleaseSchema.safeParse(
+				githubRelease(99, { author: { id: 999, login: "github-actions[bot]" } }),
+			).success,
+		).toBe(true);
+		expect(
+			githubReleaseSchema.safeParse({ ...release, html_url: "https://user:secret@github.com/a/b" })
+				.success,
+		).toBe(false);
+		const evidence = formatDaySourceEvidence(events, query.timeZone).join("\n");
+		expect(evidence).toContain('"创建 Issue":2');
+		expect(evidence).toContain('"发布 Release":2');
+	});
+	it("retains complete commit messages and PR descriptions beyond the old preview limit", () => {
+		const message = `feat: preserve details\n\n${"commit details\n".repeat(500)}complete ending\n`;
+		const body = `## Changes\n${"PR explanation\n".repeat(400)}final PR note`;
+		const commit = githubCommit();
+		commit.commit.message = message;
+		const events = githubDayEvents(account, [commit], [githubPull(1, { body })], query);
+		expect(events.map((event) => event.content)).toEqual([message, body]);
+		expect(events[0]?.title).toBe("feat: preserve details");
+	});
 	it("clips to the local day, preserves author instants and deduplicates by repository and commit SHA", () => {
 		const a = githubCommit(1, query.start);
 		const b = {

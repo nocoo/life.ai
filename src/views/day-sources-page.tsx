@@ -73,7 +73,7 @@ export function DaySourcesPage() {
 										{provider === "gecko"
 											? "汇总每小时的电脑活动、应用与窗口内容，自动隐藏闲置、锁屏和屏保。"
 											: provider === "github"
-												? "随当天页面选择的日期，自动读取该账号的 Commits，以及该账号创建的 PR 当天的创建、合并和关闭记录。"
+												? "随当天页面选择的日期，自动读取该账号的 Commit、PR、Issue 和 Release，保留动作时间与完整说明。"
 												: "读取 lizheng.blog 当天公开发表的文章，展示封面、摘要、作者和发表时间。"}
 									</p>
 									{setting?.account ? (
@@ -116,7 +116,8 @@ export function DaySourcesPage() {
 									{provider === "github" ? (
 										<p className="text-sm leading-relaxed text-basalt-muted-foreground">
 											Commits 使用 GitHub 搜索收录的默认分支提交，按作者时间归属。私有仓库需 PAT
-											授权。
+											授权。PR、Issue 包含该账号创建的条目当天的动作；Release
+											来自有访问权限的自有、协作及组织仓库，按该账号署名的版本发布时间归属。
 											同一账号和日期在当前时区首次查询后保存结果（包括空日），之后不自动刷新。移除连接会删除
 											PAT，保留已查询记录。
 										</p>

@@ -1,10 +1,10 @@
 # 分层日记与结构化输出
 
-从 2.0.1 起，日记围绕本人生活组织信息。GPS 与逐笔消费备注是主线，天气和 Apple 健康解释环境与身体活动。Gecko 与 GitHub 的记录数量可能很大，也可能来自机器或 AI 自动执行；它们分别进入独立的开发和 GitHub 卡片。Firefly 的文章即使只有一篇，也必须得到独立分析。
+从 2.0.1 起，日记围绕本人生活组织信息。GPS 与逐笔消费备注是主线，天气和 Apple 健康解释环境与身体活动。Gecko 与 GitHub 的记录数量可能很大，也可能来自机器或 AI 自动执行；它们进入各自的辅助分析区。Firefly 的文章即使只有一篇，也必须得到独立分析。2.0.2 将模块命名为「AI 总结」，所有辅助分析都放在这张卡片内部。
 
 ## Gecko 参考
 
-参考相邻 Gecko 项目的 `apps/web-dashboard/src/services/prompt-defaults.ts`、`services/analyze-core.ts` 与 `components/daily/daily-review-client.tsx`：AI 返回固定字段 JSON，服务端解析，页面按字段渲染总结、亮点与时段。Life.ai 沿用这种内容与布局分离的方式，采用生活正文及三张可展开卡片。页面负责标题、Lucide 图标、颜色、段落和列表；模型只负责中文内容。
+参考相邻 Gecko 项目的 `apps/web-dashboard/src/services/prompt-defaults.ts`、`services/analyze-core.ts` 与 `components/daily/daily-review-client.tsx`：AI 返回固定字段 JSON，服务端解析，页面按字段渲染总结、亮点与时段。Life.ai 沿用这种内容与布局分离的方式，在同一张 AI 总结卡片中显示生活正文和三个可展开分析区。页面负责标题、Lucide 图标、颜色、段落和列表；模型只负责中文内容。
 
 ## 证据优先级
 
@@ -45,7 +45,9 @@
 
 ## 展示
 
-生活主文下方依次显示「开发信息」「文章创作」「GitHub 信息」。每张卡片有一句简短概括，默认收起要点，使用 Basalt Collapsible 独立展开；切换日期或生成新稿后重置展开状态。没有对应来源记录时不出现空卡片。图标为 Lucide Monitor、NotebookPen、GitFork；GitHub 沿用现有明暗主题中性色。
+「AI 总结」只有一张外层 LayerCard。生活主文下方依次显示「电脑活动」「文章创作」「GitHub」，以内部虚线分隔，不再形成独立的外层卡片。每个分析区有一句简短概括，默认收起要点，使用 Basalt Collapsible 独立展开；切换日期或生成新稿后重置展开状态。没有对应来源记录时不出现空分析区。图标为 Lucide Monitor、NotebookPen、GitFork；GitHub 沿用现有明暗主题中性色。
+
+这一布局调整不改变 JSON 字段 `development` / `writing` / `github` 或 prompt 版本；已经保存的结构化日记直接采用新布局，无需重新生成。原有纯文本日记继续可读。2.0.2 新增的 Issue、Release 同样进入 GitHub 辅助区的分类数量和代表性记录，完整内容仍参与输入哈希，不进入个人活动主线。
 
 当天概况、天气、地图与日记中的说明移到右上角 Lucide Info 控件，天气供应商链接保留在说明内。正文保留测量值、关键日期和可重试的错误。触摸可再次点按关闭，键盘可打开并用 Escape 关闭，面板不会超出视口。
 

@@ -566,6 +566,50 @@
 	margin-top: 0.8rem;
 }
 
+.github-detail-dialog {
+	display: flex;
+	flex-direction: column;
+	max-height: 85dvh;
+}
+
+.github-detail-records {
+	min-height: 0;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+}
+
+.github-detail-record {
+	padding-block: 18px;
+	overflow-wrap: anywhere;
+}
+
+.github-detail-record + .github-detail-record {
+	border-top: 1px solid hsl(var(--basalt-border));
+}
+
+.github-detail-eyebrow,
+.github-detail-eyebrow > span {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.github-detail-eyebrow {
+	justify-content: space-between;
+	margin-bottom: 8px;
+	font-size: 12px;
+	color: hsl(var(--basalt-muted-foreground));
+}
+
+.github-detail-body {
+	margin-top: 12px;
+	font-size: 13px;
+	line-height: 1.8;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
 .github-state {
 	color: #59636e;
 	border: 1px solid currentColor;
@@ -573,10 +617,13 @@
 	padding: 0.1rem 0.55rem;
 }
 
-.github-state[data-state="open"] {
+.github-state[data-state="open"],
+.github-state[data-state="issue-open"],
+.github-state[data-state="released"] {
 	color: #1a7f37;
 }
-.github-state[data-state="merged"] {
+.github-state[data-state="merged"],
+.github-state[data-state="issue-closed"] {
 	color: #8250df;
 }
 .github-state[data-state="closed"] {
@@ -585,10 +632,13 @@
 .dark .github-state {
 	color: #9198a1;
 }
-.dark .github-state[data-state="open"] {
+.dark .github-state[data-state="open"],
+.dark .github-state[data-state="issue-open"],
+.dark .github-state[data-state="released"] {
 	color: #3fb950;
 }
-.dark .github-state[data-state="merged"] {
+.dark .github-state[data-state="merged"],
+.dark .github-state[data-state="issue-closed"] {
 	color: #a371f7;
 }
 .dark .github-state[data-state="closed"] {
@@ -905,9 +955,27 @@
 	margin-top: 18px;
 }
 
-.story-diary {
-	display: grid;
-	gap: 16px;
+.story-summary-section {
+	position: relative;
+	border-top: 1px dashed hsl(var(--basalt-border));
+	padding-block: 16px;
+}
+
+.story-summary-section:last-child {
+	padding-bottom: 0;
+}
+
+.story-summary-section > .story-card-heading {
+	padding-right: 32px;
+}
+
+.story-summary-section > .story-card-info {
+	right: -6px;
+	top: 12px;
+}
+
+.story-summary-section-intro {
+	margin-top: 8px;
 }
 
 .story-summary-section-intro,

@@ -35,7 +35,7 @@ test("daily cache management lists scoped and shared caches, recovers from failu
 		await page.setViewportSize({ width: 1440, height: 1000 });
 		await page.goto("/?day=2026-09-10");
 		const cards = page.locator('[data-story-kind="github"]');
-		await expect(cards).toHaveCount(5);
+		await expect(cards).toHaveCount(4);
 		expect(cacheReads).toEqual([]);
 		const reads = sourceReads.length;
 		const trigger = page.getByRole("button", { name: "管理数据缓存", exact: true });
@@ -90,7 +90,7 @@ test("daily cache management lists scoped and shared caches, recovers from failu
 		).toBeDisabled();
 		await expect(dialog).toContainText("已显示的卡片暂时保留");
 		expect(sourceReads).toHaveLength(reads);
-		await expect(cards).toHaveCount(5);
+		await expect(cards).toHaveCount(4);
 		await dialog.getByRole("button", { name: "刷新缓存列表", exact: true }).click();
 		await expect(github).toContainText("0 条");
 		expect(sourceReads).toHaveLength(reads);
@@ -118,7 +118,7 @@ test("daily cache management lists scoped and shared caches, recovers from failu
 		await page.getByRole("button", { name: "后一天", exact: true }).click();
 		await expect(page.locator("[data-github-empty]")).toBeVisible();
 		await page.getByRole("button", { name: "前一天", exact: true }).click();
-		await expect(cards).toHaveCount(5);
+		await expect(cards).toHaveCount(4);
 		expect(errors).toEqual([]);
 	} finally {
 		await request.delete("/api/settings/sources/github");

@@ -9,7 +9,7 @@ test.afterEach(async ({ request }) => {
 		await request.delete(`/api/settings/sources/${provider}`);
 });
 
-test("structured diaries have independent cards, compact information controls and safe failed regeneration", async ({
+test("AI summaries contain independent activity sections, compact information controls and safe failed regeneration", async ({
 	page,
 	request,
 }) => {
@@ -60,14 +60,18 @@ test("structured diaries have independent cards, compact information controls an
 	if (!summary?.sections) throw new Error("Missing structured diary fixture");
 	await page.goto(`/?day=${query.date}`);
 	const diary = page.locator("#life-day-close");
+	const summaryCard = diary.locator("[data-ai-summary]");
+	await expect(summaryCard.getByRole("heading", { name: "AI 总结", exact: true })).toBeVisible();
+	await expect(summaryCard.locator("[data-diary-section]")).toHaveCount(3);
+	await expect(diary.locator(".story-card")).toHaveCount(1);
 	const narrative = diary.locator(".story-summary-body");
 	await expect(narrative).toHaveText(summary.content);
 	await expect(narrative).not.toContainText('"sections"');
 	await expect(diary.locator("[data-diary-section]")).toHaveCount(3);
 	for (const [key, title, icon] of [
-		["development", "开发信息", "monitor"],
+		["development", "电脑活动", "monitor"],
 		["writing", "文章创作", "notebook-pen"],
-		["github", "GitHub 信息", "git-fork"],
+		["github", "GitHub", "git-fork"],
 	] as const) {
 		const card = diary.locator(`[data-diary-section="${key}"]`);
 		const trigger = card.getByRole("button", { name: title, exact: true });
@@ -85,7 +89,7 @@ test("structured diaries have independent cards, compact information controls an
 	await expect(
 		diary.locator('[data-diary-section="writing"] button[aria-expanded="true"]'),
 	).toHaveCount(1);
-	const info = diary.getByRole("button", { name: "查看当日日记的来源与说明", exact: true });
+	const info = diary.getByRole("button", { name: "查看AI 总结的来源与说明", exact: true });
 	await info.click();
 	await expect(page.getByRole("tooltip")).toContainText("life-test-ok");
 	await page.keyboard.press("Escape");

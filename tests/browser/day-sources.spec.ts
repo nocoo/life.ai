@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { githubFixtureKey } from "../github-fixture";
+import { githubFixtureCommitMessage, githubFixtureKey } from "../github-fixture";
 import { expect, test } from "./public-context-fixture";
 
 const key = `gk_${"a".repeat(64)}`;
@@ -13,7 +13,7 @@ test.afterEach(async ({ request }) => {
 	await request.put("/api/settings/general", { data: { places: [], routine: null } });
 });
 
-test("GitHub settings save only the connection, and the selected timeline day loads cached commits and PRs with Lucide icons", async ({
+test("GitHub settings save only the connection, and the selected timeline day loads cached commits, PRs, issues and releases with Lucide icons", async ({
 	page,
 	request,
 }) => {
@@ -41,22 +41,55 @@ test("GitHub settings save only the connection, and the selected timeline day lo
 		).ok(),
 	).toBe(true);
 	await page.goto("/?day=2026-09-11");
-	await expect(page.locator("[data-github-empty]")).toContainText("当天没有 Commits 或 PR 活动。");
+	await expect(page.locator("[data-github-empty]")).toContainText("当天快照中没有 GitHub 活动。");
 	await expect(page.locator("[data-github-empty] svg.lucide-git-fork")).toBeVisible();
 	await page.getByRole("button", { name: "前一天", exact: true }).click();
 	await expect(page).toHaveURL(/day=2026-09-10/);
 	const cards = page.locator('[data-story-kind="github"]');
-	await expect(cards).toHaveCount(5);
-	const commit = cards.filter({ hasText: "GitHub · Commit" });
+	await expect(cards).toHaveCount(4);
+	const commit = page.locator('[data-hour="9"] [data-story-kind="github"]');
+	const pulls = page.locator('[data-hour="10"] [data-story-kind="github"]');
+	await expect(pulls).toHaveCount(1);
+	await expect(pulls).toContainText("3 条动态 · 1 个仓库");
+	await expect(commit.locator(".story-metrics")).toContainText("Issue");
+	await expect(pulls.locator(".story-metrics")).toContainText("Release");
 	await expect(commit.locator(".story-card-icon svg.lucide-git-fork")).toBeVisible();
 	await expect(commit).toContainText("09:02:03");
-	await expect(commit).toContainText("life-fixture/app");
-	await expect(commit.getByRole("link")).toHaveAttribute(
+	await expect(commit).not.toContainText("End of full commit message.");
+	await commit.getByRole("button", { name: "查看详情", exact: true }).click();
+	const details = page.getByRole("dialog");
+	await expect(details).toContainText("life-fixture/app");
+	await expect(details.locator("time").first()).toHaveText("09:02:03");
+	await expect(details.locator(".github-detail-body").first()).toHaveText(
+		githubFixtureCommitMessage,
+	);
+	await expect(details.getByRole("link").first()).toHaveAttribute(
 		"href",
 		/github\.com\/life-fixture\/app\/commit\//,
 	);
-	await expect(cards.filter({ hasText: "GitHub · 合并 PR" })).toContainText("12:00:00");
-	await expect(cards.filter({ hasText: "GitHub · 关闭 PR" })).toContainText("13:00:00");
+	await expect(details.locator(".github-detail-record")).toHaveCount(3);
+	await expect(details).toContainText("创建 Issue");
+	await expect(details).toContainText("关闭 Issue");
+	await expect(details).toContainText("Keep the complete issue description.");
+	await page.keyboard.press("Escape");
+	await expect(details).toHaveCount(0);
+	await expect(commit.getByRole("button", { name: "查看详情", exact: true })).toBeFocused();
+	await pulls.getByRole("button", { name: "查看详情", exact: true }).click();
+	await expect(details.locator(".github-detail-record")).toHaveCount(3);
+	await expect(details).toContainText("Keep all PR details in the activity dialog.");
+	await expect(details).toContainText("Keep every line of the release notes.");
+	await expect(details).toContainText("v2.0.41");
+	await expect(details).toContainText("目标：main");
+	await expect(details.getByRole("link", { name: "Daily activity release" })).toHaveAttribute(
+		"href",
+		"https://github.com/life-fixture/app/releases/tag/v2.0.41",
+	);
+	await page.keyboard.press("Escape");
+	const mergedCard = page.locator('[data-hour="12"] [data-story-kind="github"]');
+	await expect(mergedCard).toContainText("12:00:00");
+	await expect(page.locator('[data-hour="13"] [data-story-kind="github"]')).toContainText(
+		"13:00:00",
+	);
 	const computer = page.locator('[data-hour="9"] [data-story-kind="computer"]');
 	await expect(computer).toBeVisible();
 	const commitBox = await commit.boundingBox();
@@ -69,25 +102,56 @@ test("GitHub settings save only the connection, and the selected timeline day lo
 			localStorage.setItem("theme", value);
 		}, theme);
 		await page.reload();
-		await expect(cards).toHaveCount(5);
+		await expect(cards).toHaveCount(4);
 		await expect(commit).toHaveCSS("--story-color", theme === "dark" ? "#f0f6fc" : "#24292f");
-		const merged = cards.locator('[data-state="merged"]').first();
+		await mergedCard.getByRole("button", { name: "查看详情", exact: true }).click();
+		const merged = details.locator('[data-state="merged"]').first();
 		await expect(merged).toHaveCSS(
 			"color",
 			theme === "dark" ? "rgb(163, 113, 247)" : "rgb(130, 80, 223)",
 		);
+		await page.keyboard.press("Escape");
+		await pulls.getByRole("button", { name: "查看详情", exact: true }).click();
+		await expect(details.locator('[data-state="released"]')).toHaveCSS(
+			"color",
+			theme === "dark" ? "rgb(63, 185, 80)" : "rgb(26, 127, 55)",
+		);
+		await page.evaluate(() =>
+			Promise.allSettled(document.getAnimations().map((animation) => animation.finished)),
+		);
 		const accessibility = await new AxeBuilder({ page })
-			.include('[data-story-kind="github"]')
+			.include('[role="dialog"]')
 			.withTags(["wcag2a", "wcag2aa"])
 			.analyze();
 		expect(accessibility.violations).toEqual([]);
+		await page.screenshot({ path: `test-results/l3/github-dialog-${theme}.png` });
+		await page.keyboard.press("Escape");
 	}
 	await page.setViewportSize({ width: 390, height: 844 });
 	await expect(commit.locator("..")).toHaveClass(/story-lane-both/);
 	await commit.scrollIntoViewIfNeeded();
+	await commit.getByRole("button", { name: "查看详情", exact: true }).click();
+	await expect(details.locator(".github-detail-body").first()).toHaveText(
+		githubFixtureCommitMessage,
+	);
+	await page.evaluate(() =>
+		Promise.allSettled(document.getAnimations().map((animation) => animation.finished)),
+	);
+	const bounds = await details.boundingBox();
+	expect(bounds && bounds.width <= 390 && bounds.height <= 844).toBeTruthy();
+	expect(
+		await details.locator(".github-detail-records").evaluate((list) => {
+			list.scrollTop = list.scrollHeight;
+			return list.scrollHeight > list.clientHeight;
+		}),
+	).toBe(true);
+	await expect(details.getByRole("button", { name: "关闭 GitHub 详情" })).toBeInViewport();
+	await page.screenshot({ path: "test-results/l3/github-dialog-mobile.png" });
+	await details.getByRole("button", { name: "关闭 GitHub 详情" }).click();
+	await expect(details).toHaveCount(0);
 	expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 	await page.goto("/?day=2026-09-11");
-	await expect(page.locator("[data-github-empty]")).toContainText("当天没有 Commits 或 PR 活动。");
+	await expect(page.locator("[data-github-empty]")).toContainText("当天快照中没有 GitHub 活动。");
 	await expect(cards).toHaveCount(0);
 	expect(errors).toEqual([]);
 });

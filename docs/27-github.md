@@ -1,4 +1,4 @@
-# GitHub 按日记录 — 2.0.0
+# GitHub 按日记录
 
 在「设置 → 数据源 → GitHub」填写已有 Personal Access Token，保存时由 Worker 调用 GitHub `/user` 验证并识别账号。设置仅管理凭据与连接状态；查询日期直接沿用当天页面的日期选择，自动读取相应记录。此功能不创建 PAT。
 
@@ -6,16 +6,23 @@
 
 - 提交使用 `author:<login> author-date:<UTC start>..<UTC end - 1 second>`，显示原始作者时间。GitHub 提交搜索只收录默认分支，私有仓库取决于 PAT 授权。
 - PR 使用 `is:pr author:<login>`，分别查创建时间和关闭时间；显示该账号创建的 PR 当天的创建、合并、关闭动作。合并不证明由该账号本人执行，后来的编辑不算当天活动。
+- 从 2.0.2 起，Issue 使用 `is:issue author:<login>`，分别查询创建和关闭时间，同样保留各次动作、编号及完整正文；当前状态来自首次查询时的快照，不将后续编辑当作当天活动。
+- Release 没有跨仓库的作者/日期搜索接口。先分页读取 `/user/repos` 返回的自有、协作和组织仓库，再读取各仓库全部 Release 分页，仅保留该账号数字 ID 署名、非草稿且 `published_at` 在当天的版本。保留完整发布说明、版本 tag、目标分支/提交及预发布状态。覆盖范围是 PAT 当前可访问且账号具有显式权限的仓库；已经失去权限或已删除的仓库/版本无法还原。
 - 复用日期/时区验证器，以 `[start,end)` 裁剪真实 UTC 瞬间，兼容夏令时；以仓库/SHA 或 PR ID/动作去重。
 - 每页 100 条，顺序读取全部分页。搜索不完整、超过单次搜索 1,000 条、总数变化、重复或缺页时明确失败，不缓存部分结果。响应上限 4 MiB、单请求 15 秒、整个日读取 45 秒；日快照上限 1 MiB。
+- 仓库发现至多 1,000 项，每个仓库至多 1,000 个 Release；分页重复、无效响应或超限时整日失败。每批至多六个仓库并行读取，批内等待全部请求收束后再处理结果，非当天版本在分页时丢弃。首次查询会比仅搜索 Commit/PR 多出仓库及 Release 请求；命中 D1 后全部省去。不能用近期 Events API 的有限记录证明历史日期没有 Release。
 
 参考：[搜索 API](https://docs.github.com/en/rest/search/search)、[提交搜索范围](https://docs.github.com/en/search-github/searching-on-github/searching-commits)、[PR 日期过滤](https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests)。
+
+Release 参考：[账号有权访问的仓库](https://docs.github.com/en/rest/repos/repos#list-repositories-for-the-authenticated-user)、[Release 列表](https://docs.github.com/en/rest/releases/releases#list-releases)。历史筛选使用发布时间，不根据创建时间或最近一页提前停止。
 
 ## 凭据与缓存
 
 PAT 复用 AES-GCM 与现有 `AI_SETTINGS_KEY`，只由 Worker 解密后发送至固定 `api.github.com`，不跟随重定向。同源设置 API 受 Access、主机及来源检查保护；响应仅返回账号 ID/login 和 `hasApiKey`，不返回 PAT、密文或掩码片段。错误不透传上游正文或网络错误文本。保存成功及离开页面后清空输入，Gecko/GitHub 草稿彼此独立。
 
 Classic PAT 只查公开仓库时无须 scope；包含私有仓库时需要 `repo`。账号识别只读取公开的 ID/login，无须 `read:user` 或 `user:email`，也不需要 `workflow` 或管理权限。`repo` 本身包含写权限，但 Life.ai 只调用读取接口；组织仓库启用 SSO 时，还需授权该 PAT。参考 [GitHub scopes](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps) 与 [账号接口](https://docs.github.com/en/rest/users/users#get-the-authenticated-user)。
+
+Fine-grained PAT 选择需要读取的仓库；私有数据需要 Contents、Pull requests、Issues 的只读权限，仓库列表使用自动包含的 Metadata read。GitHub 仍可能限制 fine-grained PAT 对多个资源所有者及组织仓库的访问；以 token 实际授权范围为准。
 
 `0008_github.sql` 保留原数据源配置和密文，扩展 provider 约束及账号字段，新增 `github_day_cache`。
 
@@ -29,7 +36,13 @@ Classic PAT 只查公开仓库时无须 scope；包含私有仓库时需要 `rep
 
 ## 当天阅读
 
-时间线显示 GitHub 卡片、仓库、标题、短 SHA/PR 编号、原文链接与动作时间。设置、记录及空日卡片统一采用 Lucide `GitFork`，动作使用 `GitCommitHorizontal`、`GitPullRequest`、`GitMerge` 和 `GitPullRequestClosed`，不使用 emoji。卡片采用 GitHub 中性色，PR 状态使用绿色、紫色、红色和草稿灰色，兼容明暗主题且有文字标签。信息面板说明 PR 状态是首次查询时的快照。空日显示 GitHub 空状态卡片，不伪造零点事件。
+从 2.0.2 起，同一小时的 GitHub 记录合并成一张卡片，显示实际记录时段、动态总数、仓库数与出现的 Commit/PR/Issue/Release 数量。PR、Issue 按仓库与编号去重计数，详情保留其每次动作。同一编号在不同仓库或不同类型中分别计数；原始事件不被合并删除。
+
+「查看详情」打开独立 Basalt Dialog，按时间列出所有记录，保留秒精度、账号与仓库、完整 SHA、编号、状态、版本 tag、目标分支/提交、原文链接和完整说明。正文按纯文本换行，外链限定 GitHub HTTPS；长内容在弹窗内滚动，标题和右上角关闭按钮留在视口内，Escape 关闭后焦点回到原触发按钮。切日后不会沿用旧时段的弹窗状态。
+
+设置、记录及空日卡片统一采用 Lucide `GitFork`；动作使用 `GitCommitHorizontal`、`GitPullRequest`、`GitMerge`、`GitPullRequestClosed`、`CircleDot`、`CircleCheck` 和 `Tag`。卡片沿用 GitHub 中性色，状态有对应颜色与文字，兼容明暗主题。右上角信息入口解释查询范围、快照状态及缓存；空日不伪造零点事件。
+
+2.0.2 的新查询保留完整 Commit message、PR/Issue body 和 Release notes；超过已有日快照上限仍明确失败，不截断后缓存。旧缓存保持原样，可能没有新增类型、PR 正文或 4,000 字符之后的旧提交说明。需要补齐时，用户在缓存管理中清除该日 GitHub 缓存，再读取该日；打开弹窗本身不会发起 GitHub 请求。
 
 宽屏同一横排的卡片填满所在行高度，仍保留短卡片的自然宽度；手机按时间纵向排列，使用内容自然高度。
 

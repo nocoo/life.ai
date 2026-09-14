@@ -100,7 +100,7 @@ test("a whole day reads along one trunk with grouped evidence, record tabs and c
 	await expect(
 		page.locator(".day-meta").getByRole("heading", { name: "一日累计", exact: true }),
 	).toBeVisible();
-	await expect(closing.getByRole("heading", { name: "当日日记", exact: true })).toBeVisible();
+	await expect(closing.getByRole("heading", { name: "AI 总结", exact: true })).toBeVisible();
 	const metaBox = await page.locator(".day-meta").boundingBox();
 	const treeBox = await page.locator(".day-story-column").boundingBox();
 	expect(metaBox && treeBox && metaBox.x > treeBox.x + treeBox.width).toBe(true);
@@ -134,6 +134,6 @@ test("a whole day reads along one trunk with grouped evidence, record tabs and c
 	await expect(page.locator('[data-story-kind="connect"]')).toHaveCount(2);
 	await expect(page.locator('[data-story-kind="health"]')).toHaveCount(0);
 	await expect(page.getByRole("application", { name: "当日足迹地图", exact: true })).toHaveCount(0);
-	await expect(page.getByRole("heading", { name: "当日日记", exact: true })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "AI 总结", exact: true })).toBeVisible();
 	expect(errors).toEqual([]);
 });

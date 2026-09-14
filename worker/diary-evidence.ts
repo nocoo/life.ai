@@ -66,7 +66,7 @@ export function formatDaySourceEvidence(events: LifeEvent[], timeZone: string): 
 	});
 	if (githubGroups.size) {
 		lines.push(
-			`- GitHub 共 ${[...githubGroups.values()].reduce((count, group) => count + group.length, 0)} 条活动，涉及 ${githubGroups.size} 个仓库。提交按作者时间；PR 属于该账号创建的 PR，合并或关闭不证明由本人操作，也不代表连续工作时长。机器或 AI 可以自动提交；以下只取各项目的代表性记录，不是完整操作清单。`,
+			`- GitHub 共 ${[...githubGroups.values()].reduce((count, group) => count + group.length, 0)} 条活动，涉及 ${githubGroups.size} 个仓库。提交按作者时间；PR、Issue 属于该账号创建的条目，合并或关闭不证明由本人操作；Release 使用该账号署名版本的发布时间。这些记录不代表连续工作时长。机器或 AI 可以自动执行；以下只取各项目的代表性记录，不是完整操作清单。`,
 		);
 		// Keep each project's counts and a few spread-out examples instead of repeating every commit.
 		let remaining = 12_000;

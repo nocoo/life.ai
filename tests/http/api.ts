@@ -1632,15 +1632,15 @@ await scenario(
 			[1, 2].map(async () => data<DaySourcesResult>(await request(path))),
 		);
 		assert(first && second);
-		assert.equal(first.events.length, 5);
+		assert.equal(first.events.length, 8);
 		assert.deepEqual(second, first);
-		assert.equal((await upstreamCalls()) - before, 3);
+		assert.equal((await upstreamCalls()) - before, 7);
 		const cachedCalls = await upstreamCalls();
 		const connection = await data<DaySourceConnection>(
 			await request(`${root}/test`, { method: "POST", body: githubFixtureQuery }),
 		);
 		assert(connection.success);
-		assert.equal(connection.eventCount, 5);
+		assert.equal(connection.eventCount, 8);
 		assert.deepEqual(await data(await request(path)), first);
 		assert.equal(await upstreamCalls(), cachedCalls);
 		await data(await request(root, { method: "PUT", body: { enabled: false } }));
@@ -1723,10 +1723,10 @@ await scenario(
 		assert.equal(await upstreamCalls(), beforeCalls);
 		assert.deepEqual(await data(await request("/api/settings/sources")), settings);
 		const dayPath = `/api/day-sources?${new URLSearchParams(githubFixtureQuery)}`;
-		assert.equal((await data<DaySourcesResult>(await request(dayPath))).events.length, 5);
-		assert.equal(await upstreamCalls(), beforeCalls + 3);
+		assert.equal((await data<DaySourcesResult>(await request(dayPath))).events.length, 8);
+		assert.equal(await upstreamCalls(), beforeCalls + 7);
 		await data(await request(dayPath));
-		assert.equal(await upstreamCalls(), beforeCalls + 3);
+		assert.equal(await upstreamCalls(), beforeCalls + 7);
 		const preservedSql =
 			"SELECT (SELECT COUNT(*) FROM life_events) AS events, (SELECT COUNT(*) FROM provider_days) AS provider_days, (SELECT COUNT(*) FROM health_series) AS health_series, (SELECT COUNT(*) FROM day_summaries) AS diaries, (SELECT data_json FROM general_settings LIMIT 1) AS settings";
 		const preserved = (await executeLocalSql(state, preservedSql)) as { results: unknown[] }[];

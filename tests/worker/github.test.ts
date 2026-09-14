@@ -6,6 +6,7 @@ import {
 	githubFixtureAccount as account,
 	githubCommit,
 	githubFixtureResponse,
+	githubRelease,
 	githubFixtureKey as key,
 	githubFixtureQuery as query,
 } from "../github-fixture";
@@ -91,15 +92,17 @@ describe("GitHub private configuration and permanent account/day cache", () => {
 		await enable(env);
 		upstream.mockClear();
 		const first = await readDaySources(env, query);
-		expect(first.events).toHaveLength(5);
+		expect(first.events).toHaveLength(8);
 		expect(first.sources).toEqual([{ provider: "github", state: "ready", stale: false }]);
 		expect(first.configuration).toBe('["github:7123"]');
-		expect(upstream).toHaveBeenCalledTimes(3);
+		expect(upstream).toHaveBeenCalledTimes(7);
 		for (const [input, init] of upstream.mock.calls) {
 			const url = new URL(input);
 			expect(url.origin).toBe("https://api.github.com");
-			expect(url.searchParams.get("q")).toContain("author:life-fixture");
-			expect(url.searchParams.get("q")).toContain("2026-09-09T16:00:00Z..2026-09-10T15:59:59Z");
+			if (url.pathname.startsWith("/search/")) {
+				expect(url.searchParams.get("q")).toContain("author:life-fixture");
+				expect(url.searchParams.get("q")).toContain("2026-09-09T16:00:00Z..2026-09-10T15:59:59Z");
+			}
 			expect(new Headers(init?.headers).get("Authorization")).toBe(`Bearer ${key}`);
 			expect(new Headers(init?.headers).get("User-Agent")).toBe("Life.ai");
 			expect(init?.signal).toBeInstanceOf(AbortSignal);
@@ -110,7 +113,7 @@ describe("GitHub private configuration and permanent account/day cache", () => {
 		expect(await readDaySources(env, query, "refresh")).toEqual(first);
 		expect(await readDaySources(env, query, "cached-only")).toEqual(first);
 		expect(await (await settings(env, "POST", query, "/github/test")).json()).toMatchObject({
-			data: { success: true, eventCount: 5 },
+			data: { success: true, eventCount: 8 },
 		});
 		expect(upstream).not.toHaveBeenCalled();
 		expect(queries.every((sql) => sql.startsWith("SELECT"))).toBe(true);
@@ -145,14 +148,14 @@ describe("GitHub private configuration and permanent account/day cache", () => {
 		expect(await readDaySources(env, emptyDay)).toEqual(empty);
 		expect(upstream).not.toHaveBeenCalled();
 		await readDaySources(env, query);
-		expect(upstream).toHaveBeenCalledTimes(3);
+		expect(upstream).toHaveBeenCalledTimes(7);
 		await readDaySources(env, {
 			...query,
 			timeZone: "UTC",
 			start: "2026-09-10T00:00:00.000Z",
 			end: "2026-09-11T00:00:00.000Z",
 		});
-		expect(upstream).toHaveBeenCalledTimes(6);
+		expect(upstream).toHaveBeenCalledTimes(14);
 		upstream.mockResolvedValueOnce(Response.json({ id: 999, login: "other-owner" }));
 		await enable(env);
 		const other = await readDaySources(env, query);
@@ -177,10 +180,10 @@ describe("GitHub private configuration and permanent account/day cache", () => {
 		const third = readDaySources(env, query);
 		finish(Response.json({ total_count: 1, incomplete_results: false, items: [githubCommit()] }));
 		const results = await Promise.all([first, second, third]);
-		expect(results[0]?.events).toHaveLength(5);
+		expect(results[0]?.events).toHaveLength(8);
 		expect(results[1]).toEqual(results[0]);
 		expect(results[2]).toEqual(results[0]);
-		expect(upstream).toHaveBeenCalledTimes(3);
+		expect(upstream).toHaveBeenCalledTimes(7);
 	});
 	it("does not query upstream for missing diary cache and recovers abandoned leases", async () => {
 		const { env, sqlite, upstream } = setup();
@@ -193,7 +196,7 @@ describe("GitHub private configuration and permanent account/day cache", () => {
 				"INSERT INTO github_day_cache(account_id,date,timezone,start_at,end_at,lease_token,leased_until) VALUES(?,?,?,?,?,'abandoned',0)",
 			)
 			.run(account.id, query.date, query.timeZone, query.start, query.end);
-		expect((await readDaySources(env, query)).events).toHaveLength(5);
+		expect((await readDaySources(env, query)).events).toHaveLength(8);
 		expect(
 			sqlite.prepare("SELECT lease_token, leased_until FROM github_day_cache").get(),
 		).toMatchObject({ lease_token: null, leased_until: 0 });
@@ -211,7 +214,7 @@ describe("GitHub private configuration and permanent account/day cache", () => {
 		expect(failed.sources[0]?.state).toBe("error");
 		expect(JSON.stringify(failed)).not.toContain(key);
 		expect(sqlite.prepare("SELECT COUNT(*) AS n FROM github_day_cache").get()?.n).toBe(0);
-		expect((await readDaySources(env, query)).events).toHaveLength(5);
+		expect((await readDaySources(env, query)).events).toHaveLength(8);
 	});
 	it("keeps an in-flight snapshot when settings are re-saved for the same account", async () => {
 		const { env, upstream } = setup();
@@ -228,7 +231,7 @@ describe("GitHub private configuration and permanent account/day cache", () => {
 		await enable(env);
 		finish(Response.json({ total_count: 1, incomplete_results: false, items: [githubCommit()] }));
 		const first = await reading;
-		expect(first.events).toHaveLength(5);
+		expect(first.events).toHaveLength(8);
 		upstream.mockClear();
 		expect(await readDaySources(env, query)).toEqual(first);
 		expect(upstream).not.toHaveBeenCalled();
@@ -268,6 +271,117 @@ describe("GitHub private configuration and permanent account/day cache", () => {
 });
 
 describe("bounded GitHub search", () => {
+	it("paginates accessible repositories and all release pages before selecting an old publication date", async () => {
+		const { upstream } = setup();
+		const historical = {
+			...query,
+			date: "2020-01-01",
+			start: "2019-12-31T16:00:00.000Z",
+			end: "2020-01-01T16:00:00.000Z",
+		};
+		const repositories = Array.from({ length: 101 }, (_, id) => ({
+			id: id + 1,
+			full_name: `life-fixture/repo-${id + 1}`,
+		}));
+		const recent = Array.from({ length: 100 }, (_, id) => githubRelease(id + 1));
+		const old = githubRelease(101, {
+			published_at: "2020-01-01T04:05:06Z",
+			html_url: "https://github.com/life-fixture/repo-101/releases/tag/v-old",
+		});
+		let active = 0,
+			peak = 0;
+		upstream.mockImplementation(async (input) => {
+			const url = new URL(input),
+				page = Number(url.searchParams.get("page"));
+			if (url.pathname.startsWith("/search/"))
+				return Response.json({ total_count: 0, incomplete_results: false, items: [] });
+			if (url.pathname === "/user/repos")
+				return Response.json(repositories.slice((page - 1) * 100, page * 100));
+			active++;
+			peak = Math.max(peak, active);
+			await new Promise((resolve) => setTimeout(resolve, 1));
+			active--;
+			return Response.json(
+				url.pathname === "/repos/life-fixture/repo-101/releases"
+					? page === 1
+						? recent
+						: [old]
+					: [],
+			);
+		});
+		const events = await fetchGitHubDay(account, historical, key, AbortSignal.timeout(5000));
+		expect(events).toHaveLength(1);
+		expect(events[0]).toMatchObject({
+			occurredAt: "2020-01-01T04:05:06.000Z",
+			content: old.body,
+			data: { repository: "life-fixture/repo-101", action: "released" },
+		});
+		expect(peak).toBeLessThanOrEqual(6);
+		expect(peak).toBeGreaterThan(1);
+		expect(upstream.mock.calls.filter(([url]) => url.includes("/user/repos"))).toHaveLength(2);
+		expect(upstream.mock.calls.filter(([url]) => url.includes("/repo-101/releases"))).toHaveLength(
+			2,
+		);
+	});
+	it("never caches commits and PRs alone when a release request fails, and retains published notes on retry", async () => {
+		const { env, sqlite, upstream } = setup();
+		await enable(env);
+		upstream.mockImplementation(async (input, init) =>
+			new URL(input).pathname.endsWith("/releases")
+				? new Response(key, { status: 503 })
+				: githubFixtureResponse(new URL(input), new Headers(init?.headers).get("Authorization")),
+		);
+		const failed = await readDaySources(env, query);
+		expect(failed.sources[0]?.state).toBe("error");
+		expect(JSON.stringify(failed)).not.toContain(key);
+		expect(sqlite.prepare("SELECT COUNT(*) AS n FROM github_day_cache").get()?.n).toBe(0);
+		upstream.mockImplementation(async (input, init) =>
+			githubFixtureResponse(new URL(input), new Headers(init?.headers).get("Authorization")),
+		);
+		const result = await readDaySources(env, query);
+		expect(result.events).toHaveLength(8);
+		expect(result.events.some((event) => event.content === githubRelease().body)).toBe(true);
+	});
+	it.each(["/user/repos", "/repos/life-fixture/app/releases"])(
+		"rejects malformed and duplicate lists at %s",
+		async (path) => {
+			const { upstream } = setup();
+			const entry =
+				path === "/user/repos" ? { id: 1, full_name: "life-fixture/app" } : githubRelease();
+			for (const items of [[{}], [entry, entry]]) {
+				upstream.mockImplementation(async (input, init) =>
+					new URL(input).pathname === path
+						? Response.json(items)
+						: githubFixtureResponse(
+								new URL(input),
+								new Headers(init?.headers).get("Authorization"),
+							),
+				);
+				await expect(
+					fetchGitHubDay(account, query, key, AbortSignal.timeout(1000)),
+				).rejects.toMatchObject({ status: 502 });
+			}
+		},
+	);
+	it("bounds repository discovery before starting any per-repository requests", async () => {
+		const { upstream } = setup();
+		upstream.mockImplementation(async (input, init) => {
+			const url = new URL(input);
+			if (url.pathname !== "/user/repos")
+				return githubFixtureResponse(url, new Headers(init?.headers).get("Authorization"));
+			const page = Number(url.searchParams.get("page"));
+			return Response.json(
+				Array.from({ length: 100 }, (_, index) => ({
+					id: (page - 1) * 100 + index + 1,
+					full_name: `fixture/repo-${page}-${index}`,
+				})),
+			);
+		});
+		await expect(
+			fetchGitHubDay(account, query, key, AbortSignal.timeout(1000)),
+		).rejects.toMatchObject({ code: "source_incomplete" });
+		expect(upstream.mock.calls.some(([url]) => url.includes("/releases"))).toBe(false);
+	});
 	it("keeps oversized daily snapshots out of D1 instead of failing with a database row-size error", async () => {
 		const { env, sqlite, upstream } = setup();
 		await enable(env);
@@ -285,7 +399,9 @@ describe("bounded GitHub search", () => {
 							incomplete_results: false,
 							items: commits.slice((page - 1) * 100, page * 100),
 						}
-					: { total_count: 0, incomplete_results: false, items: [] },
+					: url.pathname.startsWith("/search/")
+						? { total_count: 0, incomplete_results: false, items: [] }
+						: [],
 			);
 		});
 		const result = await readDaySources(env, query);
@@ -305,11 +421,13 @@ describe("bounded GitHub search", () => {
 							incomplete_results: false,
 							items: commits.slice((page - 1) * 100, page * 100),
 						}
-					: { total_count: 0, incomplete_results: false, items: [] },
+					: url.pathname.startsWith("/search/")
+						? { total_count: 0, incomplete_results: false, items: [] }
+						: [],
 			);
 		});
 		expect(await fetchGitHubDay(account, query, key, AbortSignal.timeout(1000))).toHaveLength(101);
-		expect(upstream).toHaveBeenCalledTimes(4);
+		expect(upstream).toHaveBeenCalledTimes(7);
 	});
 	it.each([
 		{ total_count: 1, incomplete_results: true, items: [githubCommit()] },

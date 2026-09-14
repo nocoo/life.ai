@@ -227,7 +227,7 @@ export function DataOverviewSkeleton() {
 
 export function DiarySkeleton() {
 	return (
-		<LoadingRegion label="正在读取当日日记" className="space-y-5">
+		<LoadingRegion label="正在读取 AI 总结" className="space-y-5">
 			<TextLines />
 			<TextLines />
 			<SkeletonLine minWidth={100} className="h-8 max-w-28 rounded-md" />
@@ -342,7 +342,7 @@ export function TimelineSkeleton() {
 					<WeatherSkeleton />
 					<SolarSkeleton />
 				</SkeletonCard>
-				<SkeletonCard title="当日日记">
+				<SkeletonCard title="AI 总结">
 					<DiarySkeleton />
 				</SkeletonCard>
 			</div>

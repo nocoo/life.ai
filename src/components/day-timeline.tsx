@@ -55,6 +55,7 @@ import { DayMap } from "./day-map";
 import { DaySummaryCard } from "./day-summary";
 import { EventDetails } from "./event-card";
 import { FinanceDayCard } from "./finance-day";
+import { GitHubStoryCard } from "./github-story-card";
 import { HealthDayCard } from "./health-story";
 import { HealthTimelineEntry } from "./health-timeline-entry";
 import { SourceStoryCard } from "./source-story-card";
@@ -105,8 +106,8 @@ function StoryBranchView({
 	onOpenMap: (branch: StoryBranch) => void;
 	embedded?: boolean;
 }) {
-	if (branch.computer || branch.article || branch.github)
-		return <SourceStoryCard branch={branch} />;
+	if (branch.github) return <GitHubStoryCard branch={branch} />;
+	if (branch.computer || branch.article) return <SourceStoryCard branch={branch} />;
 	const Icon = BRANCH_ICONS[branch.kind];
 	const grouped = branch.kind === "sleep" || branch.kind === "health" || branch.kind === "journey";
 	const source = branch.events[0];
@@ -513,7 +514,7 @@ export function DayTimelineView({
 								</Text>
 							</LayerCard.Header>
 							<LayerCard.Body>
-								<p className="text-sm">当天没有 Commits 或 PR 活动。</p>
+								<p className="text-sm">当天快照中没有 GitHub 活动。</p>
 							</LayerCard.Body>
 						</LayerCard>
 					) : null}

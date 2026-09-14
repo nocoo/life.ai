@@ -5,11 +5,14 @@ import {
 	ArrowLeftRight,
 	ArrowUpRight,
 	ChartNoAxesColumn,
+	CircleDot,
 	Clock,
 	Droplets,
 	Dumbbell,
 	Flame,
 	Footprints,
+	GitCommitHorizontal,
+	GitPullRequest,
 	HeartPulse,
 	List,
 	type LucideIcon,
@@ -19,6 +22,7 @@ import {
 	PersonStanding,
 	Plug,
 	Route,
+	Tag,
 } from "lucide-react";
 import type { DayInsights } from "../models/day-insights";
 import { healthMetrics, type StoryMetric } from "../viewmodels/day-story";
@@ -41,6 +45,10 @@ const METRIC_ICONS: Record<string, LucideIcon> = {
 	收入: ArrowDownLeft,
 	支出: ArrowUpRight,
 	转账: ArrowLeftRight,
+	Commit: GitCommitHorizontal,
+	PR: GitPullRequest,
+	Issue: CircleDot,
+	Release: Tag,
 };
 
 export function StoryMetrics({ items }: { items: StoryMetric[] }) {

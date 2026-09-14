@@ -52,7 +52,7 @@ export interface StoryBranch {
 	fromPreviousDay: boolean;
 	computer?: ComputerActivity;
 	article?: PublishedArticle;
-	github?: GitHubActivity;
+	github?: { event: LifeEvent; activity: GitHubActivity }[];
 }
 
 export interface StoryContinuation {
@@ -257,7 +257,8 @@ function groupBranches(events: LifeEvent[], timeline: DayTimeline): StoryBranch[
 	const groups = new Map<string, LifeEvent[]>();
 	for (const event of events) {
 		const kind = storyKind(event);
-		const grouped = kind === "health" || kind === "sleep" || kind === "journey";
+		const grouped =
+			kind === "health" || kind === "sleep" || kind === "journey" || kind === "github";
 		const id = grouped ? `${kind}:${event.sourceId}` : event.id;
 		const group = groups.get(id) ?? [];
 		group.push(event);
@@ -269,10 +270,41 @@ function groupBranches(events: LifeEvent[], timeline: DayTimeline): StoryBranch[
 		const insights = buildDayInsights(records, timeline);
 		const computer = kind === "computer" ? computerActivitySchema.safeParse(event.data) : null;
 		const article = kind === "article" ? publishedArticleSchema.safeParse(event.data) : null;
-		const github = kind === "github" ? githubActivitySchema.safeParse(event.data) : null;
+		const github =
+			kind === "github"
+				? records.flatMap((item) => {
+						const parsed = githubActivitySchema.safeParse(item.data);
+						return parsed.success ? [{ event: item, activity: parsed.data }] : [];
+					})
+				: [];
 		let title = event.title;
 		let metrics: StoryMetric[] = [];
-		if (kind === "health" || kind === "sleep") {
+		if (github.length) {
+			const repositories = new Set(github.map((item) => item.activity.repository));
+			const pulls = new Set(
+				github
+					.filter((item) => ["opened", "merged", "closed"].includes(item.activity.action))
+					.map((item) => `${item.activity.repository}#${item.activity.number}`),
+			);
+			const issues = new Set(
+				github
+					.filter((item) => item.activity.action.startsWith("issue-"))
+					.map((item) => `${item.activity.repository}#${item.activity.number}`),
+			);
+			title = `${github.length} 条动态 · ${repositories.size} 个仓库`;
+			metrics = [
+				{
+					label: "Commit",
+					value: String(github.filter((item) => item.activity.action === "commit").length),
+				},
+				{ label: "PR", value: String(pulls.size) },
+				{ label: "Issue", value: String(issues.size) },
+				{
+					label: "Release",
+					value: String(github.filter((item) => item.activity.action === "released").length),
+				},
+			].filter((item) => item.value !== "0");
+		} else if (kind === "health" || kind === "sleep") {
 			title = kind === "sleep" ? "睡眠" : "身体记录";
 			metrics = healthMetrics(insights.health);
 		} else if (kind === "journey") {
@@ -308,7 +340,7 @@ function groupBranches(events: LifeEvent[], timeline: DayTimeline): StoryBranch[
 			]);
 		}
 		return {
-			id,
+			id: kind === "github" ? `${id}:${event.occurredAt}` : id,
 			kind,
 			side: sideFor(kind),
 			title,
@@ -320,7 +352,7 @@ function groupBranches(events: LifeEvent[], timeline: DayTimeline): StoryBranch[
 			fromPreviousDay: event.precision !== "day" && event.occurredAt < timeline.start,
 			...(computer?.success ? { computer: computer.data } : {}),
 			...(article?.success ? { article: article.data } : {}),
-			...(github?.success ? { github: github.data } : {}),
+			...(github.length ? { github } : {}),
 		};
 	});
 }
