@@ -15,6 +15,7 @@ import { useSearchParams } from "react-router";
 import { useStore } from "zustand";
 import { DateNavigation } from "../components/date-navigation";
 import { DayTimelineView } from "../components/day-timeline";
+import { EMPTY_NAMED_PLACES } from "../models/general-settings";
 import { localDateKey, shiftLocalDate } from "../models/time";
 import {
 	dayContextQuery,
@@ -23,6 +24,7 @@ import {
 } from "../viewmodels/day-context-view-model";
 import { daySummaryStore } from "../viewmodels/day-summary-view-model";
 import { formatLocalDate } from "../viewmodels/format";
+import { generalSettingsStore } from "../viewmodels/general-settings-view-model";
 import {
 	ALL_SOURCES,
 	isSelectedToday,
@@ -52,6 +54,9 @@ export function TimelinePage() {
 	const mapMode = useStore(timelineStore, (state) => state.mapMode);
 	const tab = useStore(timelineStore, (state) => state.tab);
 	const context = useStore(dayContextStore);
+	const generalSettings = useStore(generalSettingsStore, (state) => state.settings);
+	const settingsStatus = useStore(generalSettingsStore, (state) => state.status);
+	const namedPlaces = generalSettings?.places ?? EMPTY_NAMED_PLACES;
 	const contextQuery = useMemo(
 		() => (timeline && story ? dayContextQuery(timeline, story.places) : null),
 		[timeline, story],
@@ -60,6 +65,10 @@ export function TimelinePage() {
 	const summaryStart = timeline?.start;
 	const summaryEnd = timeline?.end;
 	const summaryTimeZone = timeline?.timezone;
+
+	useEffect(() => {
+		timelineStore.getState().setNamedPlaces(namedPlaces);
+	}, [namedPlaces]);
 
 	useEffect(() => {
 		const state = timelineStore.getState();
@@ -95,7 +104,15 @@ export function TimelinePage() {
 	}, []);
 
 	useEffect(() => {
-		if (status === "ready" && summaryDate && summaryStart && summaryEnd && summaryTimeZone) {
+		if (
+			status === "ready" &&
+			summaryDate &&
+			summaryStart &&
+			summaryEnd &&
+			summaryTimeZone &&
+			settingsStatus !== "idle" &&
+			settingsStatus !== "loading"
+		) {
 			void daySummaryStore.getState().load({
 				date: summaryDate,
 				start: summaryStart,
@@ -103,7 +120,16 @@ export function TimelinePage() {
 				timeZone: summaryTimeZone,
 			});
 		}
-	}, [status, summaryDate, summaryStart, summaryEnd, summaryTimeZone]);
+		void generalSettings;
+	}, [
+		status,
+		summaryDate,
+		summaryStart,
+		summaryEnd,
+		summaryTimeZone,
+		generalSettings,
+		settingsStatus,
+	]);
 
 	return (
 		<Tabs
@@ -251,6 +277,7 @@ export function TimelinePage() {
 											key={`${day}:${sourceId}:${kind}`}
 											timeline={kind === "records" ? (recordsTimeline ?? timeline) : timeline}
 											kind={kind}
+											namedPlaces={namedPlaces}
 										/>
 									)}
 								</Suspense>

@@ -82,7 +82,7 @@ export function DaySummaryCard({ query }: { query: DaySummaryQuery }) {
 					<Banner
 						variant="alert"
 						title="摘要可能过时"
-						description="当天记录或日记写法已更新。可以重新生成，失败时会保留上一份摘要。"
+						description="当天记录、通用设置或日记写法已更新。可以重新生成，失败时会保留上一份摘要。"
 					/>
 				) : null}
 				{status === "ready" && !configured ? (

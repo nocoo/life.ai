@@ -8,7 +8,7 @@ This document details the backend implementation, database schema, authenticatio
 
 - **Runtime**: Cloudflare Worker running natively on the V8 engine, backed by Cloudflare D1 (`life`).
 - **Domain Routing & Host Isolation**:
-  - `APP_ORIGIN` (`https://life.hexly.ai`): Dashboard SPA and authenticated APIs, including records, imports, Connect management, AI settings and daily summaries.
+  - `APP_ORIGIN` (`https://life.hexly.ai`): Dashboard SPA and authenticated APIs, including records, imports, Connect management, general/AI settings and daily summaries.
   - `INGEST_HOST` (`life.worker.hexly.ai`): Machine ingestion endpoint (`POST /api/ingest`) and health probe (`GET /api/live`). Disallows static assets, SPA dashboard, or any data reads.
   - Development (`life.dev.hexly.ai` or loopback `127.0.0.1` / `localhost` / `::1`): Development routing with local identity bypass under strict `RESOURCE_ENV === "development"`.
   - All foreign hostnames are blocked in production with `403 forbidden_host`.
@@ -131,7 +131,7 @@ ON life_events(source_id, occurred_at ASC, id ASC);
   ```json
   {
     "status": "ok",
-    "version": "1.6.0",
+    "version": "1.7.0",
     "timestamp": "2026-09-13T17:35:00.000Z",
     "database": "ok"
   }
@@ -216,13 +216,13 @@ All five AI method/path contracts require Access and the app hostname; browser w
 | `PUT /api/settings/ai` | Saves provider, model, endpoint and protocol. Omitted keys only survive an unchanged provider/endpoint/SDK/auth tuple |
 | `POST /api/settings/ai/test` | Tests the saved configuration with a fixed prompt and 15-second timeout |
 | `GET /api/day-summary?date=...&timeZone=...&start=...&end=...` | Returns `{ summary, stale, eventCount }`; verifies the complete local-day UTC window |
-| `POST /api/day-summary` | Same fields as JSON plus optional `revision` (at most 2,000 characters); generates and persists a diary, with a 45-second model timeout |
+| `POST /api/day-summary` | Same fields as JSON plus optional `revision` (at most 2,000 characters); generates and persists a diary, with a 90-second model timeout |
 
 Migration `0002_daily_ai.sql` adds `ai_settings` (singleton `default`), `day_summaries` (primary key `date, timezone`) and `day_summary_leases` (same key, ownership token and expiry). Record timestamps stay UTC; local date/timezone are summary lookup metadata. API keys use AES-GCM with the separate `AI_SETTINGS_KEY` Worker secret.
 
 Default inference uses Workers AI Qwen; external providers use the next-ai registry and bounded AI SDK clients. Settings bodies are limited to 16 KiB, model names to 200 characters, URLs to 2,048, and keys to 4,096. External endpoints require HTTPS DNS names; only marked isolated tests can use loopback. HTTP redirects are never followed, model responses are capped at 512 KiB, and output text at 16,000 characters.
 
-Summaries cover all sources in the day. Paged UTC reads feed the shared numeric collector and incremental input hash; narrative samples are bounded across hours and sources. A 90-second D1 lease rejects concurrent generation with 409. The save statement checks lease ownership and expiry atomically; failed or expired generation keeps the last successful summary. A second input hash detects records arriving during generation. The prompt combines complete provider aggregates with bounded narrative evidence, cross-night sleep, GPS areas, all-day finance, cached weather and solar context. Existing text and optional feedback guide regeneration; viewing a saved diary makes no external context request. See [21 Diary evidence](21-diary.md) for the current prompt and freshness rules.
+Summaries cover all sources in the day. Paged UTC reads feed the shared numeric collector and incremental input hash; narrative samples are bounded across hours and sources. A 180-second D1 lease rejects concurrent generation with 409. The save statement checks lease ownership and expiry atomically; failed or expired generation keeps the last successful summary. A second input hash detects records or general settings changing during generation. The prompt combines complete provider aggregates with bounded narrative evidence, cross-night sleep, GPS areas, all-day finance, cached weather and solar context, plus named places and personal sleep routines. Actual sleep instants are also formatted in the routine timezone before comparing clocks. Existing text guides regeneration only when feedback is supplied; viewing a saved diary makes no external context request. See [21 Diary evidence](21-diary.md) for the current prompt and freshness rules.
 
 ## 7. Data Management and Footprint
 
@@ -290,3 +290,16 @@ Source dates are explicitly UTC+8. `utc_day` is the technical source-date key; t
 `GET /api/context/sun` and `GET /api/context/weather` require Access and the app hostname. They accept `date`, `timeZone`, `start`, `end`, `latitude`, `longitude`; the UTC window must exactly represent the selected local date. Invalid inputs return 400, unsupported methods 405, lease contention 503. The ingestion host returns 404.
 
 Migration `0005_public_context.sql` adds compact JSON caches, per-key leases and one Nominatim rate-limit marker. Complete solar results persist permanently; repeat reads are cache-only with no writes. Historical complete weather is permanent, incomplete history expires after 30 minutes, recent weather after three hours. Diary generation shares those caches and at most four coarse city/district lookups. Failed or partial solar responses are retryable. Details: [20 Public context](20-public-context-cache.md).
+
+## 11. General settings
+
+| Endpoint | Behavior |
+| --- | --- |
+| `GET /api/settings/general` | Returns `{ data: { places, routine } }`; an absent singleton returns empty places and a null routine without writing |
+| `PUT /api/settings/general` | Validates and replaces the complete settings object, returning the normalized result; identical content preserves the stored timestamp |
+
+Both methods require Access and the app hostname. PUT enforces the existing origin/media-type rules and a 64 KiB body limit. The ingestion hostname returns 404. Invalid settings return 400 `invalid_settings`; database or corrupt stored-data errors are not disguised as empty settings.
+
+`places` contains at most 100 `{ id, label, latitude, longitude, radiusMeters }` objects. IDs are unique 1–64 character alphanumeric/underscore/hyphen strings; trimmed labels are 1–80 characters without control characters. Coordinates are finite and bounded to ±90/±180, and radius is an integer from 50 to 50,000 meters. `routine` is null or `{ bedtime, wakeTime, timeZone }`, with distinct `HH:mm` clocks and a validated canonical timezone. Unknown fields are rejected.
+
+Migration `0006_general_settings.sql` adds one `general_settings` row keyed by `default`, with validated JSON and `updated_at`. Places are configuration, not daily records. Smallest matching circle wins; equal radii use nearest center and stable ID. Named locations and routine background enter diary evidence and freshness hashing without modifying provider data. See [24 General settings](24-general-settings.md).

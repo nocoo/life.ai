@@ -208,7 +208,7 @@ function VisitView({ item, mode }: { item: StoryVisit; mode: TimelineMapMode }) 
 							{item.stops.map((stop) => (
 								<li key={stop.id}>
 									<time dateTime={stop.at}>{stop.clock}</time>
-									<span>区域 {stop.placeIndex}</span>
+									<span>{stop.label ?? `区域 ${stop.placeIndex}`}</span>
 								</li>
 							))}
 						</ol>
@@ -367,7 +367,7 @@ export function DayTimelineView({
 	const stacked = useIsMobile() === true;
 	const hasMap = insights.gps.pointCount > 0;
 	const reference = story.places.representativePlace
-		? `区域 ${story.places.representativePlace.index} 附近`
+		? `${story.places.representativePlace.namedPlace?.label ?? `区域 ${story.places.representativePlace.index}`} 附近`
 		: "当天参考位置";
 	return (
 		<>

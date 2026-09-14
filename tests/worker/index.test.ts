@@ -97,6 +97,9 @@ describe("worker/index router & host isolation", () => {
 		const query =
 			"date=2026-09-13&timeZone=UTC&start=2026-09-13T00:00:00Z&end=2026-09-14T00:00:00Z";
 		const cases = [
+			["/api/settings/general", "GET", 200],
+			["/api/settings/general", "PUT", 415],
+			["/api/settings/general", "PATCH", 405],
 			["/api/settings/ai", "GET", 200],
 			["/api/settings/ai", "PUT", 415],
 			["/api/settings/ai", "PATCH", 405],

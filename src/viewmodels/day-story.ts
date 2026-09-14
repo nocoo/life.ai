@@ -7,6 +7,7 @@ import {
 	type GpsVisit,
 } from "../models/day-places";
 import { buildFinanceDay, type FinanceDay } from "../models/finance";
+import type { NamedPlace } from "../models/general-settings";
 import type { DayTimeline, HourSlot, JsonValue, LifeEvent } from "../models/types";
 import type { SolarMoment } from "./day-context-view-model";
 import { formatDurationMinutes, formatInterval, formatLocalClock } from "./format";
@@ -52,7 +53,7 @@ export interface StoryHour {
 
 export interface StoryVisit {
 	visit: Pick<GpsVisit, "id" | "startAt" | "endAt" | "points" | "pointCount" | "observedMinutes">;
-	stops: { id: string; placeIndex: number; at: string; clock: string }[];
+	stops: { id: string; placeIndex: number; at: string; clock: string; label?: string }[];
 	places: GpsPlace[];
 	title: string;
 	period: string;
@@ -292,8 +293,9 @@ export function buildDayStory(
 	insights: DayInsights,
 	radiusKm: 5 | 10 = 5,
 	excludedGpsIntervals: { start: number; end: number }[] = [],
+	namedPlaces: readonly NamedPlace[] = [],
 ): DayStory {
-	const places = buildDayPlaces(insights.gps, radiusKm);
+	const places = buildDayPlaces(insights.gps, radiusKm, namedPlaces);
 	const gpsSources = new Set(
 		insights.gps.segments.flatMap((segment) => segment.map((point) => point.sourceId)),
 	);
@@ -391,8 +393,10 @@ export function buildDayStory(
 		}
 		const start = formatLocalClock(firstPoint.occurredAt, firstPoint.precision);
 		const end = formatLocalClock(lastPoint.occurredAt, lastPoint.precision);
-		const title =
-			groupPlaces.length > 1
+		const namedLabels = [...new Set(groupPlaces.flatMap((place) => place.namedPlace?.label ?? []))];
+		const title = namedLabels.length
+			? `${namedLabels.join(" · ")}${groupPlaces.some((place) => !place.namedPlace) ? "与周边" : "附近"}`
+			: groupPlaces.length > 1
 				? `沿途经过 ${groupPlaces.length} 个区域`
 				: `${repeatedPlace ? "同一区域采样" : "位置采样"} · 区域 ${firstMember.visit.placeIndex} 附近`;
 		row.visits.push({
@@ -406,11 +410,13 @@ export function buildDayStory(
 			},
 			stops: members.map((member) => {
 				const point = member.points[0] as (typeof points)[number];
+				const named = places.places.find((place) => place.id === member.visit.placeId)?.namedPlace;
 				return {
 					id: `${member.visit.id}:${hour}`,
 					placeIndex: member.visit.placeIndex,
 					at: point.occurredAt,
 					clock: formatLocalClock(point.occurredAt, point.precision) ?? "",
+					...(named ? { label: named.label } : {}),
 				};
 			}),
 			places: groupPlaces,

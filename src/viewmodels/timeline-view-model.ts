@@ -1,7 +1,8 @@
 import { createStore } from "zustand/vanilla";
 import { buildDayInsights, type DayInsights, type TrackPoint } from "../models/day-insights";
+import type { NamedPlace } from "../models/general-settings";
 import { buildHealthStory, type HealthStory } from "../models/health-insights";
-import type { SleepLocation } from "../models/health-location";
+import { namedSleepLocation, type SleepLocation } from "../models/health-location";
 import { applyHealthStoryInsights } from "../models/health-quantities";
 import { buildDayTimeline, localDateKey, localDayWindow, shiftLocalDate } from "../models/time";
 import type { DayTimeline, LifeEvent, Source } from "../models/types";
@@ -30,6 +31,7 @@ export interface TimelineViewState {
 	recordsStatus: LoadStatus;
 	recordsError: string | null;
 	radiusKm: 5 | 10;
+	namedPlaces: readonly NamedPlace[];
 	mapMode: TimelineMapMode;
 	tab: TimelinePageTab;
 	status: LoadStatus;
@@ -41,6 +43,7 @@ export interface TimelineViewState {
 	goToday: () => Promise<void>;
 	selectSource: (sourceId: string) => Promise<void>;
 	selectRadius: (radiusKm: 5 | 10) => void;
+	setNamedPlaces: (places: readonly NamedPlace[]) => void;
 	selectMapMode: (mapMode: TimelineMapMode) => void;
 	selectTab: (tab: TimelinePageTab) => void;
 	retry: () => Promise<void>;
@@ -69,6 +72,7 @@ function initialTimelineState(): Pick<
 	| "recordsStatus"
 	| "recordsError"
 	| "radiusKm"
+	| "namedPlaces"
 	| "mapMode"
 	| "tab"
 	| "status"
@@ -86,6 +90,7 @@ function initialTimelineState(): Pick<
 		recordsStatus: "idle",
 		recordsError: null,
 		radiusKm: 5,
+		namedPlaces: [],
 		mapMode: "auto",
 		tab: "timeline",
 		status: "idle",
@@ -119,7 +124,13 @@ export function eventsForSource(events: LifeEvent[], sourceId: string): LifeEven
 	return events.filter((event) => event.sourceId === sourceId);
 }
 
-function projectDay(day: string, sourceId: string, events: LifeEvent[], radiusKm: 5 | 10) {
+function projectDay(
+	day: string,
+	sourceId: string,
+	events: LifeEvent[],
+	radiusKm: 5 | 10,
+	namedPlaces: readonly NamedPlace[],
+) {
 	const window = localDayWindow(day);
 	const visible = eventsForSource(events, sourceId);
 	const timeline = buildDayTimeline(day, visible);
@@ -133,8 +144,16 @@ function projectDay(day: string, sourceId: string, events: LifeEvent[], radiusKm
 		insights,
 		health,
 		story: health
-			? buildHealthTimeline(timeline, insights, health, visible, radiusKm, cachedLocations)
-			: buildDayStory(timeline, insights, radiusKm),
+			? buildHealthTimeline(
+					timeline,
+					insights,
+					health,
+					visible,
+					radiusKm,
+					cachedLocations,
+					namedPlaces,
+				)
+			: buildDayStory(timeline, insights, radiusKm, [], namedPlaces),
 		recordsTimeline: cachedRawEvents
 			? buildDayTimeline(day, eventsForSource(cachedRawEvents, sourceId))
 			: null,
@@ -183,7 +202,7 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 			cachedLocations = {};
 			set({
 				sources,
-				...projectDay(day, get().sourceId, events, get().radiusKm),
+				...projectDay(day, get().sourceId, events, get().radiusKm, get().namedPlaces),
 				status: "ready",
 				error: null,
 			});
@@ -206,7 +225,13 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 								hours: story.hours.map((hour) => ({
 									...hour,
 									health: hour.health?.map((item) =>
-										item.kind === "sleep" ? { ...item, location: locations[item.id] } : item,
+										item.kind === "sleep"
+											? {
+													...item,
+													location:
+														namedSleepLocation(item.night, get().namedPlaces) ?? locations[item.id],
+												}
+											: item,
 									),
 								})),
 							},
@@ -289,7 +314,7 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 		set({ sourceId: next });
 		const { day, status } = get();
 		if (status !== "idle" && cachedDay === day) {
-			set(projectDay(day, next, cachedEvents, get().radiusKm));
+			set(projectDay(day, next, cachedEvents, get().radiusKm, get().namedPlaces));
 			if (get().tab === "records") await get().loadRecords();
 			return;
 		}
@@ -300,7 +325,19 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 		const { day, sourceId } = get();
 		set({
 			radiusKm,
-			...(cachedDay === day ? projectDay(day, sourceId, cachedEvents, radiusKm) : {}),
+			...(cachedDay === day
+				? projectDay(day, sourceId, cachedEvents, radiusKm, get().namedPlaces)
+				: {}),
+		});
+	},
+	setNamedPlaces(namedPlaces) {
+		const { day, sourceId, radiusKm, status } = get();
+		if (namedPlaces === get().namedPlaces) return;
+		set({
+			namedPlaces,
+			...(cachedDay === day && status === "ready"
+				? projectDay(day, sourceId, cachedEvents, radiusKm, namedPlaces)
+				: {}),
 		});
 	},
 	selectMapMode(mapMode) {

@@ -16,6 +16,11 @@ const ConnectPage = lazy(() =>
 const AiSettingsPage = lazy(() =>
 	import("./views/ai-settings-page").then((module) => ({ default: module.AiSettingsPage })),
 );
+const GeneralSettingsPage = lazy(() =>
+	import("./views/general-settings-page").then((module) => ({
+		default: module.GeneralSettingsPage,
+	})),
+);
 const DataOverviewPage = lazy(() =>
 	import("./views/data-overview-page").then((module) => ({ default: module.DataOverviewPage })),
 );
@@ -40,6 +45,7 @@ export function App() {
 						<Route path="/imports" element={<ImportsPage />} />
 						<Route path="/connect" element={<ConnectPage />} />
 						<Route path="/settings/ai" element={<AiSettingsPage />} />
+						<Route path="/settings/general" element={<GeneralSettingsPage />} />
 						<Route path="/data" element={<DataOverviewPage />} />
 						<Route path="/data/footprint" element={<FootprintPage />} />
 						<Route path="/data/apple-health" element={<AppleHealthPage />} />

@@ -16,7 +16,10 @@ import { parseArgs, parseEnv } from "node:util";
 import { z } from "zod";
 import { validateSummaryQuery } from "../src/models/ai.js";
 import { buildDayInsights } from "../src/models/day-insights.js";
+import { generalSettingsSchema } from "../src/models/general-settings.js";
+import { buildHealthStory } from "../src/models/health-insights.js";
 import { PIXIU_COLUMNS, pixiuDayEvents, validatePixiuDay } from "../src/models/pixiu.js";
+import type { LifeEvent } from "../src/models/types.js";
 import { generateAiText, getDecryptedAiConfig } from "../worker/ai.js";
 import {
 	buildDaySummaryPrompt,
@@ -30,6 +33,7 @@ import {
 	collectDiaryEvidence,
 	formatEvidenceTime,
 	formatHealthDimensionsEvidence,
+	formatPersonalContext,
 	formatSpendingEvidence,
 } from "../worker/diary-evidence.js";
 import { DIARY_PROMPT_VERSION, DIARY_SYSTEM_PROMPT } from "../worker/diary-prompt.js";
@@ -44,6 +48,26 @@ const caseSchema = z.object({
 	sourceCounts: z.record(z.string(), z.number().int().nonnegative()).default({}),
 	signals: z.array(z.string()).default([]),
 	pixiuRows: z.array(z.array(z.string()).length(9)).default([]),
+	personalSettings: generalSettingsSchema.optional(),
+	sleep: z
+		.array(
+			z.object({
+				startAt: z.iso.datetime({ offset: true }),
+				endAt: z.iso.datetime({ offset: true }),
+				stage: z.enum(["core", "awake"]),
+			}),
+		)
+		.default([]),
+	gps: z
+		.array(
+			z.object({
+				occurredAt: z.iso.datetime({ offset: true }),
+				precision: z.enum(["day", "hour", "minute", "second"]).default("minute"),
+				latitude: z.number().min(-90).max(90),
+				longitude: z.number().min(-180).max(180),
+			}),
+		)
+		.default([]),
 	expectations: z.array(z.string()).min(1),
 	forbiddenClaims: z.array(z.string()).min(1),
 });
@@ -204,6 +228,23 @@ writeFileSync(
 const baseline = (await import(
 	pathToFileURL(baselinePath).href
 )) as typeof import("../worker/day-summary.js");
+// Older versions kept their complete instructions in the user prompt. Newer versions
+// also have a system prompt: load that exact revision instead of silently omitting it.
+let baselineSystem: string | undefined;
+if (
+	execFileSync("git", ["ls-tree", "--name-only", baselineRef, "worker/diary-prompt.ts"], {
+		cwd: repo,
+		encoding: "utf8",
+	}).trim()
+) {
+	const path = resolve(output, "baseline-diary-prompt.ts");
+	writeFileSync(
+		path,
+		execFileSync("git", ["show", `${baselineRef}:worker/diary-prompt.ts`], { cwd: repo }),
+		{ mode: 0o600 },
+	);
+	baselineSystem = (await import(pathToFileURL(path).href)).DIARY_SYSTEM_PROMPT;
+}
 const source = new DatabaseSync(realpathSync(args.snapshot), { readOnly: true });
 source.exec("PRAGMA query_only = ON");
 const cache = new DatabaseSync(resolve(output, "public-context.sqlite"));
@@ -232,9 +273,15 @@ if (args.run && !config.apiKey)
 	);
 const modelConfig = { provider: config.provider, model: config.model, sdkType: config.sdkType };
 const implementationHash = hash(
-	["ai", "day-summary", "diary-evidence", "diary-prompt"].map((name) =>
-		readFileSync(resolve(repo, `worker/${name}.ts`), "utf8"),
-	),
+	[
+		"worker/ai.ts",
+		"worker/day-summary.ts",
+		"worker/diary-evidence.ts",
+		"worker/diary-prompt.ts",
+		"src/models/general-settings.ts",
+		"src/models/day-places.ts",
+		"src/models/health-insights.ts",
+	].map((path) => readFileSync(resolve(repo, path), "utf8")),
 );
 const evaluatorHash = hash(readFileSync(fileURLToPath(import.meta.url), "utf8"));
 save(resolve(output, "run.json"), {
@@ -277,21 +324,79 @@ async function evidence(item: EvalCase): Promise<Parameters<typeof buildDaySumma
 					}),
 				)
 			: [];
+		const gps: LifeEvent[] = item.gps.map((point, index) => ({
+			id: `${item.id}-gps-${index}`,
+			sourceId: "footprint",
+			sourceName: "Footprint",
+			sourceKind: "import",
+			occurredAt: point.occurredAt,
+			endAt: null,
+			precision: point.precision,
+			title: "位置采样",
+			content: "",
+			data: { latitude: point.latitude, longitude: point.longitude },
+			updatedAt: query.start,
+		}));
+		const insights = buildDayInsights([...pixiu, ...gps], query);
+		const sleep: LifeEvent[] = item.sleep.map((segment, index) => ({
+			id: `${item.id}-sleep-${index}`,
+			sourceId: "apple-health",
+			sourceName: "Apple 健康",
+			sourceKind: "import",
+			occurredAt: segment.startAt,
+			endAt: segment.endAt,
+			precision: "minute",
+			title: "睡眠",
+			content: "",
+			data: {
+				type: "HKCategoryTypeIdentifierSleepAnalysis",
+				value:
+					segment.stage === "awake"
+						? "HKCategoryValueSleepAnalysisAwake"
+						: "HKCategoryValueSleepAnalysisAsleepCore",
+			},
+			updatedAt: query.start,
+		}));
+		const health = sleep.length ? buildHealthStory([...sleep, ...gps], query) : null;
+		const details = gps.length
+			? await collectDiaryEvidence(
+					cacheEnv,
+					{ ...query, insights, health, pixiuEvents: pixiu, settings: item.personalSettings },
+					{
+						getDaySun: async () => ({ events: [], daylightMinutes: null, status: "normal" }),
+						getDayWeather: async () => null,
+						getPlaceLabel: async () => null,
+					},
+				)
+			: formatSpendingEvidence(pixiu);
 		return [
 			item.date,
 			query.timeZone,
 			Object.values(item.sourceCounts).reduce((sum, value) => sum + value, 0),
 			item.sourceCounts,
 			{},
-			buildDayInsights(pixiu, query),
-			[],
-			[...item.signals, ...formatSpendingEvidence(pixiu)],
+			insights,
+			formatHealthEvidence(
+				health,
+				query.timeZone,
+				item.personalSettings?.places,
+				item.personalSettings?.routine,
+			),
+			[...item.signals, ...details],
+			undefined,
+			item.personalSettings ? formatPersonalContext(item.personalSettings) : [],
 		];
 	}
 	const day = await streamDayEvents(env, Date.parse(query.start), Date.parse(query.end), query);
 	const publicEvidence = await collectDiaryEvidence(
 		cacheEnv,
-		{ ...query, insights: day.insights, health: day.health, pixiuEvents: day.pixiuEvents },
+		{
+			...query,
+			insights: day.insights,
+			health: day.health,
+			pixiuEvents: day.pixiuEvents,
+			settings: item.personalSettings,
+		},
 		args.run
 			? undefined
 			: {
@@ -308,10 +413,17 @@ async function evidence(item: EvalCase): Promise<Parameters<typeof buildDaySumma
 		day.samplesBySource,
 		day.insights,
 		[
-			...formatHealthEvidence(day.health, query.timeZone),
+			...formatHealthEvidence(
+				day.health,
+				query.timeZone,
+				item.personalSettings?.places,
+				item.personalSettings?.routine,
+			),
 			...formatHealthDimensionsEvidence(day.healthEvents, query.timeZone),
 		],
 		publicEvidence,
+		undefined,
+		item.personalSettings ? formatPersonalContext(item.personalSettings) : [],
 	];
 }
 
@@ -384,7 +496,13 @@ try {
 			)
 				throw new Error("Frozen eval evidence or mode changed; use a new output directory");
 			const input = savedInput?.input ?? (await evidence(item));
-			const oldPrompt = baseline.buildDaySummaryPrompt(...input);
+			const baselineInput: Parameters<typeof buildDaySummaryPrompt> = [...input];
+			if (input[9]?.length) {
+				// Give older builders the same background even before they had a separate argument.
+				baselineInput[7] = [...(input[7] ?? []), ...input[9]];
+				baselineInput[9] = undefined;
+			}
+			const oldPrompt = baseline.buildDaySummaryPrompt(...baselineInput);
 			const prompt = buildDaySummaryPrompt(...input);
 			// Reuse the same factual formatters without either writer's instructions. The judge
 			// must see localized sample precision and totals, but not the candidate's writing request.
@@ -400,6 +518,7 @@ try {
 					})),
 				),
 				coverage: { total: input[2], sources: input[3] },
+				...(item.personalSettings ? { personalSettings: item.personalSettings } : {}),
 			};
 			save(resolve(output, `${item.id}.materials.json`), materials);
 			if (!savedInput)
@@ -410,6 +529,7 @@ try {
 					implementationHash,
 					liveContext: args.run,
 					oldPrompt,
+					baselineSystem,
 					prompt,
 					system: DIARY_SYSTEM_PROMPT,
 				});
@@ -420,7 +540,7 @@ try {
 			for (let repeat = 0; repeat < repeats; repeat++) {
 				const prefix = resolve(output, `${item.id}.${repeat}`);
 				const [old, current] = await Promise.all([
-					infer(`${prefix}.baseline.json`, oldPrompt, undefined),
+					infer(`${prefix}.baseline.json`, oldPrompt, baselineSystem),
 					infer(`${prefix}.candidate.json`, prompt, DIARY_SYSTEM_PROMPT),
 				]);
 				if (
@@ -435,6 +555,9 @@ try {
 				const swap = (Number.parseInt(hash(item.id).slice(0, 2), 16) + repeat) % 2 === 1;
 				const a = swap ? current : old;
 				const b = swap ? old : current;
+				const judgeSystem = item.personalSettings
+					? `${JUDGE_SYSTEM}\n额外核对个人背景：personalSettings 的 routine 是用户平日的钟表作息，不是当天观测。早晚比较必须在同一时区；材料已给出换到作息时区的实测钟点时，直接用该组对照。贴近平日的睡眠不能凭常规社会作息判成颠倒或懒散；没有实测睡眠时不能从习惯生成今天的入睡、起床或时长。places 是配置表，只有命中采样的名称才有当天位置依据，单点或有空档的采样不能证明连续停留或全天在家。请在 calibration 中明确核验这些适用项，引用正文与相应事实；与其中任一事实冲突时该项至多 2 分，影响主要情节则记 criticalErrors。不要要求正文复述所有设置、没有发生的事情或时区换算步骤。`
+					: JUDGE_SYSTEM;
 				let judgeRetries = 0;
 				const judgments = await Promise.all(
 					[false, true].map(async (reverse) => {
@@ -444,11 +567,11 @@ try {
 							A: (reverse ? b : a).result.content,
 							B: (reverse ? a : b).result.content,
 						});
-						const judgePath = `${prefix}.judge-${hash({ judgePrompt, system: JUDGE_SYSTEM }).slice(0, 12)}`;
+						const judgePath = `${prefix}.judge-${hash({ judgePrompt, system: judgeSystem }).slice(0, 12)}`;
 						// Retry malformed judge output once, never a valid low score. Preserve both
 						// artifacts and count the retry so a formatting failure is not a writer failure.
 						for (const suffix of ["", "-retry"]) {
-							const judged = await infer(`${judgePath}${suffix}.json`, judgePrompt, JUDGE_SYSTEM);
+							const judged = await infer(`${judgePath}${suffix}.json`, judgePrompt, judgeSystem);
 							try {
 								return judgmentSchema.parse(
 									JSON.parse(judged.result.content.replace(/^```(?:json)?\s*|\s*```$/g, "")),

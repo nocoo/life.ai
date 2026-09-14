@@ -8,6 +8,7 @@ import {
 	DialogTitle,
 } from "@nocoo/basalt/components/dialog";
 import { useCallback, useId, useMemo, useRef, useState } from "react";
+import { EMPTY_NAMED_PLACES, type NamedPlace } from "../models/general-settings";
 import { PIXIU_COLUMNS } from "../models/pixiu";
 import type { DayTimeline, LifeEvent } from "../models/types";
 import {
@@ -32,11 +33,16 @@ const getRowId = (row: DayRecordRow) => row.event.id;
 export default function DayRecords({
 	timeline,
 	kind,
+	namedPlaces = EMPTY_NAMED_PLACES,
 }: {
 	timeline: DayTimeline;
 	kind: DayRecordKind;
+	namedPlaces?: readonly NamedPlace[];
 }) {
-	const rows = useMemo(() => buildDayRecords(timeline, kind), [timeline, kind]);
+	const rows = useMemo(
+		() => buildDayRecords(timeline, kind, namedPlaces),
+		[timeline, kind, namedPlaces],
+	);
 	const [selected, setSelected] = useState<{ event: LifeEvent; json: string } | null>(null);
 	const returnFocus = useRef<HTMLButtonElement | null>(null);
 	const descriptionId = useId();
@@ -113,6 +119,13 @@ export default function DayRecords({
 				})),
 			);
 		} else if (isLocation) {
+			common.push({
+				id: "placeLabel",
+				header: "地点",
+				accessor: (row) => row.placeLabel ?? "—",
+				sortValue: (row) => row.placeLabel ?? "",
+				cellClassName: "max-w-48 break-words",
+			});
 			for (const [id, header] of [
 				["latitude", "纬度"],
 				["longitude", "经度"],

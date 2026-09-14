@@ -24,7 +24,7 @@ Access team 为 `nocoo`，issuer 为 `https://nocoo.cloudflareaccess.com`；audi
 
 部署前运行 `bun run quality`。`bun run deploy` 构建和 dry run 后检查迁移列表、应用缺失迁移，再部署两个域名。先迁移再更新服务，避免缺表。当前版本必须同时显示于侧栏与 `/api/live`。
 
-部署后检查 `/api/live` 的 JSON / D1 / version、Access 入口跳转、拒绝未授权 API 与机器域名读取。生产环境只做只读上线检查，不运行测试 seed/reset。当前健康数据版本的证据写入 [17 Apple Health](17-apple-health.md)，初次重构证据保留于 [08 重构记录](08-chronicle-rewrite.md)。
+部署后检查 `/api/live` 的 JSON / D1 / version、Access 入口跳转、拒绝未授权 API 与机器域名读取。生产环境只做只读上线检查，不运行测试 seed/reset。当前设置与日记版本的证据写入 [24 通用设置](24-general-settings.md)，健康导入证据见 [17 Apple Health](17-apple-health.md)，初次重构证据保留于 [08 重构记录](08-chronicle-rewrite.md)。
 
 ## AI 配置
 

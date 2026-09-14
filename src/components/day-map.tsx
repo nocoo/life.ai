@@ -2,8 +2,10 @@ import { Button, LayerCard, Text } from "@nocoo/basalt";
 import { Empty } from "@nocoo/basalt/components/empty";
 import { Map as MapIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useStore } from "zustand";
 import type { DayInsights, TrackPoint } from "../models/day-insights";
 import type { GpsPlace } from "../models/day-places";
+import { EMPTY_NAMED_PLACES, matchNamedPlace } from "../models/general-settings";
 import {
 	estimateTrackSpeeds,
 	nearestTrackPoint,
@@ -11,6 +13,7 @@ import {
 	speedBand,
 } from "../models/track-speed";
 import { formatLocalClock } from "../viewmodels/format";
+import { generalSettingsStore } from "../viewmodels/general-settings-view-model";
 import { selectTrackEndpoints } from "../viewmodels/timeline-view-model";
 import { StoryCardHeading } from "./story-card-heading";
 
@@ -31,12 +34,17 @@ function speedLabel(speed: number | null): string {
 		: `${SPEED_STYLE[speedBand(speed)].label} · 估算 ${speed.toFixed(1)} km/h`;
 }
 
-function popupNode(title: string, point: TrackPoint, speed: number | null): HTMLElement {
+function popupNode(
+	title: string,
+	point: TrackPoint,
+	speed: number | null,
+	place?: string,
+): HTMLElement {
 	const node = document.createElement("div");
 	node.style.whiteSpace = "pre-wrap";
 	const clock = formatLocalClock(point.occurredAt, point.precision);
 	const lines = [
-		title,
+		place ? `${title} · ${place}` : title,
 		clock ?? "全天",
 		`${point.latitude.toFixed(5)}, ${point.longitude.toFixed(5)}`,
 		point.sourceName,
@@ -64,6 +72,10 @@ export function DayMap({
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [mapError, setMapError] = useState<string | null>(null);
 	const [attempt, setAttempt] = useState(0);
+	const namedPlaces = useStore(
+		generalSettingsStore,
+		(state) => state.settings?.places ?? EMPTY_NAMED_PLACES,
+	);
 	const hasPoints =
 		insights.gps.pointCount > 0 && insights.gps.segments.some((segment) => segment.length > 0);
 
@@ -89,6 +101,8 @@ export function DayMap({
 					return;
 				}
 				const L = leaflet.default ?? leaflet;
+				const popup = (title: string, point: TrackPoint, speed: number | null) =>
+					popupNode(title, point, speed, matchNamedPlace(point, namedPlaces)?.label);
 				map = L.map(containerRef.current, {
 					scrollWheelZoom: false,
 					keyboard: true,
@@ -138,11 +152,12 @@ export function DayMap({
 								fillOpacity: 0.85,
 							})
 								.addTo(map)
-								.bindPopup(popupNode("位置记录", point, speed));
+								.bindPopup(popup("位置记录", point, speed));
 						}
 					}
 				}
 				for (const place of places ?? []) {
+					const placeTitle = `${place.namedPlace?.label ?? `区域 ${place.index}`} · 附近采样`;
 					const point = nearestTrackPoint(place.anchor, speeds.keys());
 					const speed = point ? (speeds.get(point) ?? null) : null;
 					const band = speedBand(speed);
@@ -154,9 +169,9 @@ export function DayMap({
 							iconAnchor: [14, 32],
 							popupAnchor: [0, -30],
 						}),
-						title: `区域 ${place.index} · 附近采样 · ${speedLabel(speed)}`,
+						title: `${placeTitle} · ${speedLabel(speed)}`,
 					}).addTo(map);
-					if (point) marker.bindPopup(popupNode(`区域 ${place.index} · 附近采样`, point, speed));
+					if (point) marker.bindPopup(popupNode(placeTitle, point, speed));
 				}
 				const ends = selectTrackEndpoints(insights.gps.segments);
 				if (ends) {
@@ -174,9 +189,7 @@ export function DayMap({
 							title: endpoint.title,
 						})
 							.addTo(map)
-							.bindPopup(
-								popupNode(endpoint.title, endpoint.point, speeds.get(endpoint.point) ?? null),
-							);
+							.bindPopup(popup(endpoint.title, endpoint.point, speeds.get(endpoint.point) ?? null));
 					}
 				}
 				if (latLngs.length === 1) {
@@ -235,7 +248,7 @@ export function DayMap({
 				map = undefined;
 			}
 		};
-	}, [hasPoints, insights, attempt, showPoints, places]);
+	}, [hasPoints, insights, attempt, showPoints, places, namedPlaces]);
 
 	return (
 		<LayerCard className="story-map story-card">

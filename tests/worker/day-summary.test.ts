@@ -22,6 +22,7 @@ import {
 } from "../../worker/day-summary.js";
 import { formatEvidenceTime, formatHealthDimensionsEvidence } from "../../worker/diary-evidence.js";
 import { DIARY_SYSTEM_PROMPT } from "../../worker/diary-prompt.js";
+import { handlePutGeneralSettings } from "../../worker/general-settings.js";
 import { healthDayHeader, readHealthEvents } from "../../worker/health-read.js";
 import {
 	buildWeatherCacheKey,
@@ -70,6 +71,7 @@ function setup() {
 		"0003_provider_days.sql",
 		"0004_apple_health.sql",
 		"0005_public_context.sql",
+		"0006_general_settings.sql",
 	])
 		sqlite.exec(readFileSync(new URL(`../../worker/migrations/${name}`, import.meta.url), "utf8"));
 	const prepare = vi.fn((sql: string) => {
@@ -296,6 +298,31 @@ function sleepRecord(
 }
 
 describe("daily summary evidence", () => {
+	it("compares observed sleep with habitual clocks in the routine's timezone, without replacing observations", async () => {
+		const { env, putHealthDay } = setup();
+		await putHealthDay(Date.parse("2026-09-13T00:00:00Z"), [
+			sleepRecord("AsleepCore", "2026-09-13T01:10:00Z", "2026-09-13T09:05:00Z"),
+		]);
+		const { health } = await scan(env);
+		expect(health?.nights).toHaveLength(1);
+		const routine = { bedtime: "21:00", wakeTime: "05:00", timeZone: "America/New_York" };
+		const lines = formatHealthEvidence(health, day.timeZone, [], routine).join("\n");
+		expect(lines).toContain("09:10 入睡");
+		expect(lines).toContain("17:05 睡眠结束");
+		expect(lines).toContain("2026/09/12 21:10 入睡");
+		expect(lines).toContain("2026/09/13 05:05 这段记录结束");
+		expect(lines).toContain("平时 21:00 入睡、05:00 起床");
+		expect(health?.nights[0]?.fellAsleepAt).toBe("2026-09-13T01:10:00.000Z");
+		expect(formatHealthEvidence(null, day.timeZone, [], routine).join("\n")).toContain(
+			"没有归属本日起床的实测睡眠时段",
+		);
+		expect(formatHealthEvidence(null, day.timeZone)).toEqual([]);
+		if (!health) throw new Error("Missing observed sleep");
+		expect(
+			formatHealthEvidence({ ...health, nights: [] }, day.timeZone, [], routine).join("\n"),
+		).toContain("不能据此写出今天几点入睡");
+	});
+
 	it("validates the full local day and maps invalid input to HTTP 400", () => {
 		expect(safeValidateSummaryQuery(day)).toEqual(day);
 		for (const input of [
@@ -1011,6 +1038,64 @@ describe("saved daily summaries", () => {
 			vi.doUnmock("../../worker/diary-prompt.js");
 			vi.resetModules();
 		}
+	});
+
+	it("passes personal names and wall-clock routine to the prompt and invalidates saved diaries on settings changes", async () => {
+		const { env, insert, run } = setup();
+		insert();
+		const save = (label: string, bedtime = "03:00") =>
+			handlePutGeneralSettings(
+				new Request("http://localhost/api/settings/general", {
+					method: "PUT",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						places: [{ id: "home", label, latitude: 31, longitude: 121, radiusMeters: 300 }],
+						routine: { bedtime, wakeTime: "11:00", timeZone: "Asia/Shanghai" },
+					}),
+				}),
+				env,
+			);
+		await save("家");
+		const saved = await data(await handlePostDaySummary(request(), env));
+		const prompt =
+			run.mock.calls[0]?.[1].messages.find((message) => message.role === "user")?.content ?? "";
+		expect(prompt).toContain("用户确认的地点与作息背景，与当日观测分开");
+		expect(prompt).toContain("通常 03:00 入睡，11:00 起床");
+		expect(prompt).toContain('"label":"家"');
+		expect(prompt).toContain("不是当天的睡眠记录");
+		expect(prompt).not.toContain("在用户命名的「家」"); // Merely configuring home is not evidence of a visit.
+		await save(" 家 ");
+		expect((await data(await handleGetDaySummary(env, url()))).stale).toBe(false);
+		await save("书房");
+		const stale = await data(await handleGetDaySummary(env, url()));
+		expect(stale.stale).toBe(true);
+		expect(stale.summary).toEqual(saved.summary);
+		await save("家", "02:30");
+		expect((await data(await handleGetDaySummary(env, url()))).stale).toBe(true);
+		await save("家");
+		expect((await data(await handleGetDaySummary(env, url()))).stale).toBe(false);
+		expect(run).toHaveBeenCalledOnce();
+	});
+
+	it("marks a generation stale if habitual context changes while the model is running", async () => {
+		const { env, insert, run } = setup();
+		insert();
+		run.mockImplementationOnce(async () => {
+			await handlePutGeneralSettings(
+				new Request("http://localhost/api/settings/general", {
+					method: "PUT",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						places: [],
+						routine: { bedtime: "09:00", wakeTime: "17:00", timeZone: "Asia/Shanghai" },
+					}),
+				}),
+				env,
+			);
+			return { response: "依据生成开始时的材料。" };
+		});
+		expect((await data(await handlePostDaySummary(request(), env))).stale).toBe(true);
+		expect((await data(await handleGetDaySummary(env, url()))).stale).toBe(true);
 	});
 
 	it("does not save public-context that arrived while the model was running", async () => {

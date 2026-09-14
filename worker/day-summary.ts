@@ -8,6 +8,12 @@ import {
 } from "../src/models/ai.js";
 import { createDayInsightsCollector, type DayInsights } from "../src/models/day-insights.js";
 import { footprintDayEvents } from "../src/models/footprint.js";
+import {
+	type GeneralSettings,
+	matchNamedPlace,
+	type NamedPlace,
+	type SleepRoutine,
+} from "../src/models/general-settings.js";
 import { buildHealthStory, type HealthStory } from "../src/models/health-insights.js";
 import { applyHealthStoryInsights } from "../src/models/health-quantities.js";
 import { pixiuDayEvents } from "../src/models/pixiu.js";
@@ -18,10 +24,12 @@ import {
 	collectDiaryEvidence,
 	formatEvidenceTime,
 	formatHealthDimensionsEvidence,
+	formatPersonalContext,
 } from "./diary-evidence.js";
 import { DIARY_PROMPT_VERSION, DIARY_SYSTEM_PROMPT } from "./diary-prompt.js";
 import { eventRowToEvent, readEventRows } from "./events.js";
 import { readFootprintDays } from "./footprint-read.js";
+import { readGeneralSettings } from "./general-settings.js";
 import { readHealthEvents } from "./health-read.js";
 import { readPixiuDays } from "./pixiu-read.js";
 import { ApiError, type WorkerEnv } from "./types.js";
@@ -317,15 +325,27 @@ async function foldSummaryInputHash(
 	query: { date: string; timeZone: string; start: string; end: string },
 	eventsHash: string,
 	insights: DayInsights,
+	settings: GeneralSettings,
 ): Promise<string> {
 	return createHash("sha256")
 		.update(eventsHash)
-		.update(await cachedPublicContextFingerprint(env, query, insights))
+		.update(JSON.stringify(settings))
+		.update(await cachedPublicContextFingerprint(env, query, insights, settings.places))
 		.digest("hex");
 }
 
-export function formatHealthEvidence(health: HealthStory | null, timeZone: string): string[] {
-	if (!health) return [];
+export function formatHealthEvidence(
+	health: HealthStory | null,
+	timeZone: string,
+	namedPlaces: readonly NamedPlace[] = [],
+	routine: SleepRoutine | null = null,
+): string[] {
+	const noObservedSleep = routine
+		? [
+				"- 没有归属本日起床的实测睡眠时段。个人作息只是平日习惯，不能据此写出今天几点入睡、几点起床或睡了多久；今晚入睡如有观测，以该记录为准。",
+			]
+		: [];
+	if (!health) return noObservedSleep;
 	const clock = (at: string) =>
 		new Intl.DateTimeFormat("zh-CN", {
 			timeZone,
@@ -336,10 +356,17 @@ export function formatHealthEvidence(health: HealthStory | null, timeZone: strin
 			hourCycle: "h23",
 		}).format(new Date(at));
 	return [
-		...health.nights.map(
-			(night) =>
-				`- 醒来的这一夜：${clock(night.fellAsleepAt)} 入睡，${clock(night.wokeAt)} 睡眠结束，实际睡眠 ${Math.round(night.asleepMinutes)} 分钟${night.inBedMinutes !== null ? `；卧床 ${Math.round(night.inBedMinutes)} 分钟（不等于实际睡眠）` : ""}${night.awakeMinutes !== null ? `；夜间清醒 ${Math.round(night.awakeMinutes)} 分钟` : ""}；睡眠阶段 ${night.stages.map((stage) => `${stage.label} ${Math.round(stage.minutes)} 分钟`).join("、")}${night.place ? `；夜间 ${night.place.sampleCount} 个 GPS 采样位于约 ${Math.round(night.place.radiusMeters)} 米范围，场所性质未知` : ""}`,
-		),
+		...(health.nights.length ? [] : noObservedSleep),
+		...health.nights.flatMap((night) => {
+			const named = night.place ? matchNamedPlace(night.place, namedPlaces) : null;
+			const observed = `- 醒来的这一夜：${clock(night.fellAsleepAt)} 入睡，${clock(night.wokeAt)} 睡眠结束，实际睡眠 ${Math.round(night.asleepMinutes)} 分钟${night.inBedMinutes !== null ? `；卧床 ${Math.round(night.inBedMinutes)} 分钟（不等于实际睡眠）` : ""}${night.awakeMinutes !== null ? `；夜间清醒 ${Math.round(night.awakeMinutes)} 分钟` : ""}；睡眠阶段 ${night.stages.map((stage) => `${stage.label} ${Math.round(stage.minutes)} 分钟`).join("、")}${night.place ? `；夜间 ${night.place.sampleCount} 个 GPS 采样位于约 ${Math.round(night.place.radiusMeters)} 米范围，${named ? `采样中心落在用户命名的「${named.label}」范围内（半径 ${named.radiusMeters} 米）` : "场所性质未知"}` : ""}`;
+			return routine
+				? [
+						observed,
+						`- 同一段睡眠改用作息设置的 ${routine.timeZone} 钟表：${formatEvidenceTime(night.fellAsleepAt, "minute", routine.timeZone)} 入睡，${formatEvidenceTime(night.wokeAt, "minute", routine.timeZone)} 这段记录结束；平时 ${routine.bedtime} 入睡、${routine.wakeTime} 起床。比较早晚时使用这一组同一时区的钟点，不能拿展示时区的钟点直接与另一时区的习惯比较，也不能据此填补这段以外的睡眠。`,
+					]
+				: [observed];
+		}),
 		...health.bedtimes.map(
 			(bedtime) => `- 今晚 ${clock(bedtime.occurredAt)} 入睡，完整睡眠归属次日起床日。`,
 		),
@@ -402,6 +429,7 @@ export function buildDaySummaryPrompt(
 	healthEvidence: string[] = [],
 	diaryEvidence: string[] = [],
 	previous?: { content: string; revision?: string },
+	personalContext: string[] = [],
 ): string {
 	const statsLines = Object.entries(sourceCounts)
 		.slice(0, MAX_SAMPLED_SOURCES)
@@ -427,7 +455,7 @@ export function buildDaySummaryPrompt(
 
 	return `请为 ${date}（展示时区 ${timeZone}）写当天生活实录。以下是这一天的材料；联系线索，还原最有可能发生的场景。
 
-【有时刻的事件样本，跨来源按时间排列】
+${personalContext.length ? `【用户确认的地点与作息背景，与当日观测分开】\n${personalContext.join("\n")}\n\n` : ""}【有时刻的事件样本，跨来源按时间排列】
 ${timedSamples.join("\n")}
 
 【只有日期的事件样本，无日内顺序】
@@ -440,7 +468,7 @@ ${evidenceLines.length > 0 ? evidenceLines.join("\n") : "- 当天没有额外的
 总事件数: ${eventCount} 条
 ${statsLines.join("\n")}${previousBlock}
 
-落笔前再检查：这一天最值得留下的事情是什么？消费备注有没有真正改变你的理解？选择最有根据的解释，让消费、移动与身体活动在场景里相遇。把关键猜测自然标明，不给只有日期的账目补交易先后，也不把睡眠或定位的记录空白写成确定经历。删掉没有线索的动作、内心独白和结尾复述。只有一两条有效线索时，只写一段、不超过 100 字。请直接输出实录正文，不展示检查过程。`;
+${personalContext.length ? "个人背景最后核对：如果设置了作息，只按本人习惯和同一时区下的实测钟点理解早晚，不按常见作息判断异常；习惯不能填入记录空白。配置中的地点不是当天到访清单，家附近的单点也不是全天在家的证明。\n\n" : ""}落笔前再检查：这一天最值得留下的事情是什么？消费备注有没有真正改变你的理解？选择最有根据的解释，让消费、移动与身体活动在场景里相遇。把关键猜测自然标明，不给只有日期的账目补交易先后，也不把睡眠或定位的记录空白写成确定经历。删掉没有线索的动作、内心独白和结尾复述。只有一两条有效线索时，只写一段、不超过 100 字。请直接输出实录正文，不展示检查过程。`;
 }
 
 /**
@@ -501,8 +529,17 @@ export async function handleGetDaySummary(env: WorkerEnv, url: URL): Promise<Res
 
 	const startMs = new Date(query.start).getTime();
 	const endMs = new Date(query.end).getTime();
-	const streamed = await streamDayEvents(env, startMs, endMs, query, false);
-	const inputHash = await foldSummaryInputHash(env, query, streamed.inputHash, streamed.insights);
+	const [streamed, settings] = await Promise.all([
+		streamDayEvents(env, startMs, endMs, query, false),
+		readGeneralSettings(env),
+	]);
+	const inputHash = await foldSummaryInputHash(
+		env,
+		query,
+		streamed.inputHash,
+		streamed.insights,
+		settings,
+	);
 	const eventCount = streamed.eventCount;
 
 	if (!row) {
@@ -567,6 +604,10 @@ export async function handlePostDaySummary(request: Request, env: WorkerEnv): Pr
 
 	try {
 		// Stream events page-by-page, accumulating bounded evidence & hash
+		const [streamed, settings] = await Promise.all([
+			streamDayEvents(env, startMs, endMs, query),
+			readGeneralSettings(env),
+		]);
 		const {
 			insights,
 			health,
@@ -576,10 +617,7 @@ export async function handlePostDaySummary(request: Request, env: WorkerEnv): Pr
 			eventCount,
 			sourceCounts,
 			samplesBySource,
-		} = await streamDayEvents(env, startMs, endMs, {
-			start: query.start,
-			end: query.end,
-		});
+		} = streamed;
 
 		// Empty-day: reject with 400 no_records
 		if (eventCount === 0) {
@@ -600,8 +638,15 @@ export async function handlePostDaySummary(request: Request, env: WorkerEnv): Pr
 			insights,
 			health,
 			pixiuEvents,
+			settings,
 		});
-		const inputHashWithContext = await foldSummaryInputHash(env, query, inputHash, insights);
+		const inputHashWithContext = await foldSummaryInputHash(
+			env,
+			query,
+			inputHash,
+			insights,
+			settings,
+		);
 		const prompt = buildDaySummaryPrompt(
 			query.date,
 			query.timeZone,
@@ -610,7 +655,7 @@ export async function handlePostDaySummary(request: Request, env: WorkerEnv): Pr
 			samplesBySource,
 			insights,
 			[
-				...formatHealthEvidence(health, query.timeZone),
+				...formatHealthEvidence(health, query.timeZone, settings.places, settings.routine),
 				...formatHealthDimensionsEvidence(healthEvents, query.timeZone),
 			],
 			diaryEvidence,
@@ -619,6 +664,7 @@ export async function handlePostDaySummary(request: Request, env: WorkerEnv): Pr
 				: query.revision
 					? { content: "", revision: query.revision }
 					: undefined,
+			formatPersonalContext(settings),
 		);
 
 		const { content, provider, model } = await generateAiText(
@@ -628,8 +674,17 @@ export async function handlePostDaySummary(request: Request, env: WorkerEnv): Pr
 			DIARY_OUTPUT_TOKENS,
 			{ system: DIARY_SYSTEM_PROMPT, reasoning: true },
 		);
-		const current = await streamDayEvents(env, startMs, endMs, query, false);
-		const currentHash = await foldSummaryInputHash(env, query, current.inputHash, current.insights);
+		const [current, currentSettings] = await Promise.all([
+			streamDayEvents(env, startMs, endMs, query, false),
+			readGeneralSettings(env),
+		]);
+		const currentHash = await foldSummaryInputHash(
+			env,
+			query,
+			current.inputHash,
+			current.insights,
+			currentSettings,
+		);
 
 		const generatedAt = Date.now();
 

@@ -112,6 +112,24 @@ describe("buildDayRecords", () => {
 		expect(rows[0]?.instant).toBe(rows[1]?.instant);
 	});
 
+	it("names numeric legacy coordinates without modifying their raw values or turning blanks into zero", () => {
+		const events = ["31.000", "", " ", null, "invalid", "Infinity"].map((latitude, index) =>
+			eventFixture({
+				id: `legacy-${index}`,
+				sourceId: "footprint",
+				data: { latitude, longitude: "121.0" },
+			}),
+		);
+		const rows = buildDayRecords(timelineFixture([events]), "locations", [
+			{ id: "home", label: "家", latitude: 31, longitude: 121, radiusMeters: 100 },
+			{ id: "equator", label: "赤道", latitude: 0, longitude: 121, radiusMeters: 100 },
+		]);
+		expect(rows.map((row) => row.placeLabel)).toEqual(["家", null, null, null, null, null]);
+		expect(rows[0]?.latitude).toBe("31.000");
+		expect(rows[0]?.longitude).toBe("121.0");
+		expect(rows[0]?.event).toBe(events[0]);
+	});
+
 	it("uses story classification, including Connect locations and workout/sleep/finance precedence", () => {
 		const records = [
 			eventFixture({ id: "gps", sourceId: "footprint", data: null }),

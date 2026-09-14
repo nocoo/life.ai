@@ -6,6 +6,7 @@ import {
 	KeyRound,
 	MapPin,
 	Settings,
+	Settings2,
 	Upload,
 	Wallet,
 } from "lucide-react";
@@ -26,12 +27,7 @@ export const NAV_GROUPS: NavGroup[] = [
 	{
 		id: "chronicle",
 		label: "编年史",
-		items: [
-			{ href: "/", label: "时间线", icon: CalendarClock },
-			{ href: "/imports", label: "导入", icon: Upload },
-			{ href: "/connect", label: "Connect", icon: KeyRound },
-			{ href: "/settings/ai", label: "AI 设置", icon: Settings },
-		],
+		items: [{ href: "/", label: "时间线", icon: CalendarClock }],
 	},
 	{
 		id: "data",
@@ -43,7 +39,19 @@ export const NAV_GROUPS: NavGroup[] = [
 			{ href: "/data/pixiu", label: "貔貅记账", icon: Wallet },
 		],
 	},
+	{
+		id: "settings",
+		label: "设置",
+		items: [
+			{ href: "/settings/general", label: "通用设置", icon: Settings2 },
+			{ href: "/settings/ai", label: "AI 设置", icon: Settings },
+			{ href: "/connect", label: "Connect", icon: KeyRound },
+			{ href: "/imports", label: "导入", icon: Upload },
+		],
+	},
 ];
+
+export const SETTINGS_GROUP_ID = "settings";
 
 export const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((group) => group.items);
 
@@ -59,6 +67,10 @@ export const ROUTE_META: Record<string, { title: string; description: string }> 
 	"/connect": {
 		title: "Connect",
 		description: "签发只写令牌，按 UTC 小时覆盖写入",
+	},
+	"/settings/general": {
+		title: "通用设置",
+		description: "常用地点与惯常作息",
 	},
 	"/settings/ai": {
 		title: "AI 设置",

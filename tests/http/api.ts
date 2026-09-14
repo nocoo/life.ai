@@ -18,6 +18,7 @@ import type {
 } from "../../src/models/data-management";
 import type { DayContextQuery, DaySun, DayWeather } from "../../src/models/day-context";
 import { validateFootprintDay } from "../../src/models/footprint";
+import type { GeneralSettings } from "../../src/models/general-settings";
 import type { HealthImportReceipt } from "../../src/models/health-types";
 import { PIXIU_COLUMNS, parsePixiu } from "../../src/models/pixiu";
 import type {
@@ -1219,6 +1220,14 @@ await scenario(
 			plan,
 			{ target: "test", channel: "cli" },
 		);
+		const personal: GeneralSettings = {
+			places: [
+				{ id: "river", label: "河畔书屋", latitude: 31.23, longitude: 121.47, radiusMeters: 100 },
+				{ id: "unused", label: "仅配置的工作室", latitude: 32, longitude: 122, radiusMeters: 100 },
+			],
+			routine: { bedtime: "03:00", wakeTime: "11:00", timeZone: "Asia/Shanghai" },
+		};
+		await data(await request("/api/settings/general", { method: "PUT", body: personal }));
 		const result = await data<DaySummaryResult>(
 			await request("/api/day-summary", { method: "POST", body: query }),
 		);
@@ -1237,8 +1246,12 @@ await scenario(
 			"信用卡还款",
 			"河畔读完一本书",
 			"睡眠",
+			"在用户命名的「河畔书屋」范围内",
+			"通常 03:00 入睡，11:00 起床",
+			"不是当天的睡眠记录",
 		])
 			assert(prompt.includes(evidence), `Missing diary evidence: ${evidence}`);
+		assert(!prompt.includes("在用户命名的「仅配置的工作室」"));
 		const fixture = process.env.LIFE_TEST_CONTEXT_URL;
 		assert(fixture);
 		const publicCalls = (await (await fetch(`${fixture}/requests`)).json()) as unknown[];
@@ -1262,6 +1275,217 @@ await scenario(
 			(await data<DaySummaryResult>(await request(path))).summary,
 			regenerated.summary,
 		);
+		await data(
+			await request("/api/settings/general", {
+				method: "PUT",
+				body: { ...personal, routine: { ...personal.routine, bedtime: "02:45" } },
+			}),
+		);
+		const stale = await data<DaySummaryResult>(await request(path));
+		assert.equal(stale.stale, true);
+		assert.deepEqual(stale.summary, regenerated.summary);
+		await executeLocalSql(state, "DELETE FROM general_settings;");
+	},
+);
+
+await scenario(
+	"general settings enforce Access, host, origin, method, schemas, normalization and singleton row",
+	async () => {
+		const path = "/api/settings/general";
+
+		// 1. Boundary enforcement: Access, host, origin, unsupported method
+		await rejected(await request(path, { method: "GET", token: null }), 401);
+		await rejected(
+			await request(path, { method: "PUT", token: null, body: { places: [], routine: null } }),
+			401,
+		);
+		await rejected(await request(path, { method: "GET", host: "life.worker.hexly.ai" }), 404);
+		await rejected(
+			await request(path, {
+				method: "PUT",
+				host: "life.worker.hexly.ai",
+				body: { places: [], routine: null },
+			}),
+			404,
+		);
+		await rejected(
+			await request(path, {
+				method: "PUT",
+				origin: "https://outside.example.test",
+				body: { places: [], routine: null },
+			}),
+			403,
+		);
+		await rejected(await request(path, { method: "DELETE" }), 405);
+		await rejected(await request(path, { method: "PATCH" }), 405);
+		await rejected(await request(path, { method: "POST" }), 405);
+
+		// 2. GET returns empty settings initially and does NOT insert a DB row
+		const initial = await data<GeneralSettings>(await request(path));
+		assert.deepEqual(initial, { places: [], routine: null });
+		const initialRows = (await executeLocalSql(
+			state,
+			"SELECT COUNT(*) AS count FROM general_settings;",
+		)) as { results: { count: number }[] }[];
+		assert.equal(initialRows[0]?.results[0]?.count, 0);
+
+		// 3. Schema validation rejections (radius, coordinates, duplicate IDs, clock, timezone, body size, content-type)
+		const validPlace = {
+			id: "home",
+			label: "家",
+			latitude: 31.23,
+			longitude: 121.47,
+			radiusMeters: 300,
+		};
+		const validRoutine = {
+			bedtime: "23:00",
+			wakeTime: "07:00",
+			timeZone: "Asia/Shanghai",
+		};
+
+		// 3a. Invalid Content-Type
+		await rejected(
+			await request(path, {
+				method: "PUT",
+				raw: JSON.stringify({ places: [], routine: null }),
+				contentType: "text/plain",
+			}),
+			415,
+		);
+
+		// 3b. Oversized body (> 64 KiB limit)
+		const oversizedLabel = "x".repeat(70 * 1024);
+		await rejected(
+			await request(path, {
+				method: "PUT",
+				raw: JSON.stringify({ places: [{ ...validPlace, label: oversizedLabel }], routine: null }),
+			}),
+			413,
+		);
+
+		// 3c. Invalid JSON structure & fields
+		for (const invalidBody of [
+			null,
+			[],
+			"not-json-object",
+			{ places: "not-array", routine: null },
+			{ places: [], routine: "not-object" },
+			// Invalid radius (< 50 or > 50000 or non-integer)
+			{ places: [{ ...validPlace, radiusMeters: 49 }], routine: null },
+			{ places: [{ ...validPlace, radiusMeters: 50001 }], routine: null },
+			{ places: [{ ...validPlace, radiusMeters: 300.5 }], routine: null },
+			// Invalid coordinates
+			{ places: [{ ...validPlace, latitude: 91 }], routine: null },
+			{ places: [{ ...validPlace, latitude: -91 }], routine: null },
+			{ places: [{ ...validPlace, longitude: 181 }], routine: null },
+			{ places: [{ ...validPlace, longitude: -181 }], routine: null },
+			// Invalid label (empty, > 80 chars, control chars)
+			{ places: [{ ...validPlace, label: "" }], routine: null },
+			{ places: [{ ...validPlace, label: "   " }], routine: null },
+			{ places: [{ ...validPlace, label: "a".repeat(81) }], routine: null },
+			{ places: [{ ...validPlace, label: "line\nbreak" }], routine: null },
+			// Invalid ID format
+			{ places: [{ ...validPlace, id: "" }], routine: null },
+			{ places: [{ ...validPlace, id: "bad id with space" }], routine: null },
+			{ places: [{ ...validPlace, id: "a".repeat(65) }], routine: null },
+			// Duplicate place IDs
+			{ places: [validPlace, { ...validPlace, label: "分店" }], routine: null },
+			// Invalid routine clocks
+			{ places: [], routine: { ...validRoutine, bedtime: "24:00" } },
+			{ places: [], routine: { ...validRoutine, wakeTime: "07:60" } },
+			{ places: [], routine: { ...validRoutine, bedtime: "invalid" } },
+			{ places: [], routine: { ...validRoutine, bedtime: "07:00", wakeTime: "07:00" } }, // identical bedtime & wakeTime
+			// Invalid routine timezone
+			{ places: [], routine: { ...validRoutine, timeZone: "Invalid/Not_A_Timezone_123" } },
+		]) {
+			await rejected(await request(path, { method: "PUT", body: invalidBody }), 400);
+		}
+
+		// 4. PUT multiple places and non-standard sleep routine
+		const multiSettings: GeneralSettings = {
+			places: [
+				validPlace,
+				{
+					id: "office-1",
+					label: "办公楼",
+					latitude: 31.24,
+					longitude: 121.49,
+					radiusMeters: 1000,
+				},
+				{
+					id: "gym_crossfit",
+					label: "训练馆",
+					latitude: -12.05,
+					longitude: 77.04,
+					radiusMeters: 50,
+				},
+			],
+			routine: {
+				bedtime: "03:15",
+				wakeTime: "11:45",
+				timeZone: "America/New_York",
+			},
+		};
+
+		const saved = await data<GeneralSettings>(
+			await request(path, { method: "PUT", body: multiSettings }),
+		);
+		assert.deepEqual(saved, multiSettings);
+
+		// Exactly one singleton row in general_settings table
+		const afterPutRows = (await executeLocalSql(
+			state,
+			"SELECT id, data_json, updated_at FROM general_settings;",
+		)) as { results: { id: string; data_json: string; updated_at: number }[] }[];
+		assert.equal(afterPutRows[0]?.results.length, 1);
+		assert.equal(afterPutRows[0]?.results[0]?.id, "default");
+		const firstUpdatedAt = afterPutRows[0]?.results[0]?.updated_at;
+		assert(firstUpdatedAt && firstUpdatedAt > 0);
+
+		// 5. Re-put identical content (even with trimmed whitespace / canonical timezone representation)
+		// normalized content does NOT update updated_at
+		const normalizedRePut = {
+			places: [
+				{ ...validPlace, label: "  家  " }, // whitespace trims to "家"
+				multiSettings.places[1],
+				multiSettings.places[2],
+			],
+			routine: {
+				...multiSettings.routine,
+				timeZone: "US/Eastern", // IANA resolves to "America/New_York"
+			},
+		};
+
+		const rePutSaved = await data<GeneralSettings>(
+			await request(path, { method: "PUT", body: normalizedRePut }),
+		);
+		assert.deepEqual(rePutSaved, multiSettings);
+
+		const afterRePutRows = (await executeLocalSql(
+			state,
+			"SELECT id, updated_at FROM general_settings;",
+		)) as { results: { id: string; updated_at: number }[] }[];
+		assert.equal(afterRePutRows[0]?.results.length, 1);
+		assert.equal(afterRePutRows[0]?.results[0]?.updated_at, firstUpdatedAt);
+
+		// 6. Clearing settings (empty places and null routine)
+		const clearedSettings: GeneralSettings = { places: [], routine: null };
+		const cleared = await data<GeneralSettings>(
+			await request(path, { method: "PUT", body: clearedSettings }),
+		);
+		assert.deepEqual(cleared, clearedSettings);
+
+		// Verify GET returns cleared settings
+		const getCleared = await data<GeneralSettings>(await request(path));
+		assert.deepEqual(getCleared, clearedSettings);
+
+		// 7. Cleanup D1 row completely so subsequent test suites start with clean state
+		await executeLocalSql(state, "DELETE FROM general_settings;");
+		const finalRows = (await executeLocalSql(
+			state,
+			"SELECT COUNT(*) AS count FROM general_settings;",
+		)) as { results: { count: number }[] }[];
+		assert.equal(finalRows[0]?.results[0]?.count, 0);
 	},
 );
 

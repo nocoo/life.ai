@@ -119,6 +119,29 @@ describe("timelineStore", () => {
 		expect(fetchHealthEventsMock).not.toHaveBeenCalled();
 	});
 
+	it("relabels cached daily data after settings change without fetching or mutating original records", async () => {
+		const home = { id: "home", label: "家", latitude: 31, longitude: 121, radiusMeters: 100 };
+		const places = [home];
+		const event = eventFixture({ sourceId: "footprint", data: { latitude: 31, longitude: 121 } });
+		fetchSourcesMock.mockResolvedValue([sourceFixture({ id: "footprint" })]);
+		fetchAllEventsMock.mockResolvedValue([event]);
+		timelineStore.getState().setNamedPlaces(places); // Also safe before the initial day load.
+		await timelineStore.getState().load();
+		const visits = () => timelineStore.getState().story?.hours.flatMap((hour) => hour.visits) ?? [];
+		expect(visits()[0]?.title).toBe("家附近");
+		const story = timelineStore.getState().story;
+		timelineStore.getState().setNamedPlaces(places);
+		expect(timelineStore.getState().story).toBe(story);
+		timelineStore.getState().setNamedPlaces([{ ...home, label: "书房" }]);
+		expect(visits()[0]?.title).toBe("书房附近");
+		timelineStore.getState().selectRadius(10);
+		expect(visits()[0]?.title).toBe("书房附近");
+		timelineStore.getState().setNamedPlaces([]);
+		expect(visits()[0]?.title).toContain("区域");
+		expect(fetchAllEventsMock).toHaveBeenCalledOnce();
+		expect(event.data).toEqual({ latitude: 31, longitude: 121 });
+	});
+
 	it("recomputes map statistics when the source filter changes", async () => {
 		const health = eventFixture({ id: "h", sourceId: "src-health" });
 		const other = eventFixture({ id: "o", sourceId: "src-other" });

@@ -3,6 +3,7 @@ import { handleGetAiSettings, handlePostAiTest, handlePutAiSettings } from "./ai
 import { authenticateAccess, isLocalHost } from "./auth.js";
 import { handleDataRequest } from "./data-routes.js";
 import { handleGetDaySummary, handlePostDaySummary } from "./day-summary.js";
+import { handleGetGeneralSettings, handlePutGeneralSettings } from "./general-settings.js";
 import { handleContextRequest } from "./public-context.js";
 import {
 	handleDeleteConnect,
@@ -177,6 +178,15 @@ export async function handleRequest(request: Request, env: WorkerEnv): Promise<R
 				);
 			}
 			return await handleGetEvents(env, url);
+		}
+
+		if (url.pathname === "/api/settings/general") {
+			if (method === "GET") return await handleGetGeneralSettings(env);
+			if (method === "PUT") return await handlePutGeneralSettings(request, env);
+			return jsonResponse(
+				{ error: { code: "method_not_allowed", message: "Method not allowed" } },
+				405,
+			);
 		}
 
 		if (url.pathname === "/api/settings/ai") {

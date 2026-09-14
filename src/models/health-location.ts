@@ -1,14 +1,31 @@
 import { gpsDistanceMeters } from "./day-insights";
 import type { FootprintDay } from "./footprint";
+import { matchNamedPlace, type NamedPlace } from "./general-settings";
 import type { SleepNight } from "./health-insights";
 import { localDateKey } from "./time";
 
 export interface SleepLocation {
-	kind: "residence" | "familiar" | "travel" | "unknown";
+	kind: "residence" | "familiar" | "travel" | "unknown" | "named";
 	label: string;
 	detail: string;
 	matchedNights: number;
 	observedNights: number;
+}
+
+export function namedSleepLocation(
+	night: SleepNight,
+	places: readonly NamedPlace[],
+): SleepLocation | null {
+	const place = night.place ? matchNamedPlace(night.place, places) : null;
+	return place
+		? {
+				kind: "named",
+				label: place.label,
+				detail: `这一夜的采样中心落在你标记的 ${place.radiusMeters} 米范围内。`,
+				matchedNights: 0,
+				observedNights: 0,
+			}
+		: null;
 }
 
 /** A conservative suggestion from repeated overnight GPS, never a place-of-business lookup. */

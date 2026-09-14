@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DayInsights } from "../../src/models/day-insights";
+import type { GeneralSettings } from "../../src/models/general-settings";
 import type { LifeEvent, Precision } from "../../src/models/types";
 import {
 	cachedPublicContextFingerprint,
 	collectDiaryEvidence,
 	formatHealthDimensionsEvidence,
+	formatPersonalContext,
 	formatSpendingEvidence,
 	formatSunEvidence,
 	formatWeatherEvidence,
@@ -62,6 +64,107 @@ function insights(
 }
 
 describe("diary evidence formatting", () => {
+	it("keeps every user-defined name and personal timezone in a separate non-observational context", () => {
+		expect(formatPersonalContext({ places: [], routine: null })).toEqual([]);
+		const settings: GeneralSettings = {
+			places: [
+				{ id: "home", label: '家 / "书房"', latitude: 31, longitude: 120, radiusMeters: 150 },
+			],
+			routine: { bedtime: "03:00", wakeTime: "11:00", timeZone: "America/Los_Angeles" },
+		};
+		const lines = formatPersonalContext(settings);
+		expect(lines.join("\n")).toContain("通常 03:00 入睡，11:00 起床");
+		expect(lines.join("\n")).toContain("America/Los_Angeles");
+		expect(lines.join("\n")).toContain("不是当天的睡眠记录");
+		expect(lines.join("\n")).toContain("并非当天到访清单");
+		expect(lines[0]).toContain(
+			JSON.stringify(settings.places.map(({ label, radiusMeters }) => ({ label, radiusMeters }))),
+		);
+	});
+
+	it("uses exact named regions before GIS, preserves returns, and keeps nearby unmatched points unnamed", async () => {
+		const settings: GeneralSettings = {
+			places: [
+				{ id: "home", label: "家", latitude: 31, longitude: 120, radiusMeters: 100 },
+				{ id: "office", label: "工作室", latitude: 31.01, longitude: 120, radiusMeters: 100 },
+			],
+			routine: null,
+		};
+		const getPlaceLabel = vi.fn(async () => "周边街区");
+		const lines = await collectDiaryEvidence(
+			env,
+			{
+				...window,
+				settings,
+				health: null,
+				pixiuEvents: [],
+				insights: insights(
+					[31, 31.01, 31, 31.002].map((latitude, index) => ({
+						latitude,
+						longitude: 120,
+						at: `2026-09-13T0${index}:00:00Z`,
+						precision: "hour",
+					})),
+				),
+			},
+			{
+				getPlaceLabel,
+				getDayWeather: async () => null,
+				getDaySun: async () => ({ events: [], daylightMinutes: null, status: "normal" }),
+			},
+		);
+		const visits = lines.filter((line) => line.startsWith("- 定位时段"));
+		expect(visits).toHaveLength(4);
+		expect(visits[0]).toContain("08时：在用户命名的「家」范围内（半径 100 米）");
+		expect(visits[1]).toContain("工作室");
+		expect(visits[2]).toContain("家");
+		expect(visits[3]).toContain("周边街区");
+		expect(visits[3]).not.toContain("用户命名");
+		expect(getPlaceLabel).toHaveBeenCalledOnce();
+	});
+
+	it("includes more than four named areas for free and keeps date-only matches out of timed visits", async () => {
+		const places = Array.from({ length: 6 }, (_, i) => ({
+			id: `p-${i}`,
+			label: `地点${i}`,
+			latitude: 30 + i,
+			longitude: 120,
+			radiusMeters: 100,
+		}));
+		const points = places.map((place, i) => ({ ...place, at: `2026-09-13T0${i}:00:00Z` }));
+		const getPlaceLabel = vi.fn(async () => null);
+		const api = {
+			getPlaceLabel,
+			getDayWeather: async () => null,
+			getDaySun: async () => ({ events: [], daylightMinutes: null, status: "normal" as const }),
+		};
+		const lines = await collectDiaryEvidence(
+			env,
+			{
+				...window,
+				settings: { places, routine: null },
+				insights: insights(points),
+				health: null,
+				pixiuEvents: [],
+			},
+			api,
+		);
+		expect(lines.filter((line) => line.startsWith("- 定位时段"))).toHaveLength(6);
+		expect(getPlaceLabel).not.toHaveBeenCalled();
+		const daily = await collectDiaryEvidence(
+			env,
+			{
+				...window,
+				settings: { places, routine: null },
+				insights: insights([{ latitude: 30, longitude: 120, at: window.start, precision: "day" }]),
+				health: null,
+				pixiuEvents: [],
+			},
+			api,
+		);
+		expect(daily.filter((line) => line.startsWith("- 定位时段"))).toEqual([]);
+		expect(daily.join("\n")).toContain('只有日期、没有时刻的位置采样命中用户命名范围：["地点0"]');
+	});
 	it("keeps every health dimension and unit, including rare and zero-valued observations", () => {
 		const record = (
 			data: LifeEvent["data"],

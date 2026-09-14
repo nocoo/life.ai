@@ -5,6 +5,7 @@ import {
 	gpsDistanceMeters,
 	type TrackPoint,
 } from "../models/day-insights";
+import type { NamedPlace } from "../models/general-settings";
 import type {
 	BloodPressureReading,
 	EcgRecording,
@@ -13,7 +14,7 @@ import type {
 	SleepNight,
 	WorkoutGroup,
 } from "../models/health-insights";
-import type { SleepLocation } from "../models/health-location";
+import { namedSleepLocation, type SleepLocation } from "../models/health-location";
 import type { DayTimeline, LifeEvent } from "../models/types";
 import { buildDayStory } from "./day-story";
 import { describeJsonData, type EventDetailRow } from "./event-details";
@@ -109,6 +110,7 @@ export function buildHealthTimeline(
 	events: LifeEvent[],
 	radiusKm: 5 | 10,
 	locations: Record<string, SleepLocation> = {},
+	namedPlaces: readonly NamedPlace[] = [],
 ) {
 	const start = Date.parse(timeline.start);
 	const end = Date.parse(timeline.end);
@@ -131,7 +133,7 @@ export function buildHealthTimeline(
 			occurredAt: night.wokeAt,
 			night,
 			map,
-			location: locations[night.id],
+			location: namedSleepLocation(night, namedPlaces) ?? locations[night.id],
 		});
 	}
 	for (const group of health.workouts) {
@@ -200,7 +202,7 @@ export function buildHealthTimeline(
 			? [{ start: Date.parse(item.start), end: Date.parse(item.end) }]
 			: [],
 	);
-	const story = buildDayStory(remaining, insights, radiusKm, excluded);
+	const story = buildDayStory(remaining, insights, radiusKm, excluded, namedPlaces);
 	for (const item of items) {
 		const at = Date.parse(item.occurredAt);
 		if (at < start || at >= end) continue;

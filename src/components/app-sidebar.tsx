@@ -28,7 +28,10 @@ import { useLocation, useNavigate } from "react-router";
 import { sessionInitials } from "../viewmodels/session-view-model";
 import { APP_VERSION } from "./app-version";
 import { APP_NAME, BRAND_MARK_SRC } from "./brand";
-import { NAV_GROUPS } from "./navigation";
+import { NAV_GROUPS, type NavGroup, SETTINGS_GROUP_ID } from "./navigation";
+
+const MAIN_GROUPS = NAV_GROUPS.filter((group) => group.id !== SETTINGS_GROUP_ID);
+const SETTINGS_GROUP = NAV_GROUPS.find((group) => group.id === SETTINGS_GROUP_ID);
 
 export interface AppSidebarProps {
 	collapsed: boolean;
@@ -82,6 +85,47 @@ export function AppSidebar({
 			<AvatarFallback>{sessionInitials(userName)}</AvatarFallback>
 		</Avatar>
 	);
+	const pathname = location.pathname;
+
+	const collapsedIcons = (groups: NavGroup[]) =>
+		groups.flatMap((group) =>
+			group.items.map((item) => (
+				<Tooltip key={item.href} delayDuration={0}>
+					<TooltipTrigger asChild>
+						<SidebarIconItem
+							active={pathname === item.href}
+							aria-label={item.label}
+							className="self-center"
+							onClick={() => navigate(item.href)}
+						>
+							<item.icon className="h-4 w-4" strokeWidth={1.5} />
+						</SidebarIconItem>
+					</TooltipTrigger>
+					<TooltipContent side="right" sideOffset={8}>
+						{item.label}
+					</TooltipContent>
+				</Tooltip>
+			)),
+		);
+
+	const expandedGroups = (groups: NavGroup[]) =>
+		groups.map((group) => (
+			<div key={group.id}>
+				<SidebarPartition>{group.label}</SidebarPartition>
+				<div className="flex flex-col gap-0.5 px-3">
+					{group.items.map((item) => (
+						<SidebarItem
+							key={item.href}
+							active={pathname === item.href}
+							onClick={() => navigate(item.href)}
+						>
+							<item.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
+							<span className="flex-1 truncate text-left">{item.label}</span>
+						</SidebarItem>
+					))}
+				</div>
+			</div>
+		));
 
 	return (
 		<Sidebar collapsed={collapsed} aria-label="主导航">
@@ -120,27 +164,16 @@ export function AppSidebar({
 							搜索 (⌘K)
 						</TooltipContent>
 					</Tooltip>
-					<SidebarNav className="w-full items-center gap-1 pt-1">
-						{NAV_GROUPS.flatMap((group) =>
-							group.items.map((item) => (
-								<Tooltip key={item.href} delayDuration={0}>
-									<TooltipTrigger asChild>
-										<SidebarIconItem
-											active={location.pathname === item.href}
-											aria-label={item.label}
-											className="self-center"
-											onClick={() => navigate(item.href)}
-										>
-											<item.icon className="h-4 w-4" strokeWidth={1.5} />
-										</SidebarIconItem>
-									</TooltipTrigger>
-									<TooltipContent side="right" sideOffset={8}>
-										{item.label}
-									</TooltipContent>
-								</Tooltip>
-							)),
-						)}
-					</SidebarNav>
+					<div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+						<SidebarNav className="w-full items-center gap-1 pt-1">
+							{collapsedIcons(MAIN_GROUPS)}
+						</SidebarNav>
+						{SETTINGS_GROUP ? (
+							<div className="mt-auto flex w-full flex-col items-center gap-1 border-t border-basalt-border/70 pt-2">
+								{collapsedIcons([SETTINGS_GROUP])}
+							</div>
+						) : null}
+					</div>
 					<SidebarFooter className="flex w-full justify-center px-0">
 						<Tooltip delayDuration={0}>
 							<TooltipTrigger asChild>
@@ -186,29 +219,14 @@ export function AppSidebar({
 					<div className="px-3 pb-1">
 						<SidebarSearch onClick={() => setSearchOpen(true)}>搜索</SidebarSearch>
 					</div>
-					<SidebarNav className="pt-1">
-						{NAV_GROUPS.map((group) => (
-							<div key={group.id}>
-								<SidebarPartition>{group.label}</SidebarPartition>
-								<div className="flex flex-col gap-0.5 px-3">
-									{group.items.map((item) => (
-										<SidebarItem
-											key={item.href}
-											active={location.pathname === item.href}
-											onClick={() => navigate(item.href)}
-										>
-											<item.icon
-												className="h-4 w-4 shrink-0"
-												strokeWidth={1.5}
-												aria-hidden="true"
-											/>
-											<span className="flex-1 truncate text-left">{item.label}</span>
-										</SidebarItem>
-									))}
-								</div>
+					<div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+						<SidebarNav className="pt-1">{expandedGroups(MAIN_GROUPS)}</SidebarNav>
+						{SETTINGS_GROUP ? (
+							<div className="mt-auto border-t border-basalt-border/70 pb-1">
+								{expandedGroups([SETTINGS_GROUP])}
 							</div>
-						))}
-					</SidebarNav>
+						) : null}
+					</div>
 					<SidebarFooter>
 						<SidebarUser name={userName} email={userEmail} avatar={avatar} />
 					</SidebarFooter>

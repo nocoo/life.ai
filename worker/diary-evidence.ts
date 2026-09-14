@@ -7,6 +7,11 @@ import { weatherDescription } from "../src/models/day-context.js";
 import type { DayInsights } from "../src/models/day-insights.js";
 import { buildDayPlaces, type DayPlaces, type GpsPlace } from "../src/models/day-places.js";
 import { buildFinanceDay, formatMinor } from "../src/models/finance.js";
+import {
+	type GeneralSettings,
+	matchNamedPlace,
+	type NamedPlace,
+} from "../src/models/general-settings.js";
 import type { HealthStory } from "../src/models/health-insights.js";
 import { PIXIU_COLUMNS } from "../src/models/pixiu.js";
 import type { LifeEvent, Precision } from "../src/models/types.js";
@@ -40,9 +45,29 @@ export interface DiaryEvidenceInput {
 	insights: DayInsights;
 	health: HealthStory | null;
 	pixiuEvents: LifeEvent[];
+	settings?: GeneralSettings;
 }
 
 const publicApi: DiaryPublicApi = { getDaySun, getDayWeather, getPlaceLabel };
+
+/** Self-reported context is separate from the day's observed evidence. */
+export function formatPersonalContext(settings: GeneralSettings): string[] {
+	const lines: string[] = [];
+	if (settings.places.length) {
+		lines.push(
+			`用户命名的地点范围：${JSON.stringify(settings.places.map(({ label, radiusMeters }) => ({ label, radiusMeters })))}`,
+			"这些名称是用户的背景设置，并非当天到访清单。下方只有采样命中的范围才带上名称；范围内采样不证明进入具体建筑，当前名称也不证明历史用途。",
+		);
+	}
+	if (settings.routine) {
+		const { bedtime, wakeTime, timeZone } = settings.routine;
+		lines.push(
+			`用户自述平时作息：通常 ${bedtime} 入睡，${wakeTime} 起床；每天按 ${timeZone} 的当地钟表时间理解，不是 UTC 事件。`,
+			"用这份个人作息理解当天，而非按一般人的睡觉起床时间评价早晚。它只是习惯，不是当天的睡眠记录；实际观测优先，缺失处不能用习惯填满。展示时区不同时，应先区分两个时区再比较。",
+		);
+	}
+	return lines;
+}
 
 async function quiet<T>(work: Promise<T>): Promise<T | null> {
 	try {
@@ -261,7 +286,7 @@ export async function collectDiaryEvidence(
 	input: DiaryEvidenceInput,
 	api: DiaryPublicApi = publicApi,
 ): Promise<string[]> {
-	const built = buildDayPlaces(input.insights.gps);
+	const built = buildDayPlaces(input.insights.gps, 5, input.settings?.places);
 	const places = selectDiaryPlaces(built);
 	const anchor = places[0]?.anchor ?? built.allDayPoints[0];
 	const query: DayContextQuery | null = anchor
@@ -280,12 +305,14 @@ export async function collectDiaryEvidence(
 				quiet(api.getDaySun(env, query)),
 				Promise.all(
 					places.map((place) =>
-						quiet(
-							api.getPlaceLabel(env, {
-								latitude: roundCoordinate(place.anchor.latitude),
-								longitude: roundCoordinate(place.anchor.longitude),
-							}),
-						),
+						place.namedPlace
+							? Promise.resolve(place.namedPlace.label)
+							: quiet(
+									api.getPlaceLabel(env, {
+										latitude: roundCoordinate(place.anchor.latitude),
+										longitude: roundCoordinate(place.anchor.longitude),
+									}),
+								),
 					),
 				),
 			])
@@ -296,6 +323,9 @@ export async function collectDiaryEvidence(
 			labels[index] ?? `未命名区域 ${place.index}（场所未知）`,
 		]),
 	);
+	// Saved names need no GIS request. Include them even if they are outside the four public lookups.
+	for (const place of built.places)
+		if (place.namedPlace) placeLabels.set(place.id, place.namedPlace.label);
 	const visits = built.visits.filter((visit) => placeLabels.has(visit.placeId));
 	// Keep early and late returns even on a day with many area changes; no extra GIS requests.
 	const sampledVisits =
@@ -311,8 +341,17 @@ export async function collectDiaryEvidence(
 		const last = visit.points.at(-1) as (typeof visit.points)[number];
 		const start = formatEvidenceTime(visit.startAt, first.precision, input.timeZone);
 		const end = formatEvidenceTime(visit.endAt, last.precision, input.timeZone);
-		return `- 定位时段 ${start}${start === end ? "" : ` 至 ${end}`}：在「${placeLabels.get(visit.placeId)}」一带有记录。`;
+		const named = built.places.find((place) => place.id === visit.placeId)?.namedPlace;
+		return `- 定位时段 ${start}${start === end ? "" : ` 至 ${end}`}：在${named ? "用户命名的" : ""}「${placeLabels.get(visit.placeId)}」${named ? `范围内（半径 ${named.radiusMeters} 米）有采样` : "一带有记录"}。`;
 	});
+	const dailyNames = [
+		...new Set(
+			built.allDayPoints.flatMap((point) => {
+				const named = matchNamedPlace(point, input.settings?.places ?? []);
+				return named ? [named.label] : [];
+			}),
+		),
+	];
 	return [
 		...formatWeatherEvidence(weather, input.timeZone),
 		...formatSunEvidence(sun, input.timeZone),
@@ -322,6 +361,11 @@ export async function collectDiaryEvidence(
 				]
 			: []),
 		...placeLines,
+		...(dailyNames.length
+			? [
+					`- 只有日期、没有时刻的位置采样命中用户命名范围：${JSON.stringify(dailyNames)}，不能安排日内顺序。`,
+				]
+			: []),
 		...formatSpendingEvidence(input.pixiuEvents),
 	];
 }
@@ -350,8 +394,9 @@ export async function cachedPublicContextFingerprint(
 	env: WorkerEnv,
 	query: { date: string; timeZone: string; start: string; end: string },
 	insights: DayInsights,
+	namedPlaces: readonly NamedPlace[] = [],
 ): Promise<string> {
-	const built = buildDayPlaces(insights.gps);
+	const built = buildDayPlaces(insights.gps, 5, namedPlaces);
 	const places = selectDiaryPlaces(built);
 	const anchor = places[0]?.anchor ?? built.allDayPoints[0];
 	if (!anchor) return JSON.stringify(null);
@@ -368,14 +413,16 @@ export async function cachedPublicContextFingerprint(
 		readCacheJson(env, "weather", buildWeatherCacheKey(contextQuery)),
 		Promise.all(
 			places.map((place) =>
-				readCacheJson(
-					env,
-					"place",
-					buildPlaceCacheKey(
-						roundCoordinate(place.anchor.latitude),
-						roundCoordinate(place.anchor.longitude),
-					),
-				),
+				place.namedPlace
+					? Promise.resolve(null)
+					: readCacheJson(
+							env,
+							"place",
+							buildPlaceCacheKey(
+								roundCoordinate(place.anchor.latitude),
+								roundCoordinate(place.anchor.longitude),
+							),
+						),
 			),
 		),
 	]);

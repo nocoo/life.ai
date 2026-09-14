@@ -1,4 +1,5 @@
 import { type DayInsights, gpsDistanceMeters, type TrackPoint, unionMinutes } from "./day-insights";
+import { matchNamedPlace, type NamedPlace } from "./general-settings";
 
 export interface GpsPlace {
 	id: string;
@@ -12,6 +13,7 @@ export interface GpsPlace {
 	totalObservedMinutes: number;
 	firstObservedAt: string;
 	lastObservedAt: string;
+	namedPlace?: NamedPlace;
 }
 
 export interface GpsVisit {
@@ -58,6 +60,7 @@ export function computeObservedMinutes(segments: TrackPoint[][]): number {
 export function buildDayPlaces(
 	gps: DayInsights["gps"] | undefined | null,
 	radiusKm: 5 | 10 = 5,
+	namedPlaces: readonly NamedPlace[] = [],
 ): DayPlaces {
 	const nativeSegments = gps?.segments ?? [];
 	const points = nativeSegments.flat();
@@ -76,7 +79,12 @@ export function buildDayPlaces(
 	let visit: GpsVisit | undefined;
 	for (const point of timed) {
 		// ponytail: a linear area scan suits one day's points; add a spatial index only if profiling requires it.
-		let place = places.find((item) => gpsDistanceMeters(item.anchor, point) <= radiusKm * 1000);
+		const named = matchNamedPlace(point, namedPlaces);
+		let place = places.find((item) =>
+			named
+				? item.namedPlace?.id === named.id
+				: !item.namedPlace && gpsDistanceMeters(item.anchor, point) <= radiusKm * 1000,
+		);
 		if (!place) {
 			place = {
 				id: `place-${places.length + 1}`,
@@ -87,6 +95,7 @@ export function buildDayPlaces(
 				totalObservedMinutes: 0,
 				firstObservedAt: point.occurredAt,
 				lastObservedAt: point.occurredAt,
+				...(named ? { namedPlace: named } : {}),
 			};
 			places.push(place);
 		}

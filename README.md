@@ -22,7 +22,9 @@
 
 「貔貅记账」独立页面接受一个或多个原始 CSV，以 UTC+8 的记账日保存完整九列，每天一行 JSON，重复、零金额与多币种均保留。同日整份覆盖、未出现的日期保留；消费与收入按原始分类计算，转账和还款等另列。账目放在全天卡片，原始流水在「账目记录」页签查看。详见 [貔貅导入与核验](docs/22-pixiu-daily-import.md)。
 
-日记 `.json` / `.ndjson` 使用「日记导入」入口，普通 JSON 上限 10 MiB。导入可取消，已完成的批次会保留。本机也可以用共享 CLI 或 `life-data-import` Skill 导入 Footprint、Apple Health 和貔貅：
+侧栏底部的「设置」集中放通用设置、AI 设置、Connect 和日记导入。在「通用设置」点击地图选中心、调整半径并预览范围，可保存多个地点名称；时间线、地图、原始位置表和睡眠位置沿用这些名称。也可填写本人平时入睡、起床时间及其时区。日记将地点和作息作为个人背景，实际睡眠会先转换到作息时区再对照；缺少观测时保留空白。设置变更会提示旧日记可以重写。详见 [通用设置](docs/24-general-settings.md)。
+
+日记 `.json` / `.ndjson` 使用「设置 → 导入」入口，普通 JSON 上限 10 MiB。导入可取消，已完成的批次会保留。本机也可以用共享 CLI 或 `life-data-import` Skill 导入 Footprint、Apple Health 和貔貅：
 
 ```sh
 bun run data:import --provider footprint --file /path/to/track.gpx --dry-run --json

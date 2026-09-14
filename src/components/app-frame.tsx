@@ -8,6 +8,7 @@ import { ExternalLink, Menu } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router";
 import { useStore } from "zustand";
+import { generalSettingsStore } from "../viewmodels/general-settings-view-model";
 import {
 	sessionAvatarUrl,
 	sessionDisplayName,
@@ -39,6 +40,10 @@ export function AppFrame() {
 	useEffect(() => {
 		void sessionStore.getState().load();
 	}, []);
+	useEffect(() => {
+		if (session && status === "ready" && generalSettingsStore.getState().status === "idle")
+			void generalSettingsStore.getState().load();
+	}, [session, status]);
 
 	useEffect(() => {
 		void pathname;

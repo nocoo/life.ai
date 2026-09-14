@@ -1,3 +1,4 @@
+import { matchNamedPlace, type NamedPlace } from "../models/general-settings";
 import { normalizeTimestamp } from "../models/time";
 import type { DayTimeline, JsonValue, LifeEvent } from "../models/types";
 import { storyKind } from "./day-story";
@@ -16,10 +17,15 @@ export interface DayRecordRow {
 	speed: RawValue;
 	course: RawValue;
 	pointCount: number | null;
+	placeLabel: string | null;
 }
 
 function rawValue(value: JsonValue | undefined): RawValue {
 	return typeof value === "number" || typeof value === "string" ? value : null;
+}
+
+function coordinate(value: RawValue): number {
+	return value === null || String(value).trim() === "" ? Number.NaN : Number(value);
 }
 
 function utcInstant(value: string): number {
@@ -32,7 +38,11 @@ function utcInstant(value: string): number {
 }
 
 /** One row per original event; never expand legacy track arrays a second time. */
-export function buildDayRecords(timeline: DayTimeline, kind: DayRecordKind): DayRecordRow[] {
+export function buildDayRecords(
+	timeline: DayTimeline,
+	kind: DayRecordKind,
+	namedPlaces: readonly NamedPlace[] = [],
+): DayRecordRow[] {
 	const unique = new Map<string, LifeEvent>();
 	for (const events of [timeline.allDay, ...timeline.hours.map((slot) => slot.events)]) {
 		for (const event of events) {
@@ -55,15 +65,22 @@ export function buildDayRecords(timeline: DayTimeline, kind: DayRecordKind): Day
 				: Array.isArray(data.trackPoints)
 					? data.trackPoints
 					: null;
+			const latitude = rawValue(data.latitude ?? data.lat);
+			const longitude = rawValue(data.longitude ?? data.lon ?? data.lng);
+			const place = matchNamedPlace(
+				{ latitude: coordinate(latitude), longitude: coordinate(longitude) },
+				namedPlaces,
+			);
 			return {
 				event,
 				instant: utcInstant(event.occurredAt),
-				latitude: rawValue(data.latitude ?? data.lat),
-				longitude: rawValue(data.longitude ?? data.lon ?? data.lng),
+				latitude,
+				longitude,
 				elevation: rawValue(data.elevation ?? data.ele),
 				speed: rawValue(data.speed),
 				course: rawValue(data.course),
 				pointCount: points?.length ?? null,
+				placeLabel: place?.label ?? null,
 			};
 		})
 		.sort((a, b) => a.instant - b.instant || a.event.id.localeCompare(b.event.id));

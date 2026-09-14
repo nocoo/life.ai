@@ -1,0 +1,589 @@
+[
+	{
+		"date": "2026-08-05",
+		"kind": "synthetic",
+		"sourceCounts": {
+			"Footprint": 5,
+			"Apple 健康": 34,
+			"貔貅记账": 1
+		},
+		"signals": [
+			"Apple 健康：完整睡眠时段为当天 03:10 至 11:00（Asia/Shanghai），实际睡眠 455 分钟，中间清醒 15 分钟；完整覆盖入睡至醒来，不只是截取的一小段。",
+			"Apple 健康：全天 6200 步；13:00–16:00 记录 3500 步与 4 层爬楼，没有 Workout。"
+		],
+		"gps": [
+			{
+				"occurredAt": "2026-08-04T18:55:00Z",
+				"precision": "minute",
+				"latitude": 20,
+				"longitude": 100
+			},
+			{
+				"occurredAt": "2026-08-05T03:05:00Z",
+				"precision": "minute",
+				"latitude": 20,
+				"longitude": 100
+			},
+			{
+				"occurredAt": "2026-08-05T05:00:00Z",
+				"precision": "minute",
+				"latitude": 20.02,
+				"longitude": 100
+			},
+			{
+				"occurredAt": "2026-08-05T08:00:00Z",
+				"precision": "minute",
+				"latitude": 20.02,
+				"longitude": 100
+			},
+			{
+				"occurredAt": "2026-08-05T14:00:00Z",
+				"precision": "minute",
+				"latitude": 20,
+				"longitude": 100
+			}
+		],
+		"pixiuRows": [
+			[
+				"2026-08-05",
+				"日常支出",
+				"茶饮",
+				"0.00",
+				"68.00",
+				"CNY",
+				"微信",
+				"",
+				"补一包平日喝的咖啡豆，网购下单"
+			]
+		],
+		"id": "personal-late-routine",
+		"label": "凌晨三点入睡是本人的正常节奏",
+		"personalSettings": {
+			"places": [
+				{
+					"id": "home",
+					"label": "家",
+					"latitude": 20,
+					"longitude": 100,
+					"radiusMeters": 150
+				},
+				{
+					"id": "studio",
+					"label": "工作室",
+					"latitude": 20.02,
+					"longitude": 100,
+					"radiusMeters": 180
+				},
+				{
+					"id": "parents",
+					"label": "父母家",
+					"latitude": 20.04,
+					"longitude": 100,
+					"radiusMeters": 150
+				}
+			],
+			"routine": {
+				"bedtime": "03:00",
+				"wakeTime": "11:00",
+				"timeZone": "Asia/Shanghai"
+			}
+		},
+		"expectations": [
+			"以本人的 03:00–11:00 为背景理解完整睡眠，接近平日节奏。",
+			"使用家与工作室的实际采样名称，联系走动与咖啡补货写自然的日常片段。"
+		],
+		"forbiddenClaims": [
+			"不能按一般常识把 03:10 入睡评价为熬夜、昼夜颠倒或 11 点醒来评价为睡懒觉。",
+			"不能声称到访没有采样的父母家，也不能写已收到或已冲泡网购咖啡。"
+		],
+		"sleep": [
+			{
+				"startAt": "2026-08-04T19:10:00Z",
+				"endAt": "2026-08-04T22:00:00Z",
+				"stage": "core"
+			},
+			{
+				"startAt": "2026-08-04T22:00:00Z",
+				"endAt": "2026-08-04T22:15:00Z",
+				"stage": "awake"
+			},
+			{
+				"startAt": "2026-08-04T22:15:00Z",
+				"endAt": "2026-08-05T03:00:00Z",
+				"stage": "core"
+			}
+		]
+	},
+	{
+		"date": "2026-08-05",
+		"kind": "synthetic",
+		"sourceCounts": {
+			"Footprint": 5,
+			"Apple 健康": 34,
+			"貔貅记账": 1
+		},
+		"signals": [
+			"Apple 健康：完整睡眠时段为当天 03:10 至 11:00（Asia/Shanghai），实际睡眠 455 分钟，中间清醒 15 分钟；完整覆盖入睡至醒来，不只是截取的一小段。",
+			"Apple 健康：全天 6200 步；13:00–16:00 记录 3500 步与 4 层爬楼，没有 Workout。"
+		],
+		"gps": [
+			{
+				"occurredAt": "2026-08-04T18:55:00Z",
+				"precision": "minute",
+				"latitude": 20,
+				"longitude": 100
+			},
+			{
+				"occurredAt": "2026-08-05T03:05:00Z",
+				"precision": "minute",
+				"latitude": 20,
+				"longitude": 100
+			},
+			{
+				"occurredAt": "2026-08-05T05:00:00Z",
+				"precision": "minute",
+				"latitude": 20.02,
+				"longitude": 100
+			},
+			{
+				"occurredAt": "2026-08-05T08:00:00Z",
+				"precision": "minute",
+				"latitude": 20.02,
+				"longitude": 100
+			},
+			{
+				"occurredAt": "2026-08-05T14:00:00Z",
+				"precision": "minute",
+				"latitude": 20,
+				"longitude": 100
+			}
+		],
+		"pixiuRows": [
+			[
+				"2026-08-05",
+				"日常支出",
+				"茶饮",
+				"0.00",
+				"68.00",
+				"CNY",
+				"微信",
+				"",
+				"补一包平日喝的咖啡豆，网购下单"
+			]
+		],
+		"id": "personal-routine-counterfactual",
+		"label": "同样痕迹，习惯改为 23 点至 7 点",
+		"counterfactualOf": "personal-late-routine",
+		"personalSettings": {
+			"places": [
+				{
+					"id": "home",
+					"label": "家",
+					"latitude": 20,
+					"longitude": 100,
+					"radiusMeters": 150
+				},
+				{
+					"id": "studio",
+					"label": "工作室",
+					"latitude": 20.02,
+					"longitude": 100,
+					"radiusMeters": 180
+				},
+				{
+					"id": "parents",
+					"label": "父母家",
+					"latitude": 20.04,
+					"longitude": 100,
+					"radiusMeters": 150
+				}
+			],
+			"routine": {
+				"bedtime": "23:00",
+				"wakeTime": "07:00",
+				"timeZone": "Asia/Shanghai"
+			}
+		},
+		"expectations": [
+			"当天完整入睡起床比用户惯常作息约晚四小时，理解与上一案例不同。",
+			"保留真实 03:10–11:00 的睡眠事实，不把惯常 23:00–07:00 当作当天。"
+		],
+		"forbiddenClaims": [
+			"不能断言当天 23 点入睡或 7 点起床。",
+			"不能虚构晚睡原因、职业、熬夜工作、酒局或因咖啡导致失眠。"
+		],
+		"sleep": [
+			{
+				"startAt": "2026-08-04T19:10:00Z",
+				"endAt": "2026-08-04T22:00:00Z",
+				"stage": "core"
+			},
+			{
+				"startAt": "2026-08-04T22:00:00Z",
+				"endAt": "2026-08-04T22:15:00Z",
+				"stage": "awake"
+			},
+			{
+				"startAt": "2026-08-04T22:15:00Z",
+				"endAt": "2026-08-05T03:00:00Z",
+				"stage": "core"
+			}
+		]
+	},
+	{
+		"id": "personal-missing-sleep",
+		"label": "只有习惯，完全缺少当天睡眠",
+		"date": "2026-08-06",
+		"kind": "synthetic",
+		"sourceCounts": {
+			"Footprint": 1,
+			"Apple 健康": 1,
+			"貔貅记账": 1
+		},
+		"personalSettings": {
+			"places": [
+				{
+					"id": "home",
+					"label": "家",
+					"latitude": 20,
+					"longitude": 100,
+					"radiusMeters": 150
+				},
+				{
+					"id": "studio",
+					"label": "工作室",
+					"latitude": 20.02,
+					"longitude": 100,
+					"radiusMeters": 180
+				},
+				{
+					"id": "parents",
+					"label": "父母家",
+					"latitude": 20.04,
+					"longitude": 100,
+					"radiusMeters": 150
+				}
+			],
+			"routine": {
+				"bedtime": "03:00",
+				"wakeTime": "11:00",
+				"timeZone": "Asia/Shanghai"
+			}
+		},
+		"gps": [
+			{
+				"occurredAt": "2026-08-06T00:00:00Z",
+				"precision": "day",
+				"latitude": 20,
+				"longitude": 100
+			}
+		],
+		"signals": [
+			"Apple 健康：全天手机记录 420 步，没有睡眠、心率或锻炼资料，佩戴及采集覆盖情况未知。"
+		],
+		"pixiuRows": [
+			[
+				"2026-08-06",
+				"日常支出",
+				"兴趣",
+				"0.00",
+				"24.00",
+				"CNY",
+				"微信",
+				"",
+				"网购帐篷修补贴，备着下次露营用"
+			]
+		],
+		"expectations": [
+			"围绕为下次露营备修补贴写一段简短实录。",
+			"理解家只有日期精度采样，习惯不是当天睡眠证据；可选择完全不写睡眠。"
+		],
+		"forbiddenClaims": [
+			"不能从习惯补出 03:00 入睡、11:00 起床、睡了八小时或今天作息照常。",
+			"不能断言全天在家、卧床休息、没有出门、修补贴已到货或当天露营。"
+		]
+	},
+	{
+		"id": "personal-visited-places",
+		"label": "命中的地点与只在设置里的地点",
+		"date": "2026-08-07",
+		"kind": "synthetic",
+		"sourceCounts": {
+			"Footprint": 4,
+			"Apple 健康": 28,
+			"貔貅记账": 1
+		},
+		"personalSettings": {
+			"places": [
+				{
+					"id": "home",
+					"label": "家",
+					"latitude": 20,
+					"longitude": 100,
+					"radiusMeters": 150
+				},
+				{
+					"id": "studio",
+					"label": "工作室",
+					"latitude": 20.02,
+					"longitude": 100,
+					"radiusMeters": 180
+				},
+				{
+					"id": "parents",
+					"label": "父母家",
+					"latitude": 20.04,
+					"longitude": 100,
+					"radiusMeters": 150
+				}
+			],
+			"routine": null
+		},
+		"gps": [
+			{
+				"occurredAt": "2026-08-07T00:10:00Z",
+				"precision": "minute",
+				"latitude": 20,
+				"longitude": 100
+			},
+			{
+				"occurredAt": "2026-08-07T02:30:00Z",
+				"precision": "minute",
+				"latitude": 20.02,
+				"longitude": 100
+			},
+			{
+				"occurredAt": "2026-08-07T04:50:00Z",
+				"precision": "minute",
+				"latitude": 20.02,
+				"longitude": 100
+			},
+			{
+				"occurredAt": "2026-08-07T11:20:00Z",
+				"precision": "minute",
+				"latitude": 20,
+				"longitude": 100
+			}
+		],
+		"signals": [
+			"Apple 健康：全天 7200 步，10:00–13:00 有 3300 步和 6 层爬楼，心率短时升至 116 bpm；无 Workout、无睡眠资料。"
+		],
+		"pixiuRows": [
+			[
+				"2026-08-07",
+				"日常支出",
+				"兴趣",
+				"0.00",
+				"53.00",
+				"CNY",
+				"微信",
+				"",
+				"工作室耗材补货：刻刀替换刀片、白胶"
+			]
+		],
+		"expectations": [
+			"用家、工作室的命中采样和耗材备注合理还原在工作室周边活动、为手工兴趣补材料的片段。",
+			"小范围地点即使同属一个 5 公里区域也须区分，保留返回家的方向。"
+		],
+		"forbiddenClaims": [
+			"不能因配置中有父母家便叙述看望父母或在父母家吃饭。",
+			"不能把采样窗口说成准确抵达离开，也不能确定已经完成某件作品或与人会面。"
+		]
+	},
+	{
+		"id": "personal-timezone-routine",
+		"label": "惯常作息与展示日期使用不同的时区",
+		"date": "2026-08-08",
+		"kind": "synthetic",
+		"sourceCounts": {
+			"Footprint": 3,
+			"Apple 健康": 32,
+			"貔貅记账": 1
+		},
+		"personalSettings": {
+			"places": [
+				{
+					"id": "home",
+					"label": "家",
+					"latitude": 20,
+					"longitude": 100,
+					"radiusMeters": 150
+				},
+				{
+					"id": "studio",
+					"label": "工作室",
+					"latitude": 20.02,
+					"longitude": 100,
+					"radiusMeters": 180
+				},
+				{
+					"id": "parents",
+					"label": "父母家",
+					"latitude": 20.04,
+					"longitude": 100,
+					"radiusMeters": 150
+				}
+			],
+			"routine": {
+				"bedtime": "21:00",
+				"wakeTime": "05:00",
+				"timeZone": "America/New_York"
+			}
+		},
+		"gps": [
+			{
+				"occurredAt": "2026-08-08T00:45:00Z",
+				"precision": "minute",
+				"latitude": 20,
+				"longitude": 100
+			},
+			{
+				"occurredAt": "2026-08-08T09:15:00Z",
+				"precision": "minute",
+				"latitude": 20,
+				"longitude": 100
+			},
+			{
+				"occurredAt": "2026-08-08T12:10:00Z",
+				"precision": "minute",
+				"latitude": 20.003,
+				"longitude": 100
+			}
+		],
+		"signals": [
+			"Apple 健康：完整睡眠时段为 2026-08-08 09:10 至 17:05，以上均为展示时区 Asia/Shanghai；实际睡眠 465 分钟。没有其他睡眠记录。",
+			"Apple 健康：17:00–21:00 记录 4300 步，无正式锻炼。"
+		],
+		"pixiuRows": [
+			[
+				"2026-08-08",
+				"日常支出",
+				"日用品",
+				"0.00",
+				"32.00",
+				"CNY",
+				"微信",
+				"",
+				"杂货补货，牛奶和鸡蛋"
+			]
+		],
+		"expectations": [
+			"先统一时区：八月纽约的 21:00–05:00 对应上海次日 09:00–17:00，实际睡眠接近平日。",
+			"自然叙述傍晚之后的走动与日常补给，不必写时区换算过程。"
+		],
+		"forbiddenClaims": [
+			"不能把 09:10 与 21:00 当作同一时区比较后断言作息突然提前十二小时、颠倒或补觉睡了一整天。",
+			"不能根据作息时区断言用户身在纽约、当天跨国旅行或从事夜班工作。"
+		],
+		"sleep": [
+			{
+				"startAt": "2026-08-08T01:10:00Z",
+				"endAt": "2026-08-08T04:30:00Z",
+				"stage": "core"
+			},
+			{
+				"startAt": "2026-08-08T04:30:00Z",
+				"endAt": "2026-08-08T04:40:00Z",
+				"stage": "awake"
+			},
+			{
+				"startAt": "2026-08-08T04:40:00Z",
+				"endAt": "2026-08-08T09:05:00Z",
+				"stage": "core"
+			}
+		]
+	},
+	{
+		"id": "personal-observations-first",
+		"label": "实际睡眠优先于个人习惯",
+		"date": "2026-08-09",
+		"kind": "synthetic",
+		"sourceCounts": {
+			"Footprint": 3,
+			"Apple 健康": 45,
+			"貔貅记账": 1
+		},
+		"personalSettings": {
+			"places": [
+				{
+					"id": "home",
+					"label": "家",
+					"latitude": 20,
+					"longitude": 100,
+					"radiusMeters": 150
+				},
+				{
+					"id": "studio",
+					"label": "工作室",
+					"latitude": 20.02,
+					"longitude": 100,
+					"radiusMeters": 180
+				},
+				{
+					"id": "parents",
+					"label": "父母家",
+					"latitude": 20.04,
+					"longitude": 100,
+					"radiusMeters": 150
+				}
+			],
+			"routine": {
+				"bedtime": "03:00",
+				"wakeTime": "11:00",
+				"timeZone": "Asia/Shanghai"
+			}
+		},
+		"gps": [
+			{
+				"occurredAt": "2026-08-08T22:55:00Z",
+				"precision": "minute",
+				"latitude": 20,
+				"longitude": 100
+			},
+			{
+				"occurredAt": "2026-08-09T00:25:00Z",
+				"precision": "minute",
+				"latitude": 20.003,
+				"longitude": 100
+			},
+			{
+				"occurredAt": "2026-08-09T01:10:00Z",
+				"precision": "minute",
+				"latitude": 20,
+				"longitude": 100
+			}
+		],
+		"signals": [
+			"Apple 健康：醒来的这一夜完整覆盖 2026-08-08 23:10 入睡至 2026-08-09 07:05 醒来（Asia/Shanghai），实际睡眠 470 分钟；完整记录，不是零散片段。",
+			"Apple 健康：当天 08:20–09:00 户外步行 Workout，距离 2.6 公里，平均心率 102 bpm；该时段 GPS 是同一次活动，不能算成两次锻炼。"
+		],
+		"pixiuRows": [
+			["2026-08-09", "日常支出", "餐饮", "0.00", "18.00", "CNY", "微信", "", "早餐店小笼包"]
+		],
+		"expectations": [
+			"按实际 23:10–07:05 理解醒来的这一夜，比通常 03:00–11:00 更早。",
+			"联系实际晨间步行和明确早餐备注，写自然的早晨片段。"
+		],
+		"forbiddenClaims": [
+			"不能把平日 03:00–11:00 覆盖到实际睡眠，也不能把昨晚 23:10 说成今晚才发生。",
+			"不能发明更早作息的具体原因、精准早餐付款时刻或把 GPS 与 Workout 说成两次运动。"
+		],
+		"sleep": [
+			{
+				"startAt": "2026-08-08T15:10:00Z",
+				"endAt": "2026-08-08T20:00:00Z",
+				"stage": "core"
+			},
+			{
+				"startAt": "2026-08-08T20:00:00Z",
+				"endAt": "2026-08-08T20:05:00Z",
+				"stage": "awake"
+			},
+			{
+				"startAt": "2026-08-08T20:05:00Z",
+				"endAt": "2026-08-08T23:05:00Z",
+				"stage": "core"
+			}
+		]
+	}
+]
