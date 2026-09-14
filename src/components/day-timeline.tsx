@@ -15,6 +15,8 @@ import {
 	Activity,
 	ArrowUpRight,
 	BookOpen,
+	CalendarClock,
+	CalendarDays,
 	Footprints,
 	Leaf,
 	MapPin,
@@ -52,6 +54,8 @@ import { DaySummaryCard } from "./day-summary";
 import { EventDetails } from "./event-card";
 import { HealthDayCard } from "./health-story";
 import { HealthTimelineEntry } from "./health-timeline-entry";
+import { StoryCardHeading } from "./story-card-heading";
+import { StoryCardInfo } from "./story-card-info";
 import { useIsMobile } from "./use-is-mobile";
 
 const CHAPTERS = [
@@ -71,23 +75,52 @@ const BRANCH_ICONS = {
 	connect: Plug,
 } satisfies Record<StoryKind, typeof Moon>;
 
+const BRANCH_LABELS: Record<StoryKind, string> = {
+	sleep: "睡眠",
+	health: "身体活动",
+	workout: "锻炼",
+	journey: "足迹",
+	money: "收支",
+	note: "随记",
+	connect: "连接记录",
+};
+
 function StoryBranchView({
 	branch,
 	onOpenMap,
+	embedded = false,
 }: {
 	branch: StoryBranch;
 	onOpenMap: (branch: StoryBranch) => void;
+	embedded?: boolean;
 }) {
 	const Icon = BRANCH_ICONS[branch.kind];
 	const grouped = branch.kind === "sleep" || branch.kind === "health" || branch.kind === "journey";
 	const source = branch.events[0];
+	const Surface = embedded ? "article" : LayerCard;
 	return (
-		<LayerCard className={`story-branch story-${branch.kind}`} data-story-kind={branch.kind}>
-			<div className="story-branch-eyebrow">
-				<Icon size={15} strokeWidth={1.6} aria-hidden="true" />
-				<span>{source?.sourceName}</span>
-				{branch.period ? <span className="story-period">{branch.period}</span> : null}
-			</div>
+		<Surface
+			className={`${embedded ? "story-all-day-entry" : "story-branch"} story-${branch.kind}`}
+			data-story-kind={branch.kind}
+		>
+			{!embedded ? (
+				<StoryCardInfo
+					label={branch.title}
+					notes={[
+						...new Set(branch.events.map((event) => `来源：${event.sourceName}`)),
+						`${branch.events.length} 条记录`,
+					]}
+				/>
+			) : null}
+			{!embedded ? (
+				<div className="story-branch-eyebrow">
+					<span className="story-card-icon" aria-hidden="true">
+						<Icon size={17} strokeWidth={1.6} />
+					</span>
+					<span>{BRANCH_LABELS[branch.kind]}</span>
+					{branch.period ? <span className="story-period">{branch.period}</span> : null}
+				</div>
+			) : null}
 			{branch.fromPreviousDay ? <p className="story-carried">延续自前一天</p> : null}
 			<div className="story-branch-copy">
 				<h3
@@ -119,11 +152,7 @@ function StoryBranchView({
 					查看这段足迹 <ArrowUpRight size={14} aria-hidden="true" />
 				</Button>
 			) : null}
-			{grouped ? (
-				<Text as="p" size="xs" tone="muted" className="mt-3">
-					{branch.events.length} 条记录
-				</Text>
-			) : source ? (
+			{!grouped && source ? (
 				<Collapsible className="story-event-details">
 					<CollapsibleTrigger>详情</CollapsibleTrigger>
 					<CollapsibleContent>
@@ -131,7 +160,7 @@ function StoryBranchView({
 					</CollapsibleContent>
 				</Collapsible>
 			) : null}
-		</LayerCard>
+		</Surface>
 	);
 }
 
@@ -147,9 +176,18 @@ function VisitView({ item, mode }: { item: StoryVisit; mode: TimelineMapMode }) 
 		>
 			<div className="story-lane story-lane-right">
 				<LayerCard className="story-branch story-visit-copy" data-story-kind="journey">
+					<StoryCardInfo
+						label={item.title}
+						notes={[
+							...new Set(visit.points.map((point) => `来源：${point.sourceName}`)),
+							`${visit.pointCount} 个位置采样`,
+						]}
+					/>
 					<div className="story-branch-eyebrow">
-						<MapPin size={15} strokeWidth={1.5} aria-hidden="true" />
-						<span>{[...new Set(visit.points.map((point) => point.sourceName))].join(" · ")}</span>
+						<span className="story-card-icon" aria-hidden="true">
+							<MapPin size={17} strokeWidth={1.6} />
+						</span>
+						<span>足迹</span>
 						<time dateTime={visit.startAt} className="story-period">
 							{item.period}
 						</time>
@@ -410,14 +448,13 @@ export function DayTimelineView({
 					</section>
 				</div>
 				<aside className="day-meta" aria-label="当日信息">
-					<LayerCard>
+					<LayerCard className="story-card story-overview">
 						<LayerCard.Header>
-							<Text as="h2" variant="heading" size="md">
-								当天概况
-							</Text>
-							<Text as="p" size="sm" tone="muted">
-								{timeline.timezone}
-							</Text>
+							<StoryCardHeading
+								icon={CalendarClock}
+								title="当天概况"
+								subtitle={timeline.timezone}
+							/>
 						</LayerCard.Header>
 						<LayerCard.Body>
 							<StoryMetrics
@@ -448,19 +485,29 @@ export function DayTimelineView({
 					<DayInsightsCard insights={insights} />
 					{health ? <HealthDayCard story={health} /> : null}
 					{story.allDay.length > 0 ? (
-						<LayerCard>
+						<LayerCard className="story-card story-all-day-card">
+							<StoryCardInfo
+								label="全天记录"
+								notes={[
+									"这些内容只精确到日期，不代表发生在零点。",
+									...story.allDay.flatMap((branch) => [
+										...new Set(branch.events.map((event) => `来源：${event.sourceName}`)),
+										`${branch.title}：${branch.events.length} 条记录`,
+									]),
+								]}
+							/>
 							<LayerCard.Header>
-								<Text as="h2" variant="heading" size="md">
-									全天记录
-								</Text>
-								<Text as="p" size="sm" tone="muted">
-									只记录到日期的内容
-								</Text>
+								<StoryCardHeading icon={CalendarDays} title="全天记录" />
 							</LayerCard.Header>
 							<LayerCard.Body>
 								<section className="story-all-day" aria-label="全天记录">
 									{story.allDay.map((branch) => (
-										<StoryBranchView key={branch.id} branch={branch} onOpenMap={setMapDetail} />
+										<StoryBranchView
+											key={branch.id}
+											branch={branch}
+											onOpenMap={setMapDetail}
+											embedded
+										/>
 									))}
 								</section>
 							</LayerCard.Body>

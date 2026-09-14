@@ -22,6 +22,11 @@ test("ZIP and directory imports preserve health, replay unchanged, and tell the 
 	const errors: string[] = [];
 	page.on("pageerror", (error) => errors.push(error.message));
 	const files = syntheticHealthFiles(date);
+	const internalValue = "HKCategoryValueEnvironmentalAudioExposureEventMomentaryLimit";
+	files["apple_health_export/导出.xml"] = (files["apple_health_export/导出.xml"] as string).replace(
+		"</HealthData>",
+		`<Record type="HKCategoryTypeIdentifierAudioExposureEvent" sourceName="Fixture Apple Watch" device="Watch" startDate="2026-09-20T14:00:00+08:00" endDate="2026-09-20T14:00:00+08:00" value="${internalValue}"/></HealthData>`,
+	);
 	const zip = new ZipWriter(new BlobWriter("application/zip"));
 	for (const [path, content] of Object.entries(files))
 		await zip.add(path, new BlobReader(new Blob([content])));
@@ -110,9 +115,31 @@ test("ZIP and directory imports preserve health, replay unchanged, and tell the 
 	await expect(pressure).toContainText("118");
 	await expect(pressure).toContainText("76");
 	await expect(pressure).toContainText("08:45");
+	await expect(pressure).not.toContainText("Fixture Apple Watch");
+	const pressureInfo = pressure.getByRole("button", { name: "查看血压的来源与说明", exact: true });
+	await pressureInfo.hover();
+	await expect(page.getByRole("tooltip")).toContainText("Fixture Apple Watch");
+	await page.keyboard.press("Escape");
+	await expect(page.getByRole("tooltip")).toHaveCount(0);
+	await page.mouse.move(0, 0);
+	await pressureInfo.focus();
+	await expect(page.getByRole("tooltip")).toContainText("Fixture Apple Watch");
+	await page.keyboard.press("Escape");
+	await expect(pressureInfo).toBeFocused();
+	await expect(page.getByRole("tooltip")).toHaveCount(0);
+	const audio = page
+		.locator('[data-health-kind="observation"]')
+		.filter({ hasText: "环境声音提醒" });
+	await expect(audio).toHaveCount(1);
+	await expect(audio).not.toContainText(internalValue);
+	await expect(audio).not.toContainText("Fixture Apple Watch");
+	const allDay = page.getByRole("region", { name: "全天记录", exact: true });
+	await expect(allDay).toContainText("350 kcal");
+	await expect(allDay.locator("[data-basalt-surface]")).toHaveCount(0);
 	const workout = page.locator('[data-health-kind="workout"]');
 	await expect(workout).toContainText("骑行");
 	await expect(workout).toContainText(/45\s*分/);
+	await expect(workout).not.toContainText("Fixture Apple Watch");
 	await expect(workout.getByRole("application", { name: "锻炼与足迹合并地图" })).toHaveCount(1);
 	await expect(
 		page.locator('[data-hour="7"] [data-visit], [data-hour="8"] [data-visit]'),
@@ -130,6 +157,9 @@ test("ZIP and directory imports preserve health, replay unchanged, and tell the 
 	await expect(raw).toContainText("步行速度");
 	await expect(raw).toContainText("Fixture Apple Watch");
 	expect(rawRequests).toBe(1);
+	await raw.getByRole("button", { name: "查看完整记录：环境声音提醒", exact: true }).click();
+	await expect(page.getByRole("dialog")).toContainText(internalValue);
+	await page.keyboard.press("Escape");
 	await raw.getByRole("button", { name: "查看完整记录：血压组合", exact: true }).click();
 	await expect(page.getByRole("dialog")).toContainText("Synthetic measurement");
 	await page.keyboard.press("Escape");

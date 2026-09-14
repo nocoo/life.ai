@@ -1,5 +1,6 @@
 import { Button, LayerCard, Text } from "@nocoo/basalt";
 import { Empty } from "@nocoo/basalt/components/empty";
+import { Map as MapIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { DayInsights, TrackPoint } from "../models/day-insights";
 import type { GpsPlace } from "../models/day-places";
@@ -11,6 +12,7 @@ import {
 } from "../models/track-speed";
 import { formatLocalClock } from "../viewmodels/format";
 import { selectTrackEndpoints } from "../viewmodels/timeline-view-model";
+import { StoryCardHeading } from "./story-card-heading";
 
 const OSM_TILE = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 const OSM_ATTRIBUTION =
@@ -236,16 +238,17 @@ export function DayMap({
 	}, [hasPoints, insights, attempt, showPoints, places]);
 
 	return (
-		<LayerCard className="story-map">
+		<LayerCard className="story-map story-card">
 			<LayerCard.Header>
-				<Text as="h2" variant="heading" size="md">
-					{title ?? (compact ? "全天足迹" : "足迹")}
-				</Text>
-				<Text as="p" size="sm" tone="muted">
-					{hasPoints
-						? `${insights.gps.pointCount} 个点 · ${(insights.gps.distanceMeters / 1000).toFixed(2)} km`
-						: "这一天没有位置记录"}
-				</Text>
+				<StoryCardHeading
+					icon={MapIcon}
+					title={title ?? (compact ? "全天足迹" : "足迹")}
+					subtitle={
+						hasPoints
+							? `${insights.gps.pointCount} 个点 · ${(insights.gps.distanceMeters / 1000).toFixed(2)} km`
+							: "这一天没有位置记录"
+					}
+				/>
 			</LayerCard.Header>
 			<LayerCard.Body>
 				{mapError && hasPoints ? (

@@ -18,7 +18,7 @@
 .story-page {
 	--story-body: hsl(var(--basalt-chart-green));
 	--story-route: hsl(var(--basalt-chart-blue));
-	--story-night: hsl(var(--basalt-chart-pink));
+	--story-night: hsl(var(--basalt-accent-10));
 	--story-money: hsl(var(--basalt-chart-yellow));
 	--story-rail: 84px;
 	container: day-story / inline-size;
@@ -298,28 +298,180 @@
 }
 
 .story-branch {
-	--story-color: var(--story-route);
 	position: relative;
 	min-width: 0;
 	overflow: visible;
 	padding: 14px 18px;
 }
 
+.story-card,
+.story-branch {
+	--story-color: hsl(var(--basalt-chart-blue));
+	position: relative;
+	border: 1px solid color-mix(in srgb, var(--story-color) 30%, hsl(var(--basalt-border)));
+	border-inline-start: 3px solid var(--story-color);
+	box-shadow:
+		inset 0 1px 0 hsl(var(--basalt-bright) / 0.7),
+		0 2px 3px hsl(0 0% 0% / 0.025),
+		0 8px 22px -14px hsl(0 0% 0% / 0.22);
+}
+
+/* Overlay the material on Basalt's nested surface fill without replacing that fill. */
+:is([data-basalt-surface-root], .story-map-dialog)
+:is(.story-card, .story-branch)[data-basalt-surface] {
+	background-image:
+		repeating-linear-gradient(
+			125deg,
+			hsl(var(--basalt-foreground) / 0.014) 0 1px,
+			transparent 1px 5px
+		),
+		linear-gradient(120deg, color-mix(in srgb, var(--story-color) 9%, transparent), transparent 75%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.story-card,
+	.story-branch {
+		animation: story-card-arrive 240ms ease-out;
+		transition: box-shadow 160ms ease-out;
+	}
+}
+
+@media (hover: hover) {
+	.story-card:hover,
+	.story-branch:hover {
+		box-shadow:
+			inset 0 1px 0 hsl(var(--basalt-bright) / 0.7),
+			0 2px 4px hsl(0 0% 0% / 0.035),
+			0 10px 26px -12px hsl(0 0% 0% / 0.26);
+	}
+}
+
+@keyframes story-card-arrive {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.story-card-heading {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-width: 0;
+	padding-right: 26px;
+}
+
+.story-card-info {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	width: 28px;
+	height: 28px;
+	color: hsl(var(--basalt-muted-foreground));
+	z-index: 1;
+}
+
+.story-card-info-panel {
+	width: min(340px, calc(100vw - 24px));
+	max-height: min(420px, 70dvh);
+	overflow: auto;
+	overflow-wrap: anywhere;
+}
+
+.story-card-info-panel ul {
+	display: grid;
+	gap: 8px;
+	margin-top: 10px;
+	padding-left: 16px;
+	list-style: disc;
+	font-size: 12px;
+	line-height: 1.65;
+	color: hsl(var(--basalt-muted-foreground));
+}
+
+.story-card-heading-copy {
+	min-width: 0;
+}
+
+.story-card-heading-copy > p {
+	margin-top: 3px;
+	line-height: 1.6;
+}
+
+.story-card-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 36px;
+	height: 36px;
+	border-radius: var(--basalt-radius-widget);
+	background: color-mix(in srgb, var(--story-color) 18%, hsl(var(--basalt-card)));
+	color: color-mix(in srgb, var(--story-color) 55%, hsl(var(--basalt-foreground)));
+}
+
+.story-metric-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.story-metric-label svg {
+	flex: 0 0 auto;
+	color: color-mix(
+		in srgb,
+		var(--story-color, hsl(var(--basalt-chart-blue))) 50%,
+		hsl(var(--basalt-foreground))
+	);
+}
+
 .story-sleep {
-	--story-color: var(--story-night);
+	--story-color: hsl(var(--basalt-accent-10));
 }
 
 .story-health,
-.story-workout {
-	--story-color: var(--story-body);
+.story-workout,
+.story-walk,
+.story-totals {
+	--story-color: hsl(var(--basalt-chart-green));
 }
 
-.story-money {
-	--story-color: var(--story-money);
+.story-money,
+.story-climb,
+.day-context-card {
+	--story-color: hsl(var(--basalt-chart-yellow));
 }
 
-.story-note {
-	--story-color: hsl(var(--basalt-muted-foreground));
+.story-heart {
+	--story-color: hsl(var(--basalt-chart-pink));
+}
+
+.story-pressure {
+	--story-color: hsl(var(--basalt-accent-7));
+}
+
+.story-ecg,
+.story-vitals {
+	--story-color: hsl(var(--basalt-accent-3));
+}
+
+.story-observation {
+	--story-color: hsl(var(--basalt-accent-5));
+}
+
+.story-summary,
+.story-connect {
+	--story-color: hsl(var(--basalt-accent-11));
+}
+
+.story-note,
+.story-overview,
+.story-all-day-card {
+	--story-color: hsl(var(--basalt-chart-pearl));
 }
 
 .story-lane-left > .story-branch::after,
@@ -348,10 +500,13 @@
 	margin-bottom: 10px;
 	font-size: 11px;
 	color: hsl(var(--basalt-muted-foreground));
+	padding-right: 26px;
 }
 
-.story-branch-eyebrow svg {
-	color: color-mix(in srgb, var(--story-color) 72%, hsl(var(--basalt-foreground)));
+.story-branch-eyebrow > .story-card-icon {
+	width: 30px;
+	height: 30px;
+	border-radius: 8px;
 }
 
 .story-period {
@@ -613,13 +768,49 @@
 	outline-offset: 4px;
 }
 
-.story-all-day .story-branch {
-	padding: 14px 0;
-	background: transparent;
+.story-all-day-entry {
+	min-width: 0;
 }
 
-.story-all-day .story-branch + .story-branch {
+.story-all-day-entry + .story-all-day-entry {
+	margin-top: 16px;
+	padding-top: 16px;
 	border-top: 1px solid hsl(var(--basalt-border) / 0.6);
+}
+
+.story-all-day .story-metrics {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 20px 36px;
+	margin-top: 0;
+}
+
+.story-all-day .story-metrics > div {
+	min-width: 100px;
+}
+
+.story-all-day-entry:not(.story-health) .story-metrics {
+	margin-top: 12px;
+}
+
+.story-lane > .story-branch,
+.story-lane > .health-story-card,
+.story-lane > .health-sleep-place {
+	width: fit-content;
+	min-width: min(100%, 280px);
+	max-width: 100%;
+	align-self: flex-start;
+	justify-self: start;
+}
+
+/* Keep short cards connected to the trunk without changing their text alignment. */
+@media (min-width: 768px) {
+	.story-lane-left > .story-branch,
+	.story-lane-left > .health-story-card,
+	.story-lane-left > .health-sleep-place {
+		align-self: flex-end;
+		justify-self: end;
+	}
 }
 
 @container story-column (min-width: 1240px) {
@@ -653,8 +844,8 @@
 		left: calc(var(--story-rail) / -2);
 	}
 
-	.story-lane-left > .story-branch::after,
-	.story-lane-right > .story-branch::before {
+	.story-hour-branches > .story-lane-left > .story-branch::after,
+	.story-hour-branches > .story-lane-right > .story-branch::before {
 		display: none;
 	}
 }
@@ -908,19 +1099,6 @@
 	grid-template-columns: minmax(0, 1fr) var(--story-rail) minmax(0, 1fr);
 	align-items: start;
 }
-.health-special-card {
-	border-color: hsl(var(--basalt-chart-pink) / 0.4);
-	background:
-		linear-gradient(135deg, hsl(var(--basalt-chart-pink) / 0.07), transparent 60%),
-		hsl(var(--basalt-card));
-}
-.health-special-card > .story-branch-eyebrow {
-	color: hsl(var(--basalt-foreground));
-	margin-bottom: 14px;
-}
-.health-workout-entry .story-workout {
-	border-color: hsl(var(--basalt-chart-green) / 0.4);
-}
 .story-visit-observation {
 	margin-top: 14px;
 	font-size: 13px;
@@ -1026,15 +1204,21 @@
 	position: relative;
 }
 .story-solar {
+	--story-color: hsl(var(--basalt-chart-yellow));
 	align-items: center;
 	padding-block: 12px;
 	color: hsl(var(--basalt-muted-foreground));
 }
+.story-solar[data-solar="sunset"],
+.day-solar-times [data-solar="sunset"] {
+	--story-color: hsl(var(--basalt-accent-7));
+}
 .story-solar-icon {
 	grid-column: 2;
 	justify-self: center;
-	background: hsl(var(--basalt-card));
-	color: var(--story-money);
+	border-radius: 50%;
+	background: color-mix(in srgb, var(--story-color) 16%, hsl(var(--basalt-card)));
+	color: color-mix(in srgb, var(--story-color) 50%, hsl(var(--basalt-foreground)));
 	box-sizing: content-box;
 	padding: 6px;
 }
@@ -1075,6 +1259,9 @@
 .day-solar-times time {
 	font-variant-numeric: tabular-nums;
 }
+.day-solar-times svg {
+	color: color-mix(in srgb, var(--story-color) 50%, hsl(var(--basalt-foreground)));
+}
 @media (max-width: 767px) {
 	.story-hour-axis {
 		left: 0;
@@ -1085,7 +1272,7 @@
 	.story-visit-map {
 		margin-top: 10px;
 	}
-	.story-visit-map:has([data-state="closed"]) {
+	.story-visit-map:has([data-state="closed"][hidden]) {
 		display: none;
 	}
 	.story-solar-icon {

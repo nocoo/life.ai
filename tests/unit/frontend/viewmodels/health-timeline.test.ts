@@ -323,8 +323,8 @@ describe("health timeline cards", () => {
 				details: [
 					{ term: "数值", value: "70" },
 					{ term: "单位", value: "kg" },
-					{ term: "来源设备", value: "Apple 健康" },
 				],
+				notes: expect.arrayContaining([expect.stringContaining("Apple 健康")]),
 			},
 		]);
 		expect(result.story.hours[0]?.health).toBeUndefined();
@@ -350,6 +350,7 @@ describe("health timeline cards", () => {
 		});
 		const reminder = healthEvent("reminder", at, {
 			type: "HKCategoryTypeIdentifierLowHeartRateEvent",
+			unit: "count/min",
 		});
 		const events = [mass, reminder];
 		const snapshot = structuredClone(events);
@@ -360,15 +361,59 @@ describe("health timeline cards", () => {
 		expect(measurement.details).toEqual([
 			{ term: "数值", value: "70.1235" },
 			{ term: "单位", value: "kg" },
-			{ term: "来源设备", value: "Withings" },
 		]);
+		expect(measurement.notes).toEqual(
+			expect.arrayContaining([expect.stringContaining("Withings")]),
+		);
 		expect(result.items.find((item) => item.id === reminder.id)).toMatchObject({
 			kind: "observation",
-			details: [{ term: "来源设备", value: "Apple 健康" }],
+			details: [],
+			notes: expect.arrayContaining([expect.stringContaining("Apple 健康")]),
 		});
 		expect(measurement.event).toBe(mass);
 		expect(measurement.event.data).toBe(mass.data);
 		expect(result.timeline.hours[7]?.events.find((event) => event.id === mass.id)).toBe(mass);
+		expect(events).toEqual(snapshot);
+	});
+
+	it("hides internal category values and their units without losing zero measurements or raw values", () => {
+		const at = "2026-09-13T07:23:00.000Z";
+		const alert = healthEvent("audio-alert", at, {
+			type: "HKCategoryTypeIdentifierAudioExposureEvent",
+			value: "HKCategoryValueEnvironmentalAudioExposureEventMomentaryLimit",
+			unit: "dBASPL",
+			sourceName: "Apple Watch",
+		});
+		const zeros = [0, "0"].map((value, index) =>
+			healthEvent(`zero-${index}`, at, {
+				type: "HKQuantityTypeIdentifierBodyMass",
+				value,
+				unit: "kg",
+			}),
+		);
+		const events = [alert, ...zeros];
+		const snapshot = structuredClone(events);
+		const result = project(events);
+		expect(result.items.find((item) => item.id === alert.id)).toMatchObject({
+			kind: "observation",
+			details: [],
+			notes: expect.arrayContaining([expect.stringContaining("Apple Watch")]),
+		});
+		for (const zero of zeros)
+			expect(result.items.find((item) => item.id === zero.id)).toMatchObject({
+				kind: "observation",
+				details: [
+					{ term: "数值", value: "0" },
+					{ term: "单位", value: "kg" },
+				],
+			});
+		for (const event of events) {
+			const item = result.items.find((candidate) => candidate.id === event.id);
+			expect(item?.kind).toBe("observation");
+			if (item?.kind !== "observation") continue;
+			expect(item.event).toBe(event);
+			expect(item.event.data).toBe(event.data);
+		}
 		expect(events).toEqual(snapshot);
 	});
 

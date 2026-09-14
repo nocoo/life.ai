@@ -34,7 +34,13 @@ export type HealthTimelineItem = MomentBase &
 		| { kind: "ecg"; ecg: EcgRecording }
 		| { kind: "pressure"; reading: BloodPressureReading }
 		| { kind: "moment"; moment: HealthMoment }
-		| { kind: "observation"; event: LifeEvent; title: string; details: EventDetailRow[] }
+		| {
+				kind: "observation";
+				event: LifeEvent;
+				title: string;
+				details: EventDetailRow[];
+				notes: string[];
+		  }
 		| { kind: "bedtime"; title: string }
 	);
 
@@ -160,7 +166,9 @@ export function buildHealthTimeline(
 			event.precision !== "day" &&
 			typeof data.type === "string" &&
 			rare.test(data.type)
-		)
+		) {
+			const value =
+				typeof data.value === "string" && /^HK/.test(data.value.trim()) ? undefined : data.value;
 			items.push({
 				kind: "observation",
 				id: event.id,
@@ -168,11 +176,16 @@ export function buildHealthTimeline(
 				event,
 				title: healthDimensionLabel(data.type),
 				details: describeJsonData({
-					...(data.value != null ? { value: data.value } : {}),
-					...(data.unit ? { unit: data.unit } : {}),
-					sourceName: healthRecordSource(event),
+					...(value != null ? { value } : {}),
+					...(value != null && data.unit ? { unit: data.unit } : {}),
 				}),
+				notes: [
+					`来源：${healthRecordSource(event)}`,
+					...(typeof data.sourceVersion === "string" ? [`应用版本：${data.sourceVersion}`] : []),
+					...(typeof data.device === "string" ? [`设备：${data.device}`] : []),
+				],
 			});
+		}
 	}
 	const remaining: DayTimeline = {
 		...timeline,

@@ -1,4 +1,34 @@
 import { Button, DescriptionList, LayerCard, Text } from "@nocoo/basalt";
+import {
+	Activity,
+	ArrowDown,
+	ArrowUp,
+	BedDouble,
+	Bike,
+	ChevronLeft,
+	ChevronRight,
+	Droplets,
+	Dumbbell,
+	Eye,
+	Flame,
+	Footprints,
+	Gauge,
+	Heart,
+	HeartPulse,
+	type LucideIcon,
+	Moon,
+	MoonStar,
+	Mountain,
+	MoveUpRight,
+	PersonStanding,
+	Route,
+	SquareActivity,
+	Sunrise,
+	Timer,
+	Watch,
+	Waves,
+	Wind,
+} from "lucide-react";
 import { useState } from "react";
 import {
 	type BloodPressureReading,
@@ -12,7 +42,21 @@ import {
 } from "../models/health-insights";
 import { formatDurationMinutes, formatLocalClock } from "../viewmodels/format";
 import { healthDimensionLabel } from "../viewmodels/health-format";
+import { StoryCardHeading, StoryMetricLabel } from "./story-card-heading";
+import { StoryCardInfo } from "./story-card-info";
 import "./health-story.css";
+
+const MOMENT_ICONS = { heartPeak: HeartPulse, walk: Footprints, climb: MoveUpRight };
+const WORKOUT_ICONS: Record<string, LucideIcon> = {
+	Walking: Footprints,
+	Running: Footprints,
+	Cycling: Bike,
+	Swimming: Waves,
+	TraditionalStrengthTraining: Dumbbell,
+	FunctionalStrengthTraining: Dumbbell,
+	Yoga: PersonStanding,
+	Hiking: Mountain,
+};
 
 function clock(iso: string): string {
 	return formatLocalClock(iso, "minute") ?? iso.slice(11, 16);
@@ -21,38 +65,40 @@ function clock(iso: string): string {
 export function SleepStoryCard({ night }: { night: SleepNight | null }) {
 	if (!night) return null;
 	return (
-		<LayerCard className="health-story-card">
+		<LayerCard className="health-story-card story-card story-sleep">
+			<StoryCardInfo label="睡眠" notes={night.evidence} />
 			<LayerCard.Header>
-				<Text as="h2" variant="heading" size="md">
-					睡眠
-				</Text>
-				<Text as="p" size="sm" tone="muted" className="health-story-lede">
-					这一夜，醒来后回看
-				</Text>
+				<StoryCardHeading icon={MoonStar} title="睡眠" subtitle="这一夜，醒来后回看" />
 			</LayerCard.Header>
 			<LayerCard.Body>
 				<dl className="health-story-times">
 					<div>
-						<dt>入睡</dt>
+						<dt>
+							<StoryMetricLabel icon={Moon}>入睡</StoryMetricLabel>
+						</dt>
 						<dd>
 							<time dateTime={night.fellAsleepAt}>{clock(night.fellAsleepAt)}</time>
 						</dd>
 					</div>
 					<div>
-						<dt>起床</dt>
+						<dt>
+							<StoryMetricLabel icon={Sunrise}>起床</StoryMetricLabel>
+						</dt>
 						<dd>
 							<time dateTime={night.wokeAt}>{clock(night.wokeAt)}</time>
 						</dd>
 					</div>
 				</dl>
 				<DescriptionList columns={2}>
-					<DescriptionList.Item term="实际睡眠">
+					<DescriptionList.Item
+						term={<StoryMetricLabel icon={MoonStar}>实际睡眠</StoryMetricLabel>}
+					>
 						{formatDurationMinutes(night.asleepMinutes)}
 					</DescriptionList.Item>
-					<DescriptionList.Item term="在床">
+					<DescriptionList.Item term={<StoryMetricLabel icon={BedDouble}>在床</StoryMetricLabel>}>
 						{night.inBedMinutes === null ? "未记录" : formatDurationMinutes(night.inBedMinutes)}
 					</DescriptionList.Item>
-					<DescriptionList.Item term="清醒">
+					<DescriptionList.Item term={<StoryMetricLabel icon={Eye}>清醒</StoryMetricLabel>}>
 						{night.awakeMinutes === null ? "未记录" : formatDurationMinutes(night.awakeMinutes)}
 					</DescriptionList.Item>
 				</DescriptionList>
@@ -85,11 +131,6 @@ export function SleepStoryCard({ night }: { night: SleepNight | null }) {
 						</span>
 					))}
 				</div>
-				<ul className="health-story-evidence">
-					{night.evidence.map((item) => (
-						<li key={item}>{item}</li>
-					))}
-				</ul>
 			</LayerCard.Body>
 		</LayerCard>
 	);
@@ -99,35 +140,42 @@ export function HealthDayCard({ story }: { story: HealthStory }) {
 	const { day } = story;
 	if (!day.oxygen && !day.respiratory && !day.hrv && day.restingHeartRate === null) return null;
 	return (
-		<LayerCard className="health-story-card">
+		<LayerCard className="health-story-card story-card story-vitals">
+			<StoryCardInfo
+				label="身体信号"
+				notes={[
+					"来自 Apple 健康；同一时段的重叠设备采样不会重复累计。",
+					...[day.oxygen, day.respiratory, day.hrv].flatMap((metric) =>
+						metric ? [`${metric.label}：${metric.samples} 次测量`] : [],
+					),
+				]}
+			/>
 			<LayerCard.Header>
-				<Text as="h2" variant="heading" size="md">
-					身体信号
-				</Text>
+				<StoryCardHeading icon={Activity} title="身体信号" subtitle="这一天的生理测量" />
 			</LayerCard.Header>
 			<LayerCard.Body>
 				<DescriptionList columns={2}>
 					{day.oxygen ? (
-						<DescriptionList.Item term="平均血氧">
+						<DescriptionList.Item
+							term={<StoryMetricLabel icon={Droplets}>平均血氧</StoryMetricLabel>}
+						>
 							{day.oxygen.mean.toFixed(1)}%
-							<Text as="span" size="xs" tone="muted">
-								{" "}
-								· {day.oxygen.samples} 次
-							</Text>
 						</DescriptionList.Item>
 					) : null}
 					{day.respiratory ? (
-						<DescriptionList.Item term="呼吸频率">
+						<DescriptionList.Item term={<StoryMetricLabel icon={Wind}>呼吸频率</StoryMetricLabel>}>
 							{day.respiratory.mean.toFixed(1)} 次/分
 						</DescriptionList.Item>
 					) : null}
 					{day.hrv ? (
-						<DescriptionList.Item term="心率变异性">
+						<DescriptionList.Item
+							term={<StoryMetricLabel icon={Activity}>心率变异性</StoryMetricLabel>}
+						>
 							{Math.round(day.hrv.mean)} ms
 						</DescriptionList.Item>
 					) : null}
 					{day.restingHeartRate !== null ? (
-						<DescriptionList.Item term="静息心率">
+						<DescriptionList.Item term={<StoryMetricLabel icon={Heart}>静息心率</StoryMetricLabel>}>
 							{Math.round(day.restingHeartRate)} bpm
 						</DescriptionList.Item>
 					) : null}
@@ -140,23 +188,18 @@ export function HealthDayCard({ story }: { story: HealthStory }) {
 export function HealthMomentCard({ moment }: { moment: HealthMoment }) {
 	return (
 		<article className="health-story-moment">
+			<StoryCardInfo
+				label={moment.title}
+				notes={moment.evidence.filter((item) => item !== moment.detail)}
+			/>
+			<StoryCardHeading icon={MOMENT_ICONS[moment.kind]} title={moment.title} as="h3" />
 			<time dateTime={moment.occurredAt}>
 				{clock(moment.occurredAt)}
 				{moment.kind === "heartPeak" ? " · 测量时刻" : " · 这一小时"}
 			</time>
-			<Text as="h3" variant="heading" size="sm">
-				{moment.title}
-			</Text>
 			<Text as="p" size="sm">
 				{moment.detail}
 			</Text>
-			<ul className="health-story-evidence">
-				{moment.evidence
-					.filter((item) => item !== moment.detail)
-					.map((item) => (
-						<li key={item}>{item}</li>
-					))}
-			</ul>
 		</article>
 	);
 }
@@ -165,21 +208,36 @@ export function WorkoutStoryCard({ group }: { group: WorkoutGroup }) {
 	const { canonical, duplicates } = group;
 	return (
 		<article className="health-story-workout">
-			<Text as="h3" variant="heading" size="sm">
-				{canonical.title}
-			</Text>
-			<Text as="p" size="sm" tone="muted">
-				{clock(canonical.startAt)}
-				{canonical.endAt ? `–${clock(canonical.endAt)}` : ""} · {canonical.sourceName}
-			</Text>
+			<StoryCardInfo
+				label={canonical.title}
+				notes={[
+					`来源：${canonical.sourceName}`,
+					...(duplicates.length
+						? [
+								`同时保留 ${duplicates.map((item) => item.sourceName).join("、")} 的原始记录，未把重叠运动相加`,
+							]
+						: []),
+				]}
+			/>
+			<StoryCardHeading
+				icon={WORKOUT_ICONS[canonical.activity.replace(/^HKWorkoutActivityType/, "")] ?? Dumbbell}
+				title={canonical.title}
+				as="h3"
+				subtitle={
+					<>
+						{clock(canonical.startAt)}
+						{canonical.endAt ? `–${clock(canonical.endAt)}` : ""}
+					</>
+				}
+			/>
 			<DescriptionList columns={2}>
-				<DescriptionList.Item term="时长">
+				<DescriptionList.Item term={<StoryMetricLabel icon={Timer}>时长</StoryMetricLabel>}>
 					{formatDurationMinutes(canonical.durationMinutes)}
 				</DescriptionList.Item>
-				<DescriptionList.Item term="距离">
+				<DescriptionList.Item term={<StoryMetricLabel icon={Route}>距离</StoryMetricLabel>}>
 					{canonical.distanceMeters === null ? "—" : `${Math.round(canonical.distanceMeters)} m`}
 				</DescriptionList.Item>
-				<DescriptionList.Item term="能量">
+				<DescriptionList.Item term={<StoryMetricLabel icon={Flame}>能量</StoryMetricLabel>}>
 					{canonical.energyKcal === null ? "—" : `${Math.round(canonical.energyKcal)} kcal`}
 				</DescriptionList.Item>
 			</DescriptionList>
@@ -190,17 +248,14 @@ export function WorkoutStoryCard({ group }: { group: WorkoutGroup }) {
 						.filter((item) => !/Distance|ActiveEnergyBurned/.test(item.type))
 						.map((item) => (
 							<li key={`${item.type}:${item.unit}`}>
-								{healthDimensionLabel(item.type)} {Number(item.value.toFixed(1))}{" "}
+								<StoryMetricLabel icon={/HeartRate/.test(item.type) ? HeartPulse : Activity}>
+									{healthDimensionLabel(item.type)}
+								</StoryMetricLabel>{" "}
+								{Number(item.value.toFixed(1))}{" "}
 								{item.unit === "count/min" && /HeartRate/.test(item.type) ? "bpm" : item.unit}
 							</li>
 						))}
 				</ul>
-			) : null}
-			{duplicates.length > 0 ? (
-				<p className="health-story-duplicates">
-					同时保留 {duplicates.map((item) => item.sourceName).join("、")}{" "}
-					的原始记录，未把重叠运动相加
-				</p>
 			) : null}
 		</article>
 	);
@@ -213,26 +268,26 @@ function pressureText(value: number | null): string {
 export function BloodPressureCard({ reading }: { reading: BloodPressureReading }) {
 	return (
 		<article className="health-story-moment">
+			<StoryCardInfo label="血压" notes={[`来源：${reading.sourceName}`, ...reading.evidence]} />
+			<StoryCardHeading icon={Gauge} title="血压" subtitle="一次血压测量" as="h3" />
 			<time dateTime={reading.occurredAt}>{clock(reading.occurredAt)}</time>
-			<Text as="h3" variant="heading" size="sm">
-				血压
-			</Text>
 			<dl className="health-pressure-reading">
 				<div>
-					<dt>收缩压</dt>
+					<dt>
+						<StoryMetricLabel icon={ArrowUp}>收缩压</StoryMetricLabel>
+					</dt>
 					<dd>{pressureText(reading.systolic)}</dd>
 				</div>
 
 				<div>
-					<dt>舒张压</dt>
+					<dt>
+						<StoryMetricLabel icon={ArrowDown}>舒张压</StoryMetricLabel>
+					</dt>
 					<dd>
 						{pressureText(reading.diastolic)} <span className="health-pressure-unit">mmHg</span>
 					</dd>
 				</div>
 			</dl>
-			<Text as="p" size="sm" tone="muted">
-				{reading.sourceName}
-			</Text>
 			{reading.systolic === null || reading.diastolic === null ? (
 				<Text as="p" size="sm" tone="muted">
 					此次只有单侧读数
@@ -331,19 +386,27 @@ export function EcgStoryCard({
 	const unit = ecg.unit?.trim() || "µV";
 	return (
 		<article className="health-story-moment">
+			<StoryCardInfo label="心电图" notes={ecg.evidence} />
+			<StoryCardHeading
+				icon={SquareActivity}
+				title="心电图"
+				subtitle="一次心电测量 · 原始波形"
+				as="h3"
+			/>
 			<time dateTime={ecg.occurredAt}>{clock(ecg.occurredAt)}</time>
-			<Text as="h3" variant="heading" size="sm">
-				心电图
-			</Text>
 			<DescriptionList columns={2}>
-				<DescriptionList.Item term="设备分类">{ecg.classificationLabel}</DescriptionList.Item>
-				<DescriptionList.Item term="平均心率">
+				<DescriptionList.Item term={<StoryMetricLabel icon={Watch}>设备分类</StoryMetricLabel>}>
+					{ecg.classificationLabel}
+				</DescriptionList.Item>
+				<DescriptionList.Item
+					term={<StoryMetricLabel icon={HeartPulse}>平均心率</StoryMetricLabel>}
+				>
 					{ecg.averageHeartRate ? `${ecg.averageHeartRate} bpm` : "未知"}
 				</DescriptionList.Item>
-				<DescriptionList.Item term="时长">
+				<DescriptionList.Item term={<StoryMetricLabel icon={Timer}>时长</StoryMetricLabel>}>
 					{ecg.durationSeconds ? `${ecg.durationSeconds} 秒` : "未知"}
 				</DescriptionList.Item>
-				<DescriptionList.Item term="采样">
+				<DescriptionList.Item term={<StoryMetricLabel icon={Activity}>采样</StoryMetricLabel>}>
 					{hz ? `${hz} Hz` : "未知"}
 					{ecg.sampleCount ? ` · ${ecg.sampleCount} 点` : ""}
 				</DescriptionList.Item>
@@ -362,6 +425,7 @@ export function EcgStoryCard({
 							disabled={slice.page <= 0}
 							onClick={() => setPage((current) => current - 1)}
 						>
+							<ChevronLeft size={14} aria-hidden="true" />
 							上一段
 						</Button>
 						<Text as="p" size="sm" tone="muted">
@@ -375,6 +439,7 @@ export function EcgStoryCard({
 							onClick={() => setPage((current) => current + 1)}
 						>
 							下一段
+							<ChevronRight size={14} aria-hidden="true" />
 						</Button>
 					</div>
 				</div>
@@ -383,11 +448,6 @@ export function EcgStoryCard({
 					{ecg.filePath ? "正在准备波形" : "没有波形附件"}
 				</Text>
 			)}
-			<ul className="health-story-evidence">
-				{ecg.evidence.map((item) => (
-					<li key={item}>{item}</li>
-				))}
-			</ul>
 		</article>
 	);
 }

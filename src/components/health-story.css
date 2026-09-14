@@ -3,15 +3,18 @@
 	gap: 28px;
 }
 
-.health-story-card .health-story-lede {
-	margin: 0;
+.health-story-moment > .story-card-heading,
+.health-sleep-place > .story-card-heading,
+.story-observation > .story-card-heading,
+.story-branch.story-sleep > .story-card-heading {
+	margin-bottom: 12px;
 }
 
 .health-story-times {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 20px 32px;
-	margin: 8px 0 0;
+	margin: 0 0 18px;
 }
 
 .health-story-times dt {
@@ -24,6 +27,7 @@
 	font-size: 22px;
 	font-weight: 560;
 	letter-spacing: -0.02em;
+	font-variant-numeric: tabular-nums;
 }
 
 .health-story-hypnogram {
@@ -87,7 +91,7 @@
 	display: block;
 	font-size: 12px;
 	color: hsl(var(--basalt-muted-foreground));
-	margin-bottom: 4px;
+	margin-bottom: 12px;
 }
 
 .health-story-workout {
@@ -95,21 +99,19 @@
 	gap: 10px;
 }
 
-.health-story-duplicates {
-	margin: 0;
-	font-size: 13px;
-	color: hsl(var(--basalt-muted-foreground));
-}
-
 .health-story-ecg-wrap {
 	margin-top: 12px;
+	padding: 10px;
+	border: 1px solid color-mix(in srgb, var(--story-color) 24%, hsl(var(--basalt-border)));
+	border-radius: var(--basalt-radius-widget);
+	background: hsl(var(--basalt-secondary) / 0.65);
 }
 
 .health-story-ecg {
 	display: block;
 	width: 100%;
 	height: 148px;
-	color: color-mix(in srgb, hsl(var(--basalt-chart-pink)) 65%, hsl(var(--basalt-foreground)));
+	color: color-mix(in srgb, hsl(var(--basalt-accent-3)) 55%, hsl(var(--basalt-foreground)));
 }
 
 .health-story-ecg-grid {

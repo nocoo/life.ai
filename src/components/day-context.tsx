@@ -1,9 +1,10 @@
 import { DescriptionList, LayerCard, Text } from "@nocoo/basalt";
 import { Banner } from "@nocoo/basalt/components/banner";
-import { CloudSun, Sunrise, Sunset } from "lucide-react";
+import { CloudRain, CloudSun, SunMoon, Sunrise, Sunset, Wind } from "lucide-react";
 import { weatherDescription } from "../models/day-context";
 import { type DayContextState, dayContextStore } from "../viewmodels/day-context-view-model";
 import { formatDurationMinutes } from "../viewmodels/format";
+import { StoryCardHeading, StoryMetricLabel } from "./story-card-heading";
 
 export function DayContextCard({
 	context,
@@ -17,14 +18,13 @@ export function DayContextCard({
 	const weather = context?.weather;
 	const sun = context?.sun;
 	return (
-		<LayerCard className="day-context-card">
+		<LayerCard className="day-context-card story-card">
 			<LayerCard.Header>
-				<Text as="h2" variant="heading" size="md">
-					天气与天光
-				</Text>
-				<Text as="p" size="sm" tone="muted">
-					{hasLocation ? reference : "需要当天的参考位置"}
-				</Text>
+				<StoryCardHeading
+					icon={SunMoon}
+					title="天气与天光"
+					subtitle={hasLocation ? reference : "需要当天的参考位置"}
+				/>
 			</LayerCard.Header>
 			{!hasLocation ? (
 				<LayerCard.Empty
@@ -51,12 +51,16 @@ export function DayContextCard({
 								</div>
 							</div>
 							<DescriptionList columns={2}>
-								<DescriptionList.Item term="全天降水">
+								<DescriptionList.Item
+									term={<StoryMetricLabel icon={CloudRain}>全天降水</StoryMetricLabel>}
+								>
 									{weather.precipitationMm === null
 										? "资料不足"
 										: `${weather.precipitationMm.toFixed(1)} mm`}
 								</DescriptionList.Item>
-								<DescriptionList.Item term="最大风速">
+								<DescriptionList.Item
+									term={<StoryMetricLabel icon={Wind}>最大风速</StoryMetricLabel>}
+								>
 									{weather.windMaxKmh === null
 										? "资料不足"
 										: `${weather.windMaxKmh.toFixed(1)} km/h`}
@@ -84,6 +88,7 @@ export function DayContextCard({
 									return (
 										<a
 											key={`${event.kind}:${event.occurredAt}`}
+											data-solar={event.kind}
 											href={`#life-hour-${event.hour}`}
 											aria-label={`${event.clock} ${event.label}，跳转至时间线`}
 										>

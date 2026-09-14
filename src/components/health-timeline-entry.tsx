@@ -7,7 +7,16 @@ import {
 	Text,
 } from "@nocoo/basalt";
 import { Banner } from "@nocoo/basalt/components/banner";
-import { HeartPulse, Moon, Stethoscope } from "lucide-react";
+import {
+	BellRing,
+	ClipboardList,
+	HeartPulse,
+	type LucideIcon,
+	MapPin,
+	MoonStar,
+	Ruler,
+	Scale,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "zustand";
 import { formatLocalClock } from "../viewmodels/format";
@@ -22,6 +31,21 @@ import {
 	SleepStoryCard,
 	WorkoutStoryCard,
 } from "./health-story";
+import { StoryCardHeading } from "./story-card-heading";
+import { StoryCardInfo } from "./story-card-info";
+
+const OBSERVATION_ICONS: Record<string, LucideIcon> = {
+	体重: Scale,
+	身体质量指数: Scale,
+	去脂体重: Scale,
+	身高: Ruler,
+	高心率提醒: HeartPulse,
+	低心率提醒: HeartPulse,
+	心律不齐提醒: HeartPulse,
+	心肺适能提醒: HeartPulse,
+	环境声音提醒: BellRing,
+	耳机声音提醒: BellRing,
+};
 
 function WorkoutEntry({
 	item,
@@ -112,11 +136,7 @@ function EcgEntry({ item }: { item: Extract<HealthTimelineItem, { kind: "ecg" }>
 		return () => store.getState().abort();
 	}, [path, store]);
 	return (
-		<LayerCard className="story-branch health-special-card">
-			<div className="story-branch-eyebrow">
-				<HeartPulse size={17} aria-hidden="true" />
-				<span>一次心电测量</span>
-			</div>
+		<LayerCard className="story-branch health-special-card story-ecg">
 			<EcgStoryCard
 				ecg={item.ecg}
 				waveform={state.waveform}
@@ -163,10 +183,8 @@ function SleepEntry({
 			<div className="story-lane story-lane-left">
 				<SleepStoryCard night={item.night} />
 				{item.location ? (
-					<LayerCard className="health-sleep-place">
-						<Text as="h3" variant="heading" size="sm">
-							{item.location.label}
-						</Text>
+					<LayerCard className="health-sleep-place story-card story-sleep">
+						<StoryCardHeading icon={MapPin} title={item.location.label} as="h3" />
 						<Text as="p" size="sm" tone="muted">
 							{item.location.detail}
 						</Text>
@@ -208,43 +226,51 @@ export function HealthTimelineEntry({
 				{item.kind === "ecg" ? (
 					<EcgEntry item={item} />
 				) : item.kind === "pressure" ? (
-					<LayerCard className="story-branch health-special-card">
-						<div className="story-branch-eyebrow">
-							<Stethoscope size={17} aria-hidden="true" />
-							<span>一次血压测量</span>
-						</div>
+					<LayerCard className="story-branch health-special-card story-pressure">
 						<BloodPressureCard reading={item.reading} />
 					</LayerCard>
 				) : item.kind === "moment" ? (
-					<LayerCard className="story-branch story-health">
+					<LayerCard
+						className={`story-branch story-${item.moment.kind === "heartPeak" ? "heart" : item.moment.kind}`}
+					>
 						<HealthMomentCard moment={item.moment} />
 					</LayerCard>
 				) : item.kind === "observation" ? (
-					<LayerCard className="story-branch story-health">
-						<time>{formatLocalClock(item.occurredAt, item.event.precision)}</time>
-						<Text as="h3" variant="heading" size="sm">
-							{item.title}
-						</Text>
-						<DescriptionList columns={2}>
-							{item.details.map((row) => (
-								<DescriptionList.Item key={row.term} term={row.term}>
-									{row.value}
-								</DescriptionList.Item>
-							))}
-						</DescriptionList>
+					<LayerCard className="story-branch story-observation">
+						<StoryCardInfo label={item.title} notes={item.notes} />
+						<StoryCardHeading
+							icon={OBSERVATION_ICONS[item.title] ?? ClipboardList}
+							title={item.title}
+							as="h3"
+							subtitle={
+								<time dateTime={item.occurredAt}>
+									{formatLocalClock(item.occurredAt, item.event.precision)}
+								</time>
+							}
+						/>
+						{item.details.length ? (
+							<DescriptionList columns={2}>
+								{item.details.map((row) => (
+									<DescriptionList.Item key={row.term} term={row.term}>
+										{row.value}
+									</DescriptionList.Item>
+								))}
+							</DescriptionList>
+						) : null}
 					</LayerCard>
 				) : (
 					<LayerCard className="story-branch story-sleep">
-						<div className="story-branch-eyebrow">
-							<Moon size={16} aria-hidden="true" />
-							<time>{formatLocalClock(item.occurredAt, "minute")}</time>
-						</div>
-						<Text as="h3" variant="heading" size="sm">
-							{item.title}
-						</Text>
-						<Text as="p" size="sm" tone="muted">
-							这一夜的睡眠分析会归到起床那天。
-						</Text>
+						<StoryCardInfo label={item.title} notes={["这一夜的睡眠分析会归到起床那天。"]} />
+						<StoryCardHeading
+							icon={MoonStar}
+							title={item.title}
+							as="h3"
+							subtitle={
+								<time dateTime={item.occurredAt}>
+									{formatLocalClock(item.occurredAt, "minute")}
+								</time>
+							}
+						/>
 					</LayerCard>
 				)}
 			</div>

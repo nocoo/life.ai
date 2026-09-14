@@ -7,6 +7,7 @@ import {
 	Text,
 } from "@nocoo/basalt";
 import { Banner } from "@nocoo/basalt/components/banner";
+import { Sparkles } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useStore } from "zustand";
 import type { DaySummaryQuery } from "../models/ai";
@@ -16,6 +17,7 @@ import {
 	splitSummaryParagraphs,
 } from "../viewmodels/day-summary-view-model";
 import { formatAbsoluteTime } from "../viewmodels/format";
+import { StoryCardHeading } from "./story-card-heading";
 
 export function DaySummaryCard({ query }: { query: DaySummaryQuery }) {
 	const navigate = useNavigate();
@@ -32,23 +34,20 @@ export function DaySummaryCard({ query }: { query: DaySummaryQuery }) {
 	const canGenerate = status === "ready" && configured && eventCount > 0 && !generating;
 	if (!sameSummaryQuery(activeQuery, query)) {
 		return (
-			<LayerCard className="story-summary">
+			<LayerCard className="story-summary story-card">
 				<LayerCard.Loading label="正在读取摘要" />
 			</LayerCard>
 		);
 	}
 
 	return (
-		<LayerCard className="story-summary">
+		<LayerCard className="story-summary story-card">
 			<LayerCard.Header>
-				<div className="space-y-1">
-					<Text as="h2" variant="heading" size="md">
-						当日摘要
-					</Text>
-					<Text as="p" size="sm" tone="muted">
-						使用当天全部来源生成，不受来源筛选影响。
-					</Text>
-				</div>
+				<StoryCardHeading
+					icon={Sparkles}
+					title="当日摘要"
+					subtitle="使用当天全部来源生成，不受来源筛选影响。"
+				/>
 			</LayerCard.Header>
 			<LayerCard.Body className="space-y-4">
 				{status === "loading" && !result ? <LayerCard.Loading label="正在读取摘要" /> : null}
@@ -132,6 +131,7 @@ export function DaySummaryCard({ query }: { query: DaySummaryQuery }) {
 						loading={generating}
 						disabled={!canGenerate}
 					>
+						<Sparkles size={14} strokeWidth={1.6} aria-hidden="true" />
 						{summary ? "重新生成" : "生成摘要"}
 					</Button>
 				</div>
