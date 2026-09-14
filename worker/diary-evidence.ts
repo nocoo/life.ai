@@ -13,6 +13,7 @@ import {
 	matchNamedPlace,
 	type NamedPlace,
 } from "../src/models/general-settings.js";
+import { GITHUB_ACTION_LABELS, githubActivitySchema } from "../src/models/github.js";
 import { buildGpsJourneys, TRAVEL_MODE_LABELS } from "../src/models/gps-journeys.js";
 import type { HealthStory } from "../src/models/health-insights.js";
 import { PIXIU_COLUMNS } from "../src/models/pixiu.js";
@@ -52,6 +53,18 @@ export function formatDaySourceEvidence(events: LifeEvent[], timeZone: string): 
 		if (article?.success)
 			return [
 				`- ${clock} 公开发表文章：${JSON.stringify({ title: event.title, summary: event.content, author: article.data.author, url: article.data.url })}`,
+			];
+		const github = event.sourceId === "github" ? githubActivitySchema.safeParse(event.data) : null;
+		if (github?.success)
+			return [
+				`- ${clock} GitHub ${GITHUB_ACTION_LABELS[github.data.action]}：${JSON.stringify({
+					account: github.data.account.login,
+					repository: github.data.repository,
+					title: event.title,
+					url: github.data.url,
+					number: github.data.number,
+					sha: github.data.sha,
+				})}。提交按作者时间；PR 属于该账号创建的 PR，合并或关闭不证明由本人操作，也不代表连续工作时长。`,
 			];
 		return [];
 	});

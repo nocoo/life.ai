@@ -41,26 +41,49 @@ beforeEach(() => {
 afterEach(() => store.getState().reset());
 
 describe("data source settings", () => {
+	it("keeps PAT drafts separate and queries the explicitly selected GitHub date", async () => {
+		await store.getState().load();
+		store.getState().setApiKey("gecko", "other-provider-draft");
+		store.getState().setApiKey("github", " fixture-credential ");
+		await store.getState().save("github", true);
+		expect(saveDaySourceSettings).toHaveBeenLastCalledWith("github", {
+			enabled: true,
+			apiKey: "fixture-credential",
+		});
+		expect(store.getState().apiKeys.github).toBe("");
+		expect(store.getState().apiKeys.gecko).toBe("other-provider-draft");
+		store.getState().setQueryDate("2026-09-10");
+		await store.getState().test("github");
+		expect(testDaySource).toHaveBeenLastCalledWith(
+			"github",
+			expect.objectContaining({ date: "2026-09-10" }),
+		);
+		store.getState().setQueryDate("invalid");
+		await store.getState().test("github");
+		expect(store.getState().error).not.toBeNull();
+		store.getState().clearSecrets();
+		expect(Object.values(store.getState().apiKeys).every((value) => value === "")).toBe(true);
+	});
 	it("loads saved status, saves a trimmed secret and clears only the saved provider's draft", async () => {
 		await store.getState().load();
 		expect(store.getState()).toMatchObject({ status: "ready", settings });
-		store.getState().setApiKey(" fixture-secret ");
+		store.getState().setApiKey("gecko", " fixture-secret ");
 		await store.getState().save("firefly", true);
 		expect(saveDaySourceSettings).toHaveBeenLastCalledWith("firefly", { enabled: true });
-		expect(store.getState().apiKey).toBe(" fixture-secret ");
+		expect(store.getState().apiKeys.gecko).toBe(" fixture-secret ");
 		await store.getState().remove("firefly");
-		expect(store.getState().apiKey).toBe(" fixture-secret ");
+		expect(store.getState().apiKeys.gecko).toBe(" fixture-secret ");
 		await store.getState().save("gecko", true);
 		expect(saveDaySourceSettings).toHaveBeenLastCalledWith("gecko", {
 			enabled: true,
 			apiKey: "fixture-secret",
 		});
-		expect(store.getState().apiKey).toBe("");
+		expect(store.getState().apiKeys.gecko).toBe("");
 		await store.getState().save("gecko", false);
 		expect(saveDaySourceSettings).toHaveBeenLastCalledWith("gecko", { enabled: false });
-		store.getState().setApiKey("discard");
+		store.getState().setApiKey("gecko", "discard");
 		await store.getState().remove("gecko");
-		expect(store.getState()).toMatchObject({ apiKey: "", settings: [], busy: null });
+		expect(store.getState()).toMatchObject({ apiKeys: { gecko: "" }, settings: [], busy: null });
 	});
 	it("tests today's validated local window with the saved configuration", async () => {
 		await store.getState().test("gecko");
@@ -74,7 +97,7 @@ describe("data source settings", () => {
 			}),
 		);
 		expect(store.getState().connection?.success).toBe(true);
-		store.getState().setApiKey("edited");
+		store.getState().setApiKey("gecko", "edited");
 		expect(store.getState().connection).toBeNull();
 	});
 	it("serializes actions and does not reload over an active save", async () => {
@@ -118,7 +141,7 @@ describe("data source settings", () => {
 		"preserves prior configuration when %s fails and ignores completion after reset",
 		async (method) => {
 			await store.getState().load();
-			store.getState().setApiKey("draft");
+			store.getState().setApiKey("gecko", "draft");
 			const mocked = vi.mocked(
 				method === "save"
 					? saveDaySourceSettings
@@ -134,7 +157,7 @@ describe("data source settings", () => {
 			await act();
 			expect(store.getState()).toMatchObject({
 				settings,
-				apiKey: "draft",
+				apiKeys: { gecko: "draft" },
 				error: "temporarily unavailable",
 				busy: null,
 			});
@@ -148,7 +171,7 @@ describe("data source settings", () => {
 				status: "idle",
 				error: null,
 				busy: null,
-				apiKey: "",
+				apiKeys: { gecko: "" },
 			});
 		},
 	);

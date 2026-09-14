@@ -14,6 +14,7 @@ A single person's life chronicle. Import records or receive hourly snapshots fro
 - Bottom sidebar settings, named map circles and personal sleep routines: [docs/24-general-settings.md](docs/24-general-settings.md).
 - Read-only Gecko/Firefly day sources, GPS movement/commute candidates and transient D1 recovery: [docs/25-day-sources-and-travel.md](docs/25-day-sources-and-travel.md).
 - Sleep-stage chart, stable sidebar identity and page-specific loading: [docs/26-sleep-chart-and-loading.md](docs/26-sleep-chart-and-loading.md).
+- Existing GitHub PAT settings, daily commits/PRs and permanent account/day caching: [docs/27-github.md](docs/27-github.md).
 - Daily card colors, icons, supporting information and compact all-day layout: [docs/18-daily-card-design.md](docs/18-daily-card-design.md).
 - Version: root `package.json`; show the same version in the sidebar and `/api/live`.
 - UI contract: installed `@nocoo/basalt/ai/RECIPES.md` and `../basalt/INTEGRATION.md`. Use the published package, its providers, application chrome and tokens.

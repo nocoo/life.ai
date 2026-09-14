@@ -16,13 +16,16 @@ import { type LoadStatus, toErrorMessage } from "./errors";
 
 interface DaySourcesSettingsState {
 	settings: DaySourceSettings[];
-	apiKey: string;
+	apiKeys: Record<DaySourceProvider, string>;
+	queryDate: string;
 	status: LoadStatus;
 	busy: DaySourceProvider | null;
 	error: string | null;
 	connection: DaySourceConnection | null;
 	load: () => Promise<void>;
-	setApiKey: (apiKey: string) => void;
+	setApiKey: (provider: DaySourceProvider, apiKey: string) => void;
+	setQueryDate: (date: string) => void;
+	clearSecrets: () => void;
 	save: (provider: DaySourceProvider, enabled: boolean) => Promise<void>;
 	remove: (provider: DaySourceProvider) => Promise<void>;
 	test: (provider: DaySourceProvider) => Promise<void>;
@@ -33,7 +36,8 @@ let controller: AbortController | null = null;
 let generation = 0;
 const initial = () => ({
 	settings: [] as DaySourceSettings[],
-	apiKey: "",
+	apiKeys: { gecko: "", firefly: "", github: "" },
+	queryDate: localDateKey(),
 	status: "idle" as LoadStatus,
 	busy: null,
 	error: null,
@@ -55,13 +59,19 @@ export const daySourcesSettingsStore = createStore<DaySourcesSettingsState>((set
 				set({ status: "error", error: toErrorMessage(error) });
 		}
 	},
-	setApiKey(apiKey) {
-		set({ apiKey, connection: null });
+	setApiKey(provider, apiKey) {
+		set({ apiKeys: { ...get().apiKeys, [provider]: apiKey }, connection: null });
+	},
+	setQueryDate(queryDate) {
+		set({ queryDate, connection: null });
+	},
+	clearSecrets() {
+		set({ apiKeys: { gecko: "", firefly: "", github: "" } });
 	},
 	async save(provider, enabled) {
 		if (get().busy) return;
 		const current = generation;
-		const apiKey = provider === "gecko" && enabled ? get().apiKey.trim() : "";
+		const apiKey = provider !== "firefly" && enabled ? get().apiKeys[provider].trim() : "";
 		set({ busy: provider, error: null, connection: null });
 		try {
 			const settings = await saveDaySourceSettings(provider, {
@@ -69,7 +79,7 @@ export const daySourcesSettingsStore = createStore<DaySourcesSettingsState>((set
 				...(apiKey ? { apiKey } : {}),
 			});
 			if (current === generation)
-				set({ settings, apiKey: provider === "gecko" ? "" : get().apiKey, status: "ready" });
+				set({ settings, apiKeys: { ...get().apiKeys, [provider]: "" }, status: "ready" });
 		} catch (error) {
 			if (current === generation) set({ error: toErrorMessage(error) });
 		} finally {
@@ -82,8 +92,7 @@ export const daySourcesSettingsStore = createStore<DaySourcesSettingsState>((set
 		set({ busy: provider, error: null, connection: null });
 		try {
 			const settings = await removeDaySource(provider);
-			if (current === generation)
-				set({ settings, apiKey: provider === "gecko" ? "" : get().apiKey });
+			if (current === generation) set({ settings, apiKeys: { ...get().apiKeys, [provider]: "" } });
 		} catch (error) {
 			if (current === generation) set({ error: toErrorMessage(error) });
 		} finally {
@@ -94,7 +103,7 @@ export const daySourcesSettingsStore = createStore<DaySourcesSettingsState>((set
 		if (get().busy) return;
 		const current = generation;
 		set({ busy: provider, connection: null, error: null });
-		const date = localDateKey();
+		const date = provider === "github" ? get().queryDate : localDateKey();
 		try {
 			const connection = await testDaySource(provider, {
 				date,

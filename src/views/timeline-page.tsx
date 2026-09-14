@@ -268,6 +268,12 @@ export function TimelinePage() {
 								context={sameDayContext(context.query, contextQuery) ? context : null}
 								insights={insights}
 								health={health}
+								githubEmpty={
+									daySourcesStatus === "ready" &&
+									!daySourcesError &&
+									(sourceId === ALL_SOURCES || sourceId === "github") &&
+									sources.some((source) => source.id === "github" && source.recordCount === 0)
+								}
 							/>
 						) : null}
 					</TabsContent>

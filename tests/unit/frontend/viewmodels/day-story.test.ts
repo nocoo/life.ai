@@ -66,13 +66,27 @@ describe("storyKind classification", () => {
 					author: "作者",
 				},
 			}),
+			makeEvent({
+				sourceId: "github",
+				sourceKind: "external",
+				data: {
+					type: "github-activity",
+					account: { id: 7, login: "fixture" },
+					repository: "fixture/app",
+					url: "https://github.com/fixture/app/pull/1",
+					action: "opened",
+					number: 1,
+					state: "open",
+				},
+			}),
 		];
 		const timeline = buildDayTimeline("2026-09-13", events);
 		const story = buildDayStory(timeline, buildDayInsights(events, timeline));
 		const branches = story.hours.flatMap((hour) => hour.branches);
-		expect(branches.map((branch) => branch.kind)).toEqual(["computer", "article"]);
+		expect(branches.map((branch) => branch.kind)).toEqual(["computer", "article", "github"]);
 		expect(branches[0]?.computer?.apps[0]?.name).toBe("Editor");
 		expect(branches[1]?.article?.author).toBe("作者");
+		expect(branches[2]?.github?.repository).toBe("fixture/app");
 	});
 	it("anchors cross-hour movement once with a continuation and keeps each map inside its hour", () => {
 		const events = Array.from({ length: 11 }, (_, i) =>

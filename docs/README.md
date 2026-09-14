@@ -29,3 +29,6 @@
 | [22 貔貅完整导入](22-pixiu-daily-import.md) | 日包存储、全天账目、网页/CLI 导入与生产核验 |
 | [23 日记评测](23-diary-eval.md) | 消费备注、跨源场景、反事实对照、盲评与复现方式 |
 | [24 通用设置](24-general-settings.md) | 地图命名范围、个人作息、侧栏设置分区、日记背景与验证 |
+| [25 数据源与出行](25-day-sources-and-travel.md) | Gecko、Firefly、出行、通勤候选与 D1 重试 |
+| [26 睡眠图与加载](26-sleep-chart-and-loading.md) | 睡眠阶段、稳定侧栏身份与页面骨架屏 |
+| [27 GitHub 按日记录](27-github.md) | 已有 PAT、提交/PR 卡片、账号日缓存与 2.0.0 发布 |

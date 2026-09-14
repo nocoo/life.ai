@@ -3,14 +3,15 @@ import type { DaySummaryQuery } from "./ai";
 import { unionMinutes } from "./day-insights";
 import type { LifeEvent } from "./types";
 
-export const DAY_SOURCE_PROVIDERS = ["gecko", "firefly"] as const;
+export const DAY_SOURCE_PROVIDERS = ["gecko", "firefly", "github"] as const;
 export type DaySourceProvider = (typeof DAY_SOURCE_PROVIDERS)[number];
-export const DAY_SOURCE_NAMES = { gecko: "Gecko", firefly: "Firefly" } as const;
+export const DAY_SOURCE_NAMES = { gecko: "Gecko", firefly: "Firefly", github: "GitHub" } as const;
 
 export interface DaySourceSettings {
 	provider: DaySourceProvider;
 	enabled: boolean;
 	hasApiKey: boolean;
+	account?: { id: number; login: string };
 }
 export interface DaySourceInput {
 	enabled: boolean;

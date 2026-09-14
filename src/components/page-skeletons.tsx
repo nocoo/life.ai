@@ -131,6 +131,10 @@ export function DaySourcesSkeleton() {
 				</Text>
 				<SkeletonLine minWidth={100} className="h-9 max-w-28 rounded-md" />
 			</SkeletonCard>
+			<SkeletonCard title="GitHub">
+				<TextLines />
+				<FormSkeleton fields={["GitHub PAT", "查询日期"]} />
+			</SkeletonCard>
 		</LoadingRegion>
 	);
 }

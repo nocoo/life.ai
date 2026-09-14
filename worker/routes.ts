@@ -568,7 +568,9 @@ export async function handleGetLive(env: WorkerEnv, version: string): Promise<Re
 	let httpStatus = 200;
 
 	try {
-		const testQuery = await env.DB.prepare("SELECT 1 as alive").first<{ alive: number }>();
+		const testQuery = await withD1Retry(() =>
+			env.DB.prepare("SELECT 1 as alive").first<{ alive: number }>(),
+		);
 		if (testQuery?.alive !== 1) {
 			dbStatus = "error";
 			httpStatus = 503;

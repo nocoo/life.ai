@@ -18,6 +18,7 @@ import { shiftLocalDate } from "../src/models/time.js";
 import type { LifeEvent } from "../src/models/types.js";
 import { decryptApiKey, encryptApiKey } from "./ai.js";
 import { withD1Retry } from "./database.js";
+import { fetchGitHubAccount, readGitHubDay } from "./github.js";
 import { ApiError, type WorkerEnv } from "./types.js";
 import { jsonResponse, readJsonBody } from "./utils.js";
 
@@ -26,11 +27,13 @@ const FIREFLY_ENDPOINT = "https://lizheng.blog/api/posts";
 const MAX_BODY_BYTES = 4 * 1024 * 1024;
 const FIREFLY_PAGE_SIZE = 20;
 
-interface SettingsRow {
+export interface SettingsRow {
 	provider: DaySourceProvider;
 	enabled: number;
 	encrypted_api_key: string | null;
 	updated_at: number;
+	account_id: number | null;
+	account_login: string | null;
 }
 interface CacheRow {
 	data_json: string;
@@ -41,7 +44,7 @@ export async function readDaySourceSettings(env: WorkerEnv): Promise<SettingsRow
 	return (
 		await withD1Retry(() =>
 			env.DB.prepare(
-				"SELECT provider, enabled, encrypted_api_key, updated_at FROM day_source_settings ORDER BY provider",
+				"SELECT provider, enabled, encrypted_api_key, updated_at, account_id, account_login FROM day_source_settings ORDER BY provider",
 			).all<SettingsRow>(),
 		)
 	).results;
@@ -50,7 +53,14 @@ export async function readDaySourceSettings(env: WorkerEnv): Promise<SettingsRow
 function publicSettings(rows: SettingsRow[]): DaySourceSettings[] {
 	return DAY_SOURCE_PROVIDERS.map((provider) => {
 		const row = rows.find((item) => item.provider === provider);
-		return { provider, enabled: row?.enabled === 1, hasApiKey: Boolean(row?.encrypted_api_key) };
+		return {
+			provider,
+			enabled: row?.enabled === 1,
+			hasApiKey: Boolean(row?.encrypted_api_key),
+			...(provider === "github" && row?.account_id && row.account_login
+				? { account: { id: row.account_id, login: row.account_login } }
+				: {}),
+		};
 	});
 }
 
@@ -193,6 +203,8 @@ async function readProvider(
 	let cachedEvents: LifeEvent[] = [];
 	let hasCache = false;
 	try {
+		if (provider === "github")
+			return await readGitHubDay(env, row, query, mode === "cached-only", signal);
 		const cached = await withD1Retry(() =>
 			env.DB.prepare(
 				"SELECT data_json, fetched_at FROM day_source_cache WHERE provider = ? AND date = ? AND timezone = ? AND start_at = ? AND end_at = ? AND source_version = ?",
@@ -276,7 +288,9 @@ export async function readDaySources(
 			.flatMap((result) => result.events)
 			.sort((a, b) => a.occurredAt.localeCompare(b.occurredAt) || a.id.localeCompare(b.id)),
 		sources: results.map((result) => result.status),
-		configuration: JSON.stringify(rows.map((row) => row.provider)),
+		configuration: JSON.stringify(
+			rows.map((row) => (row.provider === "github" ? `github:${row.account_id}` : row.provider)),
+		),
 	};
 }
 
@@ -373,6 +387,8 @@ export async function handleDaySourceSettings(
 		throw new ApiError(400, "invalid_settings", "Firefly 是公开数据源，无须密钥。");
 	const previous = (await readDaySourceSettings(env)).find((row) => row.provider === provider);
 	let encrypted = previous?.encrypted_api_key ?? null;
+	let accountId = previous?.account_id ?? null;
+	let accountLogin = previous?.account_login ?? null;
 	if (provider === "gecko" && apiKey) {
 		if (!/^gk_[a-f\d]{64}$/i.test(apiKey))
 			throw new ApiError(400, "invalid_settings", "请填写有效的 Gecko API Key。");
@@ -382,13 +398,25 @@ export async function handleDaySourceSettings(
 	}
 	if (provider === "gecko" && enabled && !encrypted)
 		throw new ApiError(400, "invalid_settings", "请先填写 Gecko API Key。");
+	if (provider === "github" && apiKey) {
+		if (!env.AI_SETTINGS_KEY)
+			throw new ApiError(503, "source_key_unavailable", "密钥存储暂不可用，请稍后重试。");
+		const account = await fetchGitHubAccount(apiKey, request.signal);
+		encrypted = await encryptApiKey(apiKey, env.AI_SETTINGS_KEY);
+		accountId = account.id;
+		accountLogin = account.login;
+	}
+	if (provider === "github" && enabled && (!encrypted || !accountId || !accountLogin))
+		throw new ApiError(400, "invalid_settings", "请先填写 GitHub PAT。");
 	await env.DB.batch([
-		env.DB.prepare(`INSERT INTO day_source_settings (provider, enabled, encrypted_api_key, updated_at) VALUES (?, ?, ?, ?)
-			ON CONFLICT(provider) DO UPDATE SET enabled = excluded.enabled, encrypted_api_key = excluded.encrypted_api_key, updated_at = MAX(excluded.updated_at, day_source_settings.updated_at + 1)`).bind(
+		env.DB.prepare(`INSERT INTO day_source_settings (provider, enabled, encrypted_api_key, updated_at, account_id, account_login) VALUES (?, ?, ?, ?, ?, ?)
+			ON CONFLICT(provider) DO UPDATE SET enabled = excluded.enabled, encrypted_api_key = excluded.encrypted_api_key, account_id = excluded.account_id, account_login = excluded.account_login, updated_at = MAX(excluded.updated_at, day_source_settings.updated_at + 1)`).bind(
 			provider,
 			enabled ? 1 : 0,
 			encrypted,
 			Date.now(),
+			accountId,
+			accountLogin,
 		),
 		env.DB.prepare("DELETE FROM day_source_cache WHERE provider = ?").bind(provider),
 	]);

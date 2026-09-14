@@ -39,6 +39,8 @@ bun run data:import --provider pixiu --file /path/to/貔貅记账 --target produ
 
 在「Connect」为数据来源命名并创建只写 token。明文只显示一次，保存在自己的推送端。同一个 token 在同一 UTC 小时的后续请求会替换该小时的标题、内容和数据，也支持未来的小时。撤销 token 不会删除历史记录。
 
+「设置 → 数据源」可以连接 Gecko 电脑活动、Firefly 公开文章和 GitHub。GitHub 填写已有 PAT 后自动识别账号，可按指定日期查询提交与 PR 动作；时间线卡片显示仓库、标题、原文链接和 PR 状态。同一账号在相同日期/时区首次查询的完整结果（包括空日）永久缓存到 D1，不重复请求；提交范围为 GitHub 搜索收录的默认分支。PAT 加密保存，保存后不回显。详见 [GitHub 按日记录](docs/27-github.md)。
+
 ## 本地开发
 
 需要 Bun 1.4 与 Node.js 22.20+。

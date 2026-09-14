@@ -14,6 +14,7 @@ import {
 } from "../models/day-sources";
 import { buildFinanceDay, type FinanceDay } from "../models/finance";
 import type { NamedPlace } from "../models/general-settings";
+import { type GitHubActivity, githubActivitySchema } from "../models/github";
 import { buildGpsJourneys, type GpsJourney, TRAVEL_MODE_LABELS } from "../models/gps-journeys";
 import type { DayTimeline, HourSlot, JsonValue, LifeEvent } from "../models/types";
 import type { SolarMoment } from "./day-context-view-model";
@@ -29,7 +30,8 @@ export type StoryKind =
 	| "note"
 	| "connect"
 	| "computer"
-	| "article";
+	| "article"
+	| "github";
 
 export interface StoryMetric {
 	label: string;
@@ -50,6 +52,7 @@ export interface StoryBranch {
 	fromPreviousDay: boolean;
 	computer?: ComputerActivity;
 	article?: PublishedArticle;
+	github?: GitHubActivity;
 }
 
 export interface StoryContinuation {
@@ -155,6 +158,7 @@ export function storyKind(event: LifeEvent): StoryKind {
 	const data = dataObject(event.data);
 	if (event.sourceId === "gecko" && data.type === "computer-activity") return "computer";
 	if (event.sourceId === "firefly" && data.type === "published-article") return "article";
+	if (event.sourceId === "github" && data.type === "github-activity") return "github";
 	if (typeof data.workoutActivityType === "string") return "workout";
 	if (typeof data.type === "string" && data.type.endsWith("SleepAnalysis")) return "sleep";
 	if (event.sourceId === "pixiu") return "money";
@@ -265,6 +269,7 @@ function groupBranches(events: LifeEvent[], timeline: DayTimeline): StoryBranch[
 		const insights = buildDayInsights(records, timeline);
 		const computer = kind === "computer" ? computerActivitySchema.safeParse(event.data) : null;
 		const article = kind === "article" ? publishedArticleSchema.safeParse(event.data) : null;
+		const github = kind === "github" ? githubActivitySchema.safeParse(event.data) : null;
 		let title = event.title;
 		let metrics: StoryMetric[] = [];
 		if (kind === "health" || kind === "sleep") {
@@ -315,6 +320,7 @@ function groupBranches(events: LifeEvent[], timeline: DayTimeline): StoryBranch[
 			fromPreviousDay: event.precision !== "day" && event.occurredAt < timeline.start,
 			...(computer?.success ? { computer: computer.data } : {}),
 			...(article?.success ? { article: article.data } : {}),
+			...(github?.success ? { github: github.data } : {}),
 		};
 	});
 }

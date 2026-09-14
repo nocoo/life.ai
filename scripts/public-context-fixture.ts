@@ -1,4 +1,5 @@
 import type { Plugin } from "vite";
+import { githubFixtureResponse } from "../tests/github-fixture";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -11,6 +12,11 @@ export function isolatedPublicContext(origin: string): Plugin {
 		name: "life-isolated-public-context",
 		enforce: "pre",
 		transform(code, id) {
+			if (id.split("?")[0]?.endsWith("/worker/github.ts")) {
+				if (!code.includes("https://api.github.com"))
+					throw new Error("Missing isolated GitHub upstream");
+				return { code: code.replaceAll("https://api.github.com", `${origin}/github`), map: null };
+			}
 			if (id.split("?")[0]?.endsWith("/worker/day-sources.ts")) {
 				for (const [upstream, path] of [
 					["https://gecko.hexly.ai/api/v1/snapshot", "/gecko"],
@@ -55,6 +61,8 @@ export function startPublicContextFixture() {
 			const url = new URL(request.url);
 			if (url.pathname === "/requests") return Response.json(requests);
 			requests.push({ path: url.pathname, query: url.search });
+			if (url.pathname.startsWith("/github/"))
+				return githubFixtureResponse(url, request.headers.get("Authorization"));
 			if (url.pathname === "/gecko") {
 				if (request.headers.get("Authorization") !== `Bearer gk_${"a".repeat(64)}`)
 					return Response.json({ error: "invalid fixture key" }, { status: 401 });

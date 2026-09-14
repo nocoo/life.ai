@@ -1,15 +1,81 @@
 import AxeBuilder from "@axe-core/playwright";
+import { githubFixtureKey } from "../github-fixture";
 import { expect, test } from "./public-context-fixture";
 
 const key = `gk_${"a".repeat(64)}`;
 test.beforeEach(async ({ request }) => {
-	for (const provider of ["gecko", "firefly"])
+	for (const provider of ["gecko", "firefly", "github"])
 		expect((await request.delete(`/api/settings/sources/${provider}`)).ok()).toBe(true);
 });
 test.afterEach(async ({ request }) => {
-	for (const provider of ["gecko", "firefly"])
+	for (const provider of ["gecko", "firefly", "github"])
 		await request.delete(`/api/settings/sources/${provider}`);
 	await request.put("/api/settings/general", { data: { places: [], routine: null } });
+});
+
+test("GitHub settings accept a PAT, query a selected date, and display cached commits and PRs in both themes", async ({
+	page,
+	request,
+}) => {
+	const errors: string[] = [];
+	page.on("pageerror", (error) => errors.push(error.message));
+	await page.goto("/settings/sources");
+	const github = page.locator('[data-day-source="github"]');
+	await expect(github.getByRole("button", { name: "添加 GitHub", exact: true })).toBeDisabled();
+	await github.getByLabel("GitHub PAT", { exact: true }).fill(githubFixtureKey);
+	await expect(github.getByLabel("GitHub PAT", { exact: true })).toHaveAttribute(
+		"type",
+		"password",
+	);
+	await github.getByRole("button", { name: "添加 GitHub", exact: true }).click();
+	await expect(github.getByLabel("GitHub PAT", { exact: true })).toHaveValue("");
+	await expect(github.getByText("已连接 @life-fixture")).toBeVisible();
+	await github.getByLabel("GitHub 查询日期").fill("2026-09-10");
+	await github.getByRole("button", { name: "查询当天", exact: true }).click();
+	await expect(page.getByText("GitHub 查询完成", { exact: true })).toBeVisible();
+	await expect(
+		page.getByText("2026-09-10：5 条 Commit / PR 活动。", { exact: true }),
+	).toBeVisible();
+	expect(await (await request.get("/api/settings/sources")).text()).not.toContain(githubFixtureKey);
+	await github.getByRole("link", { name: "查看当天 GitHub 卡片" }).click();
+	const cards = page.locator('[data-story-kind="github"]');
+	await expect(cards).toHaveCount(5);
+	const commit = cards.filter({ hasText: "GitHub · Commit" });
+	await expect(commit).toContainText("🐙");
+	await expect(commit).toContainText("09:02:03");
+	await expect(commit).toContainText("life-fixture/app");
+	await expect(commit.getByRole("link")).toHaveAttribute(
+		"href",
+		/github\.com\/life-fixture\/app\/commit\//,
+	);
+	await expect(cards.filter({ hasText: "GitHub · 合并 PR" })).toContainText("12:00:00");
+	await expect(cards.filter({ hasText: "GitHub · 关闭 PR" })).toContainText("13:00:00");
+	for (const theme of ["light", "dark"]) {
+		await page.evaluate((value) => {
+			localStorage.setItem("theme", value);
+		}, theme);
+		await page.reload();
+		await expect(cards).toHaveCount(5);
+		await expect(commit).toHaveCSS("--story-color", theme === "dark" ? "#f0f6fc" : "#24292f");
+		const merged = cards.locator('[data-state="merged"]').first();
+		await expect(merged).toHaveCSS(
+			"color",
+			theme === "dark" ? "rgb(163, 113, 247)" : "rgb(130, 80, 223)",
+		);
+		const accessibility = await new AxeBuilder({ page })
+			.include('[data-story-kind="github"]')
+			.withTags(["wcag2a", "wcag2aa"])
+			.analyze();
+		expect(accessibility.violations).toEqual([]);
+	}
+	await page.setViewportSize({ width: 390, height: 844 });
+	await expect(commit.locator("..")).toHaveClass(/story-lane-both/);
+	await commit.scrollIntoViewIfNeeded();
+	expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+	await page.goto("/?day=2026-09-11");
+	await expect(page.locator("[data-github-empty]")).toContainText("当天没有 Commits 或 PR 活动。");
+	await expect(cards).toHaveCount(0);
+	expect(errors).toEqual([]);
 });
 
 test("settings add both sources, test saved connections and erase Gecko's saved key", async ({

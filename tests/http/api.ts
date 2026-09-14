@@ -38,6 +38,7 @@ import type {
 import { createHealthClient, uploadHealthPlan } from "../../src/services/health-client";
 import { fetchHealthAttachment } from "../../src/services/health-evidence";
 import { createPixiuClient, uploadPixiuPlan } from "../../src/services/pixiu-client";
+import { githubFixtureAccount, githubFixtureKey, githubFixtureQuery } from "../github-fixture";
 import { healthFixtureDays, syntheticHealthPlan } from "../health-fixture";
 
 const base = process.env.LIFE_TEST_URL;
@@ -1573,6 +1574,89 @@ await scenario(
 			results: { n: number }[];
 		}[];
 		assert.equal(rows[0]?.results[0]?.n, 0);
+	},
+);
+
+await scenario(
+	"GitHub authenticates PAT settings and persists complete account/day snapshots without repeat upstream requests",
+	async () => {
+		const root = "/api/settings/sources/github";
+		const fixture = process.env.LIFE_TEST_CONTEXT_URL;
+		assert(fixture && new URL(fixture).hostname === "127.0.0.1");
+		const upstreamCalls = async () =>
+			((await (await fetch(`${fixture}/requests`)).json()) as { path: string }[]).filter((item) =>
+				item.path.startsWith("/github/"),
+			).length;
+		for (const [endpoint, method] of [
+			[root, "PUT"],
+			[root, "DELETE"],
+			[`${root}/test`, "POST"],
+		] as const) {
+			await rejected(await request(endpoint, { method, token: null }), 401);
+			await rejected(await request(endpoint, { method, host: "life.worker.hexly.ai" }), 404);
+		}
+		await rejected(
+			await request(root, {
+				method: "PUT",
+				origin: "https://foreign.test",
+				body: { enabled: true, apiKey: githubFixtureKey },
+			}),
+			403,
+		);
+		await rejected(await request(root, { method: "PUT", body: { enabled: true } }), 400);
+		const saved = await data<DaySourceSettings[]>(
+			await request(root, { method: "PUT", body: { enabled: true, apiKey: githubFixtureKey } }),
+		);
+		assert.deepEqual(
+			saved.find((item) => item.provider === "github")?.account,
+			githubFixtureAccount,
+		);
+		assert(!JSON.stringify(saved).includes(githubFixtureKey));
+		const path = `/api/day-sources?${new URLSearchParams(githubFixtureQuery)}`;
+		const before = await upstreamCalls();
+		const [first, second] = await Promise.all(
+			[1, 2].map(async () => data<DaySourcesResult>(await request(path))),
+		);
+		assert(first && second);
+		assert.equal(first.events.length, 5);
+		assert.deepEqual(second, first);
+		assert.equal((await upstreamCalls()) - before, 3);
+		const cachedCalls = await upstreamCalls();
+		const connection = await data<DaySourceConnection>(
+			await request(`${root}/test`, { method: "POST", body: githubFixtureQuery }),
+		);
+		assert(connection.success);
+		assert.equal(connection.eventCount, 5);
+		assert.deepEqual(await data(await request(path)), first);
+		assert.equal(await upstreamCalls(), cachedCalls);
+		await data(await request(root, { method: "PUT", body: { enabled: false } }));
+		await data(await request(root, { method: "PUT", body: { enabled: true } }));
+		assert.deepEqual(await data(await request(path)), first);
+		assert.equal(await upstreamCalls(), cachedCalls);
+		const emptyQuery = {
+			...githubFixtureQuery,
+			date: "2026-09-11",
+			start: githubFixtureQuery.end,
+			end: "2026-09-11T16:00:00.000Z",
+		};
+		const emptyPath = `/api/day-sources?${new URLSearchParams(emptyQuery)}`;
+		const empty = await data<DaySourcesResult>(await request(emptyPath));
+		assert.equal(empty.events.length, 0);
+		assert.equal(empty.sources[0]?.state, "ready");
+		const afterEmpty = await upstreamCalls();
+		assert.deepEqual(await data(await request(emptyPath)), empty);
+		assert.equal(await upstreamCalls(), afterEmpty);
+		await data(await request(root, { method: "DELETE" }));
+		assert(
+			!(await data<DaySourceSettings[]>(await request("/api/settings/sources"))).find(
+				(item) => item.provider === "github",
+			)?.hasApiKey,
+		);
+		const cache = (await executeLocalSql(
+			state,
+			"SELECT COUNT(*) AS n FROM github_day_cache WHERE data_json IS NOT NULL;",
+		)) as { results: { n: number }[] }[];
+		assert.equal(cache[0]?.results[0]?.n, 2);
 	},
 );
 

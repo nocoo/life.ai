@@ -128,6 +128,7 @@ describe("private source settings and isolated reads", () => {
 			data: [
 				{ provider: "gecko", enabled: false, hasApiKey: false },
 				{ provider: "firefly", enabled: false, hasApiKey: false },
+				{ provider: "github", enabled: false, hasApiKey: false },
 			],
 		});
 		const response = await settings(env, "gecko", "PUT", { enabled: true, apiKey: key });

@@ -1,11 +1,27 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { withD1Retry } from "../../worker/database";
 import { readGeneralSettings } from "../../worker/general-settings";
+import { handleGetLive } from "../../worker/routes";
 import { sqliteD1 } from "../helpers/sqlite-d1";
 
 afterEach(() => vi.useRealTimers());
 
 describe("transient database connections", () => {
+	it("recovers the health check through the same bounded read retry", async () => {
+		vi.useFakeTimers();
+		vi.spyOn(console, "warn").mockImplementation(() => {});
+		const { env, sqlite } = sqliteD1();
+		vi.spyOn(env.DB, "prepare").mockImplementationOnce(() => {
+			throw new Error("Network connection lost.");
+		});
+		try {
+			const response = handleGetLive(env, "2.0.0");
+			await vi.runAllTimersAsync();
+			expect(await (await response).json()).toMatchObject({ status: "ok", database: "ok" });
+		} finally {
+			sqlite.close();
+		}
+	});
 	it("recovers the shared settings read after a remote binding disconnect", async () => {
 		vi.useFakeTimers();
 		vi.spyOn(console, "warn").mockImplementation(() => {});

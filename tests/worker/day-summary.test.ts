@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DaySummaryQuery, DaySummaryResult } from "../../src/models/ai.js";
@@ -65,15 +65,9 @@ function setup() {
 	sqlite.exec(
 		"CREATE TABLE _test_marker (key TEXT PRIMARY KEY, value TEXT); INSERT INTO _test_marker VALUES ('env', 'test');",
 	);
-	for (const name of [
-		"0001_initial.sql",
-		"0002_daily_ai.sql",
-		"0003_provider_days.sql",
-		"0004_apple_health.sql",
-		"0005_public_context.sql",
-		"0006_general_settings.sql",
-		"0007_day_sources.sql",
-	])
+	for (const name of readdirSync(new URL("../../worker/migrations/", import.meta.url))
+		.filter((name) => name.endsWith(".sql"))
+		.sort())
 		sqlite.exec(readFileSync(new URL(`../../worker/migrations/${name}`, import.meta.url), "utf8"));
 	const prepare = vi.fn((sql: string) => {
 		const statement = sqlite.prepare(sql);
@@ -299,7 +293,11 @@ describe("diary data sources and movement", () => {
 			},
 		];
 		for (const event of events) {
-			sqlite.prepare("INSERT INTO day_source_settings VALUES (?, 1, NULL, 1)").run(event.sourceId);
+			sqlite
+				.prepare(
+					"INSERT INTO day_source_settings (provider, enabled, encrypted_api_key, updated_at) VALUES (?, 1, NULL, 1)",
+				)
+				.run(event.sourceId);
 			sqlite
 				.prepare("INSERT INTO day_source_cache VALUES (?, ?, ?, ?, ?, 1, ?, ?)")
 				.run(

@@ -18,6 +18,7 @@ import {
 	CalendarClock,
 	CalendarDays,
 	Footprints,
+	GitCommitHorizontal,
 	Leaf,
 	MapPin,
 	Moon,
@@ -78,6 +79,7 @@ const BRANCH_ICONS = {
 	connect: Plug,
 	computer: Plug,
 	article: BookOpen,
+	github: GitCommitHorizontal,
 } satisfies Record<StoryKind, typeof Moon>;
 
 const BRANCH_LABELS: Record<StoryKind, string> = {
@@ -90,6 +92,7 @@ const BRANCH_LABELS: Record<StoryKind, string> = {
 	connect: "连接记录",
 	computer: "电脑活动",
 	article: "发表文章",
+	github: "GitHub",
 };
 
 function StoryBranchView({
@@ -101,7 +104,8 @@ function StoryBranchView({
 	onOpenMap: (branch: StoryBranch) => void;
 	embedded?: boolean;
 }) {
-	if (branch.computer || branch.article) return <SourceStoryCard branch={branch} />;
+	if (branch.computer || branch.article || branch.github)
+		return <SourceStoryCard branch={branch} />;
 	const Icon = BRANCH_ICONS[branch.kind];
 	const grouped = branch.kind === "sleep" || branch.kind === "health" || branch.kind === "journey";
 	const source = branch.events[0];
@@ -364,6 +368,7 @@ export function DayTimelineView({
 	context,
 	mapMode,
 	health,
+	githubEmpty = false,
 }: {
 	timeline: DayTimeline;
 	story: DayStory;
@@ -371,6 +376,7 @@ export function DayTimelineView({
 	context: DayContextState | null;
 	mapMode: TimelineMapMode;
 	health?: HealthStory | null;
+	githubEmpty?: boolean;
 }) {
 	const [mapDetail, setMapDetail] = useState<StoryBranch | null>(null);
 	const stacked = useIsMobile() === true;
@@ -493,6 +499,19 @@ export function DayTimelineView({
 						</div>
 					) : null}
 					<DayInsightsCard insights={insights} />
+					{githubEmpty ? (
+						<LayerCard className="story-card story-github" data-github-empty="">
+							<LayerCard.Header>
+								<Text as="h3" variant="heading" size="md">
+									<span aria-hidden="true">🐙</span> GitHub
+								</Text>
+							</LayerCard.Header>
+							<LayerCard.Body>
+								<p className="text-sm">当天没有 Commits 或 PR 活动。</p>
+								<p className="day-meta-caption">已保存首次查询结果。</p>
+							</LayerCard.Body>
+						</LayerCard>
+					) : null}
 					<FinanceDayCard finance={story.finance} />
 					{health ? <HealthDayCard story={health} /> : null}
 					{story.allDay.length > 0 ? (

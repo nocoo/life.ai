@@ -541,6 +541,60 @@
 	--story-color: hsl(var(--basalt-accent-9));
 }
 
+/* GitHub's neutral identity and Primer PR state colors, in both themes. */
+.story-github {
+	--story-color: #24292f;
+}
+
+.dark .story-github {
+	--story-color: #f0f6fc;
+}
+
+.story-github-repository {
+	font-size: 0.75rem;
+	color: hsl(var(--basalt-muted-foreground));
+	overflow-wrap: anywhere;
+	margin-bottom: 0.4rem;
+}
+
+.story-github-meta {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	font-size: 0.75rem;
+	margin-top: 0.8rem;
+}
+
+.github-state {
+	color: #59636e;
+	border: 1px solid currentColor;
+	border-radius: 1rem;
+	padding: 0.1rem 0.55rem;
+}
+
+.github-state[data-state="open"] {
+	color: #1a7f37;
+}
+.github-state[data-state="merged"] {
+	color: #8250df;
+}
+.github-state[data-state="closed"] {
+	color: #cf222e;
+}
+.dark .github-state {
+	color: #9198a1;
+}
+.dark .github-state[data-state="open"] {
+	color: #3fb950;
+}
+.dark .github-state[data-state="merged"] {
+	color: #a371f7;
+}
+.dark .github-state[data-state="closed"] {
+	color: #f85149;
+}
+
 .story-travel {
 	--story-color: hsl(var(--basalt-chart-blue));
 }
