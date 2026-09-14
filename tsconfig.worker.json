@@ -4,5 +4,11 @@
 		"lib": ["ES2022"],
 		"types": ["@cloudflare/workers-types", "node"]
 	},
-	"include": ["worker", "src/models/time.ts", "src/models/types.ts", "worker-configuration.d.ts"]
+	"include": [
+		"worker",
+		"scripts/eval-diary.ts",
+		"src/models/time.ts",
+		"src/models/types.ts",
+		"worker-configuration.d.ts"
+	]
 }

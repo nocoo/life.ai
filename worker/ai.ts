@@ -226,7 +226,7 @@ export async function handlePutAiSettings(request: Request, env: WorkerEnv): Pro
 }
 
 /** Workers forward auth headers across redirects by default. Disable them and bound SDK JSON reads. */
-const boundedAiFetch: typeof fetch = async (input, init) => {
+const boundedAiFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
 	const response = await fetch(input, { ...init, redirect: "manual" });
 	if (response.status >= 300 && response.status < 400) {
 		await response.body?.cancel();
@@ -249,17 +249,33 @@ const boundedAiFetch: typeof fetch = async (input, init) => {
 	return new Response(stream, { status: response.status, headers: response.headers });
 };
 
+/** Some compatible/Qwen endpoints put reasoning markup in the text channel. Save only the answer. */
+function answerText(value: string): string {
+	const text = value.replace(/<think>[\s\S]*?<\/think>/g, "").replace(/^[\s\S]*?<\/think>/, "");
+	return text.includes("<think>") ? "" : text.trim();
+}
+
 export function extractAiOutput(raw: unknown): string {
-	if (typeof raw === "string") return raw.trim();
+	if (typeof raw === "string") return answerText(raw);
 	if (!raw || typeof raw !== "object") return "";
 	const record = raw as Record<string, unknown>;
-	if (typeof record.response === "string") return record.response.trim();
+	if (typeof record.response === "string") return answerText(record.response);
 	if (!Array.isArray(record.choices)) return "";
 	const first = record.choices[0] as
-		| { message?: { content?: unknown }; text?: unknown }
+		| { message?: { content?: unknown }; text?: unknown; finish_reason?: string }
 		| undefined;
-	if (typeof first?.message?.content === "string") return first.message.content.trim();
-	return typeof first?.text === "string" ? first.text.trim() : "";
+	if (first?.finish_reason === "length") return "";
+	if (typeof first?.message?.content === "string") return answerText(first.message.content);
+	return typeof first?.text === "string" ? answerText(first.text) : "";
+}
+
+export interface AiTextResult {
+	content: string;
+	provider: string;
+	model: string;
+	/** Inference metadata for reproducible manual evals; never contains a key or prompt. */
+	resolvedModel?: string;
+	usage?: { inputTokens?: number; outputTokens?: number; reasoningTokens?: number };
 }
 
 /** Shared generation path for connection checks and summaries; errors never echo upstream secrets. */
@@ -268,7 +284,8 @@ export async function generateAiText(
 	prompt: string,
 	timeoutMs = 45_000,
 	maxOutputTokens = 1200,
-): Promise<{ content: string; provider: string; model: string }> {
+	options: { system?: string; reasoning?: boolean } = {},
+): Promise<AiTextResult> {
 	const config = await getDecryptedAiConfig(env);
 	const native = config.provider === "workers-ai";
 	if (native && !env.AI)
@@ -277,13 +294,18 @@ export async function generateAiText(
 		throw new ApiError(400, "not_configured", "未配置 API Key，请先配置并保存");
 	try {
 		let content: string;
+		let resolvedModel: string | undefined;
+		let usage: AiTextResult["usage"];
 		const signal = AbortSignal.timeout(timeoutMs);
 		if (native && env.AI) {
 			content = extractAiOutput(
 				await env.AI.run(
 					config.model as Parameters<typeof env.AI.run>[0],
 					{
-						messages: [{ role: "user", content: `${prompt}\n/no_think` }],
+						messages: [
+							...(options.system ? [{ role: "system", content: options.system }] : []),
+							{ role: "user", content: options.reasoning ? prompt : `${prompt}\n/no_think` },
+						],
 						max_tokens: maxOutputTokens,
 					},
 					{ signal },
@@ -309,16 +331,39 @@ export async function generateAiText(
 						})(config.model);
 			const result = await generateText({
 				model,
+				system: options.system,
 				prompt,
 				maxOutputTokens,
+				// Request deeper reasoning only on known reasoning models and the configured auto router.
+				// Other compatible models retain their native defaults instead of receiving invalid options.
+				providerOptions:
+					options.reasoning &&
+					config.sdkType === "openai" &&
+					/^(?:auto$|gpt-[56](?:[.-]|$)|o[134](?:-|$))/.test(config.model)
+						? { openai: { reasoningEffort: "high", forceReasoning: true } }
+						: undefined,
 				abortSignal: signal,
 				maxRetries: 0,
 			});
-			content = result.text.trim();
+			if (result.finishReason === "length")
+				throw new ApiError(502, "ai_invalid_response", "AI 未完成正文，请重新生成");
+			content = answerText(result.text);
+			resolvedModel = result.response.modelId;
+			usage = {
+				inputTokens: result.usage.inputTokens,
+				outputTokens: result.usage.outputTokens,
+				reasoningTokens: result.usage.outputTokenDetails.reasoningTokens,
+			};
 		}
 		if (!content || content.length > MAX_OUTPUT_CHARACTERS)
 			throw new ApiError(502, "ai_invalid_response", "AI 服务未返回有效内容");
-		return { content, provider: config.provider, model: config.model };
+		return {
+			content,
+			provider: config.provider,
+			model: config.model,
+			...(resolvedModel ? { resolvedModel } : {}),
+			...(usage ? { usage } : {}),
+		};
 	} catch (error) {
 		if (error instanceof ApiError) throw error;
 		throw new ApiError(502, "ai_error", "AI 服务调用失败或超时，请稍后重试");

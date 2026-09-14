@@ -8,6 +8,7 @@ import type { DayInsights } from "../src/models/day-insights.js";
 import { buildDayPlaces, type DayPlaces, type GpsPlace } from "../src/models/day-places.js";
 import { buildFinanceDay, formatMinor } from "../src/models/finance.js";
 import type { HealthStory } from "../src/models/health-insights.js";
+import { PIXIU_COLUMNS } from "../src/models/pixiu.js";
 import type { LifeEvent, Precision } from "../src/models/types.js";
 import {
 	buildPlaceCacheKey,
@@ -206,7 +207,7 @@ export function formatSpendingEvidence(events: LifeEvent[]): string[] {
 			lines.push(`- ${prefix} 日常消费（仅「日常支出」流出）：${formatMinor(row.expenseMinor)}`);
 		if (row.expenseInflowMinor)
 			lines.push(
-				`- ${prefix} 「日常支出」类流入 ${formatMinor(row.expenseInflowMinor)}（不可当作退款）`,
+				`- ${prefix} 「日常支出」类流入 ${formatMinor(row.expenseInflowMinor)}（仅凭分类不可当作退款；具体性质以本笔备注为准）`,
 			);
 		if (row.incomeMinor) lines.push(`- ${prefix} 日常收入：${formatMinor(row.incomeMinor)}`);
 		if (row.transfersMinor)
@@ -240,15 +241,18 @@ export function formatSpendingEvidence(events: LifeEvent[]): string[] {
 		const [classification, type] = key.split("\0");
 		lines.push(`- 记账类型「${classification} / ${type}」：${count} 笔`);
 	}
-	const notes: string[] = [];
+	lines.push("- 逐笔记账线索：每行是一笔完整原记录，重点理解备注；行序不是交易先后，无交易时刻。");
 	for (const event of rows) {
-		if (event.sourceId !== "pixiu") continue;
 		const data =
 			event.data && typeof event.data === "object" && !Array.isArray(event.data) ? event.data : {};
-		const note = typeof data.备注 === "string" ? data.备注.trim() : "";
-		if (note) notes.push(note);
+		// Keep all nine original cells together: a preorder, reimbursement or duplicate note
+		// means something different beside its own classification, currency and flow direction.
+		lines.push(
+			JSON.stringify(
+				Object.fromEntries(PIXIU_COLUMNS.map((column) => [column, data[column] ?? ""])),
+			),
+		);
 	}
-	if (notes.length) lines.push(`- 记账备注：${notes.join("；")}`);
 	return lines;
 }
 
@@ -314,7 +318,7 @@ export async function collectDiaryEvidence(
 		...formatSunEvidence(sun, input.timeZone),
 		...(places.length
 			? [
-					"- 以下关键位置按时间排列，保留离开再返回。定位时段并非实际抵达、离开或持续停留时间，采样空档未知；这是大致区域，不能判断是否在家或酒店。",
+					"- 以下关键位置按时间排列，保留离开再返回。定位时段并非实际抵达、离开或持续停留时间，采样空档未知；这是大致区域，场所类型没有直接标注，可结合记账与睡眠等线索理解。",
 				]
 			: []),
 		...placeLines,

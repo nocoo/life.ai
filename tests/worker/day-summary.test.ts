@@ -21,6 +21,7 @@ import {
 	streamDayEvents,
 } from "../../worker/day-summary.js";
 import { formatEvidenceTime, formatHealthDimensionsEvidence } from "../../worker/diary-evidence.js";
+import { DIARY_SYSTEM_PROMPT } from "../../worker/diary-prompt.js";
 import { healthDayHeader, readHealthEvents } from "../../worker/health-read.js";
 import {
 	buildWeatherCacheKey,
@@ -508,7 +509,8 @@ describe("compact Apple Health summary evidence", () => {
 		expect(evidence.insights.gps.pointCount).toBe(0);
 		expect((await scan(env, false)).inputHash).toBe(evidence.inputHash);
 		await handlePostDaySummary(request(), env);
-		const sent = run.mock.calls[0]?.[1].messages[0]?.content ?? "";
+		const sent =
+			run.mock.calls[0]?.[1].messages.find((message) => message.role === "user")?.content ?? "";
 		expect(sent).toContain("睡眠 8小时30分");
 		expect(sent).toContain("09/12 22:00 入睡");
 		expect(sent).toContain("09/13 07:00 睡眠结束");
@@ -664,7 +666,8 @@ describe("compact Apple Health summary evidence", () => {
 			sampleCount: "15360",
 		});
 		await handlePostDaySummary(request(), env);
-		const sent = run.mock.calls[0]?.[1].messages[0]?.content ?? "";
+		const sent =
+			run.mock.calls[0]?.[1].messages.find((message) => message.role === "user")?.content ?? "";
 		expect(sent).toContain("09/13 09:15 血压 122/78 mmHg（Cuff）");
 		expect(sent).toContain("09/13 09:30 血压 120/未记录 mmHg");
 		expect(sent).toContain("09/13 09:45 血压 未记录/80 mmHg");
@@ -988,6 +991,28 @@ describe("saved daily summaries", () => {
 		expect(sqlite.prepare("SELECT COUNT(*) AS n FROM day_summary_leases").get()?.n).toBe(0);
 	});
 
+	it("marks a saved diary stale when only the writing contract changes, without overwriting it", async () => {
+		const { env, insert, run } = setup();
+		insert();
+		const saved = await data(await handlePostDaySummary(request(), env));
+		vi.resetModules();
+		vi.doMock("../../worker/diary-prompt.js", () => ({
+			DIARY_SYSTEM_PROMPT,
+			DIARY_PROMPT_VERSION: "isolated-next-writing-contract",
+		}));
+		try {
+			const changed = await import("../../worker/day-summary.js");
+			const read = await data(await changed.handleGetDaySummary(env, url()));
+			expect(read.stale).toBe(true);
+			expect(read.summary).toEqual(saved.summary);
+			expect(read.eventCount).toBe(saved.eventCount);
+			expect(run).toHaveBeenCalledOnce();
+		} finally {
+			vi.doUnmock("../../worker/diary-prompt.js");
+			vi.resetModules();
+		}
+	});
+
 	it("does not save public-context that arrived while the model was running", async () => {
 		const { env, sqlite, putDay, run } = setup();
 		await putDay(Date.parse("2026-09-13T00:00:00Z"), [
@@ -1136,13 +1161,16 @@ describe("saved daily summaries", () => {
 		await handlePostDaySummary(request(), env);
 		run.mockResolvedValueOnce({ response: "改过的日记。" });
 		await handlePostDaySummary(request({ ...day, revision: "少写步数" }), env);
-		const sent = String(run.mock.calls.at(-1)?.[1].messages[0]?.content ?? "");
+		const messages = run.mock.calls.at(-1)?.[1].messages ?? [];
+		const sent = messages.find((message) => message.role === "user")?.content ?? "";
 		expect(sent).toContain("上一则日记");
 		expect(sent).toContain("当天记录了阅读与步行。");
 		expect(sent).toContain("少写步数");
-		expect(sent).toContain("用第一人称");
+		expect(messages[0]).toEqual({ role: "system", content: DIARY_SYSTEM_PROMPT });
+		expect(sent).not.toContain("/no_think");
 		await handlePostDaySummary(request(), env);
-		const freshPrompt = String(run.mock.calls.at(-1)?.[1].messages[0]?.content ?? "");
+		const freshPrompt =
+			run.mock.calls.at(-1)?.[1].messages.find((message) => message.role === "user")?.content ?? "";
 		expect(freshPrompt).not.toContain("【上一则日记】");
 		expect(freshPrompt).not.toContain("改过的日记。");
 	});
@@ -1205,7 +1233,8 @@ describe("compact pixiu in diary evidence", () => {
 		});
 		expect(prompt(evidence)).not.toContain("旧行");
 		await handlePostDaySummary(request(), env);
-		const sent = String(run.mock.calls.at(-1)?.[1].messages[0]?.content ?? "");
+		const sent =
+			run.mock.calls.at(-1)?.[1].messages.find((message) => message.role === "user")?.content ?? "";
 		expect(sent).toContain("源记账日期，无交易时刻");
 		expect(sent).toContain("32.00");
 		expect(sent).toContain("原分类「餐饮」");

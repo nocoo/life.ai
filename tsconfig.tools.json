@@ -4,5 +4,6 @@
 		"lib": ["ES2022", "DOM"],
 		"types": ["node", "bun"]
 	},
-	"include": ["scripts", "tests/http", "tests/browser", "*.config.ts"]
+	"include": ["scripts", "tests/http", "tests/browser", "*.config.ts"],
+	"exclude": ["scripts/eval-diary.ts"]
 }

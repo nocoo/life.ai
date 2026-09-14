@@ -372,6 +372,22 @@ describe("diary evidence formatting", () => {
 		expect(text).toContain("备注0");
 		expect(text).toContain("备注44");
 		expect(text).toContain("美元午饭");
+		const originalRows = spending
+			.filter((line) => line.startsWith("{"))
+			.map((line) => JSON.parse(line) as Record<string, string>);
+		expect(originalRows).toHaveLength(51);
+		expect(originalRows.find((row) => row.备注 === "备注44")).toEqual({
+			日期: "2026-09-13",
+			交易分类: "日常支出",
+			交易类型: "类型44",
+			流入金额: "0.00",
+			流出金额: "32.00",
+			币种: "CNY",
+			资金账户: "",
+			标签: "",
+			备注: "备注44",
+		});
+		expect(originalRows.find((row) => row.备注 === "美元午饭")?.币种).toBe("USD");
 		expect(text.split("备注").length - 1).toBeGreaterThanOrEqual(46);
 		expect(
 			text.split("\n").some((line) => line.includes("投资") && line.includes("日常消费")),
@@ -413,7 +429,7 @@ describe("diary evidence formatting", () => {
 		expect(labels.mock.calls.length).toBeLessThanOrEqual(MAX_DIARY_PLACES);
 		expect(labels.mock.calls.length).toBeGreaterThan(0);
 		expect(lines.some((line) => line.includes("苏州园区"))).toBe(true);
-		expect(lines.some((line) => line.includes("不能判断是否在家或酒店"))).toBe(true);
+		expect(lines.some((line) => line.includes("场所类型没有直接标注"))).toBe(true);
 		expect(lines.some((line) => line.includes("日出"))).toBe(true);
 		expect(lines.some((line) => line.includes("雨"))).toBe(true);
 	});

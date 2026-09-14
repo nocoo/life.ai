@@ -355,6 +355,21 @@ describe("worker/ai", () => {
 			expect(extractAiOutput(null)).toBe("");
 			expect(extractAiOutput({})).toBe("");
 		});
+
+		it("returns the final answer without reasoning and rejects incomplete generations", () => {
+			expect(extractAiOutput("<think>private draft</think>\n今天去骑车了。")).toBe(
+				"今天去骑车了。",
+			);
+			expect(extractAiOutput({ response: "private draft</think>今天去骑车了。" })).toBe(
+				"今天去骑车了。",
+			);
+			expect(extractAiOutput({ response: "<think>unfinished reasoning" })).toBe("");
+			expect(
+				extractAiOutput({
+					choices: [{ message: { content: "还没写完" }, finish_reason: "length" }],
+				}),
+			).toBe("");
+		});
 	});
 
 	describe("handlePostAiTest", () => {
@@ -614,6 +629,55 @@ describe("worker/ai", () => {
 			expect(fetchMock).toHaveBeenCalled();
 			const headers = new Headers(fetchMock.mock.calls[0]?.[1]?.headers);
 			expect(headers.get("Authorization")).toBe("Bearer sk-openai");
+		});
+
+		it("separates the writing instructions and gives supported models a reasoning budget", async () => {
+			for (const model of ["auto", "gpt-5.4", "gpt-4o-mini"]) {
+				const env = createWorkerEnv(createMockAiDb());
+				await saveCustom(env, {
+					provider: "custom",
+					model,
+					baseURL: "https://gateway.example.com/v1",
+					sdkType: "openai",
+					apiKey: "isolated-test-key",
+				});
+				const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>
+					openaiJson("新的实录。"),
+				);
+				vi.stubGlobal("fetch", fetchMock);
+				const result = await generateAiText(env, "备注：还原这次骑行", 90_000, 8192, {
+					system: "用日常线索还原场景",
+					reasoning: true,
+				});
+				const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+				expect(body.max_output_tokens).toBe(8192);
+				expect(body.reasoning?.effort).toBe(model === "gpt-4o-mini" ? undefined : "high");
+				expect(JSON.stringify(body)).toContain("用日常线索还原场景");
+				expect(result.resolvedModel).toBe("gpt-4o-mini");
+				expect(result.usage).toMatchObject({ inputTokens: 1, outputTokens: 1 });
+			}
+		});
+
+		it("rejects a token-limited external answer instead of saving partial prose", async () => {
+			const env = createWorkerEnv(createMockAiDb());
+			await saveCustom(env, {
+				provider: "custom",
+				model: "auto",
+				baseURL: "https://gateway.example.com/v1",
+				sdkType: "openai",
+				apiKey: "isolated-test-key",
+			});
+			vi.stubGlobal("fetch", async () => {
+				const body = (await openaiJson("写到一半的实录").json()) as Record<string, unknown>;
+				return Response.json({
+					...body,
+					status: "incomplete",
+					incomplete_details: { reason: "max_output_tokens" },
+				});
+			});
+			await expect(generateAiText(env, "当天的线索")).rejects.toMatchObject({
+				code: "ai_invalid_response",
+			});
 		});
 
 		it("sends Anthropic apiKey as x-api-key", async () => {
