@@ -1,12 +1,18 @@
 import { createStore } from "zustand/vanilla";
 import { buildDayInsights, type DayInsights, type TrackPoint } from "../models/day-insights";
+import { buildHealthStory, type HealthStory } from "../models/health-insights";
+import type { SleepLocation } from "../models/health-location";
+import { applyHealthStoryInsights } from "../models/health-quantities";
 import { buildDayTimeline, localDateKey, localDayWindow, shiftLocalDate } from "../models/time";
 import type { DayTimeline, LifeEvent, Source } from "../models/types";
 import { fetchAllEvents } from "../services/events-service";
+import { fetchHealthEvents } from "../services/health-evidence";
+import { fetchSleepLocations } from "../services/health-location";
 import { isAbortError } from "../services/http";
 import { fetchSources } from "../services/sources-service";
 import { buildDayStory, type DayStory } from "./day-story";
 import { type LoadStatus, toErrorMessage } from "./errors";
+import { buildHealthTimeline } from "./health-timeline";
 
 export const ALL_SOURCES = "all";
 export type TimelineMapMode = "auto" | "all" | "none";
@@ -19,12 +25,17 @@ export interface TimelineViewState {
 	timeline: DayTimeline | null;
 	insights: DayInsights | null;
 	story: DayStory | null;
+	health: HealthStory | null;
+	recordsTimeline: DayTimeline | null;
+	recordsStatus: LoadStatus;
+	recordsError: string | null;
 	radiusKm: 5 | 10;
 	mapMode: TimelineMapMode;
 	tab: TimelinePageTab;
 	status: LoadStatus;
 	error: string | null;
 	load: () => Promise<void>;
+	loadRecords: () => Promise<void>;
 	selectDay: (day: string) => Promise<void>;
 	shiftDay: (amount: number) => Promise<void>;
 	goToday: () => Promise<void>;
@@ -40,6 +51,10 @@ let loadGeneration = 0;
 let loadController: AbortController | null = null;
 let cachedDay = "";
 let cachedEvents: LifeEvent[] = [];
+let cachedLocations: Record<string, SleepLocation> = {};
+let cachedRawEvents: LifeEvent[] | null = null;
+let recordsController: AbortController | null = null;
+let recordsGeneration = 0;
 
 function initialTimelineState(): Pick<
 	TimelineViewState,
@@ -49,6 +64,10 @@ function initialTimelineState(): Pick<
 	| "timeline"
 	| "insights"
 	| "story"
+	| "health"
+	| "recordsTimeline"
+	| "recordsStatus"
+	| "recordsError"
 	| "radiusKm"
 	| "mapMode"
 	| "tab"
@@ -62,6 +81,10 @@ function initialTimelineState(): Pick<
 		timeline: null,
 		insights: null,
 		story: null,
+		health: null,
+		recordsTimeline: null,
+		recordsStatus: "idle",
+		recordsError: null,
 		radiusKm: 5,
 		mapMode: "auto",
 		tab: "timeline",
@@ -101,10 +124,20 @@ function projectDay(day: string, sourceId: string, events: LifeEvent[], radiusKm
 	const visible = eventsForSource(events, sourceId);
 	const timeline = buildDayTimeline(day, visible);
 	const insights = buildDayInsights(visible, window);
+	const health = visible.some((event) => event.sourceId === "apple-health")
+		? buildHealthStory(visible, window)
+		: null;
+	if (health) applyHealthStoryInsights(insights, health);
 	return {
 		timeline,
 		insights,
-		story: buildDayStory(timeline, insights, radiusKm),
+		health,
+		story: health
+			? buildHealthTimeline(timeline, insights, health, visible, radiusKm, cachedLocations)
+			: buildDayStory(timeline, insights, radiusKm),
+		recordsTimeline: cachedRawEvents
+			? buildDayTimeline(day, eventsForSource(cachedRawEvents, sourceId))
+			: null,
 	};
 }
 
@@ -112,19 +145,33 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 	...initialTimelineState(),
 	async load() {
 		loadController?.abort();
+		recordsController?.abort();
+		recordsGeneration++;
+		cachedRawEvents = null;
 		const controller = new AbortController();
 		loadController = controller;
 		const generation = ++loadGeneration;
-		const { day, sourceId } = get();
-		set({ status: "loading", error: null, timeline: null, insights: null, story: null });
+		const { day } = get();
+		set({
+			status: "loading",
+			error: null,
+			timeline: null,
+			insights: null,
+			story: null,
+			health: null,
+			recordsTimeline: null,
+			recordsStatus: "idle",
+			recordsError: null,
+		});
 		try {
 			const window = localDayWindow(day);
 			const [sources, events] = await Promise.all([
 				fetchSources(controller.signal),
 				fetchAllEvents({
-					start: window.start,
-					end: window.end,
+					start: new Date(Date.parse(window.start) - 86_400_000).toISOString(),
+					end: new Date(Date.parse(window.end) + 12 * 3_600_000).toISOString(),
 					source: null,
+					healthView: "story",
 					signal: controller.signal,
 				}),
 			]);
@@ -133,12 +180,43 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 			}
 			cachedDay = day;
 			cachedEvents = events;
+			cachedLocations = {};
 			set({
 				sources,
-				...projectDay(day, sourceId, events, get().radiusKm),
+				...projectDay(day, get().sourceId, events, get().radiusKm),
 				status: "ready",
 				error: null,
 			});
+			const health = get().health;
+			if (health?.nights.some((night) => night.place)) {
+				try {
+					const locations = await fetchSleepLocations(
+						health.nights,
+						window.start,
+						controller.signal,
+					);
+					if (generation !== loadGeneration) return;
+					cachedLocations = locations;
+					// Enrich only sleep cards: routes and the rest of the timeline keep their identity.
+					const story = get().story;
+					if (story)
+						set({
+							story: {
+								...story,
+								hours: story.hours.map((hour) => ({
+									...hour,
+									health: hour.health?.map((item) =>
+										item.kind === "sleep" ? { ...item, location: locations[item.id] } : item,
+									),
+								})),
+							},
+						});
+				} catch {
+					/* Location inference is optional; recorded sleep remains readable. */
+				}
+			}
+			if (generation !== loadGeneration) return;
+			if (get().tab === "records") await get().loadRecords();
 		} catch (error) {
 			if (generation !== loadGeneration || isAbortError(error)) {
 				return;
@@ -149,6 +227,41 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 				status: "error",
 				error: toErrorMessage(error),
 			});
+		}
+	},
+	async loadRecords() {
+		const { day, sourceId, timeline, sources, recordsStatus } = get();
+		if (!timeline || recordsStatus === "loading") return;
+		if (cachedRawEvents) {
+			set({
+				recordsTimeline: buildDayTimeline(day, eventsForSource(cachedRawEvents, sourceId)),
+				recordsStatus: "ready",
+			});
+			return;
+		}
+		if (!sources.some((source) => source.id === "apple-health" && source.recordCount > 0)) {
+			set({ recordsTimeline: timeline, recordsStatus: "ready" });
+			return;
+		}
+		recordsController?.abort();
+		const controller = new AbortController();
+		recordsController = controller;
+		const generation = ++recordsGeneration;
+		set({ recordsStatus: "loading", recordsError: null });
+		try {
+			const window = localDayWindow(day);
+			const healthEvents = await fetchHealthEvents(window.start, window.end, controller.signal);
+			if (generation !== recordsGeneration) return;
+			const merged = new Map(cachedEvents.map((event) => [event.id, event]));
+			for (const event of healthEvents) merged.set(event.id, event);
+			cachedRawEvents = [...merged.values()];
+			set({
+				recordsTimeline: buildDayTimeline(day, eventsForSource(cachedRawEvents, get().sourceId)),
+				recordsStatus: "ready",
+			});
+		} catch (error) {
+			if (generation === recordsGeneration && !isAbortError(error))
+				set({ recordsStatus: "error", recordsError: toErrorMessage(error) });
 		}
 	},
 	async selectDay(day: string) {
@@ -177,23 +290,27 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 		const { day, status } = get();
 		if (status !== "idle" && cachedDay === day) {
 			set(projectDay(day, next, cachedEvents, get().radiusKm));
+			if (get().tab === "records") await get().loadRecords();
 			return;
 		}
 		await get().load();
 	},
 	selectRadius(radiusKm) {
 		if ((radiusKm !== 5 && radiusKm !== 10) || radiusKm === get().radiusKm) return;
-		const { timeline, insights } = get();
+		const { day, sourceId } = get();
 		set({
 			radiusKm,
-			...(timeline && insights ? { story: buildDayStory(timeline, insights, radiusKm) } : {}),
+			...(cachedDay === day ? projectDay(day, sourceId, cachedEvents, radiusKm) : {}),
 		});
 	},
 	selectMapMode(mapMode) {
 		if (mapMode === "auto" || mapMode === "all" || mapMode === "none") set({ mapMode });
 	},
 	selectTab(tab) {
-		if (tab === "timeline" || tab === "locations" || tab === "records") set({ tab });
+		if (tab === "timeline" || tab === "locations" || tab === "records") {
+			set({ tab });
+			if (tab === "records") void get().loadRecords();
+		}
 	},
 	async retry() {
 		await get().load();
@@ -201,9 +318,14 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 	reset() {
 		loadController?.abort();
 		loadController = null;
+		recordsController?.abort();
+		recordsController = null;
+		recordsGeneration++;
+		cachedRawEvents = null;
 		loadGeneration += 1;
 		cachedDay = "";
 		cachedEvents = [];
+		cachedLocations = {};
 		set(initialTimelineState());
 	},
 }));

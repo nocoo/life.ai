@@ -1,5 +1,6 @@
 import type { EventPage, LifeEvent, Precision, SourceKind } from "../src/models/types.js";
 import { readFootprintDays } from "./footprint-read.js";
+import { readHealthSeries } from "./health-read.js";
 import { normalizeTimestamp } from "./time.js";
 import { ApiError, type WorkerEnv } from "./types.js";
 import { decodeCursor, encodeCursor, jsonResponse, LIMITS } from "./utils.js";
@@ -29,8 +30,8 @@ export interface EventRowsQuery {
 /** Two disjoint indexed ranges avoid scanning all historical point events for overlap. */
 export async function readEventRows(db: D1Database, query: EventRowsQuery): Promise<EventRow[]> {
 	const bindings: (number | string)[] = [query.start, query.end];
-	let conditions = `AND (e.source_id != 'footprint' OR NOT EXISTS (
-		SELECT 1 FROM provider_days p WHERE p.source_id = 'footprint'
+	let conditions = `AND (e.source_id NOT IN ('footprint', 'apple-health') OR NOT EXISTS (
+		SELECT 1 FROM provider_days p WHERE p.source_id = e.source_id
 		AND p.utc_day = e.occurred_at - ((e.occurred_at % 86400000 + 86400000) % 86400000)
 	))`;
 	if (query.source) {
@@ -107,10 +108,13 @@ export async function handleGetEvents(env: WorkerEnv, url: URL): Promise<Respons
 	const source = url.searchParams.get("source");
 	const cursorParam = url.searchParams.get("cursor");
 	const cursor = cursorParam ? decodeCursor(cursorParam) : null;
-	const [rows, footprintDays] = await Promise.all([
+	const [rows, footprintDays, healthSeries] = await Promise.all([
 		readEventRows(env.DB, { start, end, source, cursor, limit: LIMITS.pageSize + 1 }),
 		!cursor && (!source || source === "footprint")
 			? readFootprintDays(env.DB, start, end)
+			: undefined,
+		!cursor && (!source || source === "apple-health")
+			? readHealthSeries(env.DB, start, end, url.searchParams.get("healthView") === "story")
 			: undefined,
 	]);
 	const items = rows.slice(0, LIMITS.pageSize);
@@ -120,6 +124,7 @@ export async function handleGetEvents(env: WorkerEnv, url: URL): Promise<Respons
 		nextCursor:
 			rows.length > LIMITS.pageSize && last ? encodeCursor(last.occurred_at, last.id) : null,
 		...(footprintDays ? { footprintDays } : {}),
+		...(healthSeries ? { healthSeries } : {}),
 	};
 	return jsonResponse({ data: page });
 }

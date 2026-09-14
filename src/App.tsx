@@ -23,6 +23,10 @@ const FootprintPage = lazy(() =>
 	import("./views/footprint-page").then((module) => ({ default: module.FootprintPage })),
 );
 
+const AppleHealthPage = lazy(() =>
+	import("./views/apple-health-page").then((module) => ({ default: module.AppleHealthPage })),
+);
+
 export function App() {
 	return (
 		<AppProviders>
@@ -35,6 +39,7 @@ export function App() {
 						<Route path="/settings/ai" element={<AiSettingsPage />} />
 						<Route path="/data" element={<DataOverviewPage />} />
 						<Route path="/data/footprint" element={<FootprintPage />} />
+						<Route path="/data/apple-health" element={<AppleHealthPage />} />
 						<Route path="*" element={<NotFoundPage />} />
 					</Route>
 				</Routes>

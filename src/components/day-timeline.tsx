@@ -29,6 +29,7 @@ import {
 import { useState } from "react";
 import { Link } from "react-router";
 import type { DayInsights } from "../models/day-insights";
+import type { HealthStory } from "../models/health-insights";
 import type { DayTimeline } from "../models/types";
 import type { DayContextState, SolarMoment } from "../viewmodels/day-context-view-model";
 import {
@@ -49,6 +50,8 @@ import { DayInsightsCard, StoryMetrics } from "./day-insights";
 import { DayMap } from "./day-map";
 import { DaySummaryCard } from "./day-summary";
 import { EventDetails } from "./event-card";
+import { HealthDayCard } from "./health-story";
+import { HealthTimelineEntry } from "./health-timeline-entry";
 import { useIsMobile } from "./use-is-mobile";
 
 const CHAPTERS = [
@@ -255,6 +258,14 @@ function HourRow({
 					</div>
 				) : null}
 				{blocks.map((block) => {
+					if (block.kind === "health")
+						return (
+							<HealthTimelineEntry
+								key={`${block.id}:${mapMode}`}
+								item={block.health}
+								mode={mapMode}
+							/>
+						);
 					if (block.kind === "visit")
 						return <VisitView key={`${block.id}:${mapMode}`} item={block.visit} mode={mapMode} />;
 					if (block.kind === "solar") {
@@ -304,12 +315,14 @@ export function DayTimelineView({
 	insights,
 	context,
 	mapMode,
+	health,
 }: {
 	timeline: DayTimeline;
 	story: DayStory;
 	insights: DayInsights;
 	context: DayContextState | null;
 	mapMode: TimelineMapMode;
+	health?: HealthStory | null;
 }) {
 	const [mapDetail, setMapDetail] = useState<StoryBranch | null>(null);
 	const stacked = useIsMobile() === true;
@@ -409,7 +422,7 @@ export function DayTimelineView({
 						<LayerCard.Body>
 							<StoryMetrics
 								items={[
-									{ label: "原始记录", value: `${timeline.totalEvents} 条` },
+									{ label: "时间线记录", value: `${timeline.totalEvents} 条` },
 									{ label: "有记录的小时", value: `${timeline.activeHours} / 24` },
 									{ label: "来源", value: `${timeline.sourceCount} 个` },
 									...(hasMap
@@ -433,6 +446,7 @@ export function DayTimelineView({
 						</div>
 					) : null}
 					<DayInsightsCard insights={insights} />
+					{health ? <HealthDayCard story={health} /> : null}
 					{story.allDay.length > 0 ? (
 						<LayerCard>
 							<LayerCard.Header>

@@ -18,7 +18,7 @@ export interface ProviderCoverageDay {
 export interface ProviderOverview {
 	id: ImportSourceId;
 	name: string;
-	storage: "daily-json" | "events";
+	storage: "daily-json" | "day-dimension" | "events";
 	coverageDays: number;
 	recordCount: number;
 	dataRows: number;
@@ -29,6 +29,19 @@ export interface ProviderOverview {
 	lastChangedAt: string | null;
 	lastImportChannel: ImportChannel | null;
 	coverage: ProviderCoverageDay[];
+	health?: HealthProviderStats;
+}
+
+export interface HealthProviderStats {
+	epochRecordCount: number;
+	dimensions: {
+		id: string;
+		recordCount: number;
+		coverageDays: number;
+		dataRows: number;
+		payloadBytes: number;
+	}[];
+	files: { kind: string; fileCount: number; recordCount: number; rawBytes: number }[];
 }
 
 export interface DataOverview {

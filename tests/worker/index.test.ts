@@ -315,7 +315,7 @@ describe("worker/index router & host isolation", () => {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					source: "apple-health",
+					source: "journal",
 					records: [{ key: "k", occurredAt: "2026-09-13T00:00:00Z", title: "t" }],
 				}),
 			});

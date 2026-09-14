@@ -20,113 +20,12 @@ async function read(text: string, source: ImportSourceId, name = "export.xml") {
 	return { records: batches.flat(), batches, progress, result, wholeFile };
 }
 
-function health(count = 1): string {
-	return `<HealthData>${Array.from({ length: count }, (_, index) => `<Record type="HKQuantityTypeIdentifierStepCount" sourceName="手表" unit="count" value="${index}" startDate="2026-09-13 08:01:02 +0800" endDate="2026-09-13 08:01:59 +0800"/>`).join("")}</HealthData>`;
-}
-
 const journal = { title: "阅读", occurredAt: "2026-09-13T12:34:56.789+08:00", data: { pages: 12 } };
 const csvHeader = "日期,交易分类,交易类型,流入金额,流出金额,币种,资金账户,标签,备注";
 
-describe("Apple Health and GPS streaming imports", () => {
-	it("decodes UTF-8 across chunks, waits for batches of at most 100, and preserves intervals", async () => {
-		const { records, batches, progress, result, wholeFile } = await read(
-			health(901),
-			"apple-health",
-		);
-		expect(wholeFile).not.toHaveBeenCalled();
-		expect(batches.map((batch) => batch.length)).toEqual([
-			100, 100, 100, 100, 100, 100, 100, 100, 100, 1,
-		]);
-		expect(new Set(records.map((record) => record.key)).size).toBe(901);
-		expect(records[0]).toMatchObject({
-			title: "步数",
-			precision: "second",
-			content: "0 · count · 手表",
-			occurredAt: "2026-09-13T00:01:02.000Z",
-			endAt: "2026-09-13T00:01:59.000Z",
-		});
-		expect(progress[0]?.accepted).toBe(0);
-		expect(progress.at(-1)).toMatchObject({ processed: 901, accepted: 901 });
-		expect(progress.at(-1)?.bytesRead).toBe(progress.at(-1)?.totalBytes);
-		expect(result).toEqual({ processed: 901, accepted: 901 });
-	});
-	it("uses stable keys across filenames and attribute order", async () => {
-		const first = await read(health(), "apple-health", "导出.xml");
-		const second = await read(
-			health().replace(
-				'type="HKQuantityTypeIdentifierStepCount" sourceName="手表"',
-				'sourceName="手表" type="HKQuantityTypeIdentifierStepCount"',
-			),
-			"apple-health",
-			"other.xml",
-		);
-		expect(first.records[0]?.key).toBe(second.records[0]?.key);
-	});
-	it("accepts standard Apple DTD, workouts, correlations, summaries, and unknown HealthKit types", async () => {
-		const result = await read(
-			`<?xml version="1.0"?><!DOCTYPE HealthData [<!ELEMENT HealthData ANY>]><HealthData>
-			<ExportDate value="2026-09-13"/>
-			<Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2026-09-13T08:00:00Z"/>
-			<Correlation type="HKCorrelationTypeIdentifierBloodPressure" startDate="2026-09-13T09:00Z"/>
-			<ActivitySummary dateComponents="2026-09-13" activeEnergyBurned="100"/>
-			<Record startDate="2026-09-13T10"/>
-		</HealthData>`,
-			"apple-health",
-		);
-		expect(result.records.map((record) => [record.title, record.precision])).toEqual([
-			["Running", "second"],
-			["BloodPressure", "minute"],
-			["每日活动", "day"],
-			["Record", "hour"],
-		]);
-	});
-	it("reads namespaced GPX track, route and waypoint coordinates and extensions", async () => {
-		const { records } = await read(
-			`<gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:x="https://example.test/gpx"><trk><trkseg>
-			<trkpt lat="31.123456" lon="121.543219"><time>2026-09-13T10:23:45+08:00</time><ele>24</ele><extensions><x:speed>1.5</x:speed></extensions></trkpt>
-			<trkpt lat="0" lon="0"><name> 起点 </name><time>2026-09-13T11:00:00Z</time></trkpt>
-		</trkseg></trk><rte><rtept lat="-90" lon="180"><time>2026-09-13T12:00Z</time></rtept></rte>
-		<wpt lat="90" lon="-180"><time>2026-09-13T13Z</time><desc>ignored</desc></wpt></gpx>`,
-			"footprint",
-			"route.gpx",
-		);
-		expect(records).toHaveLength(4);
-		expect(records[0]).toMatchObject({
-			title: "GPS 轨迹",
-			content: "31.12346, 121.54322",
-			occurredAt: "2026-09-13T02:23:45.000Z",
-			data: { speed: "1.5", ele: "24", latitude: 31.123456, longitude: 121.543219 },
-		});
-		expect(records[1]?.title).toBe("起点");
-	});
-	it.each([
-		["<ClinicalDocument/>", "apple-health"],
-		["<not-gpx/>", "footprint"],
-		["<HealthData><Record/></HealthData>", "apple-health"],
-		['<HealthData><Record startDate="2026-02-30"/></HealthData>', "apple-health"],
-		[
-			'<HealthData><Record startDate="2026-09-13" endDate="2026-09-12"/></HealthData>',
-			"apple-health",
-		],
-		["<HealthData><Record", "apple-health"],
-		['<gpx><trkpt lat="91" lon="1"><time>2026-09-13</time></trkpt></gpx>', "footprint"],
-		['<gpx><trkpt lat="1" lon="181"><time>2026-09-13</time></trkpt></gpx>', "footprint"],
-		['<gpx><trkpt lat="NaN" lon="1"><time>2026-09-13</time></trkpt></gpx>', "footprint"],
-		['<gpx><trkpt lat="1" lon="NaN"><time>2026-09-13</time></trkpt></gpx>', "footprint"],
-		['<gpx><trkpt lon="1"><time>2026-09-13</time></trkpt></gpx>', "footprint"],
-		['<gpx><trkpt lat="1"><time>2026-09-13</time></trkpt></gpx>', "footprint"],
-		['<gpx><trkpt lat="1" lon="1"/></gpx>', "footprint"],
-		["<HealthData>&external;</HealthData>", "apple-health"],
-	] as const)("rejects invalid XML data: %s", async (xml, source) => {
-		await expect(read(xml, source)).rejects.toThrow();
-	});
-	it("bounds unclosed XML nodes and GPX field text", async () => {
-		await expect(
-			read(`<HealthData><Record attribute="${"x".repeat(1100_000)}`, "apple-health"),
-		).rejects.toThrow("1 MiB");
-		await expect(
-			read(`<gpx><wpt lat="1" lon="1"><name>${"a".repeat(8001)}</name></wpt></gpx>`, "footprint"),
-		).rejects.toThrow("字段过长");
+describe("dedicated provider imports", () => {
+	it.each(["apple-health", "footprint"] as const)("moves %s to Data Management", async (source) => {
+		await expect(read("<export/>", source)).rejects.toThrow("专用导入页面");
 	});
 });
 
@@ -273,8 +172,6 @@ describe("journal JSON and NDJSON", () => {
 
 describe("import progress, cancellation and failures", () => {
 	it.each([
-		["<HealthData/>", "apple-health", "export.xml"],
-		["<gpx/>", "footprint", "route.gpx"],
 		["日期", "pixiu", "data.csv"],
 		["[]", "journal", "data.json"],
 		["\n", "journal", "data.ndjson"],
@@ -287,8 +184,8 @@ describe("import progress, cancellation and failures", () => {
 		const batch = vi.fn();
 		await expect(
 			importFile(
-				new File([health()], "data.xml"),
-				"apple-health",
+				new File([JSON.stringify(journal)], "data.json"),
+				"journal",
 				batch,
 				vi.fn(),
 				controller.signal,
@@ -304,8 +201,11 @@ describe("import progress, cancellation and failures", () => {
 		});
 		await expect(
 			importFile(
-				new File([health(301)], "data.xml"),
-				"apple-health",
+				new File(
+					[Array.from({ length: 301 }, () => JSON.stringify(journal)).join("\n")],
+					"data.ndjson",
+				),
+				"journal",
 				batch,
 				(value) => {
 					progress.push(value);
@@ -317,12 +217,15 @@ describe("import progress, cancellation and failures", () => {
 		expect(progress.at(-1)?.accepted).toBe(100);
 	});
 	it("propagates read/upload failures without claiming that rejected batches were accepted", async () => {
-		const file = new File([health(101)], "data.xml");
+		const file = new File(
+			[Array.from({ length: 101 }, () => JSON.stringify(journal)).join("\n")],
+			"data.ndjson",
+		);
 		const progress: ImportProgress[] = [];
 		await expect(
 			importFile(
 				file,
-				"apple-health",
+				"journal",
 				async () => {
 					throw new Error("offline");
 				},
@@ -335,7 +238,7 @@ describe("import progress, cancellation and failures", () => {
 		vi.spyOn(file, "slice").mockImplementation(() => {
 			throw new Error("disk");
 		});
-		await expect(importFile(file, "apple-health", vi.fn(), vi.fn())).rejects.toThrow("disk");
+		await expect(importFile(file, "journal", vi.fn(), vi.fn())).rejects.toThrow("disk");
 	});
 	it("rejects invalid UTF-8 instead of corrupting the source text", async () => {
 		await expect(

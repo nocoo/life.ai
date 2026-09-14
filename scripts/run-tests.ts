@@ -130,7 +130,7 @@ try {
 	const command =
 		tier === "l2"
 			? ["bun", "tests/http/api.ts"]
-			: ["node", "node_modules/@playwright/test/cli.js", "test"];
+			: ["node", "node_modules/@playwright/test/cli.js", "test", ...process.argv.slice(3)];
 	const test = Bun.spawn(command, { env, stdout: "inherit", stderr: "inherit" });
 	const code = await test.exited;
 	if (code) throw new Error(`${tier.toUpperCase()} failed with exit ${code}`);

@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { createReadStream, statSync } from "node:fs";
+import { createReadStream, openAsBlob, statSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import { finished } from "node:stream/promises";
 import { promisify } from "node:util";
@@ -90,8 +90,8 @@ export function printUsage(): void {
   bun scripts/import-data.ts --provider <provider> --file <path> [options]
 
 必填参数:
-  --provider <name>   导入来源，当前支持: footprint
-  --file <path>       GPX 轨迹文件路径
+  --provider <name>   导入来源，当前支持: footprint, apple-health
+  --file <path>       GPX、Apple 健康 ZIP 或解压目录路径
 
 选项:
   --target <env>      目标环境: local 或 production (dry-run 时可选，实际导入时必填)
@@ -213,8 +213,8 @@ export async function runImportCli(
 		logErr("缺少必填参数: --provider (例如: --provider footprint)");
 		return 1;
 	}
-	if (options.provider !== "footprint") {
-		logErr(`不受支持的 provider: "${options.provider}"。当前仅支持 footprint。`);
+	if (options.provider !== "footprint" && options.provider !== "apple-health") {
+		logErr(`不受支持的 provider: "${options.provider}"。当前支持 footprint 与 apple-health。`);
 		return 1;
 	}
 
@@ -227,7 +227,7 @@ export async function runImportCli(
 	let fileSize = 0;
 	try {
 		const stat = statSync(resolvedPath);
-		if (!stat.isFile()) {
+		if (!stat.isFile() && !(options.provider === "apple-health" && stat.isDirectory())) {
 			logErr(`指定的文件不是普通文件: ${resolvedPath}`);
 			return 1;
 		}
@@ -258,6 +258,15 @@ export async function runImportCli(
 	processEvents.on("SIGTERM", onSignal);
 
 	try {
+		if (options.provider === "apple-health")
+			return await runHealthCli(
+				options,
+				resolvedPath,
+				activeSignal,
+				log,
+				logErr,
+				deps.getAccessHeaderFn,
+			);
 		// 1. Parse whole GPX file locally first
 		if (!options.json) {
 			log(`[1/3] 开始读取并解析轨迹文件: ${resolvedPath}`);
@@ -408,6 +417,78 @@ export async function runImportCli(
 	} finally {
 		processEvents.removeListener("SIGINT", onSignal);
 		processEvents.removeListener("SIGTERM", onSignal);
+	}
+}
+
+async function runHealthCli(
+	options: ImportCliOptions,
+	path: string,
+	signal: AbortSignal,
+	log: (message: string) => void,
+	logErr: (message: string) => void,
+	getAccess?: (url: string) => Promise<Record<string, string>>,
+): Promise<number> {
+	const { createDiskHealthStaging, openHealthDirectory } = await import("./health-staging");
+	const { parseHealthExport } = await import("../src/models/apple-health");
+	const { openHealthZip } = await import("../src/services/health-archive");
+	const { createHealthClient, uploadHealthPlan } = await import("../src/services/health-client");
+	const staging = await createDiskHealthStaging();
+	let archive: Awaited<ReturnType<typeof openHealthZip>> | null = null;
+	let lastReport = 0;
+	const onProgress = (progress: import("../src/models/health-types").HealthProgress) => {
+		if (options.json || Date.now() - lastReport < 3000) return;
+		lastReport = Date.now();
+		log(
+			`${progress.phase}: ${progress.completed}/${progress.total}，${progress.recordCount.toLocaleString()} 条记录`,
+		);
+	};
+	try {
+		signal.throwIfAborted();
+		archive = statSync(path).isFile() ? await openHealthZip(await openAsBlob(path)) : null;
+		const files = archive?.files ?? (await openHealthDirectory(path));
+		const plan = await parseHealthExport(files, staging, { signal, onProgress });
+		const stats = {
+			totalDays: plan.days.length,
+			recordCount: plan.recordCount,
+			xmlRecordCount: plan.xmlRecordCount,
+			dimensionCount: plan.dimensionCount,
+			seriesCount: plan.seriesCount,
+			fileCount: plan.files.length,
+			fileParts: plan.files.reduce((sum, file) => sum + file.parts.length, 0),
+			routePointCount: plan.routePointCount,
+			ecgSampleCount: plan.ecgSampleCount,
+			payloadBytes: plan.payloadBytes,
+			warnings: plan.warnings,
+		};
+		if (options.dryRun) {
+			log(JSON.stringify({ dryRun: true, stats }, null, 2));
+			return 0;
+		}
+		const target = options.target as DataTarget;
+		const { url, isLocalApi } = validateAndNormalizeBaseUrl(
+			options.baseUrl ??
+				(target === "production" ? "https://life.hexly.ai" : "http://127.0.0.1:7011"),
+		);
+		const client = createHealthClient({
+			baseUrl: url,
+			getHeaders: async () =>
+				target === "production" && !isLocalApi ? (getAccess ?? getCloudflareAccessHeader)(url) : {},
+		});
+		const receipt = await uploadHealthPlan(client, plan, {
+			fileName: basename(path),
+			target,
+			channel: "cli",
+			signal,
+			onProgress,
+		});
+		log(JSON.stringify({ success: true, target, baseUrl: url, stats, receipt }, null, 2));
+		return 0;
+	} catch (error) {
+		logErr(`健康导入失败：${error instanceof Error ? error.message : String(error)}`);
+		return 1;
+	} finally {
+		await archive?.close();
+		await staging.clear();
 	}
 }
 

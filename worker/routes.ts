@@ -15,7 +15,7 @@ import { floorToUtcHour, normalizeTimestamp, timestampAtPrecision } from "./time
 import { ApiError, type WorkerEnv } from "./types.js";
 import { jsonResponse, LIMITS, readJsonBody, validateDataField, validateString } from "./utils.js";
 
-const VALID_IMPORT_SOURCES: ImportSourceId[] = ["apple-health", "footprint", "pixiu", "journal"];
+const VALID_IMPORT_SOURCES: ImportSourceId[] = ["pixiu", "journal"];
 const VALID_PRECISIONS: Precision[] = ["day", "hour", "minute", "second"];
 
 /**
@@ -148,6 +148,12 @@ export async function handlePostImports(request: Request, env: WorkerEnv): Promi
 	}
 
 	const source = typedBody.source as ImportSourceId;
+	if (source === "apple-health")
+		throw new ApiError(
+			410,
+			"health_import_moved",
+			"Use Data Management → Apple Health to import complete UTC day dimensions and attachments",
+		);
 	if (source === "footprint") {
 		throw new ApiError(
 			410,

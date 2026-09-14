@@ -1,5 +1,7 @@
 # 01 Apple Health 数据结构
 
+> 本文保留原始格式参考。当前完整 ZIP/目录导入、D1 存储和每日呈现以 [17 Apple Health](17-apple-health.md) 为准。
+
 ## 概览
 这份数据来自 Apple Health 导出，目录内主要包含三类原始数据文件：
 - `导出.xml`：HealthKit 标准导出（包含 Record/Workout/Correlation/ActivitySummary 等实体）

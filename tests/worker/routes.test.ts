@@ -692,7 +692,7 @@ describe("worker/routes", () => {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					source: "apple-health",
+					source: "journal",
 					records,
 				}),
 			});
@@ -706,8 +706,8 @@ describe("worker/routes", () => {
 			const sourcesRes = await handleGetSources(env);
 			const sourcesJson = (await sourcesRes.json()) as { data: Source[] };
 			expect(sourcesJson.data.length).toBe(1);
-			expect(sourcesJson.data[0]?.id).toBe("apple-health");
-			expect(sourcesJson.data[0]?.name).toBe("Apple Health");
+			expect(sourcesJson.data[0]?.id).toBe("journal");
+			expect(sourcesJson.data[0]?.name).toBe("Journal");
 			expect(sourcesJson.data[0]?.recordCount).toBe(6);
 
 			// Query events - zero length interval at start is retained, day record has endAt: null
@@ -757,7 +757,7 @@ describe("worker/routes", () => {
 			const notArrayReq = new Request("https://life.hexly.ai/api/imports", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ source: "apple-health", records: "not-array" }),
+				body: JSON.stringify({ source: "journal", records: "not-array" }),
 			});
 			await expect(handlePostImports(notArrayReq, env)).rejects.toThrow("records must be an array");
 
@@ -765,7 +765,7 @@ describe("worker/routes", () => {
 			const nullReq = new Request("https://life.hexly.ai/api/imports", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ source: "apple-health", records: [null] }),
+				body: JSON.stringify({ source: "journal", records: [null] }),
 			});
 			await expect(handlePostImports(nullReq, env)).rejects.toThrow("must be a non-null object");
 
@@ -773,7 +773,7 @@ describe("worker/routes", () => {
 			const primReq = new Request("https://life.hexly.ai/api/imports", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ source: "apple-health", records: ["string-record"] }),
+				body: JSON.stringify({ source: "journal", records: ["string-record"] }),
 			});
 			await expect(handlePostImports(primReq, env)).rejects.toThrow("must be a non-null object");
 		});
@@ -786,7 +786,7 @@ describe("worker/routes", () => {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					source: "apple-health",
+					source: "journal",
 					records: [{ key: "k1", occurredAt: "", title: "Test" }],
 				}),
 			});
@@ -798,7 +798,7 @@ describe("worker/routes", () => {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					source: "apple-health",
+					source: "journal",
 					records: [{ key: "k1", occurredAt: 12345, title: "Test" }],
 				}),
 			});
@@ -815,7 +815,7 @@ describe("worker/routes", () => {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					source: "apple-health",
+					source: "journal",
 					records: [{ key: "k1", occurredAt: "invalid-date", title: "Test" }],
 				}),
 			});
@@ -825,7 +825,7 @@ describe("worker/routes", () => {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					source: "apple-health",
+					source: "journal",
 					records: [
 						{ key: "k1", occurredAt: "2026-09-13T10:00:00Z", endAt: "invalid-end", title: "Test" },
 					],
@@ -842,7 +842,7 @@ describe("worker/routes", () => {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					source: "apple-health",
+					source: "journal",
 					records: [
 						{ key: "k1", occurredAt: "2026-09-13T10:00:00Z", precision: "invalid", title: "Test" },
 					],
@@ -859,7 +859,7 @@ describe("worker/routes", () => {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					source: "apple-health",
+					source: "journal",
 					records: [
 						{
 							key: "k1",
@@ -878,7 +878,7 @@ describe("worker/routes", () => {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					source: "apple-health",
+					source: "journal",
 					records: [
 						{
 							key: "k1",
@@ -912,7 +912,7 @@ describe("worker/routes", () => {
 			const emptyBatchReq = new Request("https://life.hexly.ai/api/imports", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ source: "apple-health", records: [] }),
+				body: JSON.stringify({ source: "journal", records: [] }),
 			});
 			await expect(handlePostImports(emptyBatchReq, env)).rejects.toThrow(
 				"Records array cannot be empty",
@@ -964,27 +964,27 @@ describe("worker/routes", () => {
 			const importReq = new Request("https://life.hexly.ai/api/imports", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ source: "apple-health", records: records.slice(0, 100) }),
+				body: JSON.stringify({ source: "journal", records: records.slice(0, 100) }),
 			});
 			await handlePostImports(importReq, env);
 
 			const importReq2 = new Request("https://life.hexly.ai/api/imports", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ source: "apple-health", records: records.slice(100, 200) }),
+				body: JSON.stringify({ source: "journal", records: records.slice(100, 200) }),
 			});
 			await handlePostImports(importReq2, env);
 
 			const importReq3 = new Request("https://life.hexly.ai/api/imports", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ source: "apple-health", records: records.slice(200, 205) }),
+				body: JSON.stringify({ source: "journal", records: records.slice(200, 205) }),
 			});
 			await handlePostImports(importReq3, env);
 
 			// Query first page with source filter
 			const url1 = new URL(
-				"https://life.hexly.ai/api/events?start=2026-09-13T00:00:00Z&end=2026-09-13T23:59:59Z&source=apple-health",
+				"https://life.hexly.ai/api/events?start=2026-09-13T00:00:00Z&end=2026-09-13T23:59:59Z&source=journal",
 			);
 			const page1Res = await handleGetEvents(env, url1);
 			const page1 = (await page1Res.json()) as { data: EventPage };
@@ -993,7 +993,7 @@ describe("worker/routes", () => {
 
 			// Query second page using cursor
 			const url2 = new URL(
-				`https://life.hexly.ai/api/events?start=2026-09-13T00:00:00Z&end=2026-09-13T23:59:59Z&source=apple-health&cursor=${page1.data.nextCursor}`,
+				`https://life.hexly.ai/api/events?start=2026-09-13T00:00:00Z&end=2026-09-13T23:59:59Z&source=journal&cursor=${page1.data.nextCursor}`,
 			);
 			const page2Res = await handleGetEvents(env, url2);
 			const page2 = (await page2Res.json()) as { data: EventPage };
@@ -1014,7 +1014,7 @@ describe("worker/routes", () => {
 			const req = new Request("https://life.hexly.ai/api/imports", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ source: "apple-health", records: bigList }),
+				body: JSON.stringify({ source: "journal", records: bigList }),
 			});
 
 			await expect(handlePostImports(req, env)).rejects.toThrow(

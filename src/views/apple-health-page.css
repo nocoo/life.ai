@@ -1,0 +1,13 @@
+.apple-health-page {
+	width: 100%;
+	min-width: 0;
+}
+
+.apple-health-folder-action {
+	background-color: hsl(var(--basalt-muted) / 0.25);
+	transition: border-color 0.15s ease;
+}
+
+.apple-health-folder-action:hover {
+	border-color: hsl(var(--basalt-primary));
+}

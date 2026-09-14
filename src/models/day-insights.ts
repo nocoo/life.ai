@@ -1,3 +1,4 @@
+import { type QuantitySample, quantitySample, sumSensorQuantity } from "./health-quantities";
 import { normalizeTimestamp } from "./time";
 import type { JsonValue, LifeEvent, Precision } from "./types";
 
@@ -10,6 +11,8 @@ export interface TrackPoint {
 	sourceName: string;
 	elevation: number | null;
 	speed: number | null;
+	/** A native GPX segment boundary, independent of the gap between samples. */
+	breakBefore?: boolean;
 }
 
 export interface DailyWorkout {
@@ -159,12 +162,23 @@ export function createDayInsightsCollector(window: Window, retainTrackPoints = f
 	const stand: Interval[] = [];
 	let heartTotal = 0;
 	let activity: Data = {};
+	const sensorQuantities = new Map<
+		"steps" | "distanceMeters" | "flights" | "energyKcal" | "exerciseMinutes",
+		QuantitySample[]
+	>();
 	const addQuantity = (
 		key: "steps" | "distanceMeters" | "flights" | "waterMl" | "energyKcal" | "exerciseMinutes",
 		value: number | null,
 		ratio: number,
+		event: LifeEvent,
 	) => {
-		if (value !== null) result.health[key] = (result.health[key] ?? 0) + value * ratio;
+		if (value === null) return;
+		if (key === "waterMl") result.health.waterMl = (result.health.waterMl ?? 0) + value * ratio;
+		else {
+			const samples = sensorQuantities.get(key) ?? [];
+			samples.push(quantitySample(event, value));
+			sensorQuantities.set(key, samples);
+		}
 	};
 
 	const addPoint = (data: Data, event: LifeEvent) => {
@@ -263,21 +277,22 @@ export function createDayInsightsCollector(window: Window, retainTrackPoints = f
 					: "";
 			const value = data.value;
 			if (type === "StepCount")
-				addQuantity("steps", quantity(value, data.unit, { count: 1 }), ratio);
+				addQuantity("steps", quantity(value, data.unit, { count: 1 }), ratio, event);
 			if (type === "DistanceWalkingRunning")
-				addQuantity("distanceMeters", quantity(value, data.unit, DISTANCE_UNITS), ratio);
+				addQuantity("distanceMeters", quantity(value, data.unit, DISTANCE_UNITS), ratio, event);
 			if (type === "FlightsClimbed")
-				addQuantity("flights", quantity(value, data.unit, { count: 1 }), ratio);
+				addQuantity("flights", quantity(value, data.unit, { count: 1 }), ratio, event);
 			if (type === "DietaryWater")
 				addQuantity(
 					"waterMl",
 					quantity(value, data.unit, { mL: 1, ml: 1, L: 1000, l: 1000, fl_oz_us: 29.5735295625 }),
 					ratio,
+					event,
 				);
 			if (type === "ActiveEnergyBurned")
-				addQuantity("energyKcal", quantity(value, data.unit, ENERGY_UNITS), ratio);
+				addQuantity("energyKcal", quantity(value, data.unit, ENERGY_UNITS), ratio, event);
 			if (type === "AppleExerciseTime")
-				addQuantity("exerciseMinutes", quantity(value, data.unit, MINUTE_UNITS), ratio);
+				addQuantity("exerciseMinutes", quantity(value, data.unit, MINUTE_UNITS), ratio, event);
 			if (
 				type === "AppleStandHour" &&
 				(value === "HKCategoryValueAppleStandHourStood" || value === "0" || value === 0) &&
@@ -355,6 +370,8 @@ export function createDayInsightsCollector(window: Window, retainTrackPoints = f
 			}
 		},
 		finish(): DayInsights {
+			for (const [key, samples] of sensorQuantities)
+				result.health[key] = sumSensorQuantity(samples, window);
 			if (result.health.heartRate)
 				result.health.heartRate.average = heartTotal / result.health.heartRate.samples;
 			if (result.health.sleepMinutes !== null)

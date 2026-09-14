@@ -396,7 +396,7 @@ describe("overview statistics", () => {
 	it("accounts for legacy providers, cross-midnight intervals and boundary-exclusive ends", async () => {
 		await handlePostImports(
 			request({
-				source: "apple-health",
+				source: "journal",
 				records: [
 					{
 						key: "interval",
@@ -418,7 +418,7 @@ describe("overview statistics", () => {
 			fixture.env,
 		);
 		const overview = await unwrap<DataOverview>(await getDataOverview(fixture.env));
-		const health = overview.providers.find((provider) => provider.id === "apple-health");
+		const health = overview.providers.find((provider) => provider.id === "journal");
 		expect(health).toMatchObject({
 			coverageDays: 2,
 			dataRows: 3,
@@ -434,13 +434,13 @@ describe("overview statistics", () => {
 		);
 		expect(
 			(await unwrap<DataOverview>(await getDataOverview(fixture.env))).providers.find(
-				(provider) => provider.id === "apple-health",
+				(provider) => provider.id === "journal",
 			)?.payloadBytes,
 		).toBe((health?.payloadBytes as number) + 1);
 		fixture.sqlite.exec("DELETE FROM life_events WHERE external_key = 'interval'");
 		expect(
 			(await unwrap<DataOverview>(await getDataOverview(fixture.env))).providers.find(
-				(provider) => provider.id === "apple-health",
+				(provider) => provider.id === "journal",
 			),
 		).toMatchObject({ coverageDays: 1, dataRows: 2, recordCount: 2 });
 	});

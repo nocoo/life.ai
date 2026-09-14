@@ -2,21 +2,25 @@ import { readFileSync } from "node:fs";
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DaySummaryQuery, DaySummaryResult } from "../../src/models/ai.js";
+import { packHealthDay } from "../../src/models/apple-health.js";
 import { buildDayInsights, type DayInsights } from "../../src/models/day-insights.js";
 import {
 	FOOTPRINT_DAY_MS,
 	type FootprintPoint,
 	validateFootprintDay,
 } from "../../src/models/footprint.js";
+import type { HealthNode } from "../../src/models/health-types.js";
 import type { LifeEvent } from "../../src/models/types.js";
 import {
 	buildDaySummaryPrompt,
+	formatHealthEvidence,
 	formatInsightsEvidence,
 	handleGetDaySummary,
 	handlePostDaySummary,
 	safeValidateSummaryQuery,
 	streamDayEvents,
 } from "../../worker/day-summary.js";
+import { healthDayHeader, readHealthEvents } from "../../worker/health-read.js";
 import type { WorkerEnv } from "../../worker/types.js";
 
 const day: DaySummaryQuery = {
@@ -37,7 +41,12 @@ function setup() {
 	sqlite.exec(
 		"CREATE TABLE _test_marker (key TEXT PRIMARY KEY, value TEXT); INSERT INTO _test_marker VALUES ('env', 'test');",
 	);
-	for (const name of ["0001_initial.sql", "0002_daily_ai.sql", "0003_provider_days.sql"])
+	for (const name of [
+		"0001_initial.sql",
+		"0002_daily_ai.sql",
+		"0003_provider_days.sql",
+		"0004_apple_health.sql",
+	])
 		sqlite.exec(readFileSync(new URL(`../../worker/migrations/${name}`, import.meta.url), "utf8"));
 	const prepare = vi.fn((sql: string) => {
 		const statement = sqlite.prepare(sql);
@@ -58,7 +67,11 @@ function setup() {
 			},
 		};
 	});
-	const run = vi.fn(async () => ({ response: "当天记录了阅读与步行。" }));
+	const run = vi.fn(
+		async (_model: string, _input: { messages: { role: string; content: string }[] }) => ({
+			response: "当天记录了阅读与步行。",
+		}),
+	);
 	const env: WorkerEnv = {
 		RESOURCE_ENV: "test",
 		DATA_TARGET: "local",
@@ -139,7 +152,53 @@ function setup() {
 			);
 		return day;
 	};
-	return { sqlite, env, run, insert, prepare, putDay };
+	const putHealthDay = async (
+		utcDay: number,
+		nodes: HealthNode[],
+		updatedAt = Date.parse("2026-09-14T00:00:00Z"),
+	) => {
+		const health = await packHealthDay(utcDay, nodes);
+		const header = healthDayHeader(health);
+		sqlite.exec(
+			"INSERT OR IGNORE INTO sources VALUES ('apple-health', 'Apple 健康', 'import', 'apple-health', 0)",
+		);
+		sqlite.prepare("DELETE FROM health_series WHERE utc_day = ?").run(utcDay);
+		for (const series of health.data.series)
+			sqlite
+				.prepare(
+					"INSERT INTO health_series (utc_day, dimension, part, record_count, first_at, last_at, raw_bytes, payload_bytes, content_hash, body, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+				)
+				.run(
+					health.utcDay,
+					series.dimension,
+					series.part,
+					series.recordCount,
+					series.firstAt,
+					series.lastAt,
+					series.rawBytes,
+					series.payloadBytes,
+					series.contentHash,
+					series.body,
+					updatedAt,
+				);
+		sqlite
+			.prepare(
+				"INSERT OR REPLACE INTO provider_days VALUES ('apple-health', ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			)
+			.run(
+				health.utcDay,
+				health.recordCount,
+				health.firstAt,
+				health.lastAt,
+				header.bytes,
+				JSON.stringify(health.summary),
+				header.json,
+				health.contentHash,
+				updatedAt,
+			);
+		return health;
+	};
+	return { sqlite, env, run, insert, prepare, putDay, putHealthDay };
 }
 function request(query: unknown = day) {
 	return new Request("http://localhost:17011/api/day-summary", {
@@ -165,7 +224,47 @@ function prompt(evidence: Awaited<ReturnType<typeof scan>>) {
 		evidence.sourceCounts,
 		evidence.samplesBySource,
 		evidence.insights,
+		formatHealthEvidence(evidence.health, day.timeZone),
 	);
+}
+
+function healthRecord(
+	type: string,
+	startDate: string,
+	value: string,
+	unit = "count",
+	attributes: Record<string, string> = {},
+): HealthNode {
+	return {
+		name: "Record",
+		attributes: {
+			type: `HKQuantityTypeIdentifier${type}`,
+			startDate,
+			value,
+			unit,
+			sourceName: "Apple Watch",
+			device: "Watch",
+			...attributes,
+		},
+	};
+}
+
+function sleepRecord(
+	kind: string,
+	startDate: string,
+	endDate: string,
+	sourceName = "Apple Watch",
+): HealthNode {
+	return {
+		name: "Record",
+		attributes: {
+			type: "HKCategoryTypeIdentifierSleepAnalysis",
+			startDate,
+			endDate,
+			sourceName,
+			value: `HKCategoryValueSleepAnalysis${kind}`,
+		},
+	};
 }
 
 describe("daily summary evidence", () => {
@@ -208,6 +307,7 @@ describe("daily summary evidence", () => {
 		insert({
 			sourceId: "health",
 			sourceName: "健康",
+			occurredAt: "2026-09-13T02:31:00.000Z",
 			data: { type: "HKQuantityTypeIdentifierStepCount", value: "500", unit: "count" },
 		});
 		const evidence = await scan(env);
@@ -346,6 +446,359 @@ describe("daily summary evidence", () => {
 				buildDayInsights([], day),
 			),
 		).toContain("无特定生理或收支数值指标");
+	});
+});
+
+describe("compact Apple Health summary evidence", () => {
+	it("puts the complete previous night and its GPS context into the waking day's real AI prompt", async () => {
+		const { env, run, putHealthDay, putDay } = setup();
+		const utcDay = Date.parse("2026-09-12T00:00:00Z");
+		await putHealthDay(utcDay, [
+			sleepRecord("AsleepCore", "2026-09-12T14:00:00Z", "2026-09-12T17:00:00Z"),
+			sleepRecord("AsleepDeep", "2026-09-12T17:00:00Z", "2026-09-12T19:00:00Z"),
+			sleepRecord("Awake", "2026-09-12T19:00:00Z", "2026-09-12T19:30:00Z"),
+			sleepRecord("AsleepCore", "2026-09-12T19:30:00Z", "2026-09-12T23:00:00Z"),
+			sleepRecord("AsleepUnspecified", "2026-09-12T14:00:00Z", "2026-09-12T23:00:00Z", "iPhone"),
+			sleepRecord("InBed", "2026-09-12T13:30:00Z", "2026-09-12T23:30:00Z", "iPhone"),
+		]);
+		await putDay(utcDay, [
+			[13.75 * 3600, 31, 121, null, null, null],
+			[15 * 3600, 31.0001, 121.0001, null, null, null],
+		]);
+		const evidence = await scan(env);
+		expect(evidence.eventCount).toBe(6);
+		expect(evidence.sourceCounts).toEqual({ "Apple 健康": 6 });
+		expect(evidence.insights.health).toMatchObject({
+			sleepMinutes: 510,
+			sleepStages: [
+				{ name: "核心睡眠", minutes: 390 },
+				{ name: "深睡", minutes: 120 },
+			],
+		});
+		expect(evidence.health?.sleep).toMatchObject({
+			fellAsleepAt: "2026-09-12T14:00:00.000Z",
+			wokeAt: "2026-09-12T23:00:00.000Z",
+			inBedMinutes: 600,
+			awakeMinutes: 30,
+			place: { sampleCount: 2 },
+		});
+		expect(evidence.insights.gps.pointCount).toBe(0);
+		expect((await scan(env, false)).inputHash).toBe(evidence.inputHash);
+		await handlePostDaySummary(request(), env);
+		const sent = run.mock.calls[0]?.[1].messages[0]?.content ?? "";
+		expect(sent).toContain("睡眠 8小时30分");
+		expect(sent).toContain("09/12 22:00 入睡");
+		expect(sent).toContain("09/13 07:00 睡眠结束");
+		expect(sent).toContain("实际睡眠 510 分钟");
+		expect(sent).toContain("夜间 2 个 GPS 采样");
+		const previousDay = { start: "2026-09-11T16:00:00.000Z", end: day.start };
+		const previous = await streamDayEvents(
+			env,
+			Date.parse(previousDay.start),
+			Date.parse(previousDay.end),
+			previousDay,
+		);
+		expect(previous.health?.nights).toEqual([]);
+		expect(previous.health?.bedtimes).toHaveLength(1);
+		expect(formatHealthEvidence(previous.health, day.timeZone).join("\n")).not.toContain(
+			"醒来的这一夜",
+		);
+	});
+
+	it("keeps all sensor samples while reporting wearable-first activity and a duplicated workout only once", async () => {
+		const { env, putHealthDay } = setup();
+		const utcDay = Date.parse("2026-09-13T00:00:00Z");
+		const workout: HealthNode = {
+			name: "Workout",
+			attributes: {
+				workoutActivityType: "HKWorkoutActivityTypeCycling",
+				sourceName: "Apple Watch",
+				startDate: "2026-09-13T02:00:00Z",
+				endDate: "2026-09-13T03:00:00Z",
+				duration: "45",
+				durationUnit: "min",
+				totalDistance: "15",
+				totalDistanceUnit: "km",
+			},
+		};
+		await putHealthDay(utcDay, [
+			healthRecord("StepCount", "2026-09-13T00:00:00Z", "400", "count", {
+				endDate: "2026-09-13T04:00:00Z",
+				sourceName: "iPhone",
+				device: "iPhone",
+			}),
+			healthRecord("StepCount", "2026-09-13T01:00:00Z", "300", "count", {
+				endDate: "2026-09-13T03:00:00Z",
+			}),
+			healthRecord("DistanceWalkingRunning", "2026-09-13T01:00:00Z", "1", "km", {
+				endDate: "2026-09-13T02:00:00Z",
+			}),
+			healthRecord("DistanceWalkingRunning", "2026-09-13T01:00:00Z", "1.2", "km", {
+				endDate: "2026-09-13T02:00:00Z",
+				sourceName: "iPhone",
+				device: "iPhone",
+			}),
+			healthRecord("FlightsClimbed", "2026-09-13T01:00:00Z", "4", "count", {
+				endDate: "2026-09-13T02:00:00Z",
+			}),
+			healthRecord("FlightsClimbed", "2026-09-13T01:00:00Z", "5", "count", {
+				endDate: "2026-09-13T02:00:00Z",
+				sourceName: "iPhone",
+				device: "iPhone",
+			}),
+			healthRecord("HeartRate", "2026-09-13T01:00:00Z", "60", "count/min"),
+			healthRecord("HeartRate", "2026-09-13T01:30:00Z", "65", "count/min"),
+			healthRecord("HeartRate", "2026-09-13T02:15:00Z", "160", "count/min"),
+			workout,
+			{ ...workout, attributes: { ...workout.attributes, sourceName: "Strava" } },
+		]);
+		const evidence = await scan(env);
+		expect(evidence.eventCount).toBe(11);
+		expect(evidence.sourceCounts).toEqual({ "Apple 健康": 11 });
+		expect(evidence.insights.health).toMatchObject({
+			steps: 500,
+			distanceMeters: 1000,
+			flights: 4,
+		});
+		expect(evidence.insights.workoutCount).toBe(1);
+		expect(evidence.insights.workouts).toEqual([
+			expect.objectContaining({ title: "骑行", durationMinutes: 45, distanceMeters: 15000 }),
+		]);
+		const text = prompt(evidence);
+		expect(text).toContain("步数 500 步");
+		expect(text).toContain("爬楼 4 层");
+		expect(text).toContain("共 1 次运动");
+		expect(text).toContain("09/13 10:15 心率 160 bpm；同时段有 骑行");
+	});
+
+	it("renders rare pressure/ECG measurements at local times with distinct physiological units", async () => {
+		const { env, putHealthDay, run } = setup();
+		const measuredAt = "2026-09-13T01:15:00Z";
+		const systolic = healthRecord("BloodPressureSystolic", measuredAt, "122", "mmHg", {
+			sourceName: "Cuff",
+		});
+		const diastolic = healthRecord("BloodPressureDiastolic", measuredAt, "78", "mmHg", {
+			sourceName: "Cuff",
+		});
+		await putHealthDay(Date.parse("2026-09-13T00:00:00Z"), [
+			{
+				name: "Correlation",
+				attributes: {
+					type: "HKCorrelationTypeIdentifierBloodPressure",
+					startDate: measuredAt,
+					sourceName: "Cuff",
+				},
+				children: [systolic, diastolic],
+			},
+			systolic,
+			diastolic,
+			healthRecord("BloodPressureSystolic", "2026-09-13T01:30:00Z", "120", "mmHg", {
+				sourceName: "Cuff",
+			}),
+			healthRecord("BloodPressureDiastolic", "2026-09-13T01:45:00Z", "80", "mmHg", {
+				sourceName: "Other cuff",
+			}),
+			{
+				name: "Electrocardiogram",
+				attributes: {
+					startDate: "2026-09-13T02:05:00Z",
+					filePath: "electrocardiograms/ecg.csv",
+					samplingHz: "512",
+					classification: "HKElectrocardiogramClassificationSinusRhythm",
+					averageHeartRate: "72",
+					durationSeconds: "30",
+					sampleCount: "15360",
+					unit: "µV",
+				},
+			},
+			healthRecord("OxygenSaturation", "2026-09-13T03:00:00Z", "0.96", "%"),
+			healthRecord("OxygenSaturation", "2026-09-13T04:00:00Z", "98", "%"),
+			healthRecord("RespiratoryRate", "2026-09-13T03:00:00Z", "14.5", "count/min"),
+			healthRecord("HeartRate", "2026-09-13T05:00:00Z", "60", "count/min"),
+			healthRecord("HeartRate", "2026-09-13T05:30:00Z", "65", "count/min"),
+			healthRecord("HeartRate", "2026-09-13T06:00:00Z", "160", "count/min"),
+		]);
+		const evidence = await scan(env);
+		expect(evidence.health?.bloodPressure).toHaveLength(3);
+		expect(evidence.health?.bloodPressure[0]?.eventIds).toHaveLength(3);
+		expect(evidence.health?.ecg[0]).toMatchObject({
+			averageHeartRate: "72",
+			unit: "µV",
+			durationSeconds: "30",
+			samplingHz: "512",
+			sampleCount: "15360",
+		});
+		await handlePostDaySummary(request(), env);
+		const sent = run.mock.calls[0]?.[1].messages[0]?.content ?? "";
+		expect(sent).toContain("09/13 09:15 血压 122/78 mmHg（Cuff）");
+		expect(sent).toContain("09/13 09:30 血压 120/未记录 mmHg");
+		expect(sent).toContain("09/13 09:45 血压 未记录/80 mmHg");
+		expect(sent).toContain("血氧：2 次测量，均值 97.0%");
+		expect(sent).toContain("呼吸频率：1 次测量，均值 14.5 次/分");
+		expect(sent).toContain("09/13 14:00 心率 160 bpm；无同时段活动记录");
+		const ecgLine = sent.split("\n").find((line) => line.includes("心电图测量")) ?? "";
+		expect(ecgLine).toContain("09/13 10:05");
+		expect(ecgLine).toContain("设备原始分类：窦性心律");
+		expect(ecgLine).toMatch(/72\s*bpm/);
+		expect(ecgLine).toMatch(/30\s*(秒|s)/);
+		expect(ecgLine).not.toMatch(/72\s*µV/);
+	});
+
+	it("hashes every original in-day sample and its nested metadata even beyond the narrative sample budget", async () => {
+		const { env, putHealthDay } = setup();
+		const utcDay = Date.parse("2026-09-13T00:00:00Z");
+		const records = Array.from({ length: 60 }, (_, index) =>
+			healthRecord("HeartRate", new Date(utcDay + index * 60_000).toISOString(), "80", "count/min"),
+		);
+		await putHealthDay(utcDay, records);
+		const first = await data(await handlePostDaySummary(request(), env));
+		expect(first.eventCount).toBe(60);
+		expect((await scan(env)).samplesBySource["Apple 健康"]).toHaveLength(2);
+		const changed = records.map((record, index) =>
+			index === 30 ? { ...record, attributes: { ...record.attributes, value: "81" } } : record,
+		);
+		await putHealthDay(utcDay, changed);
+		expect((await data(await handleGetDaySummary(env, url()))).stale).toBe(true);
+		await putHealthDay(utcDay, records, Date.now());
+		expect((await data(await handleGetDaySummary(env, url()))).stale).toBe(false);
+		const withMetadata = records.map((record, index) =>
+			index === 30
+				? {
+						...record,
+						children: [
+							{ name: "MetadataEntry", attributes: { key: "motionContext", value: "rest" } },
+						],
+					}
+				: record,
+		);
+		await putHealthDay(utcDay, withMetadata);
+		const result = await data(await handleGetDaySummary(env, url()));
+		expect(result.stale).toBe(true);
+		expect(result.summary).toEqual(first.summary);
+		expect(result.eventCount).toBe(60);
+	});
+
+	it("invalidates a waking-day summary when only yesterday's sleep or overnight location evidence changes", async () => {
+		const { env, putHealthDay, putDay } = setup();
+		const utcDay = Date.parse("2026-09-12T00:00:00Z");
+		const beforeMidnight = sleepRecord(
+			"AsleepCore",
+			"2026-09-12T14:00:00Z",
+			"2026-09-12T15:00:00Z",
+		);
+		const after = sleepRecord("AsleepDeep", "2026-09-12T15:00:00Z", "2026-09-12T23:00:00Z");
+		await putHealthDay(utcDay, [beforeMidnight, after]);
+		await putDay(utcDay, [
+			[13.75 * 3600, 31, 121, null, null, null],
+			[15 * 3600, 31.0001, 121.0001, null, null, null],
+		]);
+		const first = await data(await handlePostDaySummary(request(), env));
+		expect(first.eventCount).toBe(1);
+		await putHealthDay(utcDay, [
+			{
+				...beforeMidnight,
+				attributes: { ...beforeMidnight.attributes, startDate: "2026-09-12T13:30:00Z" },
+			},
+			after,
+		]);
+		const sleepChanged = await data(await handleGetDaySummary(env, url()));
+		expect(sleepChanged.stale).toBe(true);
+		expect(sleepChanged.eventCount).toBe(1);
+		expect((await scan(env)).insights.health.sleepMinutes).toBe(570);
+		await putHealthDay(utcDay, [beforeMidnight, after], Date.now());
+		expect((await data(await handleGetDaySummary(env, url()))).stale).toBe(false);
+		await putDay(utcDay, [
+			[13.75 * 3600, 32, 122, null, null, null],
+			[15 * 3600, 32.0001, 122.0001, null, null, null],
+		]);
+		const placeChanged = await data(await handleGetDaySummary(env, url()));
+		expect(placeChanged.stale).toBe(true);
+		expect(placeChanged.eventCount).toBe(1);
+	});
+
+	it("keeps unchanged health summaries fresh when only import timestamps and outside-window indices change", async () => {
+		const { env, sqlite, putHealthDay } = setup();
+		const utcDay = Date.parse("2026-09-12T00:00:00Z");
+		const inside = [
+			healthRecord("HeartRate", "2026-09-12T16:30:00Z", "70", "count/min"),
+			healthRecord("HeartRate", "2026-09-12T17:30:00Z", "80", "count/min"),
+		];
+		await putHealthDay(utcDay, inside);
+		const first = await data(await handlePostDaySummary(request(), env));
+		const before = await readHealthEvents(env.DB, Date.parse(day.start), Date.parse(day.end));
+		await putHealthDay(
+			utcDay,
+			[healthRecord("HeartRate", "2026-09-12T10:00:00Z", "65", "count/min"), ...inside],
+			Date.now(),
+		);
+		sqlite.exec(
+			"UPDATE provider_days SET content_hash='changed-outside-window' WHERE source_id='apple-health'",
+		);
+		const after = await readHealthEvents(env.DB, Date.parse(day.start), Date.parse(day.end));
+		expect(after.map((event) => event.id)).not.toEqual(before.map((event) => event.id));
+		expect(after[0]?.updatedAt).not.toBe(before[0]?.updatedAt);
+		expect((await data(await handleGetDaySummary(env, url()))).stale).toBe(false);
+		expect((await scan(env, false)).inputHash).toBe(first.summary?.inputHash);
+	});
+
+	it("keeps coincident health samples fresh across a virtual-index digit boundary", async () => {
+		const { env, putHealthDay } = setup();
+		const utcDay = Date.parse("2026-09-12T00:00:00Z");
+		const outside = Array.from({ length: 9 }, (_, index) =>
+			healthRecord("HeartRate", new Date(utcDay + index * 60_000).toISOString(), "65", "count/min"),
+		);
+		const inside = [
+			healthRecord("HeartRate", "2026-09-12T16:30:00Z", "70", "count/min"),
+			healthRecord("HeartRate", "2026-09-12T16:30:00Z", "80", "count/min"),
+		];
+		await putHealthDay(utcDay, [...outside, ...inside]);
+		const first = await data(await handlePostDaySummary(request(), env));
+		await putHealthDay(
+			utcDay,
+			[...outside, healthRecord("HeartRate", "2026-09-12T10:00:00Z", "65", "count/min"), ...inside],
+			Date.now(),
+		);
+		const result = await data(await handleGetDaySummary(env, url()));
+		expect(result.eventCount).toBe(2);
+		expect(result.stale).toBe(false);
+		expect((await scan(env, false)).inputHash).toBe(first.summary?.inputHash);
+	});
+
+	it("counts dense compact dimensions and every legacy page without reviving replaced health records", async () => {
+		const { env, putHealthDay, putDay, insert } = setup();
+		const utcDay = Date.parse("2026-09-13T00:00:00Z");
+		const records = Array.from({ length: 230 }, (_, index) =>
+			healthRecord(
+				index === 229 ? "WalkingAsymmetryPercentage" : "HeartRate",
+				new Date(utcDay + index * 60_000).toISOString(),
+				index === 229 ? "0.04" : "75",
+				index === 229 ? "%" : "count/min",
+			),
+		);
+		await putHealthDay(utcDay, records);
+		await putDay(utcDay, [
+			[0, 31, 121, null, null, null],
+			[60, 31.001, 121.001, null, null, null],
+		]);
+		insert({
+			sourceId: "apple-health",
+			sourceName: "Apple 健康",
+			title: "old health row",
+			data: { type: "HKQuantityTypeIdentifierStepCount", value: "99999", unit: "count" },
+		});
+		for (let index = 0; index < 205; index++)
+			insert({
+				id: `journal-${index}`,
+				occurredAt: new Date(utcDay + index * 60_000).toISOString(),
+			});
+		const evidence = await scan(env);
+		expect(evidence.eventCount).toBe(437);
+		expect(evidence.sourceCounts).toEqual({ "Apple 健康": 230, Footprint: 2, 日记: 205 });
+		expect(evidence.insights.health.steps).toBeNull();
+		expect(evidence.insights.health.heartRate?.samples).toBe(229);
+		expect(prompt(evidence)).not.toContain("old health row");
+		expect(prompt(evidence)).toContain("WalkingAsymmetryPercentage");
+		expect((await scan(env, false)).inputHash).toBe(evidence.inputHash);
 	});
 });
 

@@ -7,10 +7,13 @@ import {
 } from "../src/models/ai.js";
 import { createDayInsightsCollector, type DayInsights } from "../src/models/day-insights.js";
 import { footprintDayEvents } from "../src/models/footprint.js";
+import { buildHealthStory, type HealthStory } from "../src/models/health-insights.js";
+import { applyHealthStoryInsights } from "../src/models/health-quantities.js";
 import type { LifeEvent, Precision } from "../src/models/types.js";
 import { generateAiText } from "./ai.js";
 import { eventRowToEvent, readEventRows } from "./events.js";
 import { readFootprintDays } from "./footprint-read.js";
+import { readHealthEvents } from "./health-read.js";
 import { ApiError, type WorkerEnv } from "./types.js";
 import { jsonResponse, readJsonBody } from "./utils.js";
 
@@ -54,7 +57,7 @@ export function safeValidateSummaryQuery(input: unknown): DaySummaryQuery {
 	}
 }
 
-/** Incremental SHA-256 and paged aggregation; raw records never accumulate in Worker memory. */
+/** Page legacy rows; decode only this day and its bounded sleep context for compact health evidence. */
 export async function streamDayEvents(
 	env: WorkerEnv,
 	startMs: number,
@@ -63,12 +66,38 @@ export async function streamDayEvents(
 	withEvidence = true,
 ) {
 	const collector = createDayInsightsCollector(window, false);
-	const hash = createHash("sha256").update(JSON.stringify(["life-day-v2", startMs, endMs]));
+	const hash = createHash("sha256").update(JSON.stringify(["life-day-v3", startMs, endMs]));
 	const sourceCounts: Record<string, number> = Object.create(null);
 	const buckets = new Map<string, Map<number, NarrativeSample[]>>();
-	const footprint = (await readFootprintDays(env.DB, startMs, endMs)).flatMap((day) =>
-		footprintDayEvents(day, { start: startMs, end: endMs }),
+	const contextStart = startMs - 86_400_000;
+	const [footprintDays, healthEvents, sleepEvents] = await Promise.all([
+		readFootprintDays(env.DB, contextStart, endMs),
+		readHealthEvents(env.DB, startMs, endMs),
+		readHealthEvents(env.DB, contextStart, endMs + 12 * 3_600_000, [
+			"HKCategoryTypeIdentifierSleepAnalysis",
+		]),
+	]);
+	const footprintContext = footprintDays.flatMap((day) =>
+		footprintDayEvents(day, { start: contextStart, end: endMs }),
 	);
+	const health =
+		healthEvents.length || sleepEvents.length
+			? buildHealthStory([...footprintContext, ...sleepEvents, ...healthEvents], window)
+			: null;
+	const healthContent = new Map(
+		healthEvents.map((event) => {
+			const { id: _id, updatedAt: _updatedAt, ...content } = event;
+			return [event, JSON.stringify(content)] as const;
+		}),
+	);
+	const orderKey = (event: LifeEvent) =>
+		healthContent.has(event) ? `health:${healthContent.get(event)}` : event.id;
+	const compareEvents = (a: LifeEvent, b: LifeEvent) =>
+		a.occurredAt.localeCompare(b.occurredAt) || orderKey(a).localeCompare(orderKey(b));
+	const footprint = [
+		...footprintContext.filter((event) => Date.parse(event.occurredAt) >= startMs),
+		...healthEvents,
+	].sort(compareEvents);
 	let footprintIndex = 0;
 	let seenFootprint = false;
 	let cursor: { occurredAtMs: number; id: string } | null = null;
@@ -97,6 +126,9 @@ export async function streamDayEvents(
 					data,
 				]),
 			);
+		} else if (event.sourceId === "apple-health") {
+			const { id: _id, updatedAt: _updatedAt, ...content } = event;
+			hash.update(JSON.stringify(content));
 		} else hash.update(JSON.stringify(event));
 		hash.update("\n");
 		if (!withEvidence) return;
@@ -133,11 +165,7 @@ export async function streamDayEvents(
 			const event = eventRowToEvent(row);
 			while (footprintIndex < footprint.length) {
 				const next = footprint[footprintIndex] as LifeEvent;
-				if (
-					next.occurredAt > event.occurredAt ||
-					(next.occurredAt === event.occurredAt && next.id > event.id)
-				)
-					break;
+				if (compareEvents(next, event) > 0) break;
 				consume(next);
 				footprintIndex++;
 			}
@@ -149,6 +177,22 @@ export async function streamDayEvents(
 	}
 	for (; footprintIndex < footprint.length; footprintIndex++)
 		consume(footprint[footprintIndex] as LifeEvent);
+	// Previous-night evidence can change the waking-day summary independently of today's samples.
+	if (health?.nights.length)
+		hash.update(
+			JSON.stringify(
+				health.nights.map((night) => ({
+					start: night.fellAsleepAt,
+					end: night.wokeAt,
+					asleep: night.asleepMinutes,
+					awake: night.awakeMinutes,
+					inBed: night.inBedMinutes,
+					stages: night.stages,
+					sources: night.sources,
+					place: night.place,
+				})),
+			),
+		);
 	const samplesBySource: Record<string, NarrativeSample[]> = Object.create(null);
 	const perSource = Math.min(
 		MAX_SAMPLES_PER_SOURCE,
@@ -167,8 +211,11 @@ export async function streamDayEvents(
 							] as NarrativeSample,
 					);
 	}
+	const insights = collector.finish();
+	if (health && withEvidence) applyHealthStoryInsights(insights, health);
 	return {
-		insights: collector.finish(),
+		insights,
+		health,
 		inputHash: hash.digest("hex"),
 		eventCount,
 		sourceCounts,
@@ -248,6 +295,47 @@ export function formatInsightsEvidence(insights: DayInsights): string[] {
 	return lines;
 }
 
+export function formatHealthEvidence(health: HealthStory | null, timeZone: string): string[] {
+	if (!health) return [];
+	const clock = (at: string) =>
+		new Intl.DateTimeFormat("zh-CN", {
+			timeZone,
+			month: "2-digit",
+			day: "2-digit",
+			hour: "2-digit",
+			minute: "2-digit",
+			hourCycle: "h23",
+		}).format(new Date(at));
+	return [
+		...health.nights.map(
+			(night) =>
+				`- 醒来的这一夜：${clock(night.fellAsleepAt)} 入睡，${clock(night.wokeAt)} 睡眠结束，实际睡眠 ${Math.round(night.asleepMinutes)} 分钟${night.place ? `；夜间 ${night.place.sampleCount} 个 GPS 采样位于约 ${Math.round(night.place.radiusMeters)} 米范围，场所性质未知` : ""}`,
+		),
+		...health.moments
+			.filter((moment) => moment.kind === "heartPeak")
+			.map(
+				(moment) =>
+					`- ${clock(moment.occurredAt)} 心率 ${moment.bpm} bpm；${moment.context.join("；") || "无同时段活动记录"}`,
+			),
+		...health.bloodPressure.map(
+			(reading) =>
+				`- ${clock(reading.occurredAt)} 血压 ${reading.systolic ?? "未记录"}/${reading.diastolic ?? "未记录"} mmHg（${reading.sourceName}）`,
+		),
+		...health.ecg.map(
+			(ecg) =>
+				`- ${clock(ecg.occurredAt)} 心电图测量；设备原始分类：${ecg.classificationLabel}${ecg.averageHeartRate ? `；平均心率 ${ecg.averageHeartRate} bpm` : ""}${ecg.durationSeconds ? `；持续 ${ecg.durationSeconds} 秒` : ""}`,
+		),
+		...(health.day.oxygen
+			? [`- 血氧：${health.day.oxygen.samples} 次测量，均值 ${health.day.oxygen.mean.toFixed(1)}%`]
+			: []),
+		...(health.day.respiratory
+			? [
+					`- 呼吸频率：${health.day.respiratory.samples} 次测量，均值 ${health.day.respiratory.mean.toFixed(1)} 次/分`,
+				]
+			: []),
+	];
+}
+
 /**
  * Build concise prompt for Chinese daily life chronicle summary.
  * Integrates createDayInsightsCollector numeric evidence alongside source/hour counts
@@ -260,12 +348,13 @@ export function buildDaySummaryPrompt(
 	sourceCounts: Record<string, number>,
 	samplesBySource: Record<string, NarrativeSample[]>,
 	insights: DayInsights,
+	healthEvidence: string[] = [],
 ): string {
 	const statsLines = Object.entries(sourceCounts)
 		.slice(0, MAX_SAMPLED_SOURCES)
 		.map(([source, count]) => `- ${source.slice(0, 80)}: 共 ${count} 条记录`);
 
-	const evidenceLines = formatInsightsEvidence(insights);
+	const evidenceLines = [...formatInsightsEvidence(insights), ...healthEvidence];
 
 	const sampleBlocks: string[] = [];
 	for (const [source, list] of Object.entries(samplesBySource)) {
@@ -432,7 +521,7 @@ export async function handlePostDaySummary(request: Request, env: WorkerEnv): Pr
 
 	try {
 		// Stream events page-by-page, accumulating bounded evidence & hash
-		const { insights, inputHash, eventCount, sourceCounts, samplesBySource } =
+		const { insights, health, inputHash, eventCount, sourceCounts, samplesBySource } =
 			await streamDayEvents(env, startMs, endMs, {
 				start: query.start,
 				end: query.end,
@@ -450,6 +539,7 @@ export async function handlePostDaySummary(request: Request, env: WorkerEnv): Pr
 			sourceCounts,
 			samplesBySource,
 			insights,
+			formatHealthEvidence(health, query.timeZone),
 		);
 
 		const { content, provider, model } = await generateAiText(env, prompt);

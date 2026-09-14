@@ -67,7 +67,7 @@ export function isTransientError(error: unknown): boolean {
 	return true;
 }
 
-async function abortableDelay(ms: number, signal?: AbortSignal): Promise<void> {
+export async function abortableDelay(ms: number, signal?: AbortSignal): Promise<void> {
 	if (ms <= 0) return;
 	signal?.throwIfAborted();
 	return new Promise((resolve, reject) => {
@@ -135,7 +135,7 @@ export function partitionFootprintDays(
 	return batches;
 }
 
-export function createFootprintClient(options: FootprintClientOptions = {}): FootprintClient {
+export function createDataRequest(options: FootprintClientOptions = {}) {
 	const baseUrl = options.baseUrl ? options.baseUrl.replace(/\/+$/, "") : "";
 	const fetchImpl = options.fetchFn ?? fetch;
 	const requestTimeoutMs = options.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
@@ -237,6 +237,11 @@ export function createFootprintClient(options: FootprintClientOptions = {}): Foo
 		return payload;
 	}
 
+	return request;
+}
+
+export function createFootprintClient(options: FootprintClientOptions = {}): FootprintClient {
+	const request = createDataRequest(options);
 	return {
 		async target(signal?: AbortSignal): Promise<DataTarget> {
 			const res = await request<{ target: DataTarget }>("/api/data/target", {

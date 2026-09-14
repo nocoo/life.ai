@@ -131,7 +131,7 @@ ON life_events(source_id, occurred_at ASC, id ASC);
   ```json
   {
     "status": "ok",
-    "version": "1.1.0",
+    "version": "1.5.0",
     "timestamp": "2026-09-13T17:35:00.000Z",
     "database": "ok"
   }
@@ -163,10 +163,10 @@ The profile uses SHA-256 of the normalized authenticated email with `lizheng.blo
 - Validates window width $\le 32$ days.
 - In-window occurrence condition includes point events and zero-length intervals at window start (`occurred_at >= start AND occurred_at < end`), plus non-day interval events overlapping the window (`precision != 'day' AND end_at > occurred_at AND occurred_at < end AND end_at > start`).
 - Paginated with page size 200 using opaque base64url cursor `base64url(occurredAtMs:id)`.
-- The first page also returns `footprintDays` containing compact UTC packages intersecting the window. The frontend decodes and clips their points to the same window; subsequent event pages do not repeat the packages. A UTC date with a compact package excludes legacy Footprint events for that date. Point and overlapping-interval branches use separate indexes.
+- The first page also returns `footprintDays` and `healthSeries` containing compact UTC packages intersecting the window, subject to the source filter. The frontend decodes and clips observations to the same window; subsequent event pages do not repeat the packages. `healthView=story` selects the timeline's health dimensions; omitted `healthView` returns all dimensions. A UTC date with a compact package excludes legacy events for that provider/date. Point and overlapping-interval branches use separate indexes.
 
 ### 4.5 `POST /api/imports`
-- Accepts batch of 1 to 100 records for `apple-health`, `pixiu`, and `journal`. Old `footprint` submissions return `410 footprint_import_moved`; use the dedicated complete-day API below.
+- Accepts batches of 1 to 100 records for `pixiu` and `journal`. Old `footprint` and `apple-health` submissions return `410 footprint_import_moved` and `410 health_import_moved`; use their dedicated complete-day APIs below.
 - Validates that records array contains only valid objects.
 - Precision defaults to `'hour'` only if `undefined`; explicit invalid values return `400 invalid_precision`.
 - Normalized and floored via shared `timestampAtPrecision`.
@@ -197,7 +197,7 @@ The profile uses SHA-256 of the normalized authenticated email with `lizheng.blo
 
 | Item | Limit |
 | --- | --- |
-| Max Request Body | 1 MiB (stream-capped) |
+| Default Max Request Body | 1 MiB (stream-capped); provider import limits below override this |
 | Max Event Data (`data`) | 32 KiB JSON |
 | Max Event Title | 200 characters |
 | Max Event Content | 8,000 characters |
@@ -242,3 +242,32 @@ Migration `0003_provider_days.sql` adds `provider_days` with key `(source_id, ut
 A batch atomically claims the lease, replaces its included days, maintains totals and removes their legacy Footprint rows. Missing dates remain untouched. Replaying the latest batch returns its receipt without accumulating counts. Unchanged content preserves package `updated_at`; A → B → A restores A. This is a per-batch transaction, so an interrupted full-file import can be resumed by rerunning the same file. The compact codec, CLI, Skill and complete verification contract are in [15 Data Management](15-data-management.md).
 
 GPS AI evidence follows the same local-day UTC window. Hashes ignore import timestamps, virtual point IDs and package contents outside that window, while preserving meaningful GPS fields and segment boundaries.
+
+## 8. Apple Health
+
+All seven contracts require Access on the app hostname and use the same target/origin checks as Footprint. The machine hostname returns 404. Imports accept a fully prepared ZIP/directory plan through the shared client, not raw XML uploaded to the Worker.
+
+| Endpoint | Behavior |
+| --- | --- |
+| `POST /api/data/apple-health/imports` | `{ fileName, totalDays, totalRecords, files, channel, target }`; validates the attachment manifest and takes a five-minute provider lease |
+| `GET /api/data/apple-health/files` | Path/hash inventory used to skip unchanged attachments |
+| `PUT /api/data/apple-health/imports/:id/files/:fileIndex/parts/:part` | Uploads one immutable gzip/base64 part; verifies decoded bytes/hash and refreshes the lease. Publishes the file manifest only when every part is present |
+| `PUT /api/data/apple-health/imports/:id/batches/:batchId` | `{ days: [day] }`; one complete UTC day, consecutive positive batch IDs, ascending dates, maximum 4 MiB serialized request. All declared files must be committed before the first day |
+| `POST /api/data/apple-health/imports/:id/finish` | `{ status: "complete" \| "cancelled" }`; completion requires every declared day, event and attachment. Returns `committedRecords`, inserted/updated/unchanged day counts and session status |
+| `GET /api/data/apple-health/series?start=ISO&end=ISO&view=all` | Positive UTC window up to 32 days; `view=all` or `story`. Includes earlier series whose intervals overlap the window; callers decode and clip observations |
+| `GET /api/data/apple-health/file?path=PATH&part=INDEX` | Without `part`, returns the current manifest. With `part`, returns one lossless part and its hashes; ECG and workout maps request only their attachment |
+
+Migration `0004_apple_health.sql` adds three tables, reusing `provider_days`, `provider_state` and the existing per-provider lease table:
+
+| Table | Key and contents |
+| --- | --- |
+| `provider_days` | `(source_id, utc_day)`; one Apple Health daily header containing series descriptors and source/dimension/nested-node totals |
+| `health_series` | `(utc_day, dimension, part)`; gzip/base64 canonical original nodes, counts, time bounds and SHA-256. Each series is bounded at 512 KiB encoded / 8 MiB decoded; a day has at most 128 parts |
+| `health_files` | `path`; current original-file manifest, kind, counts, original byte length and hash |
+| `health_file_parts` | `(file_hash, part)`; immutable original bytes in parts of at most 512 KiB decoded / 768 KiB encoded |
+
+Included days replace all dimensions atomically, including dimensions removed by the new export. Missing dates remain. Lease ownership, expiry, batch order and a write token fence every day mutation in one D1 transaction. Exact reimports preserve content, series/file timestamps and provider revision; the latest import receipt/time can change. A → B → A is compared against current canonical content. A failed import can retain already committed files/days and is retried from the complete input.
+
+`GET /api/data/overview` reports `storage: "day-dimension"`, content rows/bytes and per-dimension counts, coverage, rows and bytes, plus attachment kinds/counts/original bytes. Top-level events are counted once; nested observations and attachment samples are preserved without double-counting them as timeline events. Sleep-goal settings and measurements originally dated on Unix epoch day are excluded from measured coverage, while remaining in storage and raw reads. `health.epochRecordCount` identifies the latter in the UI. Older cached statistics without this field are rebuilt even when the content revision is unchanged.
+
+The daily view requests story dimensions with prior 24-hour/following 12-hour sleep context. Raw dimensions load on the record tab. AI reads use the same local-day clipping and stable content ordering; virtual IDs and import timestamps do not invalidate an unchanged summary. [17 Apple Health](17-apple-health.md) records the codec, complete-data verification, reading rules and release evidence.

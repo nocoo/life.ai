@@ -1,5 +1,13 @@
 import type { LucideIcon } from "lucide-react";
-import { CalendarClock, Database, KeyRound, MapPin, Settings, Upload } from "lucide-react";
+import {
+	CalendarClock,
+	Database,
+	HeartPulse,
+	KeyRound,
+	MapPin,
+	Settings,
+	Upload,
+} from "lucide-react";
 
 export interface NavItem {
 	href: string;
@@ -30,6 +38,7 @@ export const NAV_GROUPS: NavGroup[] = [
 		items: [
 			{ href: "/data", label: "数据概览", icon: Database },
 			{ href: "/data/footprint", label: "Footprint", icon: MapPin },
+			{ href: "/data/apple-health", label: "Apple Health", icon: HeartPulse },
 		],
 	},
 ];
@@ -43,7 +52,7 @@ export const ROUTE_META: Record<string, { title: string; description: string }> 
 	},
 	"/imports": {
 		title: "导入",
-		description: "导入 Apple Health XML、貔貅 CSV 与日记 JSON/NDJSON",
+		description: "导入貔貅 CSV 与日记 JSON/NDJSON",
 	},
 	"/connect": {
 		title: "Connect",
@@ -56,6 +65,10 @@ export const ROUTE_META: Record<string, { title: string; description: string }> 
 	"/data": {
 		title: "数据概览",
 		description: "各来源的覆盖天数、记录与最近导入",
+	},
+	"/data/apple-health": {
+		title: "Apple Health",
+		description: "导入完整健康档案，回看身体与生活的节律",
 	},
 	"/data/footprint": {
 		title: "Footprint",

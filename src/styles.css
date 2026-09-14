@@ -908,6 +908,19 @@
 	grid-template-columns: minmax(0, 1fr) var(--story-rail) minmax(0, 1fr);
 	align-items: start;
 }
+.health-special-card {
+	border-color: hsl(var(--basalt-chart-pink) / 0.4);
+	background:
+		linear-gradient(135deg, hsl(var(--basalt-chart-pink) / 0.07), transparent 60%),
+		hsl(var(--basalt-card));
+}
+.health-special-card > .story-branch-eyebrow {
+	color: hsl(var(--basalt-foreground));
+	margin-bottom: 14px;
+}
+.health-workout-entry .story-workout {
+	border-color: hsl(var(--basalt-chart-green) / 0.4);
+}
 .story-visit-observation {
 	margin-top: 14px;
 	font-size: 13px;

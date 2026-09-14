@@ -1,4 +1,5 @@
 import type { FootprintDay } from "./footprint";
+import type { StoredHealthSeries } from "./health-types";
 
 export type Precision = "day" | "hour" | "minute" | "second";
 export type ImportSourceId = "apple-health" | "footprint" | "pixiu" | "journal";
@@ -66,6 +67,7 @@ export interface EventPage {
 	events: LifeEvent[];
 	nextCursor: string | null;
 	footprintDays?: (FootprintDay & { updatedAt: number })[];
+	healthSeries?: StoredHealthSeries[];
 }
 
 export interface CreatedConnect {

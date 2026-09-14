@@ -42,7 +42,6 @@ export const IMPORT_SOURCE_MAP: Record<ImportSourceId, ImportSourceMeta> = {
 };
 
 export const IMPORT_SOURCES: ImportSourceMeta[] = [
-	IMPORT_SOURCE_MAP["apple-health"],
 	IMPORT_SOURCE_MAP.pixiu,
 	IMPORT_SOURCE_MAP.journal,
 ];
@@ -88,7 +87,7 @@ function initialImportState(): Pick<
 	| "rejection"
 > {
 	return {
-		source: "apple-health",
+		source: "pixiu",
 		fileName: null,
 		fileSize: null,
 		status: "idle",
@@ -111,6 +110,7 @@ export function importSourceMeta(id: ImportSourceId): ImportSourceMeta {
 export const importStore = createStore<ImportViewState>((set, get) => ({
 	...initialImportState(),
 	setSource(source: ImportSourceId) {
+		if (source === "apple-health" || source === "footprint") return;
 		if (get().status === "running") {
 			return;
 		}

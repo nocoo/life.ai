@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { CreatedConnect } from "../../src/models/types";
 import { importFootprintFixture } from "./footprint-fixture";
+import { importHealthFixture } from "./health-fixture";
 import { expect, test } from "./public-context-fixture";
 import { STORY_DAY, storyImports, storySnapshots } from "./story-fixture";
 
@@ -19,6 +20,10 @@ test("a whole day reads along one trunk with grouped evidence, record tabs and c
 		}),
 	);
 	for (const [source, records] of Object.entries(storyImports)) {
+		if (source === "apple-health") {
+			await importHealthFixture(page.request, records);
+			continue;
+		}
 		if (source === "footprint") {
 			await importFootprintFixture(page.request, records);
 			continue;
@@ -44,29 +49,33 @@ test("a whole day reads along one trunk with grouped evidence, record tabs and c
 	await expect(page.getByRole("heading", { name: "每日实录", exact: true })).toBeVisible();
 	await expect(page.locator("[data-hour]")).toHaveCount(24);
 	await expect(page.locator("[data-clock-mark]")).toHaveCount(24);
-	await expect(page.locator('[data-story-kind="sleep"]')).toHaveCount(1);
-	await expect(page.getByText("延续自前一天", { exact: true })).toBeVisible();
-	await expect(page.locator('[data-hour="3"] .story-continuation')).toContainText("睡眠持续");
+	await expect(page.locator('[data-health-kind="sleep"]')).toHaveCount(1);
+	await expect(page.locator('[data-hour="6"] [data-health-kind="sleep"]')).toContainText("23:10");
+	await expect(page.locator('[data-hour="6"] [data-health-kind="sleep"]')).toContainText("06:40");
+	await expect(page.locator('[data-hour="3"] .story-continuation')).toContainText("睡眠中");
 	const allDay = page.getByRole("region", { name: "全天记录", exact: true });
 	await expect(allDay).toContainText("九月的一个普通星期四");
 	await expect(allDay).not.toContainText("00:00");
 	const seven = page.locator('[data-hour="7"]');
-	await expect(seven.locator('[data-story-kind="health"]')).toHaveCount(1);
-	await expect(seven.locator('[data-story-kind="workout"]')).toHaveCount(1);
-	const body = await seven.locator('[data-story-kind="health"]').boundingBox();
-	const moment = await seven.locator('[data-story-kind="workout"]').boundingBox();
+	await expect(seven.locator('[data-health-kind="moment"]').first()).toBeVisible();
+	await expect(seven.locator('[data-health-kind="workout"] .story-workout')).toHaveCount(1);
+	const body = await seven
+		.locator('[data-health-kind="moment"] .story-branch')
+		.first()
+		.boundingBox();
+	const moment = await seven.locator('[data-health-kind="workout"] .story-workout').boundingBox();
 	const clock = await seven.locator(".story-clock").boundingBox();
 	expect(body && moment && clock).toBeTruthy();
 	if (!body || !moment || !clock) throw new Error("Missing story branches");
 	expect(body.x + body.width).toBeLessThan(clock.x);
 	expect(moment.x).toBeGreaterThan(clock.x + clock.width);
-	await expect(seven.locator('[data-story-kind="health"]')).toContainText("47 条记录");
+	await expect(seven).toContainText("6840 步");
 	await expect(page.getByRole("table", { name: "其他记录", exact: true })).toHaveCount(0);
 	await page.getByRole("tab", { name: "其他记录", exact: true }).click();
 	const records = page.getByRole("table", { name: "其他记录", exact: true });
 	await expect(records).toBeVisible();
 	await expect(page.locator("[data-hour]")).toHaveCount(0);
-	await records.getByRole("button", { name: "查看完整记录：夜间睡眠", exact: true }).click();
+	await records.getByRole("button", { name: "查看完整记录：睡眠", exact: true }).click();
 	await expect(page.getByRole("dialog")).toContainText("HKCategoryValueSleepAnalysisAsleepCore");
 	await page.keyboard.press("Escape");
 	await page.getByRole("tab", { name: "时间线", exact: true }).click();
@@ -99,12 +108,12 @@ test("a whole day reads along one trunk with grouped evidence, record tabs and c
 	const desktopAxe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
 	expect(desktopAxe.violations).toEqual([]);
 	await page.setViewportSize({ width: 390, height: 844 });
-	await expect(eight.locator(".story-lane-both")).toHaveCount(2);
+	await expect(eight.locator(".story-lane-both").first()).toBeVisible();
 	expect(
 		await eight
 			.locator("[data-story-kind]")
 			.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-story-kind"))),
-	).toEqual(["money", "journey", "health"]);
+	).toEqual(["money", "journey"]);
 	await expect(eight.locator(".story-visit-map")).toHaveCount(1);
 	await eight.scrollIntoViewIfNeeded();
 	expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

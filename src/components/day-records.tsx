@@ -17,6 +17,7 @@ import {
 	dayRecordTime,
 } from "../viewmodels/day-records";
 import { sourceKindLabel } from "../viewmodels/event-details";
+import { healthRecordSource, healthRecordTitle } from "../viewmodels/health-format";
 
 const PRECISION = {
 	day: { label: "天", order: 0 },
@@ -65,7 +66,7 @@ export default function DayRecords({
 				accessor: (row) => (
 					<div className="space-y-1">
 						<Text as="p" size="sm" className="max-w-48 break-words">
-							{row.event.sourceName}
+							{healthRecordSource(row.event)}
 						</Text>
 						<Text as="p" size="xs" tone="muted">
 							{sourceKindLabel(row.event.sourceKind)}
@@ -80,7 +81,7 @@ export default function DayRecords({
 				accessor: (row) => (
 					<div className="max-w-64 space-y-1">
 						<Text as="p" size="sm" className="line-clamp-2 break-words">
-							{row.event.title}
+							{healthRecordTitle(row.event)}
 						</Text>
 						{isLocation && row.pointCount !== null ? (
 							<Text as="p" size="xs" tone="muted">
@@ -129,7 +130,7 @@ export default function DayRecords({
 				<Button
 					variant="ghost"
 					size="sm"
-					aria-label={`查看完整记录：${row.event.title}`}
+					aria-label={`查看完整记录：${healthRecordTitle(row.event)}`}
 					onClick={(event) => openDetails(row.event, event.currentTarget)}
 				>
 					详情
@@ -182,7 +183,7 @@ export default function DayRecords({
 						}}
 					>
 						<DialogHeader>
-							<DialogTitle>{selected.event.title}</DialogTitle>
+							<DialogTitle>{healthRecordTitle(selected.event)}</DialogTitle>
 							<DialogDescription>
 								{selected.event.sourceName} · 完整原始记录，时间字段保留原值。
 							</DialogDescription>

@@ -42,6 +42,10 @@ export function TimelinePage() {
 	const timeline = useStore(timelineStore, (state) => state.timeline);
 	const insights = useStore(timelineStore, (state) => state.insights);
 	const story = useStore(timelineStore, (state) => state.story);
+	const health = useStore(timelineStore, (state) => state.health);
+	const recordsTimeline = useStore(timelineStore, (state) => state.recordsTimeline);
+	const recordsStatus = useStore(timelineStore, (state) => state.recordsStatus);
+	const recordsError = useStore(timelineStore, (state) => state.recordsError);
 	const status = useStore(timelineStore, (state) => state.status);
 	const error = useStore(timelineStore, (state) => state.error);
 	const radiusKm = useStore(timelineStore, (state) => state.radiusKm);
@@ -212,6 +216,7 @@ export function TimelinePage() {
 								mapMode={mapMode}
 								context={sameDayContext(context.query, contextQuery) ? context : null}
 								insights={insights}
+								health={health}
 							/>
 						) : null}
 					</TabsContent>
@@ -225,7 +230,28 @@ export function TimelinePage() {
 										</LayerCard>
 									}
 								>
-									<DayRecords key={`${day}:${sourceId}:${kind}`} timeline={timeline} kind={kind} />
+									{kind === "records" && recordsStatus === "loading" ? (
+										<LayerCard>
+											<LayerCard.Loading label="正在加载全部健康维度" />
+										</LayerCard>
+									) : kind === "records" && recordsStatus === "error" ? (
+										<Banner
+											variant="error"
+											title="完整记录暂时不可用"
+											description={recordsError ?? undefined}
+											action={
+												<Banner.Action onClick={() => void timelineStore.getState().loadRecords()}>
+													重试
+												</Banner.Action>
+											}
+										/>
+									) : (
+										<DayRecords
+											key={`${day}:${sourceId}:${kind}`}
+											timeline={kind === "records" ? (recordsTimeline ?? timeline) : timeline}
+											kind={kind}
+										/>
+									)}
 								</Suspense>
 							) : null}
 						</TabsContent>

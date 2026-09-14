@@ -1,5 +1,4 @@
 import Papa from "papaparse";
-import { SaxesParser } from "saxes";
 import { z } from "zod";
 import { normalizeTimestamp, timestampAtPrecision } from "./time";
 import type { ImportProgress, ImportRecord, ImportSourceId, Precision } from "./types";
@@ -51,102 +50,6 @@ async function* chunks(
 		progress.bytesRead = Math.min(offset + CHUNK_BYTES, file.size);
 		yield decoder.decode(bytes, { stream: progress.bytesRead < file.size });
 		report();
-	}
-}
-
-function healthRecord(name: string, attributes: Record<string, string>): PendingRecord | null {
-	if (!["Record", "Workout", "Correlation", "ActivitySummary"].includes(name)) return null;
-	const occurredAt = attributes.startDate ?? attributes.dateComponents;
-	if (!occurredAt) throw new Error(`Apple Health ${name} 缺少日期`);
-	const kind = attributes.type ?? attributes.workoutActivityType ?? name;
-	const readable = kind.replace(
-		/^HK(?:QuantityTypeIdentifier|CategoryTypeIdentifier|CorrelationTypeIdentifier|WorkoutActivityType)/,
-		"",
-	);
-	const labels: Record<string, string> = {
-		StepCount: "步数",
-		HeartRate: "心率",
-		SleepAnalysis: "睡眠",
-		ActiveEnergyBurned: "活动能量",
-		BodyMass: "体重",
-		DistanceWalkingRunning: "步行与跑步距离",
-		ActivitySummary: "每日活动",
-	};
-	return {
-		occurredAt,
-		endAt: attributes.endDate,
-		precision: name === "ActivitySummary" ? "day" : inferPrecision(occurredAt),
-		title: labels[readable] ?? readable,
-		content: [attributes.value, attributes.unit, attributes.sourceName].filter(Boolean).join(" · "),
-		data: attributes,
-	};
-}
-
-async function importXml(input: AsyncIterable<string>, source: ImportSourceId, emit: Emit) {
-	const parser = new SaxesParser({ xmlns: false });
-	const queue: PendingRecord[] = [];
-	let root = "";
-	let lastBoundary = 0;
-	let point: Record<string, string> | null = null;
-	let field = "";
-	parser.on("opentag", (tag) => {
-		lastBoundary = parser.position;
-		const name = tag.name.split(":").at(-1) as string;
-		root ||= name;
-		if (source === "apple-health") {
-			const record = healthRecord(name, tag.attributes);
-			if (record) queue.push(record);
-		} else if (["trkpt", "rtept", "wpt"].includes(name)) {
-			point = { ...tag.attributes };
-		} else if (point) {
-			field = ["time", "ele", "speed", "course", "name"].includes(name) ? name : "";
-		}
-	});
-	parser.on("text", (text) => {
-		lastBoundary = parser.position;
-		if (point && field) {
-			const value = (point[field] ?? "") + text;
-			if (value.length > 8000) throw new Error("GPX 字段过长");
-			point[field] = value;
-		}
-	});
-	parser.on("closetag", (tag) => {
-		lastBoundary = parser.position;
-		const name = tag.name.split(":").at(-1) as string;
-		if (point && ["trkpt", "rtept", "wpt"].includes(name)) {
-			const latitude = Number(point.lat);
-			const longitude = Number(point.lon);
-			if (
-				!point.lat?.trim() ||
-				!point.lon?.trim() ||
-				!Number.isFinite(latitude) ||
-				!Number.isFinite(longitude) ||
-				Math.abs(latitude) > 90 ||
-				Math.abs(longitude) > 180 ||
-				!point.time
-			) {
-				throw new Error("GPX 轨迹点需要有效的经纬度和 time");
-			}
-			queue.push({
-				occurredAt: point.time.trim(),
-				title: point.name?.trim() || "GPS 轨迹",
-				content: `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`,
-				data: { ...point, latitude, longitude },
-			});
-			point = null;
-		}
-		field = "";
-	});
-	for await (const chunk of input) {
-		parser.write(chunk);
-		if (parser.position - lastBoundary > MAX_PENDING) throw new Error("XML 节点超过 1 MiB");
-		for (const record of queue.splice(0)) await emit(record);
-	}
-	parser.close();
-	if (root !== (source === "apple-health" ? "HealthData" : "gpx")) {
-		throw new Error(
-			source === "apple-health" ? "请选择 Apple Health 的导出.xml" : "请选择 GPX 文件",
-		);
 	}
 }
 
@@ -253,6 +156,8 @@ export async function importFile(
 	signal?: AbortSignal,
 ): Promise<{ processed: number; accepted: number }> {
 	signal?.throwIfAborted();
+	if (source === "apple-health" || source === "footprint")
+		throw new Error("请使用数据管理中的专用导入页面。");
 	const ndjson = /\.(ndjson|jsonl)$/i.test(file.name);
 	if (source === "journal" && !ndjson && file.size > MAX_JSON_FILE) {
 		throw new Error("JSON 文件最多 10 MiB；更大的文件请使用 NDJSON 格式");
@@ -301,10 +206,6 @@ export async function importFile(
 	report();
 	const input = chunks(file, progress, report, signal);
 	switch (source) {
-		case "apple-health":
-		case "footprint":
-			await importXml(input, source, emit);
-			break;
 		case "pixiu":
 			await importCsv(input, emit);
 			break;

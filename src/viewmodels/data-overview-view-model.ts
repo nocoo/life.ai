@@ -157,7 +157,11 @@ export function dataTargetLabel(target: DataTarget): string {
 }
 
 export function storageLabel(storage: ProviderOverview["storage"]): string {
-	return storage === "daily-json" ? "按 UTC 日保存" : "按条保存";
+	return storage === "daily-json"
+		? "按 UTC 日保存"
+		: storage === "day-dimension"
+			? "按 UTC 日与维度保存"
+			: "按条保存";
 }
 
 export function utcDayKey(utcDay: number): string {

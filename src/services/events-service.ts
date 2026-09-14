@@ -1,3 +1,4 @@
+import { decodeHealthSeries } from "../models/apple-health";
 import { footprintDayEvents } from "../models/footprint";
 import { normalizeTimestamp } from "../models/time";
 import type { EventPage, LifeEvent } from "../models/types";
@@ -11,6 +12,7 @@ export interface FetchEventsQuery {
 	source?: string | null;
 	signal?: AbortSignal;
 	maxPages?: number;
+	healthView?: "story" | "all";
 }
 
 export async function fetchEventPage(
@@ -23,6 +25,7 @@ export async function fetchEventPage(
 			end: query.end,
 			source: query.source ?? undefined,
 			cursor: query.cursor ?? undefined,
+			healthView: query.healthView,
 		},
 		query.signal,
 	);
@@ -42,6 +45,16 @@ export async function fetchAllEvents(query: FetchEventsQuery): Promise<LifeEvent
 		}
 		const batch = await fetchEventPage({ ...query, cursor });
 		events.push(...batch.events);
+		if (page === 0 && batch.healthSeries && (!query.source || query.source === "apple-health")) {
+			const window = {
+				start: Date.parse(normalizeTimestamp(query.start)),
+				end: Date.parse(normalizeTimestamp(query.end)),
+			};
+			for (const series of batch.healthSeries) {
+				query.signal?.throwIfAborted();
+				events.push(...(await decodeHealthSeries(series, series.utcDay, series.updatedAt, window)));
+			}
+		}
 		if (page === 0 && batch.footprintDays && (!query.source || query.source === "footprint")) {
 			const window = {
 				start: Date.parse(normalizeTimestamp(query.start)),

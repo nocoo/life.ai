@@ -1,0 +1,180 @@
+.health-story {
+	display: grid;
+	gap: 28px;
+}
+
+.health-story-card .health-story-lede {
+	margin: 0;
+}
+
+.health-story-times {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 20px 32px;
+	margin: 8px 0 0;
+}
+
+.health-story-times dt {
+	font-size: 12px;
+	color: hsl(var(--basalt-muted-foreground));
+}
+
+.health-story-times dd {
+	margin: 4px 0 0;
+	font-size: 22px;
+	font-weight: 560;
+	letter-spacing: -0.02em;
+}
+
+.health-story-hypnogram {
+	position: relative;
+	height: 36px;
+	margin: 16px 0 8px;
+	border-radius: 4px;
+	background: hsl(var(--basalt-muted-foreground) / 0.12);
+}
+
+.health-story-hypnogram span {
+	position: absolute;
+	top: 6px;
+	bottom: 6px;
+	min-width: 1px;
+	border-radius: 3px;
+}
+
+.health-story-stage-core {
+	background: hsl(var(--basalt-chart-blue));
+}
+
+.health-story-stage-deep {
+	background: hsl(var(--basalt-chart-pearl));
+}
+
+.health-story-stage-rem {
+	background: hsl(var(--basalt-chart-pink));
+}
+
+.health-story-stage-asleep {
+	background: hsl(var(--basalt-chart-green));
+}
+
+.health-story-stage-awake {
+	background: hsl(var(--basalt-chart-yellow));
+}
+
+.health-story-notes,
+.health-story-evidence {
+	margin: 12px 0 0;
+	padding: 0;
+	list-style: none;
+	display: grid;
+	gap: 6px;
+	font-size: 13px;
+	color: hsl(var(--basalt-muted-foreground));
+	line-height: 1.55;
+}
+
+.health-story-chart {
+	margin-top: 12px;
+}
+
+.health-story-moments {
+	display: grid;
+	gap: 18px;
+}
+
+.health-story-moment time {
+	display: block;
+	font-size: 12px;
+	color: hsl(var(--basalt-muted-foreground));
+	margin-bottom: 4px;
+}
+
+.health-story-workout {
+	display: grid;
+	gap: 10px;
+}
+
+.health-story-duplicates {
+	margin: 0;
+	font-size: 13px;
+	color: hsl(var(--basalt-muted-foreground));
+}
+
+.health-story-ecg-wrap {
+	margin-top: 12px;
+}
+
+.health-story-ecg {
+	display: block;
+	width: 100%;
+	height: 148px;
+	color: color-mix(in srgb, hsl(var(--basalt-chart-pink)) 65%, hsl(var(--basalt-foreground)));
+}
+
+.health-story-ecg-grid {
+	stroke: hsl(var(--basalt-muted-foreground) / 0.2);
+	stroke-width: 1;
+}
+
+.health-story-ecg-axis {
+	fill: hsl(var(--basalt-muted-foreground));
+	font-size: 10px;
+}
+
+.health-story-ecg-nav {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 12px;
+	margin-top: 8px;
+}
+
+.health-sleep-legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 16px;
+	margin-top: 12px;
+	font-size: 12px;
+	color: hsl(var(--basalt-muted-foreground));
+}
+.health-sleep-legend span {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+.health-sleep-legend i {
+	width: 8px;
+	height: 8px;
+	border-radius: 2px;
+}
+.health-pressure-reading {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: end;
+	gap: 14px;
+	margin: 18px 0;
+}
+.health-pressure-reading dt {
+	font-size: 12px;
+	color: hsl(var(--basalt-muted-foreground));
+}
+.health-pressure-reading dd {
+	font-size: 32px;
+	line-height: 1.2;
+	font-variant-numeric: tabular-nums;
+	margin: 6px 0 0;
+}
+.health-pressure-reading > span {
+	margin-bottom: 4px;
+	color: hsl(var(--basalt-muted-foreground));
+}
+.health-sleep-place {
+	margin-top: 12px;
+	padding: 16px;
+}
+
+.health-pressure-unit {
+	font-size: 13px;
+	color: hsl(var(--basalt-muted-foreground));
+}

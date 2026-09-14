@@ -9,6 +9,8 @@ if (testState) verifyLocalBindings(testState);
 
 export default defineConfig({
 	cacheDir: testState ? `${testState}/vite-cache` : "node_modules/.vite",
+	// The ZIP parser is first loaded by the import worker. Prebundle it before a file is selected.
+	optimizeDeps: { include: ["@zip.js/zip.js"] },
 	plugins: [
 		react(),
 		tailwindcss(),

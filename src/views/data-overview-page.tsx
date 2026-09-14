@@ -43,6 +43,7 @@ import { useEffect, useMemo } from "react";
 import { Link } from "react-router";
 import { Bar, BarChart, CartesianGrid, LabelList, Tooltip, XAxis, YAxis } from "recharts";
 import { useStore } from "zustand";
+import { HealthProviderOverview } from "../components/health-provider-overview";
 import type { ProviderOverview } from "../models/data-management";
 import {
 	compareProviders,
@@ -312,8 +313,8 @@ function ProviderComparison({
 							{providers.map((provider) => (
 								<TableRow key={provider.id}>
 									<TableHead scope="row" className="data-overview-source">
-										{provider.id === "footprint" ? (
-											<Link to="/data/footprint" className="data-overview-link">
+										{provider.id === "footprint" || provider.id === "apple-health" ? (
+											<Link to={`/data/${provider.id}`} className="data-overview-link">
 												{provider.name}
 											</Link>
 										) : (
@@ -360,9 +361,9 @@ function ProviderDetails({ provider }: { provider: ProviderOverview }) {
 						{formatOverviewMetric(provider.dataRows, "dataRows")}
 					</Text>
 				</div>
-				{provider.id === "footprint" ? (
+				{provider.id === "footprint" || provider.id === "apple-health" ? (
 					<Button asChild variant="outline" size="sm">
-						<Link to="/data/footprint">管理 Footprint</Link>
+						<Link to={`/data/${provider.id}`}>管理 {provider.name}</Link>
 					</Button>
 				) : null}
 			</LayerCard.Header>
@@ -382,9 +383,10 @@ function ProviderDetails({ provider }: { provider: ProviderOverview }) {
 						{provider.lastChangedAt ? formatAbsoluteTime(provider.lastChangedAt) : "尚未变更"}
 					</DescriptionList.Item>
 				</DescriptionList>
+				{provider.health ? <HealthProviderOverview health={provider.health} /> : null}
 				<CoverageCalendar provider={provider} />
 			</LayerCard.Body>
-			{provider.id === "footprint" ? (
+			{provider.id === "footprint" || provider.id === "apple-health" ? (
 				<LayerCard.Footer>
 					<Text as="p" size="sm" tone="muted">
 						重复导入时，文件包含的 UTC 日会整日替换，未包含的日期保留；内容相同的日期不重复累计。
@@ -426,7 +428,7 @@ export function DataOverviewPage() {
 							刷新概览
 						</Button>
 						<Button asChild icon={<Upload className="size-4" aria-hidden="true" />}>
-							<Link to="/data/footprint">导入 Footprint</Link>
+							<Link to="/data/apple-health">导入 Apple Health</Link>
 						</Button>
 					</>
 				}

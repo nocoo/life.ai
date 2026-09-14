@@ -9,6 +9,7 @@ import {
 import type { DayTimeline, HourSlot, JsonValue, LifeEvent } from "../models/types";
 import type { SolarMoment } from "./day-context-view-model";
 import { formatDurationMinutes, formatInterval, formatLocalClock } from "./format";
+import type { HealthTimelineItem } from "./health-timeline";
 
 export type StoryKind = "sleep" | "health" | "workout" | "journey" | "money" | "note" | "connect";
 
@@ -45,6 +46,7 @@ export interface StoryHour {
 	continuing: StoryContinuation[];
 	activity: number;
 	visits: StoryVisit[];
+	health?: HealthTimelineItem[];
 }
 
 export interface StoryVisit {
@@ -60,6 +62,7 @@ export interface StoryVisit {
 export type StoryHourEntry =
 	| { kind: "branch"; at: string; id: string; branch: StoryBranch }
 	| { kind: "visit"; at: string; id: string; visit: StoryVisit }
+	| { kind: "health"; at: string; id: string; health: HealthTimelineItem }
 	| { kind: "solar"; at: string; id: string; solar: SolarMoment };
 
 export type StoryHourBlock =
@@ -74,6 +77,12 @@ export interface DayStory {
 
 export function storyHourEntries(row: StoryHour, solar: SolarMoment[]): StoryHourEntry[] {
 	const entries: StoryHourEntry[] = [
+		...(row.health ?? []).map((health) => ({
+			kind: "health" as const,
+			at: health.occurredAt,
+			id: health.id,
+			health,
+		})),
 		...row.branches.map((branch) => ({
 			kind: "branch" as const,
 			at: branch.events[0]?.occurredAt ?? "",
@@ -280,6 +289,7 @@ export function buildDayStory(
 	timeline: DayTimeline,
 	insights: DayInsights,
 	radiusKm: 5 | 10 = 5,
+	excludedGpsIntervals: { start: number; end: number }[] = [],
 ): DayStory {
 	const places = buildDayPlaces(insights.gps, radiusKm);
 	const gpsSources = new Set(
@@ -321,6 +331,11 @@ export function buildDayStory(
 	const sampledHours = new Map<number, { visit: GpsVisit; points: GpsVisit["points"] }[]>();
 	for (const visit of places.visits) {
 		for (const point of visit.points) {
+			const instant = Date.parse(point.occurredAt);
+			if (
+				excludedGpsIntervals.some((interval) => instant >= interval.start && instant < interval.end)
+			)
+				continue;
 			const hour = new Date(point.occurredAt).getHours();
 			const members = sampledHours.get(hour) ?? [];
 			let member = members.at(-1);

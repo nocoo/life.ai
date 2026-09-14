@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { AiSettingsInput, DaySummaryResult } from "../../src/models/ai";
+import { importHealthFixture } from "./health-fixture";
 import { expect, test } from "./public-context-fixture";
 
 const transparentTile = Buffer.from(
@@ -89,33 +90,21 @@ test("daily GPX map, health, workouts and currency totals follow the same select
 	});
 	await page.getByRole("button", { name: "开始上传", exact: true }).click();
 	await expect(page.getByText("导入完成", { exact: true })).toBeVisible();
-	const health = await page.request.post("/api/imports", {
-		data: {
-			source: "apple-health",
-			records: [
-				{
-					key: "daily-steps",
-					occurredAt: "2026-09-15T00:00:00Z",
-					title: "每日步数",
-					data: { type: "HKQuantityTypeIdentifierStepCount", value: "900", unit: "count" },
-				},
-				{
-					key: "daily-heart",
-					occurredAt: "2026-09-15T00:05:00Z",
-					title: "每日心率",
-					data: { type: "HKQuantityTypeIdentifierHeartRate", value: "72", unit: "count/min" },
-				},
-				{
-					key: "daily-workout",
-					occurredAt: "2026-09-15T00:00:00Z",
-					endAt: "2026-09-15T00:30:00Z",
-					title: "每日运动",
-					data: { workoutActivityType: "HKWorkoutActivityTypeWalking" },
-				},
-			],
+	await importHealthFixture(page.request, [
+		{
+			occurredAt: "2026-09-15T00:00:00Z",
+			data: { type: "HKQuantityTypeIdentifierStepCount", value: "900", unit: "count" },
 		},
-	});
-	expect(health.ok()).toBe(true);
+		{
+			occurredAt: "2026-09-15T00:05:00Z",
+			data: { type: "HKQuantityTypeIdentifierHeartRate", value: "72", unit: "count/min" },
+		},
+		{
+			occurredAt: "2026-09-15T00:00:00Z",
+			endAt: "2026-09-15T00:30:00Z",
+			data: { workoutActivityType: "HKWorkoutActivityTypeWalking" },
+		},
+	]);
 	const finance = await page.request.post("/api/imports", {
 		data: {
 			source: "pixiu",

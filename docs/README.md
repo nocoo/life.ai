@@ -21,3 +21,4 @@
 | [14 Footprint 导入评估](14-footprint-import-analysis.md) | 实施前全量 GPX 实测、D1 占用与费用、UTC 日包选型 |
 | [15 数据管理与导入](15-data-management.md) | 概览与 provider 独立页面、整日替换、网页与本机共用导入、1.3.0 发布及全量生产数据核验 |
 | [16 每日环境与记录页签](16-daily-context-and-record-tabs.md) | GPS 区域与速度、小时地图、天气及日出日落、Basalt/Recharts 整理、原始记录懒加载分页 |
+| [17 Apple Health 完整导入](17-apple-health.md) | 原始数据完整性、UTC 日与维度压缩、跨天睡眠、心电图/血压、锻炼路线合并及生产核验 |

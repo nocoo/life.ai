@@ -8,6 +8,7 @@ import type {
 	DaySummaryQuery,
 	DaySummaryResult,
 } from "../../src/models/ai";
+import { decodeHealthSeries } from "../../src/models/apple-health";
 import type {
 	DataOverview,
 	FootprintBatchReceipt,
@@ -16,6 +17,7 @@ import type {
 	FootprintImportSession,
 } from "../../src/models/data-management";
 import { validateFootprintDay } from "../../src/models/footprint";
+import type { HealthImportReceipt } from "../../src/models/health-types";
 import type {
 	Connect,
 	CreatedConnect,
@@ -25,6 +27,9 @@ import type {
 	Session,
 	Source,
 } from "../../src/models/types";
+import { createHealthClient, uploadHealthPlan } from "../../src/services/health-client";
+import { fetchHealthAttachment } from "../../src/services/health-evidence";
+import { healthFixtureDays, syntheticHealthPlan } from "../health-fixture";
 
 const base = process.env.LIFE_TEST_URL;
 const state = process.env.LIFE_TEST_STATE;
@@ -95,6 +100,34 @@ function eventsQuery(
 	return `/api/events?${params}`;
 }
 async function importBatch(source: string, records: Partial<ImportRecord>[]) {
+	if (source === "apple-health") {
+		const days = await healthFixtureDays(records as ImportRecord[]);
+		const session = await data<{ id: string }>(
+			await request("/api/data/apple-health/imports", {
+				method: "POST",
+				body: {
+					fileName: "l2-health.zip",
+					target: "test",
+					channel: "cli",
+					totalDays: days.length,
+					totalRecords: days.reduce((sum, day) => sum + day.recordCount, 0),
+					files: [],
+				},
+			}),
+			201,
+		);
+		for (const [index, day] of days.entries())
+			await data(
+				await request(`/api/data/apple-health/imports/${session.id}/batches/${index + 1}`, {
+					method: "PUT",
+					body: { days: [day] },
+				}),
+			);
+		return request(`/api/data/apple-health/imports/${session.id}/finish`, {
+			method: "POST",
+			body: { status: "complete" },
+		});
+	}
 	return request("/api/imports", { method: "POST", body: { source, records }, origin: base });
 }
 
@@ -369,7 +402,7 @@ await scenario(
 	},
 );
 await scenario("remaining event import adapters share the validated D1 endpoint", async () => {
-	for (const source of ["apple-health", "pixiu"]) {
+	for (const source of ["pixiu"]) {
 		await data(
 			await importBatch(source, [
 				{ key: `${source}-sample`, occurredAt: "1970-01-01T00:00:00Z", title: source },
@@ -383,6 +416,129 @@ await scenario("remaining event import adapters share the validated D1 endpoint"
 	);
 	assert.equal(sources.find((source) => source.id === "journal")?.recordCount, 6);
 });
+await scenario(
+	"complete Apple Health archive imports preserve measurements, attachments and lazy reads",
+	async () => {
+		await rejected(
+			await request("/api/imports", {
+				method: "POST",
+				body: { source: "apple-health", records: [] },
+			}),
+			410,
+		);
+		const client = createHealthClient({
+			baseUrl: base,
+			getHeaders: async () => ({ "Cf-Access-Jwt-Assertion": accessToken }),
+		});
+		const plan = await syntheticHealthPlan("2099-09-20");
+		await assert.rejects(
+			uploadHealthPlan(client, plan, {
+				fileName: "health.zip",
+				target: "production",
+				channel: "cli",
+			}),
+			/目标环境不匹配/,
+		);
+		const receipt: HealthImportReceipt = await uploadHealthPlan(client, plan, {
+			fileName: "health.zip",
+			target: "test",
+			channel: "cli",
+		});
+		assert.equal(receipt.committedRecords, plan.recordCount);
+		assert.equal(receipt.insertedDays, plan.days.length);
+		const start = "2099-09-19T16:00:00Z";
+		const end = "2099-09-20T16:00:00Z";
+		const full = await client.series(start, end);
+		const story = await client.series(start, end, true);
+		assert(full.series.some((row) => row.dimension === "HKQuantityTypeIdentifierWalkingSpeed"));
+		assert(!story.series.some((row) => row.dimension === "HKQuantityTypeIdentifierWalkingSpeed"));
+		const records = (
+			await Promise.all(
+				full.series.map((row) =>
+					decodeHealthSeries(row, row.utcDay, row.updatedAt, {
+						start: Date.parse(start),
+						end: Date.parse(end),
+					}),
+				),
+			)
+		).flat();
+		assert(
+			records.some(
+				(event) =>
+					event.data &&
+					typeof event.data === "object" &&
+					!Array.isArray(event.data) &&
+					event.data._healthKind === "Electrocardiogram",
+			),
+		);
+		assert(records.some((event) => event.endAt && event.occurredAt < start));
+		const waveform = await fetchHealthAttachment(
+			"electrocardiograms/morning.csv",
+			"ecg",
+			undefined,
+			client,
+		);
+		assert(new TextDecoder().decode(waveform).includes("950"));
+		const route = await fetchHealthAttachment(
+			"workout-routes/morning.gpx",
+			"route",
+			undefined,
+			client,
+		);
+		assert(new TextDecoder().decode(route).includes("<trkpt"));
+		assert.equal((await client.inventory()).files.length, plan.files.length);
+		const again = await uploadHealthPlan(client, plan, {
+			fileName: "renamed.zip",
+			target: "test",
+			channel: "cli",
+		});
+		assert.equal(again.unchangedDays, plan.days.length);
+		assert.deepEqual(await client.series(start, end), full);
+		const overview = await data<DataOverview>(await request("/api/data/overview"));
+		const health = overview.providers.find((row) => row.id === "apple-health");
+		assert.equal(health?.recordCount, plan.recordCount);
+		assert.equal(health?.coverageDays, plan.days.length - 1);
+		assert.equal(
+			health?.dataRows,
+			plan.days.length +
+				plan.seriesCount +
+				plan.files.length +
+				plan.files.reduce((count, file) => count + file.parts.length, 0),
+		);
+		assert(health?.health?.dimensions.some((row) => row.id === "HKDataTypeSleepDurationGoal"));
+		const page = await data<EventPage>(
+			await request(eventsQuery("apple-health", undefined, start, end)),
+		);
+		assert((page.healthSeries?.length ?? 0) > 0);
+		assert.equal(page.events.length, 0);
+		await rejected(await request("/api/data/apple-health/series"), 400);
+		await rejected(
+			await request(`/api/data/apple-health/series?start=${start}&end=${end}&view=unknown`),
+			400,
+		);
+		await rejected(await request("/api/data/apple-health/file"), 400);
+		await rejected(await request("/api/data/apple-health/file?path=missing"), 404);
+		await rejected(
+			await request("/api/data/apple-health/file?path=electrocardiograms/morning.csv&part=no"),
+			400,
+		);
+		await rejected(
+			await request("/api/data/apple-health/file?path=electrocardiograms/morning.csv&part=90"),
+			404,
+		);
+		await rejected(await request("/api/data/apple-health/files", { method: "POST" }), 405);
+		await rejected(await request("/api/data/apple-health/unknown"), 404);
+		for (const path of [
+			"/api/data/apple-health/files",
+			`/api/data/apple-health/series?start=${start}&end=${end}`,
+			"/api/data/apple-health/file?path=electrocardiograms/morning.csv",
+		]) {
+			await rejected(await request(path, { token: null }), 401);
+			await rejected(await request(path, { host: "life.worker.hexly.ai" }), 404);
+		}
+	},
+);
+
 await scenario(
 	"Footprint complete-day APIs preserve points, replace days and retry idempotently",
 	async () => {
@@ -870,5 +1026,5 @@ await scenario(
 
 await assertMarker(state);
 console.log(
-	`L2 passed: ${scenarios} scenarios, all 20 method/path API contracts through real HTTP and local D1.`,
+	`L2 passed: ${scenarios} scenarios, all method/path API contracts through real HTTP and local D1.`,
 );
