@@ -148,6 +148,12 @@ export async function handlePostImports(request: Request, env: WorkerEnv): Promi
 	}
 
 	const source = typedBody.source as ImportSourceId;
+	if (source === "pixiu")
+		throw new ApiError(
+			410,
+			"pixiu_import_moved",
+			"Use Data Management → 貔貅记账 to replace complete Asia/Shanghai accounting days",
+		);
 	if (source === "apple-health")
 		throw new ApiError(
 			410,

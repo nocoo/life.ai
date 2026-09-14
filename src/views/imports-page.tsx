@@ -1,4 +1,4 @@
-import { Button, Field, LayerCard, SegmentControl, Text } from "@nocoo/basalt";
+import { Button, Field, LayerCard, Text } from "@nocoo/basalt";
 import { Banner } from "@nocoo/basalt/components/banner";
 import { FileDropzone } from "@nocoo/basalt/components/file-dropzone";
 import { PageHeader } from "@nocoo/basalt/components/page-header";
@@ -6,7 +6,6 @@ import { type UploadFile, UploadQueue } from "@nocoo/basalt/components/upload-qu
 import { useStore } from "zustand";
 import { formatByteSize } from "../viewmodels/format";
 import {
-	IMPORT_SOURCES,
 	importProgressPercent,
 	importSourceMeta,
 	importStore,
@@ -55,8 +54,8 @@ export function ImportsPage() {
 	return (
 		<div className="min-w-0 space-y-6">
 			<PageHeader
-				title="导入"
-				description="将健康、账目和随记补充到每日实录。重复导入会更新已有记录。"
+				title="日记导入"
+				description="导入 JSON 或 NDJSON 随记，补充每日实录里的文字与片刻。"
 			/>
 			<LayerCard>
 				<LayerCard.Header>
@@ -65,13 +64,6 @@ export function ImportsPage() {
 					</Text>
 				</LayerCard.Header>
 				<LayerCard.Body className="space-y-4">
-					<SegmentControl
-						legend="导入来源"
-						value={source}
-						onValueChange={(value) => importStore.getState().setSource(value as typeof source)}
-						disabled={running}
-						options={IMPORT_SOURCES.map((item) => ({ value: item.id, label: item.label }))}
-					/>
 					<FileDropzone
 						label={`选择 ${meta.label} 文件`}
 						description={meta.hint}

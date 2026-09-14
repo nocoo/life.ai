@@ -153,6 +153,58 @@ describe("daySummaryStore", () => {
 		expect(daySummaryStore.getState().status).toBe("loading");
 	});
 
+	it("opens a revision dialog only when a diary already exists", async () => {
+		fetchSummary.mockResolvedValue({
+			summary: {
+				...query,
+				content: "旧日记",
+				provider: "workers-ai",
+				model: "m",
+				generatedAt: "2026-09-13T01:00:00Z",
+				eventCount: 2,
+				inputHash: "h",
+			},
+			stale: false,
+			eventCount: 2,
+		});
+		fetchSettings.mockResolvedValue({
+			provider: "workers-ai",
+			model: "m",
+			baseURL: "",
+			sdkType: "openai",
+			authType: "apiKey",
+			hasApiKey: false,
+			configured: true,
+		});
+		await daySummaryStore.getState().load(query);
+		daySummaryStore.getState().openRevision();
+		expect(daySummaryStore.getState().revisionOpen).toBe(true);
+		daySummaryStore.getState().setRevisionText("少写步数");
+		generateSummary.mockResolvedValue({
+			summary: {
+				...query,
+				content: "新日记",
+				provider: "workers-ai",
+				model: "m",
+				generatedAt: "2026-09-13T02:00:00Z",
+				eventCount: 2,
+				inputHash: "h",
+			},
+			stale: false,
+			eventCount: 2,
+		});
+		await daySummaryStore.getState().confirmRevision();
+		expect(generateSummary).toHaveBeenCalledWith(query, expect.anything(), "少写步数");
+		expect(daySummaryStore.getState().revisionOpen).toBe(false);
+		expect(daySummaryStore.getState().result?.summary?.content).toBe("新日记");
+		daySummaryStore.getState().openRevision();
+		daySummaryStore.getState().closeRevision();
+		expect(daySummaryStore.getState().revisionOpen).toBe(false);
+		daySummaryStore.getState().reset();
+		daySummaryStore.getState().openRevision();
+		expect(daySummaryStore.getState().revisionOpen).toBe(false);
+	});
+
 	it("generates a summary and retries a stored query", async () => {
 		fetchSummary.mockResolvedValue({ summary: null, stale: false, eventCount: 2 });
 		fetchSettings.mockResolvedValue({

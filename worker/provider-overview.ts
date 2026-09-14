@@ -14,7 +14,7 @@ import { jsonResponse } from "./utils.js";
 export const IMPORT_PROVIDERS: Record<ImportSourceId, string> = {
 	"apple-health": "Apple Health",
 	footprint: "Footprint",
-	pixiu: "Pixiu",
+	pixiu: "貔貅记账",
 	journal: "Journal",
 };
 
@@ -158,7 +158,12 @@ async function overview(
 	return {
 		id,
 		name: IMPORT_PROVIDERS[id],
-		storage: id === "footprint" ? "daily-json" : id === "apple-health" ? "day-dimension" : "events",
+		storage:
+			id === "footprint" || id === "pixiu"
+				? "daily-json"
+				: id === "apple-health"
+					? "day-dimension"
+					: "events",
 		coverageDays: stats.coverage.length,
 		recordCount: state?.record_count ?? 0,
 		dataRows: state?.data_rows ?? 0,

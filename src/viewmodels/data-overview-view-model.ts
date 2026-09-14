@@ -5,6 +5,8 @@ import type {
 	ProviderCoverageDay,
 	ProviderOverview,
 } from "../models/data-management";
+import { PIXIU_OFFSET_MS } from "../models/pixiu";
+import { localDateKey } from "../models/time";
 import { apiGet, isAbortError } from "../services/http";
 import { isAuthFailure, type LoadStatus, toErrorMessage } from "./errors";
 import { formatByteSize } from "./format";
@@ -13,7 +15,8 @@ export const OVERVIEW_METRICS = {
 	coverageDays: {
 		label: "覆盖天数",
 		unit: "天",
-		description: "每个来源实际有记录的 UTC 日数，缺失日期不计入覆盖。",
+		description:
+			"实际有记录的来源日期数：GPS 与健康按 UTC 日，貔貅按北京时间记账日。缺失日期不计入覆盖。",
 	},
 	recordCount: {
 		label: "原始记录",
@@ -156,7 +159,11 @@ export function dataTargetLabel(target: DataTarget): string {
 	return "当前使用的是本机数据。";
 }
 
-export function storageLabel(storage: ProviderOverview["storage"]): string {
+export function storageLabel(
+	storage: ProviderOverview["storage"],
+	provider?: ProviderOverview["id"],
+): string {
+	if (provider === "pixiu" && storage === "daily-json") return "按北京时间记账日保存";
 	return storage === "daily-json"
 		? "按 UTC 日保存"
 		: storage === "day-dimension"
@@ -168,8 +175,8 @@ export function utcDayKey(utcDay: number): string {
 	return new Date(utcDay).toISOString().slice(0, 10);
 }
 
-export function timelineDayHref(utcDay: number): string {
-	return `/?day=${utcDayKey(utcDay)}`;
+export function timelineDayHref(utcDay: number, provider?: ProviderOverview["id"]): string {
+	return `/?day=${provider === "pixiu" ? localDateKey(new Date(utcDay - PIXIU_OFFSET_MS)) : utcDayKey(utcDay)}`;
 }
 
 export interface CoverageMonth {
@@ -185,7 +192,7 @@ export function coverageCellLabel(
 	recordCount: number,
 	provider: ProviderOverview["id"] = "footprint",
 ): string {
-	return `${utcDayKey(utcDay)} UTC，${recordCount} ${provider === "footprint" ? "点" : "条记录"}`;
+	return `${utcDayKey(utcDay)} ${provider === "pixiu" ? "北京时间记账日" : "UTC"}，${recordCount} ${provider === "footprint" ? "点" : "条记录"}`;
 }
 
 export function groupCoverageMonths(days: ProviderCoverageDay[]): CoverageMonth[] {

@@ -26,6 +26,9 @@ const FootprintPage = lazy(() =>
 const AppleHealthPage = lazy(() =>
 	import("./views/apple-health-page").then((module) => ({ default: module.AppleHealthPage })),
 );
+const PixiuPage = lazy(() =>
+	import("./views/pixiu-page").then((module) => ({ default: module.PixiuPage })),
+);
 
 export function App() {
 	return (
@@ -40,6 +43,7 @@ export function App() {
 						<Route path="/data" element={<DataOverviewPage />} />
 						<Route path="/data/footprint" element={<FootprintPage />} />
 						<Route path="/data/apple-health" element={<AppleHealthPage />} />
+						<Route path="/data/pixiu" element={<PixiuPage />} />
 						<Route path="*" element={<NotFoundPage />} />
 					</Route>
 				</Routes>

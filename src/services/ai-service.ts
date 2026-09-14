@@ -42,6 +42,13 @@ export function fetchDaySummary(
 export function generateDaySummary(
 	query: DaySummaryQuery,
 	signal?: AbortSignal,
+	revision?: string,
 ): Promise<DaySummaryResult> {
-	return apiSend<DaySummaryResult>("/api/day-summary", "POST", query, signal);
+	const note = revision?.trim();
+	return apiSend<DaySummaryResult>(
+		"/api/day-summary",
+		"POST",
+		note ? { ...query, revision: note } : query,
+		signal,
+	);
 }

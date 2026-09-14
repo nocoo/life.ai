@@ -131,7 +131,7 @@ ON life_events(source_id, occurred_at ASC, id ASC);
   ```json
   {
     "status": "ok",
-    "version": "1.5.0",
+    "version": "1.6.0",
     "timestamp": "2026-09-13T17:35:00.000Z",
     "database": "ok"
   }
@@ -163,10 +163,10 @@ The profile uses SHA-256 of the normalized authenticated email with `lizheng.blo
 - Validates window width $\le 32$ days.
 - In-window occurrence condition includes point events and zero-length intervals at window start (`occurred_at >= start AND occurred_at < end`), plus non-day interval events overlapping the window (`precision != 'day' AND end_at > occurred_at AND occurred_at < end AND end_at > start`).
 - Paginated with page size 200 using opaque base64url cursor `base64url(occurredAtMs:id)`.
-- The first page also returns `footprintDays` and `healthSeries` containing compact UTC packages intersecting the window, subject to the source filter. The frontend decodes and clips observations to the same window; subsequent event pages do not repeat the packages. `healthView=story` selects the timeline's health dimensions; omitted `healthView` returns all dimensions. A UTC date with a compact package excludes legacy events for that provider/date. Point and overlapping-interval branches use separate indexes.
+- The first page also returns `footprintDays`, `healthSeries` and `pixiuDays` containing compact UTC packages intersecting the window, subject to the source filter. The frontend decodes and clips observations to the same window; subsequent event pages do not repeat the packages. `healthView=story` selects the timeline's health dimensions; omitted `healthView` returns all dimensions. A UTC date with a compact package excludes legacy events for that provider/date. Point and overlapping-interval branches use separate indexes.
 
 ### 4.5 `POST /api/imports`
-- Accepts batches of 1 to 100 records for `pixiu` and `journal`. Old `footprint` and `apple-health` submissions return `410 footprint_import_moved` and `410 health_import_moved`; use their dedicated complete-day APIs below.
+- Accepts batches of 1 to 100 records for `journal`. Old `footprint`, `apple-health` and `pixiu` submissions return 410 (`footprint_import_moved`, `health_import_moved`, `pixiu_import_moved`); use their dedicated complete-day APIs below.
 - Validates that records array contains only valid objects.
 - Precision defaults to `'hour'` only if `undefined`; explicit invalid values return `400 invalid_precision`.
 - Normalized and floored via shared `timestampAtPrecision`.
@@ -216,13 +216,13 @@ All five AI method/path contracts require Access and the app hostname; browser w
 | `PUT /api/settings/ai` | Saves provider, model, endpoint and protocol. Omitted keys only survive an unchanged provider/endpoint/SDK/auth tuple |
 | `POST /api/settings/ai/test` | Tests the saved configuration with a fixed prompt and 15-second timeout |
 | `GET /api/day-summary?date=...&timeZone=...&start=...&end=...` | Returns `{ summary, stale, eventCount }`; verifies the complete local-day UTC window |
-| `POST /api/day-summary` | Same fields as JSON; manually generates and persists the summary, with a 45-second model timeout |
+| `POST /api/day-summary` | Same fields as JSON plus optional `revision` (at most 2,000 characters); generates and persists a diary, with a 45-second model timeout |
 
 Migration `0002_daily_ai.sql` adds `ai_settings` (singleton `default`), `day_summaries` (primary key `date, timezone`) and `day_summary_leases` (same key, ownership token and expiry). Record timestamps stay UTC; local date/timezone are summary lookup metadata. API keys use AES-GCM with the separate `AI_SETTINGS_KEY` Worker secret.
 
 Default inference uses Workers AI Qwen; external providers use the next-ai registry and bounded AI SDK clients. Settings bodies are limited to 16 KiB, model names to 200 characters, URLs to 2,048, and keys to 4,096. External endpoints require HTTPS DNS names; only marked isolated tests can use loopback. HTTP redirects are never followed, model responses are capped at 512 KiB, and output text at 16,000 characters.
 
-Summaries cover all sources in the day. Paged UTC reads feed the shared numeric collector and incremental input hash; narrative samples are bounded across hours and sources. A 90-second D1 lease rejects concurrent generation with 409. The save statement checks lease ownership and expiry atomically; failed or expired generation keeps the last successful summary. A second input hash detects records arriving during generation. See [12 Daily views and AI](12-daily-view.md) for precision and sampling details.
+Summaries cover all sources in the day. Paged UTC reads feed the shared numeric collector and incremental input hash; narrative samples are bounded across hours and sources. A 90-second D1 lease rejects concurrent generation with 409. The save statement checks lease ownership and expiry atomically; failed or expired generation keeps the last successful summary. A second input hash detects records arriving during generation. The prompt combines complete provider aggregates with bounded narrative evidence, cross-night sleep, GPS areas, all-day finance, cached weather and solar context. Existing text and optional feedback guide regeneration; viewing a saved diary makes no external context request. See [21 Diary evidence](21-diary.md) for the current prompt and freshness rules.
 
 ## 7. Data Management and Footprint
 
@@ -271,3 +271,22 @@ Included days replace all dimensions atomically, including dimensions removed by
 `GET /api/data/overview` reports `storage: "day-dimension"`, content rows/bytes and per-dimension counts, coverage, rows and bytes, plus attachment kinds/counts/original bytes. Top-level events are counted once; nested observations and attachment samples are preserved without double-counting them as timeline events. Sleep-goal settings and measurements originally dated on Unix epoch day are excluded from measured coverage, while remaining in storage and raw reads. `health.epochRecordCount` identifies the latter in the UI. Older cached statistics without this field are rebuilt even when the content revision is unchanged.
 
 The daily view requests story dimensions with prior 24-hour/following 12-hour sleep context. Raw dimensions load on the record tab. AI reads use the same local-day clipping and stable content ordering; virtual IDs and import timestamps do not invalidate an unchanged summary. [17 Apple Health](17-apple-health.md) records the codec, complete-data verification, reading rules and release evidence.
+
+## 9. Pixiu daily accounting
+
+These Access-protected app-host APIs reuse the provider lease/receipt engine and `provider_days`; there is no per-transaction table or Pixiu schema migration.
+
+| Endpoint | Behavior |
+| --- | --- |
+| `POST /api/data/pixiu/imports` | `{ fileName, totalDays, totalRecords, channel, target }`; validates target and obtains the provider lease |
+| `PUT /api/data/pixiu/imports/:id/batches/:batchId` | `{ days }`; up to 32 complete source days / 768 KiB, consecutive batches, ascending dates |
+| `POST /api/data/pixiu/imports/:id/finish` | `{ status: "complete" \| "cancelled" }`; completion checks the full declared day/record counts |
+| `GET /api/data/pixiu/days?start=ISO&end=ISO` | Complete source packages assigned to the requested UTC window, at most 32 days |
+
+Source dates are explicitly UTC+8. `utc_day` is the technical source-date key; the real day starts eight hours earlier. Every daily JSON preserves all nine original strings, duplicate multiplicities and zero amounts. The server recomputes exact integer-cent summaries by currency/classification and validates hashes, lengths, bounds and counts. Identical imports preserve content/timestamps; changed days replace the complete snapshot, absent days remain, and A → B → A is supported. The overview reports accounting-date coverage, transaction counts and one content row per date. Details: [22 Pixiu](22-pixiu-daily-import.md).
+
+## 10. Public context cache
+
+`GET /api/context/sun` and `GET /api/context/weather` require Access and the app hostname. They accept `date`, `timeZone`, `start`, `end`, `latitude`, `longitude`; the UTC window must exactly represent the selected local date. Invalid inputs return 400, unsupported methods 405, lease contention 503. The ingestion host returns 404.
+
+Migration `0005_public_context.sql` adds compact JSON caches, per-key leases and one Nominatim rate-limit marker. Complete solar results persist permanently; repeat reads are cache-only with no writes. Historical complete weather is permanent, incomplete history expires after 30 minutes, recent weather after three hours. Diary generation shares those caches and at most four coarse city/district lookups. Failed or partial solar responses are retryable. Details: [20 Public context](20-public-context-cache.md).

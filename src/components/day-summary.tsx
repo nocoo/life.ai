@@ -3,6 +3,12 @@ import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	Field,
 	LayerCard,
 	Text,
 } from "@nocoo/basalt";
@@ -28,6 +34,8 @@ export function DaySummaryCard({ query }: { query: DaySummaryQuery }) {
 	const generating = useStore(daySummaryStore, (state) => state.generating);
 	const error = useStore(daySummaryStore, (state) => state.error);
 	const expired = useStore(daySummaryStore, (state) => state.expired);
+	const revisionOpen = useStore(daySummaryStore, (state) => state.revisionOpen);
+	const revisionText = useStore(daySummaryStore, (state) => state.revisionText);
 	const eventCount = result?.eventCount ?? 0;
 	const summary = result?.summary ?? null;
 	const paragraphs = summary ? splitSummaryParagraphs(summary.content) : [];
@@ -45,8 +53,8 @@ export function DaySummaryCard({ query }: { query: DaySummaryQuery }) {
 			<LayerCard.Header>
 				<StoryCardHeading
 					icon={Sparkles}
-					title="当日摘要"
-					subtitle="使用当天全部来源生成，不受来源筛选影响。"
+					title="当日日记"
+					subtitle="用当天全部来源写成故事，不受来源筛选影响。"
 				/>
 			</LayerCard.Header>
 			<LayerCard.Body className="space-y-4">
@@ -109,7 +117,7 @@ export function DaySummaryCard({ query }: { query: DaySummaryQuery }) {
 				) : configured && eventCount > 0 && status === "ready" ? (
 					<div className="story-summary-idle">
 						<Text as="p" size="sm">
-							把这些片刻整理成这一天的故事。点击后生成并保存。
+							把这些片刻写成这一天的日记。点击后生成并保存。
 						</Text>
 					</div>
 				) : null}
@@ -127,14 +135,58 @@ export function DaySummaryCard({ query }: { query: DaySummaryQuery }) {
 					<Button
 						variant="outline"
 						size="sm"
-						onClick={() => void daySummaryStore.getState().generate()}
+						onClick={() => {
+							if (summary) daySummaryStore.getState().openRevision();
+							else void daySummaryStore.getState().generate();
+						}}
 						loading={generating}
 						disabled={!canGenerate}
 					>
 						<Sparkles size={14} strokeWidth={1.6} aria-hidden="true" />
-						{summary ? "重新生成" : "生成摘要"}
+						{summary ? "再写一则" : "写日记"}
 					</Button>
 				</div>
+				<Dialog
+					open={revisionOpen}
+					onOpenChange={(open) => {
+						if (!open) daySummaryStore.getState().closeRevision();
+					}}
+				>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>再写这一天</DialogTitle>
+							<DialogDescription>
+								可以留下修改意见。成功后会覆盖当前日记；失败则保留原文。
+							</DialogDescription>
+						</DialogHeader>
+						<Field label="修改意见（可选）" htmlFor="diary-revision">
+							<textarea
+								id="diary-revision"
+								className="min-h-24 w-full rounded-basalt-md border border-basalt-border bg-basalt-background px-3 py-2 text-sm"
+								value={revisionText}
+								onChange={(event) => daySummaryStore.getState().setRevisionText(event.target.value)}
+								maxLength={2000}
+								placeholder="例如：少写步数，多写晚上在书店的事。"
+							/>
+						</Field>
+						<div className="mt-4 flex justify-end gap-2">
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => daySummaryStore.getState().closeRevision()}
+							>
+								取消
+							</Button>
+							<Button
+								size="sm"
+								onClick={() => void daySummaryStore.getState().confirmRevision()}
+								loading={generating}
+							>
+								生成
+							</Button>
+						</div>
+					</DialogContent>
+				</Dialog>
 			</LayerCard.Body>
 		</LayerCard>
 	);

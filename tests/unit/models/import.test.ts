@@ -21,65 +21,14 @@ async function read(text: string, source: ImportSourceId, name = "export.xml") {
 }
 
 const journal = { title: "阅读", occurredAt: "2026-09-13T12:34:56.789+08:00", data: { pages: 12 } };
-const csvHeader = "日期,交易分类,交易类型,流入金额,流出金额,币种,资金账户,标签,备注";
 
 describe("dedicated provider imports", () => {
-	it.each(["apple-health", "footprint"] as const)("moves %s to Data Management", async (source) => {
-		await expect(read("<export/>", source)).rejects.toThrow("专用导入页面");
-	});
-});
-
-describe("Pixiu CSV", () => {
-	it("preserves duplicate real transactions, quoted commas/newlines/quotes, and replay keys", async () => {
-		const csv = `\uFEFF${csvHeader}\r\n2026-09-13,支出,午餐,0,12.50,CNY,现金,,"咖啡,\r\n""午餐"""\r\n2026-09-13,支出,午餐,0,12.50,CNY,现金,,"咖啡,\r\n""午餐"""`;
-		const first = await read(csv, "pixiu", "2026.csv");
-		const replay = await read(csv, "pixiu", "renamed.csv");
-		expect(first.records).toHaveLength(2);
-		expect(first.records[0]?.key).not.toBe(first.records[1]?.key);
-		expect(first.records.map((record) => record.key)).toEqual(
-			replay.records.map((record) => record.key),
-		);
-		expect(first.records[0]).toMatchObject({
-			title: "午餐",
-			precision: "day",
-			content: '支出 12.50 · CNY · 咖啡,\r\n"午餐"',
-		});
-	});
-	it("supports income, empty optional columns, hour/minute/second input, and blank lines", async () => {
-		const { records } = await read(
-			`${csvHeader}\n\n2026-09-13T09,收入,,1234,0,CNY,银行卡,,\n2026-09-13 10:01,,,,,,,,\n2026-09-13T11:02:03Z,,,,,,,,`,
-			"pixiu",
-			"input.csv",
-		);
-		expect(records.map((record) => record.precision)).toEqual(["hour", "minute", "second"]);
-		expect(records[0]?.content).toBe("收入 1234 · CNY");
-		expect(records[1]?.title).toBe("记账");
-	});
-	it("streams CSV across quoted row boundaries and supports CR newlines", async () => {
-		const rows = Array.from(
-			{ length: 1600 },
-			(_, i) => `2026-09-13,支出,交通,0,${i},CNY,现金,,"公交,地铁"`,
-		);
-		const result = await read(`${csvHeader}\r${rows.join("\r")}\r`, "pixiu", "large.csv");
-		expect(result.records).toHaveLength(1600);
-		expect(result.wholeFile).not.toHaveBeenCalled();
-	});
-	it.each([
-		"wrong,header\n2026-09-13,a",
-		"日期,日期\n2026-09-13,a",
-		"日期,备注\n2026-09-13,a,b",
-		`日期,流出金额\n2026-09-13,NaN`,
-		`日期,流入金额\n2026-09-13,12x`,
-		`日期,备注\n2026-09-13,"not closed`,
-		`日期,备注\n2026-09-13,"invalid"trailing`,
-	])("rejects malformed CSV %s", async (csv) => {
-		await expect(read(csv, "pixiu", "bad.csv")).rejects.toThrow();
-	});
-	it("bounds an incomplete CSV row", async () => {
-		await expect(
-			read(`日期,备注\n2026-09-13,"${"x".repeat(1100_000)}`, "pixiu", "bad.csv"),
-		).rejects.toThrow("1 MiB");
-	});
+	it.each(["apple-health", "footprint", "pixiu"] as const)(
+		"moves %s to Data Management",
+		async (source) => {
+			await expect(read("<export/>", source)).rejects.toThrow("专用导入页面");
+		},
+	);
 });
 
 describe("journal JSON and NDJSON", () => {
@@ -127,6 +76,51 @@ describe("journal JSON and NDJSON", () => {
 		);
 		expect(a.records[0]?.key).toBe(b.records[0]?.key);
 	});
+	it.each([
+		["2026-09-13T09", "hour", "2026-09-13T09:00:00.000Z"],
+		["2026-09-13 09:34", "minute", "2026-09-13T09:34:00.000Z"],
+	] as const)(
+		"infers the precision of an offsetless %s as UTC",
+		async (occurredAt, precision, expected) => {
+			const { records } = await read(
+				JSON.stringify({ ...journal, occurredAt }),
+				"journal",
+				"a.json",
+			);
+			expect(records[0]).toMatchObject({ precision, occurredAt: expected });
+		},
+	);
+	it("keeps nested object key ordering irrelevant while preserving array order in stable keys", async () => {
+		const first = await read(
+			JSON.stringify({ ...journal, data: { place: { z: 1, a: 2 }, notes: [{ b: 2, a: 1 }, 3] } }),
+			"journal",
+			"first.json",
+		);
+		const equivalent = await read(
+			JSON.stringify({ ...journal, data: { notes: [{ a: 1, b: 2 }, 3], place: { a: 2, z: 1 } } }),
+			"journal",
+			"copy.json",
+		);
+		const reordered = await read(
+			JSON.stringify({ ...journal, data: { notes: [3, { a: 1, b: 2 }], place: { a: 2, z: 1 } } }),
+			"journal",
+			"different.json",
+		);
+		expect(first.records[0]?.key).toBe(equivalent.records[0]?.key);
+		expect(first.records[0]?.key).not.toBe(reordered.records[0]?.key);
+	});
+	it("rejects an interval ending before its normalized start without submitting a batch", async () => {
+		const onBatch = vi.fn();
+		await expect(
+			importFile(
+				new File([JSON.stringify({ ...journal, endAt: "2026-09-13T04:00:00Z" })], "bad.json"),
+				"journal",
+				onBatch,
+				vi.fn(),
+			),
+		).rejects.toThrow("结束时间不能早于开始时间");
+		expect(onBatch).not.toHaveBeenCalled();
+	});
 	it("streams NDJSON and flushes under the 1 MiB HTTP limit, even with large data", async () => {
 		const rows = Array.from({ length: 60 }, (_, i) =>
 			JSON.stringify({ ...journal, key: String(i), data: { note: "中文".repeat(5000) } }),
@@ -146,6 +140,28 @@ describe("journal JSON and NDJSON", () => {
 			"events.jsonl",
 		);
 		expect(records).toHaveLength(2);
+	});
+	it("preserves a UTF-8 character split across bounded file reads", async () => {
+		const row = JSON.stringify({ date: "2026-09-13", title: "跨块中文" });
+		const prefix = row.indexOf("跨");
+		const text = `${" ".repeat(64 * 1024 - 1 - prefix)}${row}`;
+		const encoded = new TextEncoder().encode(text);
+		expect(encoded[64 * 1024 - 1]).toBe(0xe8);
+		const { records, progress, wholeFile } = await read(text, "journal", "chunked.jsonl");
+		expect(records[0]?.title).toBe("跨块中文");
+		expect(wholeFile).not.toHaveBeenCalled();
+		expect(progress.map((item) => item.bytesRead)).toContain(64 * 1024);
+		expect(progress.at(-1)?.bytesRead).toBe(encoded.length);
+	});
+	it("submits at most 100 records per batch and ends with complete accepted progress", async () => {
+		const rows = Array.from({ length: 205 }, (_, index) => ({ ...journal, key: `row-${index}` }));
+		const { batches, result, progress } = await read(JSON.stringify(rows), "journal", "many.json");
+		expect(batches.map((batch) => batch.length)).toEqual([100, 100, 5]);
+		expect(batches.flat().map((record) => record.key)).toEqual(rows.map((row) => row.key));
+		expect(result).toEqual({ processed: 205, accepted: 205 });
+		expect(progress[0]).toMatchObject({ bytesRead: 0, processed: 0, accepted: 0 });
+		expect(progress.at(-1)).toMatchObject({ processed: 205, accepted: 205 });
+		expect(new Set(progress.map((item) => item.accepted))).toEqual(new Set([0, 100, 200, 205]));
 	});
 	it.each([
 		"[null]",
@@ -172,7 +188,6 @@ describe("journal JSON and NDJSON", () => {
 
 describe("import progress, cancellation and failures", () => {
 	it.each([
-		["日期", "pixiu", "data.csv"],
 		["[]", "journal", "data.json"],
 		["\n", "journal", "data.ndjson"],
 	] as const)("does not report success for empty %s", async (contents, source, name) => {
@@ -192,6 +207,35 @@ describe("import progress, cancellation and failures", () => {
 			),
 		).rejects.toMatchObject({ name: "AbortError" });
 		expect(batch).not.toHaveBeenCalled();
+	});
+	it("honors cancellation while a file slice is being read", async () => {
+		const controller = new AbortController();
+		const reason = new Error("reader cancelled");
+		const file = new File([JSON.stringify(journal)], "pending.json");
+		const bytes = await file.arrayBuffer();
+		let finish: (value: ArrayBuffer) => void = () => {};
+		const chunk = new Blob();
+		vi.spyOn(chunk, "arrayBuffer").mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					finish = resolve;
+				}),
+		);
+		vi.spyOn(file, "slice").mockReturnValue(chunk);
+		const onBatch = vi.fn();
+		const onProgress = vi.fn();
+		const pending = importFile(file, "journal", onBatch, onProgress, controller.signal);
+		controller.abort(reason);
+		finish(bytes);
+		await expect(pending).rejects.toBe(reason);
+		expect(onBatch).not.toHaveBeenCalled();
+		expect(onProgress).toHaveBeenCalledTimes(1);
+		expect(onProgress).toHaveBeenCalledWith({
+			bytesRead: 0,
+			totalBytes: file.size,
+			processed: 0,
+			accepted: 0,
+		});
 	});
 	it("stops after a completed batch and exposes accepted count for safe replay", async () => {
 		const controller = new AbortController();

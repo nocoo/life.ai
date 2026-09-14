@@ -154,7 +154,7 @@ describe("timelineStore", () => {
 		fetchAllEventsMock.mockClear();
 		fetchSourcesMock.mockClear();
 		expect(timelineStore.getState().tab).toBe("timeline");
-		for (const tab of ["locations", "records", "timeline"] as const) {
+		for (const tab of ["locations", "finance", "records", "timeline"] as const) {
 			timelineStore.getState().selectTab(tab);
 			expect(timelineStore.getState().tab).toBe(tab);
 			expect(timelineStore.getState().timeline).toBe(timeline);

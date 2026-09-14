@@ -13,8 +13,14 @@ export interface DaySummaryViewState {
 	generating: boolean;
 	error: string | null;
 	expired: boolean;
+	revisionOpen: boolean;
+	revisionText: string;
 	load: (query: DaySummaryQuery) => Promise<void>;
-	generate: () => Promise<void>;
+	generate: (revision?: string) => Promise<void>;
+	openRevision: () => void;
+	closeRevision: () => void;
+	setRevisionText: (value: string) => void;
+	confirmRevision: () => Promise<void>;
 	retry: () => Promise<void>;
 	abort: () => void;
 	reset: () => void;
@@ -25,7 +31,15 @@ let loadController: AbortController | null = null;
 
 function initialState(): Pick<
 	DaySummaryViewState,
-	"query" | "result" | "configured" | "status" | "generating" | "error" | "expired"
+	| "query"
+	| "result"
+	| "configured"
+	| "status"
+	| "generating"
+	| "error"
+	| "expired"
+	| "revisionOpen"
+	| "revisionText"
 > {
 	return {
 		query: null,
@@ -35,6 +49,8 @@ function initialState(): Pick<
 		generating: false,
 		error: null,
 		expired: false,
+		revisionOpen: false,
+		revisionText: "",
 	};
 }
 
@@ -78,6 +94,8 @@ export const daySummaryStore = createStore<DaySummaryViewState>((set, get) => ({
 			error: null,
 			expired: false,
 			generating: false,
+			revisionOpen: false,
+			revisionText: keepResult ? get().revisionText : "",
 			result: keepResult ? get().result : null,
 		});
 		try {
@@ -106,15 +124,30 @@ export const daySummaryStore = createStore<DaySummaryViewState>((set, get) => ({
 			});
 		}
 	},
-	async generate() {
+	openRevision() {
+		if (!get().result?.summary || get().generating) return;
+		set({ revisionOpen: true, revisionText: "" });
+	},
+	closeRevision() {
+		set({ revisionOpen: false, revisionText: "" });
+	},
+	setRevisionText(value) {
+		set({ revisionText: value });
+	},
+	async confirmRevision() {
+		const note = get().revisionText;
+		set({ revisionOpen: false, revisionText: "" });
+		await get().generate(note);
+	},
+	async generate(revision?: string) {
 		const query = get().query;
 		if (!query || get().generating) {
 			return;
 		}
 		const generation = loadGeneration;
-		set({ generating: true, error: null });
+		set({ generating: true, error: null, revisionOpen: false });
 		try {
-			const result = await generateDaySummary(query, loadController?.signal);
+			const result = await generateDaySummary(query, loadController?.signal, revision);
 			if (generation !== loadGeneration) {
 				return;
 			}

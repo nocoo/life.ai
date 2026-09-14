@@ -1,4 +1,3 @@
-import Papa from "papaparse";
 import { z } from "zod";
 import { normalizeTimestamp, timestampAtPrecision } from "./time";
 import type { ImportProgress, ImportRecord, ImportSourceId, Precision } from "./types";
@@ -53,66 +52,6 @@ async function* chunks(
 	}
 }
 
-async function importCsv(input: AsyncIterable<string>, emit: Emit) {
-	let pending = "";
-	let header: string[] | undefined;
-	let line = 0;
-	let newline: "\r\n" | "\n" | "\r" | undefined;
-	// Preserve identical legitimate transactions; memory scales with distinct CSV rows, not XML/GPX size.
-	const occurrences = new Map<string, number>();
-	const parse = async (final: boolean) => {
-		newline ??= /\r\n|\n|\r(?!$)/.exec(pending)?.[0] as typeof newline;
-		if (!newline && !final) return;
-		const result = new Papa.Parser({ delimiter: ",", newline: newline ?? "\n" }).parse(
-			pending,
-			0,
-			!final,
-		) as Papa.ParseResult<string[]>;
-		if (result.errors.length) throw new Error(`CSV 第 ${line + 1} 行格式错误`);
-		pending = pending.slice(result.meta.cursor);
-		for (const cells of result.data) {
-			line++;
-			if (cells.every((cell) => !cell.trim())) continue;
-			if (!header) {
-				header = cells.map((cell) => cell.trim());
-				if (!header.includes("日期") || new Set(header).size !== header.length) {
-					throw new Error("CSV 需要唯一表头，且包含「日期」列");
-				}
-				continue;
-			}
-			if (cells.length !== header.length) throw new Error(`CSV 第 ${line} 行列数不匹配`);
-			const row = Object.fromEntries(header.map((key, index) => [key, cells[index] as string]));
-			const incoming = row.流入金额?.trim() || "0";
-			const outgoing = row.流出金额?.trim() || "0";
-			if (![incoming, outgoing].every((amount) => /^-?\d+(?:\.\d+)?$/.test(amount))) {
-				throw new Error(`CSV 第 ${line} 行金额无效`);
-			}
-			const hash = await stableKey(row);
-			const occurrence = (occurrences.get(hash) ?? 0) + 1;
-			occurrences.set(hash, occurrence);
-			await emit({
-				key: `${hash}:${occurrence}`,
-				occurredAt: (row.日期 as string).trim(),
-				title: row.交易类型?.trim() || row.交易分类?.trim() || "记账",
-				content: [
-					Number(outgoing) !== 0 ? `支出 ${outgoing}` : `收入 ${incoming}`,
-					row.币种,
-					row.备注,
-				]
-					.filter(Boolean)
-					.join(" · "),
-				data: row,
-			});
-		}
-	};
-	for await (const chunk of input) {
-		pending += chunk;
-		await parse(false);
-		if (pending.length > MAX_PENDING) throw new Error("CSV 单行超过 1 MiB");
-	}
-	await parse(true);
-}
-
 function journalRecord(value: unknown): PendingRecord {
 	if (!value || typeof value !== "object" || Array.isArray(value)) {
 		throw new Error("每条实录必须是 JSON 对象");
@@ -156,8 +95,7 @@ export async function importFile(
 	signal?: AbortSignal,
 ): Promise<{ processed: number; accepted: number }> {
 	signal?.throwIfAborted();
-	if (source === "apple-health" || source === "footprint")
-		throw new Error("请使用数据管理中的专用导入页面。");
+	if (source !== "journal") throw new Error("请使用数据管理中的专用导入页面。");
 	const ndjson = /\.(ndjson|jsonl)$/i.test(file.name);
 	if (source === "journal" && !ndjson && file.size > MAX_JSON_FILE) {
 		throw new Error("JSON 文件最多 10 MiB；更大的文件请使用 NDJSON 格式");
@@ -205,14 +143,7 @@ export async function importFile(
 	};
 	report();
 	const input = chunks(file, progress, report, signal);
-	switch (source) {
-		case "pixiu":
-			await importCsv(input, emit);
-			break;
-		case "journal":
-			await importJournal(input, ndjson, emit);
-			break;
-	}
+	await importJournal(input, ndjson, emit);
 	if (progress.processed === 0) throw new Error("文件中没有可导入的记录");
 	await flush();
 	report();

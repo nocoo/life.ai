@@ -16,7 +16,7 @@ import { buildHealthTimeline } from "./health-timeline";
 
 export const ALL_SOURCES = "all";
 export type TimelineMapMode = "auto" | "all" | "none";
-export type TimelinePageTab = "timeline" | "locations" | "records";
+export type TimelinePageTab = "timeline" | "locations" | "finance" | "records";
 
 export interface TimelineViewState {
 	day: string;
@@ -307,7 +307,7 @@ export const timelineStore = createStore<TimelineViewState>((set, get) => ({
 		if (mapMode === "auto" || mapMode === "all" || mapMode === "none") set({ mapMode });
 	},
 	selectTab(tab) {
-		if (tab === "timeline" || tab === "locations" || tab === "records") {
+		if (tab === "timeline" || tab === "locations" || tab === "finance" || tab === "records") {
 			set({ tab });
 			if (tab === "records") void get().loadRecords();
 		}

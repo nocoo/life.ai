@@ -4,7 +4,9 @@ Footprint 在“数据管理 → Footprint”导入，也支持本机 CLI 和 `l
 
 Apple Health 在“数据管理 → Apple Health”导入完整 ZIP 或解压目录；浏览器 Worker + IndexedDB 和本机临时磁盘共用解析与上传模块，每个 UTC 日按维度无损压缩，整日替换，附件单独保留。详见 [17 Apple Health](17-apple-health.md)。
 
-貔貅和日记保留 `/imports` 网页入口，按最多 100 条且小于 512 KiB 的批次提交；文件每次读取 64 KiB。失败或取消前已提交的批次保留，重新导入使用稳定键覆盖。
+貔貅在 `/data/pixiu` 选择一个或多个 CSV，CLI 也接受年度 CSV 目录，整份输入先校验再上传。每个 UTC+8 来源日一行完整 JSON，后导入的同日快照整体覆盖。详情见 [22 貔貅导入](22-pixiu-daily-import.md)。
+
+日记保留 `/imports` 网页入口，按最多 100 条且小于 512 KiB 的批次提交；文件每次读取 64 KiB。失败或取消前已提交的批次保留，重新导入使用稳定键覆盖。
 
 | 来源 | 支持格式 | 映射 |
 | --- | --- | --- |
@@ -13,16 +15,18 @@ Apple Health 在“数据管理 → Apple Health”导入完整 ZIP 或解压目
 | 貔貅 | UTF-8 CSV | 日期、交易分类/类型、流入/流出金额、币种、资金账户、标签、备注 |
 | 日记 | JSON 对象/数组，NDJSON/JSONL | 通用实录字段；普通 JSON 限 10 MiB |
 
-Apple Health 选择完整导出包；仅上传 `导出.xml` 会遗漏附件，因此不支持这一方式。旧 `/api/imports` 的 Apple Health 写入返回 410。GPX 使用 Footprint 独立入口，注意文件中的每个 UTC 日会整日替换。CSV 支持 BOM、引号、换行和重复同内容交易；完全相同交易通过文件内出现次数区分，文件改名不改变键。XML 外部实体不会被解析或下载。
+Apple Health 选择完整导出包；仅上传 `导出.xml` 会遗漏附件，因此不支持这一方式。旧 `/api/imports` 的 Apple Health 写入返回 410。GPX 使用 Footprint 独立入口，注意文件中的每个 UTC 日会整日替换。貔貅 CSV 支持 BOM、引号、换行和同内容重复交易，全部原始单元格与重复次数均保留，文件改名不改变内容哈希。旧 `/api/imports` 的貔貅写入返回 410。XML 外部实体不会被解析或下载。
 
 ```sh
 bun run data:import --provider apple-health --file /path/to/导出.zip --dry-run --json
 bun run data:import --provider apple-health --file /path/to/apple_health_export --target production --json
 bun run data:import --provider footprint --file /path/to/track.gpx --dry-run --json
 bun run data:import --provider footprint --file /path/to/track.gpx --target production --json
+bun run data:import --provider pixiu --file /path/to/貔貅记账 --dry-run --json
+bun run data:import --provider pixiu --file /path/to/貔貅记账 --target production --json
 ```
 
-直接上传生产主域名使用当前用户的 Cloudflare Access 身份，CLI 内部取得 token，日志只返回统计和回执。已授权的 `dev:prod` 服务可通过 `--target production --base-url http://127.0.0.1:7011` 写生产 D1；`--target local` 只允许真正的本地数据库。HTTP 错误会保留已提交批次，可重跑完整输入。原始文件和坐标不进入 Git。
+直接上传生产主域名使用当前用户的 Cloudflare Access 身份，CLI 内部取得 token，日志只返回统计和回执。已授权的 `dev:prod` 服务可通过 `--target production --base-url https://life.dev.hexly.ai` 写生产 D1；`--target local` 只允许真正的本地数据库。HTTP 错误会保留已提交批次，可重跑完整输入。原始文件和坐标不进入 Git。
 
 日记示例：
 

@@ -1,5 +1,6 @@
 import { decodeHealthSeries } from "../models/apple-health";
 import { footprintDayEvents } from "../models/footprint";
+import { pixiuDayEvents } from "../models/pixiu";
 import { normalizeTimestamp } from "../models/time";
 import type { EventPage, LifeEvent } from "../models/types";
 import { ApiError, apiGet } from "./http";
@@ -45,6 +46,8 @@ export async function fetchAllEvents(query: FetchEventsQuery): Promise<LifeEvent
 		}
 		const batch = await fetchEventPage({ ...query, cursor });
 		events.push(...batch.events);
+		if (page === 0 && batch.pixiuDays && (!query.source || query.source === "pixiu"))
+			for (const day of batch.pixiuDays) events.push(...pixiuDayEvents(day));
 		if (page === 0 && batch.healthSeries && (!query.source || query.source === "apple-health")) {
 			const window = {
 				start: Date.parse(normalizeTimestamp(query.start)),

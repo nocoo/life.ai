@@ -1,3 +1,4 @@
+import type { PixiuRow } from "../../src/models/pixiu";
 import type { ImportRecord, ImportSourceId } from "../../src/models/types";
 
 /** Synthetic design/test day. Imported only into the isolated L3 database, never into production. */
@@ -20,7 +21,13 @@ const health = (
 	data: { type: `HKQuantityTypeIdentifier${type}`, value, unit },
 });
 
-export const storyImports: Record<ImportSourceId, ImportRecord[]> = {
+export const storyPixiuRows: PixiuRow[] = [
+	[STORY_DAY, "日常支出", "早餐", "0.00", "32.50", "CNY", "现金", "", "咖啡和一份三明治"],
+	[STORY_DAY, "日常支出", "午餐", "0.00", "48.00", "CNY", "现金", "", "和同事一起午餐"],
+	[STORY_DAY, "日常支出", "食材", "0.00", "89.00", "CNY", "现金", "", "晚餐食材"],
+];
+
+export const storyImports: Record<Exclude<ImportSourceId, "pixiu">, ImportRecord[]> = {
 	"apple-health": [
 		{
 			key: "story-sleep",
@@ -103,30 +110,6 @@ export const storyImports: Record<ImportSourceId, ImportRecord[]> = {
 			title: index === 0 ? "走路回家" : "轨迹点",
 			data: { latitude: 31.243 - index * 0.000105, longitude: 121.46 - index * 0.00047 },
 		})),
-	],
-	pixiu: [
-		{
-			key: "story-coffee",
-			occurredAt: storyAt(8, 5),
-			precision: "minute",
-			title: "转角的早餐",
-			content: "咖啡和一份三明治",
-			data: { 币种: "CNY", 交易类型: "支出", 流出金额: "32.50", 交易分类: "餐饮" },
-		},
-		{
-			key: "story-lunch",
-			occurredAt: storyAt(12, 20),
-			precision: "minute",
-			title: "和同事一起午餐",
-			data: { 币种: "CNY", 交易类型: "支出", 流出金额: "48.00", 交易分类: "餐饮" },
-		},
-		{
-			key: "story-dinner",
-			occurredAt: storyAt(18, 50),
-			precision: "minute",
-			title: "晚餐食材",
-			data: { 币种: "CNY", 交易类型: "支出", 流出金额: "89.00", 交易分类: "日用" },
-		},
 	],
 	journal: [
 		{

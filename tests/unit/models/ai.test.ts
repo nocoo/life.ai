@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { validateSummaryQuery } from "../../../src/models/ai";
+import {
+	MAX_SUMMARY_REVISION,
+	validateSummaryGenerateInput,
+	validateSummaryQuery,
+	validateSummaryRevision,
+} from "../../../src/models/ai";
 
 const query = {
 	date: "2026-09-13",
@@ -46,5 +51,20 @@ describe("daily summary UTC window validation", () => {
 		{ ...query, end: "2026-09-13T16:00:00.001Z" },
 	])("rejects a malformed or forged day window %#", (input) => {
 		expect(() => validateSummaryQuery(input)).toThrow();
+	});
+});
+
+describe("diary revision notes", () => {
+	it("accepts optional notes and rejects oversized or non-text input", () => {
+		expect(validateSummaryRevision(undefined)).toBeUndefined();
+		expect(validateSummaryRevision("  ")).toBeUndefined();
+		expect(validateSummaryRevision("少写步数")).toBe("少写步数");
+		expect(() => validateSummaryRevision(1)).toThrow("修改意见必须是文字");
+		expect(() => validateSummaryRevision("x".repeat(MAX_SUMMARY_REVISION + 1))).toThrow(
+			"修改意见过长",
+		);
+		expect(validateSummaryGenerateInput({ ...query, revision: " 更克制 " }).revision).toBe(
+			"更克制",
+		);
 	});
 });

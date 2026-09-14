@@ -22,3 +22,8 @@
 | [15 数据管理与导入](15-data-management.md) | 概览与 provider 独立页面、整日替换、网页与本机共用导入、1.3.0 发布及全量生产数据核验 |
 | [16 每日环境与记录页签](16-daily-context-and-record-tabs.md) | GPS 区域与速度、小时地图、天气及日出日落、Basalt/Recharts 整理、原始记录懒加载分页 |
 | [17 Apple Health 完整导入](17-apple-health.md) | 原始数据完整性、UTC 日与维度压缩、跨天睡眠、心电图/血压、锻炼路线合并及生产核验 |
+| [18 每日卡片](18-daily-card-design.md) | 卡片材质、颜色、图标、辅助信息与全天布局 |
+| [19 貔貅原始分析](19-pixiu-import-analysis.md) | CSV 实测、UTC+8 日期与 D1 存储选型 |
+| [20 公共环境缓存](20-public-context-cache.md) | 日出日落永久缓存、天气与 GIS 区域名称 |
+| [21 每日日记](21-diary.md) | 全来源证据、叙事 prompt、修改意见与持久化 |
+| [22 貔貅完整导入](22-pixiu-daily-import.md) | 日包存储、全天账目、网页/CLI 导入与生产核验 |

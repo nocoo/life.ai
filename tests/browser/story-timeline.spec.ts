@@ -2,8 +2,9 @@ import AxeBuilder from "@axe-core/playwright";
 import type { CreatedConnect } from "../../src/models/types";
 import { importFootprintFixture } from "./footprint-fixture";
 import { importHealthFixture } from "./health-fixture";
+import { importPixiuFixture } from "./pixiu-fixture";
 import { expect, test } from "./public-context-fixture";
-import { STORY_DAY, storyImports, storySnapshots } from "./story-fixture";
+import { STORY_DAY, storyImports, storyPixiuRows, storySnapshots } from "./story-fixture";
 
 test("a whole day reads along one trunk with grouped evidence, record tabs and contextual maps", async ({
 	page,
@@ -35,6 +36,7 @@ test("a whole day reads along one trunk with grouped evidence, record tabs and c
 			expect(response.ok()).toBe(true);
 		}
 	}
+	await importPixiuFixture(page.request, storyPixiuRows);
 	const creation = await page.request.post("/api/connects", { data: { name: "实录日历" } });
 	expect(creation.ok()).toBe(true);
 	const { data: created } = (await creation.json()) as { data: CreatedConnect };
@@ -98,7 +100,7 @@ test("a whole day reads along one trunk with grouped evidence, record tabs and c
 	await expect(
 		page.locator(".day-meta").getByRole("heading", { name: "一日累计", exact: true }),
 	).toBeVisible();
-	await expect(closing.getByRole("heading", { name: "当日摘要", exact: true })).toBeVisible();
+	await expect(closing.getByRole("heading", { name: "当日日记", exact: true })).toBeVisible();
 	const metaBox = await page.locator(".day-meta").boundingBox();
 	const treeBox = await page.locator(".day-story-column").boundingBox();
 	expect(metaBox && treeBox && metaBox.x > treeBox.x + treeBox.width).toBe(true);
@@ -108,12 +110,12 @@ test("a whole day reads along one trunk with grouped evidence, record tabs and c
 	const desktopAxe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
 	expect(desktopAxe.violations).toEqual([]);
 	await page.setViewportSize({ width: 390, height: 844 });
-	await expect(eight.locator(".story-lane-both").first()).toBeVisible();
+	await expect(eight.locator(".story-visit").first()).toBeVisible();
 	expect(
 		await eight
 			.locator("[data-story-kind]")
 			.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-story-kind"))),
-	).toEqual(["money", "journey"]);
+	).toEqual(["journey"]);
 	await expect(eight.locator(".story-visit-map")).toHaveCount(1);
 	await eight.scrollIntoViewIfNeeded();
 	expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -132,6 +134,6 @@ test("a whole day reads along one trunk with grouped evidence, record tabs and c
 	await expect(page.locator('[data-story-kind="connect"]')).toHaveCount(2);
 	await expect(page.locator('[data-story-kind="health"]')).toHaveCount(0);
 	await expect(page.getByRole("application", { name: "当日足迹地图", exact: true })).toHaveCount(0);
-	await expect(page.getByRole("heading", { name: "当日摘要", exact: true })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "当日日记", exact: true })).toBeVisible();
 	expect(errors).toEqual([]);
 });

@@ -2,6 +2,7 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { isolatedPublicContext } from "./scripts/public-context-fixture.ts";
 import { verifyLocalBindings } from "./scripts/verify-test-bindings.ts";
 
 const testState = process.env.LIFE_TEST_STATE;
@@ -12,6 +13,7 @@ export default defineConfig({
 	// The ZIP parser is first loaded by the import worker. Prebundle it before a file is selected.
 	optimizeDeps: { include: ["@zip.js/zip.js"] },
 	plugins: [
+		...(testState ? [isolatedPublicContext(process.env.LIFE_TEST_CONTEXT_URL ?? "")] : []),
 		react(),
 		tailwindcss(),
 		cloudflare({

@@ -36,6 +36,12 @@ export interface DaySummaryQuery {
 	end: string;
 }
 
+export const MAX_SUMMARY_REVISION = 2_000;
+
+export interface DaySummaryGenerateInput extends DaySummaryQuery {
+	revision?: string;
+}
+
 export interface DaySummary extends DaySummaryQuery {
 	content: string;
 	provider: string;
@@ -91,4 +97,23 @@ export function validateSummaryQuery(input: unknown): DaySummaryQuery {
 	)
 		throw new Error("UTC 时间范围与所选本地日期不一致");
 	return { date: fields.date, timeZone: formatter.resolvedOptions().timeZone, start, end };
+}
+
+/** Optional regenerate note. Empty input is ignored; the previous diary is attached server-side. */
+export function validateSummaryRevision(value: unknown): string | undefined {
+	if (value == null || value === "") return undefined;
+	if (typeof value !== "string") throw new Error("修改意见必须是文字");
+	const text = value.trim();
+	if (!text) return undefined;
+	if (text.length > MAX_SUMMARY_REVISION) throw new Error("修改意见过长");
+	return text;
+}
+
+export function validateSummaryGenerateInput(input: unknown): DaySummaryGenerateInput {
+	const query = validateSummaryQuery(input);
+	const revision =
+		input && typeof input === "object"
+			? validateSummaryRevision((input as { revision?: unknown }).revision)
+			: undefined;
+	return revision ? { ...query, revision } : query;
 }

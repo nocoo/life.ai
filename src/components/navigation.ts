@@ -7,6 +7,7 @@ import {
 	MapPin,
 	Settings,
 	Upload,
+	Wallet,
 } from "lucide-react";
 
 export interface NavItem {
@@ -39,6 +40,7 @@ export const NAV_GROUPS: NavGroup[] = [
 			{ href: "/data", label: "数据概览", icon: Database },
 			{ href: "/data/footprint", label: "Footprint", icon: MapPin },
 			{ href: "/data/apple-health", label: "Apple Health", icon: HeartPulse },
+			{ href: "/data/pixiu", label: "貔貅记账", icon: Wallet },
 		],
 	},
 ];
@@ -52,7 +54,7 @@ export const ROUTE_META: Record<string, { title: string; description: string }> 
 	},
 	"/imports": {
 		title: "导入",
-		description: "导入貔貅 CSV 与日记 JSON/NDJSON",
+		description: "导入日记 JSON/NDJSON",
 	},
 	"/connect": {
 		title: "Connect",
@@ -74,6 +76,7 @@ export const ROUTE_META: Record<string, { title: string; description: string }> 
 		title: "Footprint",
 		description: "解析 GPX，按 UTC 日整日替换轨迹",
 	},
+	"/data/pixiu": { title: "貔貅记账", description: "按北京时间记账日导入完整账目" },
 };
 
 export function routeMeta(pathname: string): { title: string; description: string } {

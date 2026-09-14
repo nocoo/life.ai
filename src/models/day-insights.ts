@@ -1,3 +1,4 @@
+import { createFinanceCollector } from "./finance";
 import { type QuantitySample, quantitySample, sumSensorQuantity } from "./health-quantities";
 import { normalizeTimestamp } from "./time";
 import type { JsonValue, LifeEvent, Precision } from "./types";
@@ -138,6 +139,7 @@ export function gpsDistanceMeters(
 export function createDayInsightsCollector(window: Window, retainTrackPoints = false) {
 	const start = Date.parse(window.start);
 	const end = Date.parse(window.end);
+	const finances = createFinanceCollector();
 	const result: DayInsights = {
 		eventCount: 0,
 		gps: { pointCount: 0, segments: [], distanceMeters: 0, firstAt: null, lastAt: null },
@@ -348,26 +350,7 @@ export function createDayInsightsCollector(window: Window, retainTrackPoints = f
 						),
 					});
 			}
-			if (event.sourceId === "pixiu") {
-				const currency =
-					typeof data.币种 === "string" && data.币种.trim()
-						? data.币种.trim().toUpperCase()
-						: "未注明币种";
-				let totals = result.finance.find((item) => item.currency === currency);
-				if (!totals) {
-					totals = { currency, income: 0, expense: 0, transfers: 0, count: 0 };
-					result.finance.push(totals);
-				}
-				const incoming = numeric(data.流入金额) ?? 0;
-				const outgoing = numeric(data.流出金额) ?? 0;
-				if (typeof data.交易类型 === "string" && /转账|转入|转出|transfer/i.test(data.交易类型))
-					totals.transfers += Math.max(Math.abs(incoming), Math.abs(outgoing));
-				else {
-					totals.income += incoming;
-					totals.expense += outgoing;
-				}
-				totals.count++;
-			}
+			finances.add(event);
 		},
 		finish(): DayInsights {
 			for (const [key, samples] of sensorQuantities)
@@ -389,7 +372,13 @@ export function createDayInsightsCollector(window: Window, retainTrackPoints = f
 			result.health.standHours = stand.length
 				? unionMinutes(stand) / 60
 				: quantity(activity.appleStandHours, "count", { count: 1 });
-			result.finance.sort((a, b) => a.currency.localeCompare(b.currency));
+			result.finance = finances.finish().currencies.map((row) => ({
+				currency: row.currency,
+				income: row.incomeMinor / 100,
+				expense: row.expenseMinor / 100,
+				transfers: row.transfersMinor / 100,
+				count: row.count,
+			}));
 			return result;
 		},
 	};

@@ -6,6 +6,7 @@ import {
 	type GpsPlace,
 	type GpsVisit,
 } from "../models/day-places";
+import { buildFinanceDay, type FinanceDay } from "../models/finance";
 import type { DayTimeline, HourSlot, JsonValue, LifeEvent } from "../models/types";
 import type { SolarMoment } from "./day-context-view-model";
 import { formatDurationMinutes, formatInterval, formatLocalClock } from "./format";
@@ -70,6 +71,7 @@ export type StoryHourBlock =
 	| { kind: "branches"; id: string; branches: StoryBranch[] };
 
 export interface DayStory {
+	finance: FinanceDay;
 	hours: StoryHour[];
 	allDay: StoryBranch[];
 	places: DayPlaces;
@@ -429,7 +431,11 @@ export function buildDayStory(
 	}
 	return {
 		hours,
-		allDay: groupBranches(timeline.allDay, timeline),
+		allDay: groupBranches(
+			timeline.allDay.filter((event) => event.sourceId !== "pixiu"),
+			timeline,
+		),
+		finance: buildFinanceDay(timeline.allDay),
 		places,
 	};
 }

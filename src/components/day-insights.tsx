@@ -66,7 +66,7 @@ export function StoryMetrics({ items }: { items: StoryMetric[] }) {
 
 export function DayInsightsCard({ insights }: { insights: DayInsights }) {
 	const metrics = healthMetrics(insights.health);
-	if (!metrics.length && !insights.workoutCount && !insights.finance.length) return null;
+	if (!metrics.length && !insights.workoutCount) return null;
 	return (
 		<LayerCard className="story-totals story-card">
 			<LayerCard.Header>
@@ -92,21 +92,6 @@ export function DayInsightsCard({ insights }: { insights: DayInsights }) {
 						</CollapsibleContent>
 					</Collapsible>
 				) : null}
-				{insights.finance.map((row) => (
-					<div className="story-finance-total" key={row.currency}>
-						<div className="story-finance-caption">
-							<span>{row.currency}</span>
-							<span>{row.count} 笔收支</span>
-						</div>
-						<StoryMetrics
-							items={[
-								{ label: "收入", value: row.income.toFixed(2) },
-								{ label: "支出", value: row.expense.toFixed(2) },
-								{ label: "转账", value: row.transfers.toFixed(2) },
-							]}
-						/>
-					</div>
-				))}
 			</LayerCard.Body>
 		</LayerCard>
 	);

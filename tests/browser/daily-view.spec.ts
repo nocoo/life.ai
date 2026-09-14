@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { AiSettingsInput, DaySummaryResult } from "../../src/models/ai";
 import { importHealthFixture } from "./health-fixture";
+import { importPixiuFixture } from "./pixiu-fixture";
 import { expect, test } from "./public-context-fixture";
 
 const transparentTile = Buffer.from(
@@ -105,34 +106,20 @@ test("daily GPX map, health, workouts and currency totals follow the same select
 			data: { workoutActivityType: "HKWorkoutActivityTypeWalking" },
 		},
 	]);
-	const finance = await page.request.post("/api/imports", {
-		data: {
-			source: "pixiu",
-			records: [
-				{
-					key: "daily-cny",
-					occurredAt: "2026-09-15",
-					precision: "day",
-					title: "午餐",
-					data: { 币种: "CNY", 交易类型: "支出", 流出金额: "35.20" },
-				},
-				{
-					key: "daily-usd",
-					occurredAt: "2026-09-15",
-					precision: "day",
-					title: "订阅",
-					data: { 币种: "USD", 交易类型: "支出", 流出金额: "9.99" },
-				},
-			],
-		},
-	});
-	expect(finance.ok()).toBe(true);
+	await importPixiuFixture(page.request, [
+		["2026-09-15", "日常支出", "午餐", "0.00", "35.20", "CNY", "现金", "", ""],
+		["2026-09-15", "日常支出", "订阅", "0.00", "9.99", "USD", "现金", "", ""],
+	]);
 	await page.getByRole("button", { name: "时间线", exact: true }).click();
 	await page.getByRole("button", { name: "后一天", exact: true }).click();
 	await page.getByRole("button", { name: "后一天", exact: true }).click();
 	await expect(page.locator('[data-hour="8"]').getByText("900 步", { exact: true })).toBeVisible();
-	await expect(page.locator(".story-all-day").getByText("35.20", { exact: true })).toBeVisible();
-	await expect(page.locator(".story-all-day").getByText("9.99", { exact: true })).toBeVisible();
+	await expect(
+		page.locator(".finance-day strong").getByText("35.20", { exact: true }),
+	).toBeVisible();
+	await expect(
+		page.locator(".finance-day strong").getByText("9.99", { exact: true }),
+	).toBeVisible();
 	await expect(page.getByText("步行", { exact: true })).toBeVisible();
 	const map = page.getByRole("application", { name: "当日足迹地图" });
 	await map.scrollIntoViewIfNeeded();
@@ -169,7 +156,7 @@ test("daily GPX map, health, workouts and currency totals follow the same select
 	expect(accessibility.violations).toEqual([]);
 	await page.screenshot({ path: "test-results/l3/daily-map-overview.png", fullPage: true });
 	await page.getByRole("combobox", { name: "按来源筛选" }).click();
-	await page.getByRole("option", { name: "Pixiu", exact: true }).click();
+	await page.getByRole("option", { name: "貔貅记账", exact: true }).click();
 	await expect(map).toHaveCount(0);
 	await expect(page.locator('[data-story-kind="journey"]')).toHaveCount(0);
 	await expect(page.getByText("900 步", { exact: true })).toHaveCount(0);
@@ -217,12 +204,12 @@ test("AI settings, persisted summaries, stale regeneration and date-switch races
 		).ok(),
 	).toBe(true);
 	await page.getByRole("button", { name: "时间线", exact: true }).click();
-	await expect(page.getByRole("button", { name: "生成摘要", exact: true })).toBeEnabled();
+	await expect(page.getByRole("button", { name: "写日记", exact: true })).toBeEnabled();
 	const generated = page.waitForResponse(
 		(response) =>
 			response.url().endsWith("/api/day-summary") && response.request().method() === "POST",
 	);
-	await page.getByRole("button", { name: "生成摘要", exact: true }).click();
+	await page.getByRole("button", { name: "写日记", exact: true }).click();
 	const result = (await (await generated).json()) as { data: DaySummaryResult };
 	const content = result.data.summary?.content;
 	expect(content).toBeTruthy();
@@ -247,9 +234,33 @@ test("AI settings, persisted summaries, stale regeneration and date-switch races
 		authType: "apiKey",
 	};
 	expect((await page.request.put("/api/settings/ai", { data: aiConfig })).ok()).toBe(true);
-	await page.getByRole("button", { name: "重新生成", exact: true }).click();
+	await page.getByRole("button", { name: "再写一则", exact: true }).click();
+	await expect(page.getByRole("dialog", { name: "再写这一天" })).toBeVisible();
+	await page.getByLabel("修改意见（可选）").fill("请多写晨间阅读，不要只罗列统计。");
+	await page.getByRole("dialog").getByRole("button", { name: "生成", exact: true }).click();
 	await expect(page.getByText("生成失败", { exact: true })).toBeVisible();
 	await expect(page.getByText(content, { exact: true })).toBeVisible();
+	expect(
+		(
+			await page.request.put("/api/settings/ai", { data: { ...aiConfig, model: "life-test-ok" } })
+		).ok(),
+	).toBe(true);
+	await page.getByRole("button", { name: "再写一则", exact: true }).click();
+	await page.getByLabel("修改意见（可选）").fill("记下阅读后的平静，少写数字。");
+	const regenerated = page.waitForResponse(
+		(response) =>
+			response.url().endsWith("/api/day-summary") && response.request().method() === "POST",
+	);
+	await page.getByRole("dialog").getByRole("button", { name: "生成", exact: true }).click();
+	const second = (await (await regenerated).json()) as { data: DaySummaryResult };
+	expect(second.data.summary?.content).toBeTruthy();
+	expect(second.data.stale).toBe(false);
+	await expect(page.getByRole("dialog")).toHaveCount(0);
+	const requests = (await (
+		await page.request.get(`${new URL(baseURL).origin}/requests`)
+	).json()) as { input: string }[];
+	expect(requests.at(-1)?.input).toContain("记下阅读后的平静，少写数字。");
+	expect(requests.at(-1)?.input).toContain(content);
 	expect(
 		(
 			await page.request.put("/api/settings/ai", { data: { ...aiConfig, model: "life-test-slow" } })
@@ -258,12 +269,13 @@ test("AI settings, persisted summaries, stale regeneration and date-switch races
 	const started = page.waitForRequest(
 		(request) => request.url().endsWith("/api/day-summary") && request.method() === "POST",
 	);
-	await page.getByRole("button", { name: "重新生成", exact: true }).click();
+	await page.getByRole("button", { name: "再写一则", exact: true }).click();
+	await page.getByRole("dialog").getByRole("button", { name: "生成", exact: true }).click();
 	await started;
 	await page.getByRole("button", { name: "后一天", exact: true }).click();
 	await expect(page.getByText("这一天没有记录", { exact: true })).toBeVisible();
 	await expect(page.getByText(content, { exact: true })).toHaveCount(0);
-	await expect(page.getByRole("button", { name: "生成摘要", exact: true })).toBeDisabled();
+	await expect(page.getByRole("button", { name: "写日记", exact: true })).toBeDisabled();
 	await page.setViewportSize({ width: 390, height: 844 });
 	const accessibility = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
 	expect(accessibility.violations).toEqual([]);

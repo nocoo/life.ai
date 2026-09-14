@@ -1,6 +1,7 @@
 import type { EventPage, LifeEvent, Precision, SourceKind } from "../src/models/types.js";
 import { readFootprintDays } from "./footprint-read.js";
 import { readHealthSeries } from "./health-read.js";
+import { readPixiuDays } from "./pixiu-read.js";
 import { normalizeTimestamp } from "./time.js";
 import { ApiError, type WorkerEnv } from "./types.js";
 import { decodeCursor, encodeCursor, jsonResponse, LIMITS } from "./utils.js";
@@ -30,9 +31,11 @@ export interface EventRowsQuery {
 /** Two disjoint indexed ranges avoid scanning all historical point events for overlap. */
 export async function readEventRows(db: D1Database, query: EventRowsQuery): Promise<EventRow[]> {
 	const bindings: (number | string)[] = [query.start, query.end];
-	let conditions = `AND (e.source_id NOT IN ('footprint', 'apple-health') OR NOT EXISTS (
+	let conditions = `AND (e.source_id NOT IN ('footprint', 'apple-health', 'pixiu') OR NOT EXISTS (
 		SELECT 1 FROM provider_days p WHERE p.source_id = e.source_id
-		AND p.utc_day = e.occurred_at - ((e.occurred_at % 86400000 + 86400000) % 86400000)
+		AND p.utc_day = CASE WHEN e.source_id = 'pixiu'
+			THEN COALESCE(unixepoch(json_extract(e.data, '$.日期')) * 1000, CAST(floor((e.occurred_at + 28800000) / 86400000.0) * 86400000 AS INTEGER))
+			ELSE e.occurred_at - ((e.occurred_at % 86400000 + 86400000) % 86400000) END
 	))`;
 	if (query.source) {
 		bindings.push(query.source);
@@ -108,7 +111,7 @@ export async function handleGetEvents(env: WorkerEnv, url: URL): Promise<Respons
 	const source = url.searchParams.get("source");
 	const cursorParam = url.searchParams.get("cursor");
 	const cursor = cursorParam ? decodeCursor(cursorParam) : null;
-	const [rows, footprintDays, healthSeries] = await Promise.all([
+	const [rows, footprintDays, healthSeries, pixiuDays] = await Promise.all([
 		readEventRows(env.DB, { start, end, source, cursor, limit: LIMITS.pageSize + 1 }),
 		!cursor && (!source || source === "footprint")
 			? readFootprintDays(env.DB, start, end)
@@ -116,6 +119,7 @@ export async function handleGetEvents(env: WorkerEnv, url: URL): Promise<Respons
 		!cursor && (!source || source === "apple-health")
 			? readHealthSeries(env.DB, start, end, url.searchParams.get("healthView") === "story")
 			: undefined,
+		!cursor && (!source || source === "pixiu") ? readPixiuDays(env.DB, start, end) : undefined,
 	]);
 	const items = rows.slice(0, LIMITS.pageSize);
 	const last = items.at(-1);
@@ -125,6 +129,7 @@ export async function handleGetEvents(env: WorkerEnv, url: URL): Promise<Respons
 			rows.length > LIMITS.pageSize && last ? encodeCursor(last.occurred_at, last.id) : null,
 		...(footprintDays ? { footprintDays } : {}),
 		...(healthSeries ? { healthSeries } : {}),
+		...(pixiuDays ? { pixiuDays } : {}),
 	};
 	return jsonResponse({ data: page });
 }

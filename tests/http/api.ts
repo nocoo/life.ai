@@ -16,8 +16,10 @@ import type {
 	FootprintImportReceipt,
 	FootprintImportSession,
 } from "../../src/models/data-management";
+import type { DayContextQuery, DaySun, DayWeather } from "../../src/models/day-context";
 import { validateFootprintDay } from "../../src/models/footprint";
 import type { HealthImportReceipt } from "../../src/models/health-types";
+import { PIXIU_COLUMNS, parsePixiu } from "../../src/models/pixiu";
 import type {
 	Connect,
 	CreatedConnect,
@@ -29,6 +31,7 @@ import type {
 } from "../../src/models/types";
 import { createHealthClient, uploadHealthPlan } from "../../src/services/health-client";
 import { fetchHealthAttachment } from "../../src/services/health-evidence";
+import { createPixiuClient, uploadPixiuPlan } from "../../src/services/pixiu-client";
 import { healthFixtureDays, syntheticHealthPlan } from "../health-fixture";
 
 const base = process.env.LIFE_TEST_URL;
@@ -401,21 +404,72 @@ await scenario(
 		);
 	},
 );
-await scenario("remaining event import adapters share the validated D1 endpoint", async () => {
-	for (const source of ["pixiu"]) {
-		await data(
-			await importBatch(source, [
-				{ key: `${source}-sample`, occurredAt: "1970-01-01T00:00:00Z", title: source },
-			]),
+await scenario(
+	"Pixiu stores one complete +8 accounting day, replays unchanged and replaces whole snapshots",
+	async () => {
+		await rejected(await importBatch("pixiu", []), 410);
+		const client = createPixiuClient({
+			baseUrl: base,
+			getHeaders: async () => ({ "Cf-Access-Jwt-Assertion": accessToken }),
+		});
+		const csv = `${PIXIU_COLUMNS.join(",")}\n2099-03-20,日常支出,咖啡,0.00,12.30,CNY,现金,,\n2099-03-20,日常支出,咖啡,0.00,12.30,CNY,现金,,\n2099-03-21,余额调整,调整,0.00,0.00,CNY,现金,,`;
+		const plan = await parsePixiu([{ name: "fixture.csv", text: csv }]);
+		await assert.rejects(
+			uploadPixiuPlan(client, plan, { target: "production", channel: "cli" }),
+			/目标环境不匹配/,
 		);
-	}
-	const sources = await data<Source[]>(await request("/api/sources"));
-	assert.equal(
-		sources.find((source) => source.id === "pixiu")?.lastEventAt,
-		"1970-01-01T00:00:00.000Z",
-	);
-	assert.equal(sources.find((source) => source.id === "journal")?.recordCount, 6);
-});
+		const options = { target: "test", channel: "cli" } as const;
+		const receipt = await uploadPixiuPlan(client, plan, options);
+		assert.equal(receipt.committedDays, 2);
+		assert.equal(receipt.committedPoints, 3);
+		assert.equal(receipt.insertedDays, 2);
+		const range = { start: "2099-03-19T16:00:00Z", end: "2099-03-21T16:00:00Z" };
+		const stored = await client.days(range.start, range.end);
+		assert.deepEqual(stored.days, plan.days);
+		const before = (await executeLocalSql(
+			state,
+			"SELECT * FROM provider_days WHERE source_id='pixiu' ORDER BY utc_day",
+		)) as { results: unknown[] }[];
+		const replay = await uploadPixiuPlan(client, plan, options);
+		assert.equal(replay.unchangedDays, 2);
+		const after = (await executeLocalSql(
+			state,
+			"SELECT * FROM provider_days WHERE source_id='pixiu' ORDER BY utc_day",
+		)) as { results: unknown[] }[];
+		assert.deepEqual(after[0]?.results, before[0]?.results);
+		const updated = await parsePixiu([
+			{
+				name: "changed.csv",
+				text: `${PIXIU_COLUMNS.join(",")}\n2099-03-20,日常支出,咖啡,0.00,0.10,CNY,现金,,更新`,
+			},
+		]);
+		assert.equal((await uploadPixiuPlan(client, updated, options)).updatedDays, 1);
+		assert.equal((await client.days(range.start, range.end)).days.length, 2);
+		assert.equal((await uploadPixiuPlan(client, plan, options)).updatedDays, 1);
+		const overview = await data<DataOverview>(await request("/api/data/overview"));
+		const pixiu = overview.providers.find((row) => row.id === "pixiu");
+		assert.equal(pixiu?.recordCount, 3);
+		assert.equal(pixiu?.coverageDays, 2);
+		assert.equal(pixiu?.dataRows, 2);
+		const page = await data<EventPage>(
+			await request(eventsQuery("pixiu", undefined, range.start, range.end)),
+		);
+		assert.equal(page.events.length, 0);
+		assert.deepEqual(page.pixiuDays, plan.days);
+		for (const path of [
+			"/api/data/pixiu/imports",
+			"/api/data/pixiu/days",
+			"/api/data/pixiu/imports/x/batches/1",
+			"/api/data/pixiu/imports/x/finish",
+		]) {
+			await rejected(await request(path, { method: "DELETE" }), 405);
+			await rejected(await request(path, { token: null }), 401);
+			await rejected(await request(path, { host: "life.worker.hexly.ai" }), 404);
+		}
+		await rejected(await request("/api/data/pixiu/days"), 400);
+		await rejected(await request("/api/data/pixiu/missing"), 404);
+	},
+);
 await scenario(
 	"complete Apple Health archive imports preserve measurements, attachments and lazy reads",
 	async () => {
@@ -740,14 +794,18 @@ await scenario(
 			const records = Array.from({ length: Math.min(100, 205 - offset) }, (_, i) => ({
 				key: `page-${offset + i}`,
 				title: `page-${offset + i}`,
-				occurredAt: "2099-01-01T12:00:00Z",
+				occurredAt: "2099-04-01T12:00:00Z",
 			}));
-			await data(await importBatch("pixiu", records));
+			await data(await importBatch("journal", records));
 		}
-		const first = await data<EventPage>(await request(eventsQuery("pixiu")));
+		const first = await data<EventPage>(
+			await request(eventsQuery("journal", undefined, "2099-04-01", "2099-04-02")),
+		);
 		assert.equal(first.events.length, 200);
 		assert(first.nextCursor);
-		const second = await data<EventPage>(await request(eventsQuery("pixiu", first.nextCursor)));
+		const second = await data<EventPage>(
+			await request(eventsQuery("journal", first.nextCursor, "2099-04-01", "2099-04-02")),
+		);
 		assert.equal(second.events.length, 5);
 		assert.equal(second.nextCursor, null);
 		assert.equal(new Set([...first.events, ...second.events].map((event) => event.id)).size, 205);
@@ -803,6 +861,60 @@ await scenario(
 );
 
 const aiBaseURL = process.env.LIFE_TEST_AI_URL;
+
+await scenario(
+	"daily solar and weather APIs cache in D1, reuse concurrent/next requests and enforce Access",
+	async () => {
+		const fixture = process.env.LIFE_TEST_CONTEXT_URL;
+		assert(fixture && new URL(fixture).hostname === "127.0.0.1");
+		const query: DayContextQuery = {
+			date: "2020-04-12",
+			timeZone: "Asia/Shanghai",
+			start: "2020-04-11T16:00:00.000Z",
+			end: "2020-04-12T16:00:00.000Z",
+			latitude: 31.235,
+			longitude: 121.471,
+		};
+		const params = new URLSearchParams(
+			Object.entries(query).map(([key, value]) => [key, String(value)]),
+		);
+		const sunPath = `/api/context/sun?${params}`;
+		const weatherPath = `/api/context/weather?${params}`;
+		const before = (await (await fetch(`${fixture}/requests`)).json()) as unknown[];
+		const solar = await Promise.all(
+			[1, 2, 3].map(async () => data<DaySun>(await request(sunPath))),
+		);
+		assert.equal(solar[0]?.events.length, 2);
+		assert.deepEqual(solar[1], solar[0]);
+		assert.deepEqual(solar[2], solar[0]);
+		const weather = await data<DayWeather>(await request(weatherPath));
+		assert.equal(weather.complete, true);
+		assert.equal(weather.kind, "historical");
+		const stored = (await executeLocalSql(
+			state,
+			"SELECT kind, cache_key, data_json, created_at, expires_at FROM public_context_cache ORDER BY kind, cache_key",
+		)) as { results: unknown[] }[];
+		assert.deepEqual(await data<DaySun>(await request(sunPath)), solar[0]);
+		assert.deepEqual(await data<DayWeather>(await request(weatherPath)), weather);
+		const after = (await (await fetch(`${fixture}/requests`)).json()) as unknown[];
+		assert.equal(after.length - before.length, 2, "Only one solar and one weather upstream call");
+		const reread = (await executeLocalSql(
+			state,
+			"SELECT kind, cache_key, data_json, created_at, expires_at FROM public_context_cache ORDER BY kind, cache_key",
+		)) as { results: unknown[] }[];
+		assert.deepEqual(reread[0]?.results, stored[0]?.results);
+		for (const path of [sunPath, weatherPath]) {
+			await rejected(await request(path, { token: null }), 401);
+			await rejected(await request(path, { host: "life.worker.hexly.ai" }), 404);
+			await rejected(await request(path, { method: "POST" }), 405);
+		}
+		await rejected(await request("/api/context/sun"), 400);
+		await rejected(await request("/api/context/missing"), 404);
+		params.set("start", "2020-04-12T00:00:00Z");
+		await rejected(await request(`/api/context/sun?${params}`), 400);
+	},
+);
+
 const aiKey = process.env.LIFE_TEST_AI_KEY;
 assert(aiBaseURL && aiKey && new URL(aiBaseURL).hostname === "127.0.0.1");
 const aiConfig: AiSettingsInput = {
@@ -1021,6 +1133,135 @@ await scenario(
 			await rejected(await request("/api/day-summary", { method: "POST", body: bad }), 400);
 			await rejected(await request(`/api/day-summary?${new URLSearchParams(bad)}`), 400);
 		}
+	},
+);
+
+await scenario(
+	"diary generation receives complete finance, health, GPS place, weather and sun; feedback replaces only on success",
+	async () => {
+		await saveAi({ apiKey: aiKey });
+		const query: DaySummaryQuery = {
+			date: "2020-07-20",
+			timeZone: "Asia/Shanghai",
+			start: "2020-07-19T16:00:00Z",
+			end: "2020-07-20T16:00:00Z",
+		};
+		const gps = await validateFootprintDay({
+			utcDay: Date.parse("2020-07-20"),
+			data: {
+				v: 1,
+				fields: ["offsetSeconds", "latitude", "longitude", "elevation", "speed", "course"],
+				points: [
+					[7200, 31.23, 121.47, 5, 0, 0],
+					[7500, 31.232, 121.471, 5, 0, 0],
+				],
+			},
+		});
+		const session = await data<{ id: string }>(
+			await request("/api/data/footprint/imports", {
+				method: "POST",
+				body: {
+					fileName: "diary.gpx",
+					totalDays: 1,
+					totalPoints: 2,
+					target: "test",
+					channel: "cli",
+				},
+			}),
+			201,
+		);
+		await data(
+			await request(`/api/data/footprint/imports/${session.id}/batches/1`, {
+				method: "PUT",
+				body: { days: [gps] },
+			}),
+		);
+		await data(
+			await request(`/api/data/footprint/imports/${session.id}/finish`, {
+				method: "POST",
+				body: { status: "complete" },
+			}),
+		);
+		await data(
+			await importBatch("apple-health", [
+				{
+					key: "sleep",
+					occurredAt: "2020-07-19T15:30:00Z",
+					endAt: "2020-07-20T00:00:00Z",
+					data: {
+						type: "HKCategoryTypeIdentifierSleepAnalysis",
+						value: "HKCategoryValueSleepAnalysisAsleepCore",
+					},
+				},
+				{
+					key: "steps",
+					occurredAt: "2020-07-20T02:00:00Z",
+					data: { type: "HKQuantityTypeIdentifierStepCount", value: "1432", unit: "count" },
+				},
+				{
+					key: "oxygen",
+					occurredAt: "2020-07-20T02:00:00Z",
+					data: { type: "HKQuantityTypeIdentifierOxygenSaturation", value: "0.98", unit: "%" },
+				},
+			]),
+		);
+		const plan = await parsePixiu([
+			{
+				name: "diary.csv",
+				text: `${PIXIU_COLUMNS.join(",")}\n2020-07-20,日常支出,咖啡,0.00,56.78,CNY,现金,,河畔读完一本书\n2020-07-20,信用卡还款,还款,0.00,300.00,CNY,卡,,每月还款`,
+			},
+		]);
+		await uploadPixiuPlan(
+			createPixiuClient({
+				baseUrl: base,
+				getHeaders: async () => ({ "Cf-Access-Jwt-Assertion": accessToken }),
+			}),
+			plan,
+			{ target: "test", channel: "cli" },
+		);
+		const result = await data<DaySummaryResult>(
+			await request("/api/day-summary", { method: "POST", body: query }),
+		);
+		assert(result.summary?.content);
+		const prompts = (await (await fetch(`${new URL(aiBaseURL).origin}/requests`)).json()) as {
+			input: string;
+		}[];
+		const prompt = prompts.at(-1)?.input ?? "";
+		for (const evidence of [
+			"天气",
+			"日出",
+			"05:30",
+			"测试城市",
+			"1432",
+			"56.78",
+			"信用卡还款",
+			"河畔读完一本书",
+			"睡眠",
+		])
+			assert(prompt.includes(evidence), `Missing diary evidence: ${evidence}`);
+		const fixture = process.env.LIFE_TEST_CONTEXT_URL;
+		assert(fixture);
+		const publicCalls = (await (await fetch(`${fixture}/requests`)).json()) as unknown[];
+		const path = `/api/day-summary?${new URLSearchParams({ ...query })}`;
+		assert.deepEqual(await data<DaySummaryResult>(await request(path)), result);
+		const revision = "多写河边读书的片刻，不用逐项报账。";
+		const regenerated = await data<DaySummaryResult>(
+			await request("/api/day-summary", { method: "POST", body: { ...query, revision } }),
+		);
+		assert(regenerated.summary?.content);
+		const revisedPrompts = (await (
+			await fetch(`${new URL(aiBaseURL).origin}/requests`)
+		).json()) as { input: string }[];
+		assert(revisedPrompts.at(-1)?.input.includes(revision));
+		assert(revisedPrompts.at(-1)?.input.includes(result.summary.content));
+		assert.equal(
+			((await (await fetch(`${fixture}/requests`)).json()) as unknown[]).length,
+			publicCalls.length,
+		);
+		assert.deepEqual(
+			(await data<DaySummaryResult>(await request(path))).summary,
+			regenerated.summary,
+		);
 	},
 );
 

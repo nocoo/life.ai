@@ -77,7 +77,7 @@ function MonthlyRecords({ providers }: { providers: ProviderOverview[] }) {
 						按月记录量
 					</Text>
 					<Text as="p" size="sm" tone="muted">
-						按 UTC 月汇总每日记录，首尾之间没有记录的月份为 0。Footprint 的一个 GPS 点计为一条记录。
+						按来源记录月份汇总；GPS 与健康按 UTC，貔貅按北京时间记账日。没有记录的月份为 0。
 					</Text>
 				</div>
 			</LayerCard.Header>
@@ -91,7 +91,7 @@ function MonthlyRecords({ providers }: { providers: ProviderOverview[] }) {
 				>
 					<div style={{ minWidth: history.data.length * 12 + 72 }}>
 						<ChartFrame
-							ariaLabel="每月记录量（UTC）"
+							ariaLabel="每月记录量"
 							size="data-overview-history-plot"
 							summary={<span className="sr-only">{history.summary}</span>}
 						>
@@ -145,7 +145,7 @@ function CoverageCalendar({ provider }: { provider: ProviderOverview }) {
 	}
 	return (
 		<Collapsible className="data-coverage-fold">
-			<CollapsibleTrigger>{`查看 ${provider.name} 的 ${provider.coverageDays} 个 UTC 覆盖日`}</CollapsibleTrigger>
+			<CollapsibleTrigger>{`查看 ${provider.name} 的 ${provider.coverageDays} 个${provider.id === "pixiu" ? "北京时间记账" : " UTC 覆盖"}日`}</CollapsibleTrigger>
 			<CollapsibleContent unstyled className="data-overview-coverage-content">
 				<Text as="p" size="sm" tone="muted">
 					有色日期表示已有记录。点击日期，打开按当前时区展示的每日时间线和地图。
@@ -155,7 +155,7 @@ function CoverageCalendar({ provider }: { provider: ProviderOverview }) {
 						<section
 							key={month.key}
 							className="data-coverage-month"
-							aria-label={`${provider.name} ${month.label} UTC 覆盖`}
+							aria-label={`${provider.name} ${month.label} ${provider.id === "pixiu" ? "北京时间记账日" : "UTC 覆盖"}`}
 						>
 							<Text as="h3" size="sm" bold>
 								{month.label}
@@ -178,7 +178,7 @@ function CoverageCalendar({ provider }: { provider: ProviderOverview }) {
 									return cell.filled ? (
 										<Link
 											key={cell.key}
-											to={timelineDayHref(cell.utcDay)}
+											to={timelineDayHref(cell.utcDay, provider.id)}
 											className="data-coverage-cell data-coverage-filled"
 											aria-label={label}
 											title={label}
@@ -313,7 +313,7 @@ function ProviderComparison({
 							{providers.map((provider) => (
 								<TableRow key={provider.id}>
 									<TableHead scope="row" className="data-overview-source">
-										{provider.id === "footprint" || provider.id === "apple-health" ? (
+										{provider.id !== "journal" ? (
 											<Link to={`/data/${provider.id}`} className="data-overview-link">
 												{provider.name}
 											</Link>
@@ -321,7 +321,9 @@ function ProviderComparison({
 											provider.name
 										)}
 										<Text as="p" size="xs" tone="muted">
-											{provider.dataRows > 0 ? storageLabel(provider.storage) : "尚未导入"}
+											{provider.dataRows > 0
+												? storageLabel(provider.storage, provider.id)
+												: "尚未导入"}
 										</Text>
 									</TableHead>
 									<TableCell>
@@ -356,12 +358,12 @@ function ProviderDetails({ provider }: { provider: ProviderOverview }) {
 						{provider.name}
 					</Text>
 					<Text as="p" size="sm" tone="muted">
-						{storageLabel(provider.storage)} · 原始记录{" "}
+						{storageLabel(provider.storage, provider.id)} · 原始记录{" "}
 						{formatOverviewMetric(provider.recordCount, "recordCount")} · 数据行{" "}
 						{formatOverviewMetric(provider.dataRows, "dataRows")}
 					</Text>
 				</div>
-				{provider.id === "footprint" || provider.id === "apple-health" ? (
+				{provider.id !== "journal" ? (
 					<Button asChild variant="outline" size="sm">
 						<Link to={`/data/${provider.id}`}>管理 {provider.name}</Link>
 					</Button>
@@ -386,10 +388,11 @@ function ProviderDetails({ provider }: { provider: ProviderOverview }) {
 				{provider.health ? <HealthProviderOverview health={provider.health} /> : null}
 				<CoverageCalendar provider={provider} />
 			</LayerCard.Body>
-			{provider.id === "footprint" || provider.id === "apple-health" ? (
+			{provider.id !== "journal" ? (
 				<LayerCard.Footer>
 					<Text as="p" size="sm" tone="muted">
-						重复导入时，文件包含的 UTC 日会整日替换，未包含的日期保留；内容相同的日期不重复累计。
+						重复导入时，文件包含的{provider.id === "pixiu" ? "北京时间记账日" : " UTC 日"}
+						会整日替换，未包含的日期保留；内容相同的日期不重复累计。
 					</Text>
 				</LayerCard.Footer>
 			) : null}
@@ -495,8 +498,8 @@ export function DataOverviewPage() {
 							]}
 						/>
 						<Text as="p" size="sm" tone="muted">
-							已收录 {summary.importedProviders.length} 个来源。总体覆盖按 UTC
-							日期去重，同一天不重复计数。
+							已收录 {summary.importedProviders.length}{" "}
+							个来源。总体覆盖按来源日期标签去重；貔貅使用北京时间记账日。
 						</Text>
 					</div>
 					<MonthlyRecords providers={overview.providers} />
@@ -508,7 +511,7 @@ export function DataOverviewPage() {
 					{summary.importedProviders.length > 0 ? (
 						<SectionRule
 							title="覆盖日与导入记录"
-							hint="覆盖按 UTC 日统计；记录时间和导入时间按当前时区展示。"
+							hint="GPS 与健康按 UTC 日，貔貅按北京时间记账日；来源日期键用于总体覆盖统计。"
 						>
 							<div className="data-overview-provider-grid">
 								{summary.importedProviders.map((provider) => (

@@ -2,6 +2,7 @@ import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vitest"
 import type { DayTimeline, JsonValue, LifeEvent } from "../../../../src/models/types";
 import {
 	buildDayRecords,
+	dayRecordField,
 	dayRecordSummary,
 	dayRecordTime,
 } from "../../../../src/viewmodels/day-records";
@@ -39,9 +40,33 @@ function timelineFixture(hours: LifeEvent[][] = [], allDay: LifeEvent[] = []): D
 }
 
 describe("buildDayRecords", () => {
+	it("retains original financial fields without formatting decimals or exposing structured values", () => {
+		const row = buildDayRecords(
+			timelineFixture(
+				[],
+				[
+					eventFixture({
+						sourceId: "pixiu",
+						data: { 流出金额: "12.30", 备注: "a,b\n第二行", zero: 0, nested: { private: true } },
+					}),
+				],
+			),
+			"finance",
+		)[0];
+		assert(row);
+		expect(dayRecordField(row, "流出金额")).toBe("12.30");
+		expect(dayRecordField(row, "备注")).toBe("a,b\n第二行");
+		expect(dayRecordField(row, "zero")).toBe("0");
+		expect(dayRecordField(row, "missing")).toBe("");
+		expect(dayRecordField(row, "nested")).toBe("");
+		for (const data of [null, [], "legacy"]) {
+			expect(dayRecordField({ ...row, event: { ...row.event, data } }, "流出金额")).toBe("");
+		}
+	});
 	it("returns empty rows for either kind when the day has no records", () => {
 		expect(buildDayRecords(timelineFixture(), "locations")).toEqual([]);
 		expect(buildDayRecords(timelineFixture(), "records")).toEqual([]);
+		expect(buildDayRecords(timelineFixture(), "finance")).toEqual([]);
 	});
 
 	it("deduplicates IDs across hours and all-day slots without mutating or copying events", () => {
@@ -116,11 +141,11 @@ describe("buildDayRecords", () => {
 		expect(buildDayRecords(timeline, "records").map((row) => row.event.id)).toEqual([
 			"connect-note",
 			"health",
-			"money",
 			"note",
 			"sleep",
 			"workout",
 		]);
+		expect(buildDayRecords(timeline, "finance").map((row) => row.event.id)).toEqual(["money"]);
 	});
 
 	it("preserves exact coordinates, zero values and native negative speed/course values", () => {

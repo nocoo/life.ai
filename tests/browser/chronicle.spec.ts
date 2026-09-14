@@ -32,7 +32,7 @@ test("browser imports day/minute/second records and shows UTC data in local hour
 	page,
 }) => {
 	await page.goto("/imports");
-	await page.getByRole("radio", { name: "日记", exact: true }).check();
+	await expect(page.getByRole("heading", { name: "日记导入", exact: true })).toBeVisible();
 	await page.locator('input[type="file"]').setInputFiles({
 		name: "chronicle.json",
 		mimeType: "application/json",
@@ -134,7 +134,7 @@ test("Connect creates a one-time secret, accepts a snapshot, filters it, and rev
 
 test("invalid import reports an error and can be replaced with a valid file", async ({ page }) => {
 	await page.goto("/imports");
-	await page.getByRole("radio", { name: "日记", exact: true }).check();
+	await expect(page.getByRole("heading", { name: "日记导入", exact: true })).toBeVisible();
 	await page.locator('input[type="file"]').setInputFiles({
 		name: "bad.json",
 		mimeType: "application/json",

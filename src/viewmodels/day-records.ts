@@ -4,7 +4,7 @@ import { storyKind } from "./day-story";
 import { describeEventData } from "./event-details";
 import { formatLocalClock } from "./format";
 
-export type DayRecordKind = "locations" | "records";
+export type DayRecordKind = "locations" | "finance" | "records";
 type RawValue = number | string | null;
 
 export interface DayRecordRow {
@@ -40,7 +40,11 @@ export function buildDayRecords(timeline: DayTimeline, kind: DayRecordKind): Day
 		}
 	}
 	return [...unique.values()]
-		.filter((event) => (storyKind(event) === "journey") === (kind === "locations"))
+		.filter((event) =>
+			kind === "finance"
+				? event.sourceId === "pixiu"
+				: event.sourceId !== "pixiu" && (storyKind(event) === "journey") === (kind === "locations"),
+		)
 		.map((event) => {
 			const data =
 				event.data && typeof event.data === "object" && !Array.isArray(event.data)
@@ -70,6 +74,13 @@ export function dayRecordTime(row: DayRecordRow): string {
 	if (row.event.precision === "day") return "全天";
 	if (!Number.isFinite(row.instant)) return row.event.occurredAt;
 	return formatLocalClock(new Date(row.instant).toISOString(), row.event.precision) as string;
+}
+
+export function dayRecordField(row: DayRecordRow, field: string): string {
+	const data = row.event.data;
+	return data && typeof data === "object" && !Array.isArray(data)
+		? String(rawValue(data[field]) ?? "")
+		: "";
 }
 
 export function dayRecordSummary(event: LifeEvent): string {

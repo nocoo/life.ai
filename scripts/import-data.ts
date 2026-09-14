@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import { createReadStream, openAsBlob, statSync } from "node:fs";
+import { readdir } from "node:fs/promises";
 import { basename, resolve } from "node:path";
 import { finished } from "node:stream/promises";
 import { promisify } from "node:util";
@@ -90,8 +91,8 @@ export function printUsage(): void {
   bun scripts/import-data.ts --provider <provider> --file <path> [options]
 
 必填参数:
-  --provider <name>   导入来源，当前支持: footprint, apple-health
-  --file <path>       GPX、Apple 健康 ZIP 或解压目录路径
+  --provider <name>   导入来源，当前支持: footprint, apple-health, pixiu
+  --file <path>       GPX、Apple 健康 ZIP/目录、貔貅 CSV/目录路径
 
 选项:
   --target <env>      目标环境: local 或 production (dry-run 时可选，实际导入时必填)
@@ -213,8 +214,10 @@ export async function runImportCli(
 		logErr("缺少必填参数: --provider (例如: --provider footprint)");
 		return 1;
 	}
-	if (options.provider !== "footprint" && options.provider !== "apple-health") {
-		logErr(`不受支持的 provider: "${options.provider}"。当前支持 footprint 与 apple-health。`);
+	if (!["footprint", "apple-health", "pixiu"].includes(options.provider)) {
+		logErr(
+			`不受支持的 provider: "${options.provider}"。当前支持 footprint、apple-health 与 pixiu。`,
+		);
 		return 1;
 	}
 
@@ -227,7 +230,7 @@ export async function runImportCli(
 	let fileSize = 0;
 	try {
 		const stat = statSync(resolvedPath);
-		if (!stat.isFile() && !(options.provider === "apple-health" && stat.isDirectory())) {
+		if (!stat.isFile() && !(options.provider !== "footprint" && stat.isDirectory())) {
 			logErr(`指定的文件不是普通文件: ${resolvedPath}`);
 			return 1;
 		}
@@ -258,6 +261,15 @@ export async function runImportCli(
 	processEvents.on("SIGTERM", onSignal);
 
 	try {
+		if (options.provider === "pixiu")
+			return await runPixiuCli(
+				options,
+				resolvedPath,
+				activeSignal,
+				log,
+				logErr,
+				deps.getAccessHeaderFn,
+			);
 		if (options.provider === "apple-health")
 			return await runHealthCli(
 				options,
@@ -417,6 +429,71 @@ export async function runImportCli(
 	} finally {
 		processEvents.removeListener("SIGINT", onSignal);
 		processEvents.removeListener("SIGTERM", onSignal);
+	}
+}
+
+async function runPixiuCli(
+	options: ImportCliOptions,
+	path: string,
+	signal: AbortSignal,
+	log: (message: string) => void,
+	logErr: (message: string) => void,
+	getAccess?: (url: string) => Promise<Record<string, string>>,
+): Promise<number> {
+	try {
+		const { createPixiuClient, readPixiuFiles, uploadPixiuPlan } = await import(
+			"../src/services/pixiu-client"
+		);
+		const paths = statSync(path).isDirectory()
+			? (await readdir(path, { withFileTypes: true }))
+					.filter((entry) => entry.isFile() && /\.csv$/i.test(entry.name))
+					.map((entry) => resolve(path, entry.name))
+					.sort()
+			: [path];
+		const files: File[] = [];
+		for (const file of paths) files.push(new File([await openAsBlob(file)], basename(file)));
+		const plan = await readPixiuFiles(files, signal);
+		const stats = {
+			totalDays: plan.days.length,
+			recordCount: plan.recordCount,
+			dataRows: plan.days.length,
+			firstDate: plan.firstDate,
+			lastDate: plan.lastDate,
+			timeZone: "Asia/Shanghai",
+			bytesRead: plan.bytesRead,
+			payloadBytes: plan.payloadBytes,
+			fileCount: plan.fileNames.length,
+		};
+		if (options.dryRun) {
+			log(JSON.stringify({ dryRun: true, stats }, null, 2));
+			return 0;
+		}
+		const target = options.target as DataTarget;
+		const { url, isLocalApi } = validateAndNormalizeBaseUrl(
+			options.baseUrl ??
+				(target === "production" ? "https://life.hexly.ai" : "http://127.0.0.1:7011"),
+		);
+		const client = createPixiuClient({
+			baseUrl: url,
+			getHeaders: async () =>
+				target === "production" && !isLocalApi ? (getAccess ?? getCloudflareAccessHeader)(url) : {},
+		});
+		const receipt = await uploadPixiuPlan(client, plan, {
+			target,
+			channel: "cli",
+			signal,
+			onProgress: (result) => {
+				if (!options.json)
+					log(
+						`已确认 ${result.committedDays}/${plan.days.length} 天，${result.committedPoints}/${plan.recordCount} 条`,
+					);
+			},
+		});
+		log(JSON.stringify({ success: true, target, baseUrl: url, stats, receipt }, null, 2));
+		return 0;
+	} catch (error) {
+		logErr(`貔貅导入失败：${error instanceof Error ? error.message : String(error)}`);
+		return 1;
 	}
 }
 

@@ -13,6 +13,7 @@ import {
 	validateFootprintDay,
 } from "../src/models/footprint.js";
 import { HEALTH_LIMITS, type HealthDay } from "../src/models/health-types.js";
+import { PIXIU_OFFSET_MS, type PixiuDay, validatePixiuDay } from "../src/models/pixiu.js";
 import { sha256 } from "./auth.js";
 import {
 	collectUnusedHealthParts,
@@ -25,8 +26,8 @@ import { jsonResponse, readJsonBody, validateString } from "./utils.js";
 
 const NOW = "CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)";
 
-type Provider = "footprint" | "apple-health";
-type ProviderDay = FootprintDay | HealthDay;
+type Provider = "footprint" | "apple-health" | "pixiu";
+type ProviderDay = FootprintDay | HealthDay | PixiuDay;
 
 interface ImportRow {
 	files_json: string;
@@ -86,7 +87,7 @@ function receipt(
 ): FootprintImportReceipt & { committedRecords?: number } {
 	return {
 		sessionId: row.id,
-		...(provider === "apple-health" ? { committedRecords: row.committed_points } : {}),
+		...(provider !== "footprint" ? { committedRecords: row.committed_points } : {}),
 		status: row.status,
 		committedDays: row.committed_days,
 		committedPoints: row.committed_points,
@@ -102,9 +103,10 @@ export async function beginProviderImport(
 	provider: Provider,
 ): Promise<Response> {
 	const body = object(
-		await readJsonBody(request, provider === "footprint" ? 4096 : HEALTH_LIMITS.dayBytes),
+		await readJsonBody(request, provider === "apple-health" ? HEALTH_LIMITS.dayBytes : 4096),
 	);
-	const name = provider === "footprint" ? "Footprint" : "Apple Health";
+	const name =
+		provider === "footprint" ? "Footprint" : provider === "pixiu" ? "貔貅记账" : "Apple Health";
 	const files = provider === "apple-health" ? await validateHealthFiles(body.files) : [];
 	const target = dataTarget(env);
 	if (body.target !== target) {
@@ -168,11 +170,11 @@ export async function putProviderBatch(
 	provider: Provider,
 ): Promise<Response> {
 	positiveInteger(batchId, "batchId");
-	const maxDays = provider === "footprint" ? FOOTPRINT_LIMITS.batchDays : 1;
+	const maxDays = provider === "apple-health" ? 1 : FOOTPRINT_LIMITS.batchDays;
 	const body = object(
 		await readJsonBody(
 			request,
-			provider === "footprint" ? FOOTPRINT_LIMITS.batchBytes : HEALTH_LIMITS.dayBytes,
+			provider === "apple-health" ? HEALTH_LIMITS.dayBytes : FOOTPRINT_LIMITS.batchBytes,
 		),
 	);
 	if (!Array.isArray(body.days) || !body.days.length || body.days.length > maxDays) {
@@ -184,7 +186,9 @@ export async function putProviderBatch(
 			days.push(
 				provider === "footprint"
 					? await validateFootprintDay(input)
-					: await validateHealthDay(input),
+					: provider === "pixiu"
+						? await validatePixiuDay(input)
+						: await validateHealthDay(input),
 			);
 	} catch (error) {
 		throw new ApiError(400, "invalid_day", error instanceof Error ? error.message : "Invalid day");
@@ -243,7 +247,7 @@ export async function putProviderBatch(
 		batchId,
 		committedDays: row.committed_days + days.length,
 		committedPoints: row.committed_points + pointCount,
-		...(provider === "apple-health" ? { committedRecords: row.committed_points + pointCount } : {}),
+		...(provider !== "footprint" ? { committedRecords: row.committed_points + pointCount } : {}),
 		days: days.map((day) => ({
 			utcDay: day.utcDay,
 			recordCount: day.recordCount,
@@ -325,8 +329,12 @@ export async function putProviderBatch(
 			: []),
 		env.DB.prepare(`DELETE FROM life_events WHERE source_id = '${provider}'
 			AND occurred_at >= ? AND occurred_at < ?
-			AND CAST(floor(occurred_at / ${FOOTPRINT_DAY_MS}.0) * ${FOOTPRINT_DAY_MS} AS INTEGER) IN (${placeholders}) AND ${guard}`).bind(
-			firstDay.utcDay,
+			AND ${
+				provider === "pixiu"
+					? `COALESCE(unixepoch(json_extract(data, '$.日期')) * 1000, CAST(floor((occurred_at + ${PIXIU_OFFSET_MS}) / ${FOOTPRINT_DAY_MS}.0) * ${FOOTPRINT_DAY_MS} AS INTEGER))`
+					: `CAST(floor(occurred_at / ${FOOTPRINT_DAY_MS}.0) * ${FOOTPRINT_DAY_MS} AS INTEGER)`
+			} IN (${placeholders}) AND ${guard}`).bind(
+			firstDay.utcDay - (provider === "pixiu" ? PIXIU_OFFSET_MS : 0),
 			lastDay.utcDay + FOOTPRINT_DAY_MS,
 			...keys,
 			id,

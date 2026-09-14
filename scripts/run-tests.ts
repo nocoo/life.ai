@@ -12,6 +12,7 @@ import { resolve } from "node:path";
 import { exportJWK, generateKeyPair, SignJWT } from "jose";
 import { startAiFixture } from "./ai-fixture";
 import { assertMarker, executeLocalSql, testEnvironment } from "./local-db";
+import { startPublicContextFixture } from "./public-context-fixture";
 import { verifyLocalBindings } from "./verify-test-bindings";
 
 const tier = process.argv[2];
@@ -75,7 +76,9 @@ const env = {
 	),
 };
 const aiFixture = startAiFixture();
+const contextFixture = startPublicContextFixture();
 Object.assign(env, {
+	LIFE_TEST_CONTEXT_URL: contextFixture.url,
 	LIFE_TEST_AI_URL: aiFixture.url,
 	LIFE_TEST_AI_KEY: aiFixture.apiKey,
 	AI_SETTINGS_KEY: env.LIFE_TEST_AI_SETTINGS_KEY,
@@ -136,6 +139,7 @@ try {
 	if (code) throw new Error(`${tier.toUpperCase()} failed with exit ${code}`);
 } finally {
 	aiFixture.stop();
+	contextFixture.stop();
 	if (server) {
 		server.kill("SIGTERM");
 		await Promise.race([server.exited, Bun.sleep(5000)]);

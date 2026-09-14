@@ -90,7 +90,9 @@ describe("ai service", () => {
 		stubFetch(
 			vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
 				if (init?.method === "POST") {
-					expect(init.body).toBe(JSON.stringify(query));
+					const body = JSON.parse(String(init.body));
+					expect(body.date).toBe(query.date);
+					if (body.revision) expect(body.revision).toBe("少写步数");
 					return jsonResponse(200, { data: result });
 				}
 				expect(String(input)).toContain("/api/day-summary?");
@@ -100,5 +102,6 @@ describe("ai service", () => {
 		);
 		await expect(fetchDaySummary(query)).resolves.toEqual(result);
 		await expect(generateDaySummary(query)).resolves.toEqual(result);
+		await expect(generateDaySummary(query, undefined, "少写步数")).resolves.toEqual(result);
 	});
 });

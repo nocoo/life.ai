@@ -8,11 +8,13 @@ import {
 	DialogTitle,
 } from "@nocoo/basalt/components/dialog";
 import { useCallback, useId, useMemo, useRef, useState } from "react";
+import { PIXIU_COLUMNS } from "../models/pixiu";
 import type { DayTimeline, LifeEvent } from "../models/types";
 import {
 	buildDayRecords,
 	type DayRecordKind,
 	type DayRecordRow,
+	dayRecordField,
 	dayRecordSummary,
 	dayRecordTime,
 } from "../viewmodels/day-records";
@@ -39,7 +41,8 @@ export default function DayRecords({
 	const returnFocus = useRef<HTMLButtonElement | null>(null);
 	const descriptionId = useId();
 	const isLocation = kind === "locations";
-	const title = isLocation ? "位置记录" : "其他记录";
+	const isFinance = kind === "finance";
+	const title = isLocation ? "位置记录" : isFinance ? "账目记录" : "其他记录";
 	const openDetails = useCallback((event: LifeEvent, trigger: HTMLButtonElement) => {
 		returnFocus.current = trigger;
 		setSelected({ event, json: JSON.stringify(event, null, 2) });
@@ -93,7 +96,23 @@ export default function DayRecords({
 				sortValue: (row) => row.event.title,
 			},
 		];
-		if (isLocation) {
+		if (isFinance) {
+			common.splice(
+				0,
+				common.length,
+				...PIXIU_COLUMNS.map((field) => ({
+					id: field,
+					header: field,
+					accessor: (row: DayRecordRow) => dayRecordField(row, field) || "—",
+					sortValue: (row: DayRecordRow) => dayRecordField(row, field),
+					headerClassName: "whitespace-nowrap",
+					cellClassName:
+						field === "备注"
+							? "max-w-sm whitespace-pre-wrap break-words"
+							: "whitespace-nowrap tabular-nums",
+				})),
+			);
+		} else if (isLocation) {
 			for (const [id, header] of [
 				["latitude", "纬度"],
 				["longitude", "经度"],
@@ -138,7 +157,7 @@ export default function DayRecords({
 			),
 		});
 		return common;
-	}, [isLocation, openDetails]);
+	}, [isLocation, isFinance, openDetails]);
 
 	return (
 		<>
@@ -149,7 +168,8 @@ export default function DayRecords({
 							{title}
 						</Text>
 						<Text as="p" size="sm" tone="muted" id={descriptionId}>
-							{rows.length.toLocaleString()} 条记录 · 每页 50 条 · 时间显示为 {timeline.timezone}
+							{rows.length.toLocaleString()} 条记录 · 每页 50 条 ·{" "}
+							{isFinance ? "北京时间记账日，保留原始九列" : `时间显示为 ${timeline.timezone}`}
 						</Text>
 					</div>
 				</LayerCard.Header>
@@ -167,7 +187,7 @@ export default function DayRecords({
 						columns={columns}
 						getRowId={getRowId}
 						pageSize={50}
-						defaultSort={{ id: "time", dir: "asc" }}
+						defaultSort={{ id: isFinance ? "日期" : "time", dir: "asc" }}
 						className={isLocation ? "min-w-[68rem]" : "min-w-[48rem]"}
 						empty={`这一天没有${title}。`}
 					/>

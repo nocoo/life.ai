@@ -186,6 +186,7 @@ export function TimelinePage() {
 			<TabsList aria-label="每日视图" className="mb-6">
 				<TabsTrigger value="timeline">时间线</TabsTrigger>
 				<TabsTrigger value="locations">位置记录</TabsTrigger>
+				<TabsTrigger value="finance">账目记录</TabsTrigger>
 				<TabsTrigger value="records">其他记录</TabsTrigger>
 			</TabsList>
 			{status === "error" ? (
@@ -220,7 +221,7 @@ export function TimelinePage() {
 							/>
 						) : null}
 					</TabsContent>
-					{(["locations", "records"] as const).map((kind) => (
+					{(["locations", "finance", "records"] as const).map((kind) => (
 						<TabsContent key={kind} value={kind}>
 							{tab === kind ? (
 								<Suspense

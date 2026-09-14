@@ -52,6 +52,7 @@ import { DayInsightsCard, StoryMetrics } from "./day-insights";
 import { DayMap } from "./day-map";
 import { DaySummaryCard } from "./day-summary";
 import { EventDetails } from "./event-card";
+import { FinanceDayCard } from "./finance-day";
 import { HealthDayCard } from "./health-story";
 import { HealthTimelineEntry } from "./health-timeline-entry";
 import { StoryCardHeading } from "./story-card-heading";
@@ -483,6 +484,7 @@ export function DayTimelineView({
 						</div>
 					) : null}
 					<DayInsightsCard insights={insights} />
+					<FinanceDayCard finance={story.finance} />
 					{health ? <HealthDayCard story={health} /> : null}
 					{story.allDay.length > 0 ? (
 						<LayerCard className="story-card story-all-day-card">

@@ -7,6 +7,7 @@ import {
 import { readFootprintDays } from "./footprint-read.js";
 import { healthFileInventory, putHealthFilePart, readHealthFile } from "./health-files.js";
 import { readHealthSeries } from "./health-read.js";
+import { readPixiuDays } from "./pixiu-read.js";
 import { beginProviderImport, finishProviderImport, putProviderBatch } from "./provider-imports.js";
 import { getDataOverview } from "./provider-overview.js";
 import { normalizeTimestamp } from "./time.js";
@@ -20,6 +21,27 @@ export async function handleDataRequest(
 	url: URL,
 ): Promise<Response> {
 	const method = request.method;
+	if (url.pathname.startsWith("/api/data/pixiu/")) {
+		if (url.pathname === "/api/data/pixiu/imports") {
+			if (method === "POST") return beginProviderImport(request, env, "pixiu");
+		} else if (url.pathname === "/api/data/pixiu/days") {
+			if (method === "GET") {
+				const { start, end } = dataWindow(url);
+				return jsonResponse({ data: { days: await readPixiuDays(env.DB, start, end) } });
+			}
+		} else {
+			const batch = /^\/api\/data\/pixiu\/imports\/([^/]+)\/batches\/(\d+)$/.exec(url.pathname);
+			const finish = /^\/api\/data\/pixiu\/imports\/([^/]+)\/finish$/.exec(url.pathname);
+			if (batch) {
+				if (method === "PUT")
+					return putProviderBatch(request, env, batch[1] as string, Number(batch[2]), "pixiu");
+			} else if (finish) {
+				if (method === "POST")
+					return finishProviderImport(request, env, finish[1] as string, "pixiu");
+			} else throw new ApiError(404, "not_found", "Pixiu data endpoint not found");
+		}
+		throw new ApiError(405, "method_not_allowed", "Method not allowed");
+	}
 	if (url.pathname.startsWith("/api/data/apple-health/")) {
 		const prefix = "/api/data/apple-health";
 		if (url.pathname === `${prefix}/imports`) {

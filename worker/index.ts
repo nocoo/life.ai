@@ -3,6 +3,7 @@ import { handleGetAiSettings, handlePostAiTest, handlePutAiSettings } from "./ai
 import { authenticateAccess, isLocalHost } from "./auth.js";
 import { handleDataRequest } from "./data-routes.js";
 import { handleGetDaySummary, handlePostDaySummary } from "./day-summary.js";
+import { handleContextRequest } from "./public-context.js";
 import {
 	handleDeleteConnect,
 	handleGetConnects,
@@ -203,6 +204,8 @@ export async function handleRequest(request: Request, env: WorkerEnv): Promise<R
 				405,
 			);
 		}
+		if (url.pathname.startsWith("/api/context/"))
+			return await handleContextRequest(request, env, url);
 
 		if (url.pathname === "/api/imports") {
 			if (method !== "POST") {

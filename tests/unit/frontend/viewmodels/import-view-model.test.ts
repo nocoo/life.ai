@@ -20,8 +20,10 @@ import {
 const importFileMock = vi.mocked(importFile);
 const postImportBatchMock = vi.mocked(postImportBatch);
 
-function csvFile(): File {
-	return new File(["日期,备注\n2026-09-13,咖啡"], "export.csv", { type: "text/csv" });
+function journalFile(): File {
+	return new File([JSON.stringify({ date: "2026-09-13", title: "咖啡" })], "export.json", {
+		type: "application/json",
+	});
 }
 
 describe("importStore", () => {
@@ -32,10 +34,11 @@ describe("importStore", () => {
 	});
 
 	it("previews a selected file", () => {
-		const file = csvFile();
+		expect(importStore.getState().source).toBe("journal");
+		const file = journalFile();
 		importStore.getState().selectFile(file);
 		expect(importStore.getState()).toMatchObject({
-			fileName: "export.csv",
+			fileName: "export.json",
 			fileSize: file.size,
 			status: "preview",
 		});
@@ -57,19 +60,24 @@ describe("importStore", () => {
 	});
 
 	it("imports in batches and records progress", async () => {
-		const file = csvFile();
+		const file = journalFile();
 		importStore.getState().selectFile(file);
 		postImportBatchMock.mockResolvedValue({ accepted: 1 });
 		importFileMock.mockImplementation(async (_file, source, onBatch, onProgress) => {
 			onProgress({ bytesRead: 4, totalBytes: file.size, processed: 1, accepted: 0 });
+			expect(importStore.getState()).toMatchObject({
+				status: "running",
+				processed: 1,
+				accepted: 0,
+			});
 			await onBatch([importRecordFixture()]);
 			onProgress({ bytesRead: file.size, totalBytes: file.size, processed: 1, accepted: 1 });
-			expect(source).toBe("pixiu");
+			expect(source).toBe("journal");
 			return { processed: 1, accepted: 1 };
 		});
 		await importStore.getState().start();
 		expect(postImportBatchMock).toHaveBeenCalledWith(
-			"pixiu",
+			"journal",
 			[importRecordFixture()],
 			expect.any(AbortSignal),
 		);
@@ -81,7 +89,7 @@ describe("importStore", () => {
 	});
 
 	it("does not start twice while running", async () => {
-		importStore.getState().selectFile(csvFile());
+		importStore.getState().selectFile(journalFile());
 		let finish: () => void = () => {};
 		importFileMock.mockImplementation(
 			() =>
@@ -97,7 +105,7 @@ describe("importStore", () => {
 	});
 
 	it("cancels an in-flight import", async () => {
-		importStore.getState().selectFile(csvFile());
+		importStore.getState().selectFile(journalFile());
 		importFileMock.mockImplementation((_file, _source, _onBatch, _onProgress, signal) => {
 			return new Promise((_, reject) => {
 				signal?.addEventListener("abort", () => reject(abortError()));
@@ -112,44 +120,116 @@ describe("importStore", () => {
 	});
 
 	it("treats import abort as cancellation", async () => {
-		importStore.getState().selectFile(csvFile());
+		importStore.getState().selectFile(journalFile());
 		importFileMock.mockRejectedValue(abortError());
 		await importStore.getState().start();
 		expect(importStore.getState().status).toBe("cancelled");
 	});
 
-	it("maps import failures", async () => {
-		importStore.getState().selectFile(csvFile());
-		importFileMock.mockRejectedValue(new Error("parse failed"));
+	it.each([
+		{ error: new Error("parse failed"), message: "parse failed" },
+		{ error: new TypeError("offline"), message: "无法连接服务器，请重试。" },
+		{ error: undefined, message: "请求失败，请重试。" },
+	])("maps import failures and allows replay: $message", async ({ error, message }) => {
+		importStore.getState().selectFile(journalFile());
+		importFileMock.mockRejectedValue(error);
 		await importStore.getState().start();
-		expect(importStore.getState()).toMatchObject({ status: "error", error: "parse failed" });
+		expect(importStore.getState()).toMatchObject({ status: "error", error: message });
 		importFileMock.mockResolvedValue({ processed: 2, accepted: 2 });
 		await importStore.getState().retry();
 		expect(importStore.getState().status).toBe("success");
 	});
 
-	it("ignores file changes while running", async () => {
-		importStore.getState().selectFile(csvFile());
-		importFileMock.mockImplementation(() => new Promise(() => {}));
-		void importStore.getState().start();
-		importStore.getState().selectFile(csvFile());
+	it("ignores competing actions while running and stale callbacks after clearing", async () => {
+		importStore.getState().selectFile(journalFile());
+		let finish: () => void = () => {};
+		importFileMock.mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					finish = () => resolve({ processed: 5, accepted: 5 });
+				}),
+		);
+		const pending = importStore.getState().start();
+		const active = importStore.getState();
+		importStore.getState().selectFile(new File(["{}"], "different.json"));
+		importStore.getState().setSource("journal");
 		importStore.getState().setSource("pixiu");
 		importStore.getState().rejectFile("nope");
-		expect(importStore.getState().source).toBe("pixiu");
-		expect(importStore.getState().rejection).toBeNull();
+		expect(importStore.getState()).toEqual(active);
 		importStore.getState().clear();
+		expect(importFileMock.mock.calls[0]?.[4]?.aborted).toBe(true);
+		importFileMock.mock.calls[0]?.[3]({ bytesRead: 10, totalBytes: 10, processed: 5, accepted: 5 });
+		finish();
+		await pending;
 		expect(importStore.getState().status).toBe("idle");
 		expect(importStore.getState().fileName).toBeNull();
+		expect(importStore.getState()).toMatchObject({ processed: 0, accepted: 0, progress: null });
 	});
 
-	it("rejects providers with dedicated import pages", () => {
-		importStore.getState().setSource("apple-health");
-		importStore.getState().setSource("footprint");
-		expect(importStore.getState().source).toBe("pixiu");
+	it.each(["apple-health", "footprint", "pixiu"] as const)(
+		"keeps journal selection when dedicated provider %s is requested",
+		(source) => {
+			importStore.getState().selectFile(journalFile());
+			const selected = importStore.getState();
+			importStore.getState().setSource(source);
+			expect(importStore.getState()).toEqual(selected);
+		},
+	);
+
+	it.each(["cancel", "reset"] as const)(
+		"protects a later import from a rejected request after %s",
+		async (action) => {
+			let fail: (error: unknown) => void = () => {};
+			importFileMock.mockImplementationOnce(
+				() =>
+					new Promise((_resolve, reject) => {
+						fail = reject;
+					}),
+			);
+			importStore.getState().selectFile(journalFile());
+			const stale = importStore.getState().start();
+			importStore.getState()[action]();
+			importStore.getState().selectFile(new File(["{}"], "next.json"));
+			importFileMock.mockResolvedValue({ processed: 1, accepted: 1 });
+			await importStore.getState().start();
+			const complete = importStore.getState();
+			importFileMock.mock.calls[0]?.[3]({
+				bytesRead: 10,
+				totalBytes: 10,
+				processed: 5,
+				accepted: 5,
+			});
+			fail(new Error("late failure"));
+			await stale;
+			expect(importStore.getState()).toEqual(complete);
+			expect(complete).toMatchObject({
+				status: "success",
+				fileName: "next.json",
+				processed: 1,
+				accepted: 1,
+			});
+		},
+	);
+
+	it("clears an idle selection and its rejection before another import", async () => {
+		importStore.getState().selectFile(journalFile());
+		importStore.getState().rejectFile("another file was too large");
+		importStore.getState().clear();
+		expect(importStore.getState()).toMatchObject({
+			source: "journal",
+			fileName: null,
+			fileSize: null,
+			status: "idle",
+			error: null,
+			rejection: null,
+		});
+		await importStore.getState().start();
+		expect(importStore.getState().error).toBe("请选择要导入的文件。");
+		expect(importFileMock).not.toHaveBeenCalled();
 	});
 
 	it("switches source and clears the file when idle", () => {
-		importStore.getState().selectFile(csvFile());
+		importStore.getState().selectFile(journalFile());
 		importStore.getState().setSource("journal");
 		expect(importStore.getState()).toMatchObject({
 			source: "journal",
@@ -165,7 +245,7 @@ describe("import helpers", () => {
 		expect(importSourceMeta("apple-health").id).toBe("apple-health");
 		expect(importSourceMeta("footprint").hint).toContain("GPX");
 		expect(importSourceMeta("journal").accept).toContain(".ndjson");
-		expect(IMPORT_SOURCES.map((item) => item.id)).toEqual(["pixiu", "journal"]);
+		expect(IMPORT_SOURCES.map((item) => item.id)).toEqual(["journal"]);
 		expect(importProgressPercent(null)).toBeUndefined();
 		expect(
 			importProgressPercent({ bytesRead: 0, totalBytes: 0, processed: 0, accepted: 0 }),

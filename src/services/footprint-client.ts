@@ -86,11 +86,11 @@ export async function abortableDelay(ms: number, signal?: AbortSignal): Promise<
 	});
 }
 
-export function partitionFootprintDays(
-	days: FootprintDay[],
+export function partitionFootprintDays<Day extends { utcDay: number }>(
+	days: Day[],
 	maxDays: number = FOOTPRINT_LIMITS.batchDays,
 	maxBytes: number = FOOTPRINT_LIMITS.batchBytes,
-): FootprintDay[][] {
+): Day[][] {
 	if (
 		!Number.isSafeInteger(maxDays) ||
 		!Number.isSafeInteger(maxBytes) ||
@@ -102,8 +102,8 @@ export function partitionFootprintDays(
 	const effectiveMaxDays = Math.min(maxDays, FOOTPRINT_LIMITS.batchDays);
 	const effectiveMaxBytes = Math.min(maxBytes, FOOTPRINT_LIMITS.batchBytes);
 
-	const batches: FootprintDay[][] = [];
-	let currentDays: FootprintDay[] = [];
+	const batches: Day[][] = [];
+	let currentDays: Day[] = [];
 	let bodyBytes = 11; // {"days":[]} plus each serialized day and separating commas.
 
 	for (const day of days) {

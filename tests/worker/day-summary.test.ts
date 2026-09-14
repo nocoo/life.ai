@@ -20,8 +20,30 @@ import {
 	safeValidateSummaryQuery,
 	streamDayEvents,
 } from "../../worker/day-summary.js";
+import { formatEvidenceTime, formatHealthDimensionsEvidence } from "../../worker/diary-evidence.js";
 import { healthDayHeader, readHealthEvents } from "../../worker/health-read.js";
+import {
+	buildWeatherCacheKey,
+	getDaySun,
+	getDayWeather,
+	getPlaceLabel,
+	roundCoordinate,
+} from "../../worker/public-context.js";
 import type { WorkerEnv } from "../../worker/types.js";
+
+vi.mock("../../worker/public-context.js", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("../../worker/public-context.js")>();
+	return {
+		...actual,
+		getDaySun: vi.fn(async () => ({
+			events: [] as { kind: "sunrise" | "sunset"; occurredAt: string }[],
+			daylightMinutes: 0,
+			status: "normal" as const,
+		})),
+		getDayWeather: vi.fn(async () => null),
+		getPlaceLabel: vi.fn(async () => null),
+	};
+});
 
 const day: DaySummaryQuery = {
 	date: "2026-09-13",
@@ -46,6 +68,7 @@ function setup() {
 		"0002_daily_ai.sql",
 		"0003_provider_days.sql",
 		"0004_apple_health.sql",
+		"0005_public_context.sql",
 	])
 		sqlite.exec(readFileSync(new URL(`../../worker/migrations/${name}`, import.meta.url), "utf8"));
 	const prepare = vi.fn((sql: string) => {
@@ -224,7 +247,11 @@ function prompt(evidence: Awaited<ReturnType<typeof scan>>) {
 		evidence.sourceCounts,
 		evidence.samplesBySource,
 		evidence.insights,
-		formatHealthEvidence(evidence.health, day.timeZone),
+		[
+			...formatHealthEvidence(evidence.health, day.timeZone),
+			...formatHealthDimensionsEvidence(evidence.healthEvents, day.timeZone),
+		],
+		[],
 	);
 }
 
@@ -382,9 +409,14 @@ describe("daily summary evidence", () => {
 				occurredAt: "2026-09-13T00:01:02Z",
 				content: precision === "second" ? "精确记录" : "",
 			});
+		const at = "2026-09-13T00:01:02Z";
+		expect(formatEvidenceTime(at, "day", day.timeZone)).toBe("2026/09/13");
+		expect(formatEvidenceTime(at, "hour", day.timeZone)).toBe("2026/09/13 08时");
+		expect(formatEvidenceTime(at, "hour", day.timeZone)).not.toMatch(/:/);
 		const text = prompt(await scan(env));
 		expect(text).toContain("[2026/09/13; precision=day]");
 		expect(text).toMatch(/08时; precision=hour/);
+		expect(text).not.toMatch(/08时:\d{2}; precision=hour/);
 		expect(text).toContain("08:01; precision=minute");
 		expect(text).toContain("08:01:02; precision=second");
 		expect(text).toContain("精确记录");
@@ -418,23 +450,14 @@ describe("daily summary evidence", () => {
 				energyKcal: null,
 			})),
 			finance: [
-				{ currency: "CNY", income: 100, expense: -20, transfers: 30, count: 3 },
+				{ currency: "CNY", income: 100, expense: 20, transfers: 30, count: 3 },
 				{ currency: "USD", income: 0, expense: 0, transfers: 0, count: 1 },
 			],
 		};
 		const text = formatInsightsEvidence(insights).join("\n");
-		for (const expected of [
-			"10500",
-			"5.20",
-			"2小时0分",
-			"支出 -20.00",
-			"收入 100.00",
-			"转账/转出 30.00",
-			"CNY",
-			"USD",
-			"心率平均",
-		])
+		for (const expected of ["10500", "5.20", "2小时0分", "心率平均"])
 			expect(text).toContain(expected);
+		expect(text).not.toContain("支出");
 		expect(formatInsightsEvidence(buildDayInsights([], day))).toEqual([]);
 		expect(
 			buildDaySummaryPrompt(
@@ -445,7 +468,7 @@ describe("daily summary evidence", () => {
 				{ journal: [{ time: day.start, precision: "hour", title: "记录" }] },
 				buildDayInsights([], day),
 			),
-		).toContain("无特定生理或收支数值指标");
+		).toContain("当天没有额外的天气、身体或记账证据");
 	});
 });
 
@@ -490,6 +513,9 @@ describe("compact Apple Health summary evidence", () => {
 		expect(sent).toContain("09/12 22:00 入睡");
 		expect(sent).toContain("09/13 07:00 睡眠结束");
 		expect(sent).toContain("实际睡眠 510 分钟");
+		expect(sent).toContain("卧床 600 分钟（不等于实际睡眠）");
+		expect(sent).toContain("夜间清醒 30 分钟");
+		expect(sent).toContain("深睡 120 分钟");
 		expect(sent).toContain("夜间 2 个 GPS 采样");
 		const previousDay = { start: "2026-09-11T16:00:00.000Z", end: day.start };
 		const previous = await streamDayEvents(
@@ -502,6 +528,9 @@ describe("compact Apple Health summary evidence", () => {
 		expect(previous.health?.bedtimes).toHaveLength(1);
 		expect(formatHealthEvidence(previous.health, day.timeZone).join("\n")).not.toContain(
 			"醒来的这一夜",
+		);
+		expect(formatHealthEvidence(previous.health, day.timeZone).join("\n")).toContain(
+			"今晚 09/12 22:00 入睡",
 		);
 	});
 
@@ -569,6 +598,9 @@ describe("compact Apple Health summary evidence", () => {
 		expect(text).toContain("爬楼 4 层");
 		expect(text).toContain("共 1 次运动");
 		expect(text).toContain("09/13 10:15 心率 160 bpm；同时段有 骑行");
+		expect(text).toContain("09/13 10:00 至 09/13 11:00 骑行，锻炼 45 分钟，距离 15.00 公里");
+		expect(text).toContain("2026/09/13 09时 这一小时：爬楼，该小时 4.0 层");
+		expect(text).toContain("2026/09/13 09时 这一小时：这一小时的脚步");
 	});
 
 	it("renders rare pressure/ECG measurements at local times with distinct physiological units", async () => {
@@ -614,6 +646,9 @@ describe("compact Apple Health summary evidence", () => {
 			healthRecord("OxygenSaturation", "2026-09-13T03:00:00Z", "0.96", "%"),
 			healthRecord("OxygenSaturation", "2026-09-13T04:00:00Z", "98", "%"),
 			healthRecord("RespiratoryRate", "2026-09-13T03:00:00Z", "14.5", "count/min"),
+			healthRecord("HeartRateVariabilitySDNN", "2026-09-13T03:01:00Z", "42", "ms"),
+			healthRecord("RestingHeartRate", "2026-09-13T03:02:00Z", "58", "count/min"),
+			healthRecord("VO2Max", "2026-09-13T03:03:00Z", "38.2", "mL/min·kg"),
 			healthRecord("HeartRate", "2026-09-13T05:00:00Z", "60", "count/min"),
 			healthRecord("HeartRate", "2026-09-13T05:30:00Z", "65", "count/min"),
 			healthRecord("HeartRate", "2026-09-13T06:00:00Z", "160", "count/min"),
@@ -635,6 +670,12 @@ describe("compact Apple Health summary evidence", () => {
 		expect(sent).toContain("09/13 09:45 血压 未记录/80 mmHg");
 		expect(sent).toContain("血氧：2 次测量，均值 97.0%");
 		expect(sent).toContain("呼吸频率：1 次测量，均值 14.5 次/分");
+		expect(sent).toContain("当日样本汇总，无时段归属");
+		expect(sent).toContain("心率变异性 HRV：当日样本均值 42.0 ms");
+		expect(sent).toContain("静息心率：当日记录 58 bpm");
+		expect(sent).toContain(
+			"HKQuantityTypeIdentifierVO2Max（单位 mL/min·kg）：1 条观测，原数值范围 38.2–38.2；首条 2026/09/13 11:03:00，原值 38.2",
+		);
 		expect(sent).toContain("09/13 14:00 心率 160 bpm；无同时段活动记录");
 		const ecgLine = sent.split("\n").find((line) => line.includes("心电图测量")) ?? "";
 		expect(ecgLine).toContain("09/13 10:05");
@@ -724,7 +765,7 @@ describe("compact Apple Health summary evidence", () => {
 			healthRecord("HeartRate", "2026-09-12T17:30:00Z", "80", "count/min"),
 		];
 		await putHealthDay(utcDay, inside);
-		const first = await data(await handlePostDaySummary(request(), env));
+		await handlePostDaySummary(request(), env);
 		const before = await readHealthEvents(env.DB, Date.parse(day.start), Date.parse(day.end));
 		await putHealthDay(
 			utcDay,
@@ -738,7 +779,6 @@ describe("compact Apple Health summary evidence", () => {
 		expect(after.map((event) => event.id)).not.toEqual(before.map((event) => event.id));
 		expect(after[0]?.updatedAt).not.toBe(before[0]?.updatedAt);
 		expect((await data(await handleGetDaySummary(env, url()))).stale).toBe(false);
-		expect((await scan(env, false)).inputHash).toBe(first.summary?.inputHash);
 	});
 
 	it("keeps coincident health samples fresh across a virtual-index digit boundary", async () => {
@@ -761,7 +801,7 @@ describe("compact Apple Health summary evidence", () => {
 		const result = await data(await handleGetDaySummary(env, url()));
 		expect(result.eventCount).toBe(2);
 		expect(result.stale).toBe(false);
-		expect((await scan(env, false)).inputHash).toBe(first.summary?.inputHash);
+		expect(result.summary?.inputHash).toBe(first.summary?.inputHash);
 	});
 
 	it("counts dense compact dimensions and every legacy page without reviving replaced health records", async () => {
@@ -879,6 +919,7 @@ describe("saved daily summaries", () => {
 		]);
 		const original = await data(await handlePostDaySummary(request(), env));
 		const hashA = original.summary?.inputHash;
+		const eventsHashA = (await scan(env, false)).inputHash;
 		await putDay(previousDay, [[1, 1, 1, null, null, null], ...inside], [1]);
 		await putDay(currentDay, [
 			[1, 0, 0.02, null, null, null],
@@ -889,20 +930,21 @@ describe("saved daily summaries", () => {
 		);
 		const outside = await data(await handleGetDaySummary(env, url()));
 		expect(outside.stale).toBe(false);
-		expect((await scan(env, false)).inputHash).toBe(hashA);
+		expect((await scan(env, false)).inputHash).toBe(eventsHashA);
+		expect(outside.summary?.inputHash).toBe(hashA);
 		expect(outside.eventCount).toBe(3);
 		await putDay(previousDay, inside, [0]);
-		expect((await scan(env, false)).inputHash).toBe(hashA);
+		expect((await scan(env, false)).inputHash).toBe(eventsHashA);
 		await putDay(previousDay, inside, [1]);
-		expect((await scan(env, false)).inputHash).not.toBe(hashA);
+		expect((await scan(env, false)).inputHash).not.toBe(eventsHashA);
 		await putDay(previousDay, [[57600, 0, 0.5, null, null, null]]);
 		const changed = await data(await handleGetDaySummary(env, url()));
 		expect(changed.stale).toBe(true);
 		expect(changed.eventCount).toBe(2);
-		expect((await scan(env, false)).inputHash).not.toBe(hashA);
+		expect((await scan(env, false)).inputHash).not.toBe(eventsHashA);
 		await putDay(previousDay, inside);
 		expect((await data(await handleGetDaySummary(env, url()))).stale).toBe(false);
-		expect((await scan(env, false)).inputHash).toBe(hashA);
+		expect((await scan(env, false)).inputHash).toBe(eventsHashA);
 	});
 
 	it("reports empty days honestly, never calls AI and releases the lease on rejection", async () => {
@@ -944,6 +986,33 @@ describe("saved daily summaries", () => {
 		expect(next.stale).toBe(false);
 		expect(next.summary?.inputHash).not.toBe(first.summary?.inputHash);
 		expect(sqlite.prepare("SELECT COUNT(*) AS n FROM day_summary_leases").get()?.n).toBe(0);
+	});
+
+	it("does not save public-context that arrived while the model was running", async () => {
+		const { env, sqlite, putDay, run } = setup();
+		await putDay(Date.parse("2026-09-13T00:00:00Z"), [
+			[3600, 31.25, 120.58, null, null, null],
+			[7200, 31.2501, 120.5801, null, null, null],
+		]);
+		const weatherKey = buildWeatherCacheKey({
+			...day,
+			latitude: roundCoordinate(31.25),
+			longitude: roundCoordinate(120.58),
+		});
+		run.mockImplementationOnce(async () => {
+			sqlite
+				.prepare(
+					"INSERT INTO public_context_cache (kind, cache_key, data_json, created_at, expires_at) VALUES ('weather', ?, ?, ?, ?)",
+				)
+				.run(weatherKey, '{"temperatureMax":31}', Date.now(), Date.now() + 3_600_000);
+			return { response: "生成中写入的天气。" };
+		});
+		const result = await data(await handlePostDaySummary(request(), env));
+		expect(result.stale).toBe(true);
+		expect((await data(await handleGetDaySummary(env, url()))).stale).toBe(true);
+		expect((await data(await handleGetDaySummary(env, url()))).summary?.inputHash).toBe(
+			result.summary?.inputHash,
+		);
 	});
 
 	it("marks a summary stale when an import arrives during model generation", async () => {
@@ -1028,5 +1097,120 @@ describe("saved daily summaries", () => {
 			return original(sql);
 		});
 		expect((await data(await handlePostDaySummary(request(), env))).summary).not.toBeNull();
+	});
+
+	it("folds cached public context into the hash and never fetches it on GET", async () => {
+		const { env, sqlite, putDay } = setup();
+		await putDay(Date.parse("2026-09-13T00:00:00Z"), [
+			[3600, 31.25, 120.58, null, null, null],
+			[7200, 31.2501, 120.5801, null, null, null],
+		]);
+		const first = await data(await handlePostDaySummary(request(), env));
+		expect(first.stale).toBe(false);
+		vi.mocked(getDayWeather).mockClear();
+		vi.mocked(getDaySun).mockClear();
+		vi.mocked(getPlaceLabel).mockClear();
+		expect((await data(await handleGetDaySummary(env, url()))).stale).toBe(false);
+		expect(getDayWeather).not.toHaveBeenCalled();
+		expect(getDaySun).not.toHaveBeenCalled();
+		expect(getPlaceLabel).not.toHaveBeenCalled();
+		const weatherKey = buildWeatherCacheKey({
+			...day,
+			latitude: roundCoordinate(31.25),
+			longitude: roundCoordinate(120.58),
+		});
+		sqlite
+			.prepare(
+				"INSERT INTO public_context_cache (kind, cache_key, data_json, created_at, expires_at) VALUES ('weather', ?, ?, ?, ?)",
+			)
+			.run(weatherKey, '{"temperatureMax":31}', Date.now(), Date.now() + 3_600_000);
+		const stale = await data(await handleGetDaySummary(env, url()));
+		expect(stale.stale).toBe(true);
+		expect(stale.summary?.inputHash).toBe(first.summary?.inputHash);
+		expect(getDayWeather).not.toHaveBeenCalled();
+	});
+
+	it("carries the previous diary and optional revision into the next prompt", async () => {
+		const { env, insert, run } = setup();
+		insert();
+		await handlePostDaySummary(request(), env);
+		run.mockResolvedValueOnce({ response: "改过的日记。" });
+		await handlePostDaySummary(request({ ...day, revision: "少写步数" }), env);
+		const sent = String(run.mock.calls.at(-1)?.[1].messages[0]?.content ?? "");
+		expect(sent).toContain("上一则日记");
+		expect(sent).toContain("当天记录了阅读与步行。");
+		expect(sent).toContain("少写步数");
+		expect(sent).toContain("用第一人称");
+		await handlePostDaySummary(request(), env);
+		const freshPrompt = String(run.mock.calls.at(-1)?.[1].messages[0]?.content ?? "");
+		expect(freshPrompt).not.toContain("【上一则日记】");
+		expect(freshPrompt).not.toContain("改过的日记。");
+	});
+});
+
+describe("compact pixiu in diary evidence", () => {
+	it("hashes compact pixiu without virtual ids and skips leftover event rows", async () => {
+		const { env, sqlite, insert, run } = setup();
+		const utcDay = Date.parse("2026-09-13T00:00:00.000Z");
+		const firstAt = Date.parse(day.start);
+		sqlite
+			.prepare("INSERT OR IGNORE INTO sources VALUES (?, ?, 'import', 'pixiu', ?)")
+			.run("pixiu", "貔貅记账", Date.now());
+		const payload = {
+			v: 1,
+			precision: "day",
+			sourceDate: "2026-09-13",
+			timeZone: "Asia/Shanghai",
+			utcOffsetMinutes: 480,
+			columns: [
+				"日期",
+				"交易分类",
+				"交易类型",
+				"流入金额",
+				"流出金额",
+				"币种",
+				"资金账户",
+				"标签",
+				"备注",
+			],
+			rows: [["2026-09-13", "餐饮", "支出", "0.00", "32.00", "CNY", "现金", "", "午饭"]],
+		};
+		sqlite
+			.prepare("INSERT INTO provider_days VALUES ('pixiu', ?, 1, ?, ?, ?, ?, ?, ?, ?)")
+			.run(
+				utcDay,
+				firstAt,
+				firstAt + 1000,
+				200,
+				JSON.stringify({ totals: [] }),
+				JSON.stringify(payload),
+				"hash-a",
+				Date.now(),
+			);
+		insert({
+			id: "legacy-pixiu",
+			sourceId: "pixiu",
+			sourceName: "貔貅记账",
+			precision: "day",
+			title: "旧行",
+			content: "不应重复",
+			data: { 备注: "旧行" },
+		});
+		const evidence = await scan(env);
+		expect(evidence.eventCount).toBe(1);
+		expect(evidence.pixiuEvents).toHaveLength(1);
+		expect(evidence.pixiuEvents[0]?.data).toMatchObject({
+			流出金额: "32.00",
+			sourceDate: "2026-09-13",
+		});
+		expect(prompt(evidence)).not.toContain("旧行");
+		await handlePostDaySummary(request(), env);
+		const sent = String(run.mock.calls.at(-1)?.[1].messages[0]?.content ?? "");
+		expect(sent).toContain("源记账日期，无交易时刻");
+		expect(sent).toContain("32.00");
+		expect(sent).toContain("原分类「餐饮」");
+		expect(sent).not.toContain("日常消费（仅「日常支出」流出）：32.00");
+		const hash = evidence.inputHash;
+		expect((await scan(env, false)).inputHash).toBe(hash);
 	});
 });
