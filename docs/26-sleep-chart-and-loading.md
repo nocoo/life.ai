@@ -61,4 +61,4 @@
 
 发布前对 Caddy 开发入口只读复核：`/api/live` 为 2.0.0 / D1 ok；Gecko、Firefly 均启用，Gecko 密钥已保存；9 月 10 日两个外部来源均为 ready，23 个小时卡片；已有日记存在且当前未过期。没有重生成日记或修改来源设置。
 
-2026-09-15 已随 GitHub 集成部署 2.0.0，Worker 版本 `798e448c-1165-47cb-a7c1-986238ddf930`。最终测试、D1 迁移及 dev / prod 核验见 [GitHub 按日记录的发布证据](27-github.md#验证与发布)。
+2026-09-15 已随 GitHub 集成和缓存管理部署最终 2.0.0，Worker 版本 `07cb27bd-7d66-4b24-b48b-7fcd475a5d89`。最终测试、D1 迁移及 dev / prod 核验见 [GitHub 按日记录的发布证据](27-github.md#验证与发布)。
