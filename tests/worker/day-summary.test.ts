@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DaySummaryQuery, DaySummaryResult } from "../../src/models/ai.js";
 import { packHealthDay } from "../../src/models/apple-health.js";
 import { buildDayInsights, type DayInsights } from "../../src/models/day-insights.js";
+import type { DiarySections } from "../../src/models/diary.js";
 import {
 	FOOTPRINT_DAY_MS,
 	type FootprintPoint,
@@ -53,6 +54,23 @@ const day: DaySummaryQuery = {
 	start: "2026-09-12T16:00:00.000Z",
 	end: "2026-09-13T16:00:00.000Z",
 };
+function diaryResponse(
+	narrative: string,
+	sections: DiarySections = { development: null, writing: null, github: null },
+): string {
+	return JSON.stringify({ version: 1, narrative, sections });
+}
+const externalSections: DiarySections = {
+	development: {
+		summary: "电脑上的 Life.ai 开发线索。",
+		highlights: ["Editor 窗口出现出行记录主题，不代表持续工作。"],
+	},
+	writing: {
+		summary: "发表了一篇通勤主题的文章。",
+		highlights: ["《记录一段通勤》于当天公开发表，写作起点未知。"],
+	},
+	github: null,
+};
 const databases: DatabaseSync[] = [];
 afterEach(() => {
 	for (const db of databases.splice(0)) db.close();
@@ -90,7 +108,7 @@ function setup() {
 	});
 	const run = vi.fn(
 		async (_model: string, _input: { messages: { role: string; content: string }[] }) => ({
-			response: "当天记录了阅读与步行。",
+			response: diaryResponse("当天记录了阅读与步行。"),
 		}),
 	);
 	const env: WorkerEnv = {
@@ -246,7 +264,7 @@ describe("diary data sources and movement", () => {
 		const clock = vi.spyOn(Date, "now").mockReturnValue(now);
 		run.mockImplementationOnce(async () => {
 			clock.mockReturnValue(now + 190_000);
-			return { response: "较慢的完整资料仍可成功保存。" };
+			return { response: diaryResponse("较慢的完整资料仍可成功保存。") };
 		});
 		expect((await data(await handlePostDaySummary(request(), env))).summary?.content).toBe(
 			"较慢的完整资料仍可成功保存。",
@@ -315,10 +333,16 @@ describe("diary data sources and movement", () => {
 	it("uses external-only evidence, cached GETs and stable hashes; disabling a source marks the diary stale", async () => {
 		const { env, sqlite, run } = setup();
 		seedExternal(sqlite);
+		run.mockResolvedValueOnce({
+			response: diaryResponse("个人活动材料不足，电脑与创作信息见下方。", externalSections),
+		});
 		const fetch = vi.fn();
 		vi.stubGlobal("fetch", fetch);
 		const saved = await data(await handlePostDaySummary(request(), env));
 		expect(saved).toMatchObject({ eventCount: 2, stale: false });
+		expect(saved.summary?.sections).toEqual(externalSections);
+		const stored = sqlite.prepare("SELECT content FROM day_summaries").get()?.content;
+		expect(JSON.parse(String(stored))).toMatchObject({ version: 1, sections: externalSections });
 		const userPrompt =
 			run.mock.calls[0]?.[1].messages.find((message) => message.role === "user")?.content ?? "";
 		expect(userPrompt).toContain("电脑前台活动");
@@ -327,6 +351,9 @@ describe("diary data sources and movement", () => {
 		expect(userPrompt).toContain("09:02:03");
 		expect(userPrompt).toContain("测试作者");
 		expect(userPrompt).toContain("https://lizheng.blog/2026/09/commute");
+		const personalSamples = userPrompt.split("【有时刻的个人事件样本")[1]?.split("【独立创作区")[0];
+		expect(personalSamples).not.toContain("Life.ai 出行记录");
+		expect(personalSamples).not.toContain("记录一段通勤");
 		expect(await data(await handleGetDaySummary(env, url()))).toEqual(saved);
 		sqlite.exec("UPDATE day_source_cache SET fetched_at = fetched_at + 1");
 		expect((await data(await handleGetDaySummary(env, url()))).stale).toBe(false);
@@ -336,9 +363,27 @@ describe("diary data sources and movement", () => {
 		expect(disabled.summary).toEqual(saved.summary);
 		expect(fetch).not.toHaveBeenCalled();
 	});
+	it("rejects an omitted writing card when an actual article was published", async () => {
+		const { env, sqlite, run } = setup();
+		seedExternal(sqlite);
+		run.mockResolvedValueOnce({ response: diaryResponse("少量个人线索。", externalSections) });
+		const saved = await data(await handlePostDaySummary(request(), env));
+		run.mockResolvedValueOnce({
+			response: diaryResponse("少量个人线索。", { ...externalSections, writing: null }),
+		});
+		await expect(handlePostDaySummary(request(), env)).rejects.toMatchObject({
+			status: 502,
+			code: "invalid_diary_format",
+		});
+		expect((await data(await handleGetDaySummary(env, url()))).summary).toEqual(saved.summary);
+		expect(sqlite.prepare("SELECT COUNT(*) AS n FROM day_summary_leases").get()?.n).toBe(0);
+	});
 	it("keeps the previous diary when an enabled source fails before or after AI runs", async () => {
 		const { env, sqlite, run } = setup();
 		seedExternal(sqlite);
+		run.mockResolvedValueOnce({
+			response: diaryResponse("个人活动材料不足，电脑与创作信息见下方。", externalSections),
+		});
 		const saved = await data(await handlePostDaySummary(request(), env));
 		sqlite.exec("UPDATE day_source_cache SET fetched_at = 0 WHERE provider = 'firefly'");
 		vi.stubGlobal(
@@ -354,7 +399,7 @@ describe("diary data sources and movement", () => {
 		sqlite.prepare("UPDATE day_source_cache SET fetched_at = ?").run(Date.now());
 		run.mockImplementationOnce(async () => {
 			sqlite.exec("UPDATE day_source_cache SET fetched_at = 0 WHERE provider = 'firefly'");
-			return { response: "Do not replace the saved diary" };
+			return { response: diaryResponse("Do not replace the saved diary", externalSections) };
 		});
 		await expect(handlePostDaySummary(request(), env)).rejects.toMatchObject({ status: 503 });
 		expect((await data(await handleGetDaySummary(env, url()))).summary).toEqual(saved.summary);
@@ -648,7 +693,7 @@ describe("daily summary evidence", () => {
 				{ journal: [{ time: day.start, precision: "hour", title: "记录" }] },
 				buildDayInsights([], day),
 			),
-		).toContain("当天没有额外的天气、身体或记账证据");
+		).toContain("当天没有额外的身体证据");
 	});
 });
 
@@ -1162,12 +1207,72 @@ describe("saved daily summaries", () => {
 		run.mockRejectedValueOnce(new Error("upstream secret must not leak"));
 		await expect(handlePostDaySummary(request(), env)).rejects.toMatchObject({ status: 502 });
 		expect((await data(await handleGetDaySummary(env, url()))).summary).toEqual(first.summary);
-		run.mockResolvedValueOnce({ response: "新的当天总结。" });
+		run.mockResolvedValueOnce({ response: diaryResponse("新的当天总结。") });
 		const next = await data(await handlePostDaySummary(request(), env));
 		expect(next.summary?.content).toBe("新的当天总结。");
 		expect(next.stale).toBe(false);
 		expect(next.summary?.inputHash).not.toBe(first.summary?.inputHash);
 		expect(sqlite.prepare("SELECT COUNT(*) AS n FROM day_summary_leases").get()?.n).toBe(0);
+	});
+
+	it.each([
+		"未经结构化的正文。",
+		'{"version":1,"narrative":',
+		JSON.stringify({
+			version: 1,
+			narrative: "字段位置错误",
+			development: null,
+			writing: null,
+			github: null,
+		}),
+		JSON.stringify({
+			version: 1,
+			narrative: "缺少字段",
+			sections: { development: null, writing: null },
+		}),
+		diaryResponse("没有来源却虚构了 GitHub 卡片。", {
+			development: null,
+			writing: null,
+			github: { summary: "虚构提交", highlights: ["无对应来源"] },
+		}),
+	])(
+		"preserves the last successful document and releases the lease on invalid AI output %#",
+		async (response) => {
+			const { env, sqlite, insert, run } = setup();
+			insert();
+			const saved = await data(await handlePostDaySummary(request(), env));
+			const stored = sqlite.prepare("SELECT * FROM day_summaries").get();
+			run.mockResolvedValueOnce({ response });
+			await expect(handlePostDaySummary(request(), env)).rejects.toMatchObject({
+				status: 502,
+				code: "invalid_diary_format",
+			});
+			expect(sqlite.prepare("SELECT * FROM day_summaries").get()).toEqual(stored);
+			expect((await data(await handleGetDaySummary(env, url()))).summary).toEqual(saved.summary);
+			expect(sqlite.prepare("SELECT COUNT(*) AS n FROM day_summary_leases").get()?.n).toBe(0);
+		},
+	);
+
+	it("reads a legacy plain-text diary unchanged until a valid structured replacement succeeds", async () => {
+		const { env, sqlite, insert, run } = setup();
+		insert();
+		await handlePostDaySummary(request(), env);
+		const original = "以前保存的日记。\n\n河畔读书的一天。";
+		sqlite
+			.prepare("UPDATE day_summaries SET content = ?, input_hash = 'previous-prompt-version'")
+			.run(original);
+		const read = await data(await handleGetDaySummary(env, url()));
+		expect(read.summary?.content).toBe(original);
+		expect(read.summary?.sections).toBeUndefined();
+		expect(read.stale).toBe(true);
+		run.mockResolvedValueOnce({ response: "invalid new output" });
+		await expect(handlePostDaySummary(request(), env)).rejects.toMatchObject({
+			code: "invalid_diary_format",
+		});
+		expect((await data(await handleGetDaySummary(env, url()))).summary).toEqual(read.summary);
+		const next = await data(await handlePostDaySummary(request(), env));
+		expect(next.stale).toBe(false);
+		expect(next.summary?.sections).toEqual({ development: null, writing: null, github: null });
 	});
 
 	it("marks a saved diary stale when only the writing contract changes, without overwriting it", async () => {
@@ -1244,7 +1349,7 @@ describe("saved daily summaries", () => {
 				}),
 				env,
 			);
-			return { response: "依据生成开始时的材料。" };
+			return { response: diaryResponse("依据生成开始时的材料。") };
 		});
 		expect((await data(await handlePostDaySummary(request(), env))).stale).toBe(true);
 		expect((await data(await handleGetDaySummary(env, url()))).stale).toBe(true);
@@ -1267,7 +1372,7 @@ describe("saved daily summaries", () => {
 					"INSERT INTO public_context_cache (kind, cache_key, data_json, created_at, expires_at) VALUES ('weather', ?, ?, ?, ?)",
 				)
 				.run(weatherKey, '{"temperatureMax":31}', Date.now(), Date.now() + 3_600_000);
-			return { response: "生成中写入的天气。" };
+			return { response: diaryResponse("生成中写入的天气。") };
 		});
 		const result = await data(await handlePostDaySummary(request(), env));
 		expect(result.stale).toBe(true);
@@ -1282,7 +1387,7 @@ describe("saved daily summaries", () => {
 		insert();
 		run.mockImplementationOnce(async () => {
 			insert({ title: "迟到数据" });
-			return { response: "开始生成时的记录。" };
+			return { response: diaryResponse("开始生成时的记录。") };
 		});
 		const result = await data(await handlePostDaySummary(request(), env));
 		expect(result.stale).toBe(true);
@@ -1306,7 +1411,7 @@ describe("saved daily summaries", () => {
 			status: 409,
 			code: "generation_in_progress",
 		});
-		finish?.({ response: "并发生成成功。" });
+		finish?.({ response: diaryResponse("并发生成成功。") });
 		await expect(first).resolves.toBeInstanceOf(Response);
 		sqlite
 			.prepare("INSERT INTO day_summary_leases VALUES (?, ?, 'expired', 0)")
@@ -1360,7 +1465,7 @@ describe("saved daily summaries", () => {
 			sqlite
 				.prepare("UPDATE day_summary_leases SET lease_token='successor', leased_until=?")
 				.run(Date.now() + 90_000);
-			return { response: "不能保存的旧结果。" };
+			return { response: diaryResponse("不能保存的旧结果。") };
 		});
 		await expect(handlePostDaySummary(request(), env)).rejects.toMatchObject({
 			status: 409,
@@ -1434,7 +1539,7 @@ describe("saved daily summaries", () => {
 		const { env, insert, run } = setup();
 		insert();
 		await handlePostDaySummary(request(), env);
-		run.mockResolvedValueOnce({ response: "改过的日记。" });
+		run.mockResolvedValueOnce({ response: diaryResponse("改过的日记。") });
 		await handlePostDaySummary(request({ ...day, revision: "少写步数" }), env);
 		const messages = run.mock.calls.at(-1)?.[1].messages ?? [];
 		const sent = messages.find((message) => message.role === "user")?.content ?? "";
@@ -1448,6 +1553,30 @@ describe("saved daily summaries", () => {
 			run.mock.calls.at(-1)?.[1].messages.find((message) => message.role === "user")?.content ?? "";
 		expect(freshPrompt).not.toContain("【上一则日记】");
 		expect(freshPrompt).not.toContain("改过的日记。");
+	});
+	it("keeps the whole structured previous draft when feedback refers to a late card", async () => {
+		const { env, sqlite, insert, run } = setup();
+		insert();
+		await handlePostDaySummary(request(), env);
+		const section = {
+			summary: "原来的项目记录。",
+			highlights: Array(5).fill("原稿线索".repeat(90)),
+		};
+		const previous = diaryResponse("原来的生活段落。", {
+			development: section,
+			writing: section,
+			github: {
+				...section,
+				highlights: [...section.highlights.slice(0, 4), "末尾 GitHub 卡片的具体措辞"],
+			},
+		});
+		expect(previous.length).toBeGreaterThan(4_000);
+		sqlite.prepare("UPDATE day_summaries SET content = ?").run(previous);
+		await handlePostDaySummary(request({ ...day, revision: "请修改末尾的 GitHub 卡片" }), env);
+		const sent =
+			run.mock.calls.at(-1)?.[1].messages.find((message) => message.role === "user")?.content ?? "";
+		expect(sent).toContain(previous);
+		expect(sent).toContain("末尾 GitHub 卡片的具体措辞");
 	});
 });
 

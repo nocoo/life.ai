@@ -44,7 +44,7 @@ export function FinanceDayCard({ finance }: { finance: FinanceDay }) {
 				]}
 			/>
 			<LayerCard.Header>
-				<StoryCardHeading icon={Wallet} title="一日账目" subtitle="一天的收支与生活片段" />
+				<StoryCardHeading icon={Wallet} title="一日账目" />
 			</LayerCard.Header>
 			<LayerCard.Body className="space-y-5">
 				{finance.currencies.map((currency) => (

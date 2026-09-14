@@ -901,9 +901,28 @@
 	margin-top: 14px;
 }
 
-.story-summary-meta,
 .story-summary-actions {
 	margin-top: 18px;
+}
+
+.story-diary {
+	display: grid;
+	gap: 16px;
+}
+
+.story-summary-section-intro,
+.story-summary-highlights {
+	font-size: 13px;
+	line-height: 1.85;
+	overflow-wrap: anywhere;
+}
+
+.story-summary-highlights {
+	display: grid;
+	gap: 8px;
+	margin-top: 12px;
+	padding-left: 18px;
+	list-style: disc;
 }
 
 .story-total-workouts,

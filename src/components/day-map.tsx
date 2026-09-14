@@ -16,6 +16,7 @@ import { formatLocalClock } from "../viewmodels/format";
 import { generalSettingsStore } from "../viewmodels/general-settings-view-model";
 import { selectTrackEndpoints } from "../viewmodels/timeline-view-model";
 import { StoryCardHeading } from "./story-card-heading";
+import { StoryCardInfo } from "./story-card-info";
 
 const OSM_TILE = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 const OSM_ATTRIBUTION =
@@ -252,6 +253,12 @@ export function DayMap({
 
 	return (
 		<LayerCard className="story-map story-card">
+			<StoryCardInfo
+				label={title ?? (compact ? "全天足迹" : "足迹")}
+				notes={[
+					"速度按相邻采样点估算；编号圈对应区域附近的采样速度。定位断档不能补成连续行程或停留。",
+				]}
+			/>
 			<LayerCard.Header>
 				<StoryCardHeading
 					icon={MapIcon}
@@ -301,9 +308,6 @@ export function DayMap({
 								{style.label} {style.range}
 							</span>
 						))}
-						<Text as="p" size="xs" tone="muted" className="w-full">
-							按相邻采样点估算；编号圈对应区域附近的采样速度。
-						</Text>
 					</section>
 				) : null}
 			</LayerCard.Body>

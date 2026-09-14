@@ -289,7 +289,10 @@ describe("diary evidence formatting", () => {
 			{ ...window, insights: daily, health: null, pixiuEvents: [] },
 			{ getDaySun: sun, getDayWeather: async () => null, getPlaceLabel: label },
 		);
-		expect(lines).toEqual(["- 天光：极夜，没有日出日落"]);
+		expect(lines).toEqual([
+			"【第二层：天气与天光，辅助理解个人活动】",
+			"- 天光：极夜，没有日出日落",
+		]);
 		expect(sun).toHaveBeenCalledOnce();
 		expect(label).not.toHaveBeenCalled();
 		expect(await cachedPublicContextFingerprint(env, window, daily)).toContain('"sun":null');
@@ -713,7 +716,7 @@ describe("diary evidence formatting", () => {
 		);
 		expect(unlabeled.some((line) => line.includes("场所未知"))).toBe(true);
 		expect(unlabeled.some((line) => line.includes("日出"))).toBe(true);
-		expect(unlabeled.some((line) => line.includes("天气"))).toBe(false);
+		expect(unlabeled.some((line) => line.startsWith("- 天气："))).toBe(false);
 	});
 
 	it("fingerprints D1 public-context cache without calling upstream APIs", async () => {

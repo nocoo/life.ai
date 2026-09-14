@@ -35,12 +35,42 @@ export function startAiFixture() {
 					{ status: 503 },
 				);
 			if (body.model === "life-test-slow") await Bun.sleep(800);
+			const narrative =
+				"今天记录了晨间阅读和步行，健康与收支数据已汇入实录。现有记录呈现了这一天的活动，未记录的时段保持留白。";
+			const document = {
+				version: 1,
+				narrative,
+				sections: {
+					development: input.includes("无对应来源记录，development 必须为 null。")
+						? null
+						: {
+								summary: "电脑上出现了 Life.ai 的开发线索。",
+								highlights: ["Editor 窗口包含出行记录主题，前台时长不代表本人持续工作。"],
+							},
+					writing: input.includes("无对应来源记录，writing 必须为 null。")
+						? null
+						: {
+								summary: "发表了一篇通勤主题的文章。",
+								highlights: ["《记录一段通勤》在这一天公开发表，不能据此判断开始写作的时间。"],
+							},
+					github: input.includes("无对应来源记录，github 必须为 null。")
+						? null
+						: {
+								summary: "GitHub 留下了项目提交与 PR 活动。",
+								highlights: ["仓库记录可用于理解项目进展，自动化提交与合并不等于本人逐项操作。"],
+							},
+				},
+			};
 			const text =
 				body.model === "life-test-empty"
 					? ""
 					: /收到|exactly: OK/.test(input)
 						? "收到"
-						: "今天记录了晨间阅读和步行，健康与收支数据已汇入实录。现有记录呈现了这一天的活动，未记录的时段保持留白。";
+						: body.model === "life-test-invalid-json"
+							? '{"version":1,"narrative":'
+							: body.model === "life-test-invalid-fields"
+								? JSON.stringify({ ...document, sections: { github: {} } })
+								: JSON.stringify(document);
 			if (url.pathname === "/v1/responses")
 				return Response.json({
 					id: "resp_life_fixture",

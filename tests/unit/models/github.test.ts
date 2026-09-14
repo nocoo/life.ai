@@ -121,4 +121,44 @@ describe("GitHub daily events", () => {
 		expect(text).toContain("创建 PR");
 		expect(text).toContain("合并或关闭不证明由本人操作");
 	});
+
+	it("reduces busy repositories to counts and representative records while retaining rare PR signals", () => {
+		const commits = Array.from({ length: 600 }, (_, index) => ({
+			...githubCommit(index + 1, new Date(Date.parse(query.start) + index * 60_000).toISOString()),
+			commit: {
+				message: `自动提交 ${index}`,
+				author: { date: new Date(Date.parse(query.start) + index * 60_000).toISOString() },
+			},
+		}));
+		const events = githubDayEvents(
+			account,
+			commits,
+			[githubPull(1, { title: "少量但重要的 PR", created_at: "2026-09-10T00:10:00Z" })],
+			query,
+		);
+		const original = JSON.stringify(events);
+		const text = formatDaySourceEvidence(events, query.timeZone).join("\n");
+		expect(text).toContain("601 条活动");
+		expect(text).toContain('"Commit":600');
+		expect(text).toContain("少量但重要的 PR");
+		expect(text).toContain("自动提交 0");
+		expect(text).toContain("自动提交 599");
+		expect(text.length).toBeLessThan(2_000);
+		expect(JSON.stringify(events)).toBe(original);
+	});
+
+	it("bounds the auxiliary evidence even across hundreds of repositories and declares omitted coverage", () => {
+		const commits = Array.from({ length: 200 }, (_, index) => ({
+			...githubCommit(index + 1),
+			repository: { full_name: `life-fixture/project-${index}` },
+		}));
+		const text = formatDaySourceEvidence(
+			githubDayEvents(account, commits, [], query),
+			query.timeZone,
+		).join("\n");
+		expect(text).toContain("200 个仓库");
+		expect(text).toContain("未展示不代表没有活动");
+		expect(text.length).toBeLessThan(13_000);
+		expect(formatDaySourceEvidence([], query.timeZone)).toEqual([]);
+	});
 });

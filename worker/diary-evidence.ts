@@ -33,7 +33,8 @@ import type { WorkerEnv } from "./types.js";
 export const MAX_DIARY_PLACES = 4;
 
 export function formatDaySourceEvidence(events: LifeEvent[], timeZone: string): string[] {
-	return events.flatMap((event) => {
+	const githubGroups = new Map<string, LifeEvent[]>();
+	const lines = events.flatMap((event) => {
 		const clock = formatEvidenceTime(event.occurredAt, event.precision, timeZone);
 		const computer =
 			event.sourceId === "gecko" ? computerActivitySchema.safeParse(event.data) : null;
@@ -41,10 +42,11 @@ export function formatDaySourceEvidence(events: LifeEvent[], timeZone: string): 
 			return [
 				`- 电脑前台活动 ${clock} 这一小时（不等同于连续工作，已过滤闲置）：${JSON.stringify({
 					activeSeconds: computer.data.activeSeconds,
-					apps: computer.data.apps.map((app, index) => ({
+					appCount: computer.data.apps.length,
+					apps: computer.data.apps.slice(0, 6).map((app) => ({
 						name: app.name,
 						seconds: app.seconds,
-						titles: index < 6 ? app.titles.slice(0, 3).map((title) => title.slice(0, 160)) : [],
+						titles: app.titles.slice(0, 2).map((title) => title.slice(0, 120)),
 					})),
 				})}`,
 			];
@@ -55,19 +57,54 @@ export function formatDaySourceEvidence(events: LifeEvent[], timeZone: string): 
 				`- ${clock} 公开发表文章：${JSON.stringify({ title: event.title, summary: event.content, author: article.data.author, url: article.data.url })}`,
 			];
 		const github = event.sourceId === "github" ? githubActivitySchema.safeParse(event.data) : null;
-		if (github?.success)
-			return [
-				`- ${clock} GitHub ${GITHUB_ACTION_LABELS[github.data.action]}：${JSON.stringify({
-					account: github.data.account.login,
-					repository: github.data.repository,
-					title: event.title,
-					url: github.data.url,
-					number: github.data.number,
-					sha: github.data.sha,
-				})}。提交按作者时间；PR 属于该账号创建的 PR，合并或关闭不证明由本人操作，也不代表连续工作时长。`,
-			];
+		if (github?.success) {
+			const group = githubGroups.get(github.data.repository) ?? [];
+			group.push(event);
+			githubGroups.set(github.data.repository, group);
+		}
 		return [];
 	});
+	if (githubGroups.size) {
+		lines.push(
+			`- GitHub 共 ${[...githubGroups.values()].reduce((count, group) => count + group.length, 0)} 条活动，涉及 ${githubGroups.size} 个仓库。提交按作者时间；PR 属于该账号创建的 PR，合并或关闭不证明由本人操作，也不代表连续工作时长。机器或 AI 可以自动提交；以下只取各项目的代表性记录，不是完整操作清单。`,
+		);
+		// Keep each project's counts and a few spread-out examples instead of repeating every commit.
+		let remaining = 12_000;
+		let shown = 0;
+		for (const [repository, group] of [...githubGroups].sort(([a], [b]) => a.localeCompare(b))) {
+			const counts: Record<string, number> = {};
+			const actionExamples = new Map<string, LifeEvent>();
+			for (const event of group) {
+				const { action } = githubActivitySchema.parse(event.data);
+				const label = GITHUB_ACTION_LABELS[action];
+				counts[label] = (counts[label] ?? 0) + 1;
+				if (!actionExamples.has(action)) actionExamples.set(action, event);
+			}
+			const ordered = [...group].sort((a, b) => a.occurredAt.localeCompare(b.occurredAt));
+			const examples = [
+				...new Set([
+					ordered[0] as LifeEvent,
+					ordered[Math.floor(ordered.length / 2)] as LifeEvent,
+					ordered.at(-1) as LifeEvent,
+					...actionExamples.values(),
+				]),
+			].map((event) => ({
+				time: formatEvidenceTime(event.occurredAt, event.precision, timeZone),
+				action: GITHUB_ACTION_LABELS[githubActivitySchema.parse(event.data).action],
+				title: event.title.slice(0, 160),
+			}));
+			const line = `- GitHub 项目：${JSON.stringify({ repository, counts, examples })}`;
+			if (line.length > remaining) break;
+			lines.push(line);
+			remaining -= line.length;
+			shown++;
+		}
+		if (shown < githubGroups.size)
+			lines.push(
+				`- 辅助区篇幅限制：上列 ${shown}/${githubGroups.size} 个仓库，未展示不代表没有活动。`,
+			);
+	}
+	return lines;
 }
 
 export interface DiaryPublicApi {
@@ -428,9 +465,14 @@ export async function collectDiaryEvidence(
 				},
 			)}`,
 	);
-	return [
+	const contextLines = [
 		...formatWeatherEvidence(weather, input.timeZone),
 		...formatSunEvidence(sun, input.timeZone),
+	];
+	return [
+		...(places.length || dailyNames.length || input.pixiuEvents.length
+			? ["【生活主线：GPS 与逐笔消费备注，优先理解】"]
+			: []),
 		...(places.length
 			? [
 					"- 以下关键位置按时间排列，保留离开再返回。定位时段并非实际抵达、离开或持续停留时间，采样空档未知；这是大致区域，场所类型没有直接标注，可结合记账与睡眠等线索理解。",
@@ -449,6 +491,7 @@ export async function collectDiaryEvidence(
 				]
 			: []),
 		...formatSpendingEvidence(input.pixiuEvents),
+		...(contextLines.length ? ["【第二层：天气与天光，辅助理解个人活动】", ...contextLines] : []),
 	];
 }
 

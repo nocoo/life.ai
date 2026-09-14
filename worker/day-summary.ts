@@ -7,6 +7,12 @@ import {
 	validateSummaryQuery,
 } from "../src/models/ai.js";
 import { createDayInsightsCollector, type DayInsights } from "../src/models/day-insights.js";
+import {
+	type DiaryDocument,
+	type DiarySections,
+	parseDiaryDocument,
+	readDiaryContent,
+} from "../src/models/diary.js";
 import { footprintDayEvents } from "../src/models/footprint.js";
 import {
 	type GeneralSettings,
@@ -175,6 +181,8 @@ export async function streamDayEvents(
 		if (!withEvidence) return;
 		const source = event.sourceName;
 		sourceCounts[source] = (sourceCounts[source] ?? 0) + 1;
+		// These sources have separate evidence and cards; do not duplicate their logs in the life story.
+		if (["gecko", "firefly", "github"].includes(event.sourceId)) return;
 		if (!buckets.has(source) && buckets.size < MAX_SAMPLED_SOURCES) buckets.set(source, new Map());
 		const sourceBuckets = buckets.get(source);
 		if (sourceBuckets) {
@@ -438,12 +446,13 @@ export function buildDaySummaryPrompt(
 	diaryEvidence: string[] = [],
 	previous?: { content: string; revision?: string },
 	personalContext: string[] = [],
+	sourceEvidence: Partial<Record<keyof DiarySections, string[]>> = {},
 ): string {
 	const statsLines = Object.entries(sourceCounts)
 		.slice(0, MAX_SAMPLED_SOURCES)
 		.map(([source, count]) => `- ${source.slice(0, 80)}: 共 ${count} 条记录`);
 
-	const evidenceLines = [...diaryEvidence, ...formatInsightsEvidence(insights), ...healthEvidence];
+	const healthLines = [...formatInsightsEvidence(insights), ...healthEvidence];
 
 	const samples = Object.entries(samplesBySource)
 		.flatMap(([source, list]) => list.map((item) => ({ ...item, source })))
@@ -454,29 +463,42 @@ export function buildDaySummaryPrompt(
 	const dailySamples = samples.filter((item) => item.precision === "day").map(sampleLine);
 
 	const previousParts: string[] = [];
-	if (previous?.content) previousParts.push(`【上一则日记】\n${previous.content.slice(0, 4_000)}`);
+	// The stored document is bounded by the AI transport's 16,000-character limit.
+	// Keep its complete JSON, including late cards, when feedback refers to the previous wording.
+	if (previous?.content) previousParts.push(`【上一则日记】\n${previous.content.slice(0, 16_000)}`);
 	if (previous?.revision)
 		previousParts.push(
 			`【作者希望这次改动】\n${previous.revision.slice(0, 2_000)}\n请吸收意见后重写，不要复述意见本身。`,
 		);
 	const previousBlock = previousParts.length ? `\n\n${previousParts.join("\n\n")}` : "";
 
-	return `请为 ${date}（展示时区 ${timeZone}）写当天生活实录。以下是这一天的材料；联系线索，还原最有可能发生的场景。
+	return `请为 ${date}（展示时区 ${timeZone}）写当天生活实录，遵守系统给定的 JSON 结构。材料已经分层；记录多不代表重要，先用 GPS 与消费备注还原个人生活，再单独理解开发、文章和 GitHub。
 
-${personalContext.length ? `【用户确认的地点与作息背景，与当日观测分开】\n${personalContext.join("\n")}\n\n` : ""}【有时刻的事件样本，跨来源按时间排列】
+${personalContext.length ? `【用户确认的地点与作息背景，与当日观测分开】\n${personalContext.join("\n")}\n\n` : ""}${diaryEvidence.join("\n")}
+
+【有时刻的个人事件样本，跨来源按时间排列】
 ${timedSamples.join("\n")}
 
 【只有日期的事件样本，无日内顺序】
 ${dailySamples.join("\n")}
 
-【完整日窗口的环境、身体与生活证据，按需选材】
-${evidenceLines.length > 0 ? evidenceLines.join("\n") : "- 当天没有额外的天气、身体或记账证据"}
+【第二层：完整日窗口的身体证据，辅助生活主线，不写指标清单】
+${healthLines.length > 0 ? healthLines.join("\n") : "- 当天没有额外的身体证据"}
+
+【独立创作区 → sections.writing；低频但重要，不得被开发日志挤掉】
+${sourceEvidence.writing?.length ? sourceEvidence.writing.join("\n") : "无对应来源记录，writing 必须为 null。"}
+
+【独立开发区 → sections.development；电脑观测不等于本人持续工作】
+${sourceEvidence.development?.length ? sourceEvidence.development.join("\n") : "无对应来源记录，development 必须为 null。"}
+
+【独立 GitHub 区 → sections.github；按项目理解，自动化活动只是辅助信号】
+${sourceEvidence.github?.length ? sourceEvidence.github.join("\n") : "无对应来源记录，github 必须为 null。"}
 
 【数据覆盖，仅供判断依据多少，不写入日记】
 总事件数: ${eventCount} 条
 ${statsLines.join("\n")}${previousBlock}
 
-${personalContext.length ? "个人背景最后核对：如果设置了作息，只按本人习惯和同一时区下的实测钟点理解早晚，不按常见作息判断异常；习惯不能填入记录空白。配置中的地点不是当天到访清单，家附近的单点也不是全天在家的证明。\n\n" : ""}落笔前再检查：这一天最值得留下的事情是什么？消费备注有没有真正改变你的理解？选择最有根据的解释，让消费、移动与身体活动在场景里相遇。把关键猜测自然标明，不给只有日期的账目补交易先后，也不把睡眠或定位的记录空白写成确定经历。删掉没有线索的动作、内心独白和结尾复述。只有一两条有效线索时，只写一段、不超过 100 字。请直接输出实录正文，不展示检查过程。`;
+${personalContext.length ? "个人背景最后核对：如果设置了作息，只按本人习惯和同一时区下的实测钟点理解早晚，不按常见作息判断异常；习惯不能填入记录空白。配置中的地点不是当天到访清单，家附近的单点也不是全天在家的证明。\n\n" : ""}输出前静默自检：生活正文是否仍以 GPS 和消费备注为主，天气与健康作为支持？单篇文章有没有得到重视？开发和 GitHub 是否主要在各自卡片，未被写成人持续工作的证明？只有一两条个人线索时，narrative 只写一段、不超过 100 字；只有电脑/GitHub 时，只写一句不超过 60 字的个人生活资料不足说明，不复述数字活动、不猜测本人操作或监看。保留日期精度与备注中的反证，不把记录空白写成经历。最后检查 JSON 能否解析、version 是否为 1、narrative 是否非空、三个卡片是否都在 sections 内、无记录时是否为 null、summary 与 highlights 的类型和长度是否正确；修正后只输出 JSON，不展示检查过程。`;
 }
 
 /**
@@ -580,7 +602,7 @@ export async function handleGetDaySummary(env: WorkerEnv, url: URL): Promise<Res
 		timeZone: row.timezone,
 		start: row.start_at,
 		end: row.end_at,
-		content: row.content,
+		...readDiaryContent(row.content),
 		provider: row.provider,
 		model: row.model,
 		generatedAt: new Date(row.generated_at).toISOString(),
@@ -667,7 +689,20 @@ export async function handlePostDaySummary(request: Request, env: WorkerEnv): Pr
 			pixiuEvents,
 			settings,
 		});
-		diaryEvidence.push(...formatDaySourceEvidence(external.events, query.timeZone));
+		const sourceEvidence = {
+			development: formatDaySourceEvidence(
+				external.events.filter((event) => event.sourceId === "gecko"),
+				query.timeZone,
+			),
+			writing: formatDaySourceEvidence(
+				external.events.filter((event) => event.sourceId === "firefly"),
+				query.timeZone,
+			),
+			github: formatDaySourceEvidence(
+				external.events.filter((event) => event.sourceId === "github"),
+				query.timeZone,
+			),
+		};
 		const inputHashWithContext = await foldSummaryInputHash(
 			env,
 			query,
@@ -694,6 +729,7 @@ export async function handlePostDaySummary(request: Request, env: WorkerEnv): Pr
 					? { content: "", revision: query.revision }
 					: undefined,
 			formatPersonalContext(settings),
+			sourceEvidence,
 		);
 
 		const { content, provider, model } = await generateAiText(
@@ -703,6 +739,20 @@ export async function handlePostDaySummary(request: Request, env: WorkerEnv): Pr
 			DIARY_OUTPUT_TOKENS,
 			{ system: DIARY_SYSTEM_PROMPT, reasoning: true },
 		);
+		let document: DiaryDocument;
+		try {
+			document = parseDiaryDocument(content);
+			for (const key of ["development", "writing", "github"] as const) {
+				if ((document.sections[key] !== null) !== sourceEvidence[key].length > 0)
+					throw new Error("Diary section does not match its source evidence");
+			}
+		} catch {
+			throw new ApiError(
+				502,
+				"invalid_diary_format",
+				"AI 返回的日记格式不完整或不符合要求，请重新生成；已有日记会保留。",
+			);
+		}
 		const currentExternal = await readDaySources(env, query);
 		if (currentExternal.sources.some((source) => source.state !== "ready"))
 			throw new ApiError(
@@ -751,7 +801,7 @@ export async function handlePostDaySummary(request: Request, env: WorkerEnv): Pr
 					query.timeZone,
 					query.start,
 					query.end,
-					content,
+					JSON.stringify(document),
 					provider,
 					model,
 					inputHashWithContext,
@@ -773,7 +823,8 @@ export async function handlePostDaySummary(request: Request, env: WorkerEnv): Pr
 			timeZone: query.timeZone,
 			start: query.start,
 			end: query.end,
-			content,
+			content: document.narrative,
+			sections: document.sections,
 			provider,
 			model,
 			generatedAt: new Date(generatedAt).toISOString(),

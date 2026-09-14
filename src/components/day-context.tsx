@@ -6,6 +6,7 @@ import { type DayContextState, dayContextStore } from "../viewmodels/day-context
 import { formatDurationMinutes } from "../viewmodels/format";
 import { SolarSkeleton, WeatherSkeleton } from "./page-skeletons";
 import { StoryCardHeading, StoryMetricLabel } from "./story-card-heading";
+import { StoryCardInfo } from "./story-card-info";
 
 export function DayContextCard({
 	context,
@@ -20,12 +21,39 @@ export function DayContextCard({
 	const sun = context?.sun;
 	return (
 		<LayerCard className="day-context-card story-card">
+			<StoryCardInfo
+				label="天气与天光"
+				notes={[
+					hasLocation ? `参考区域：${reference}` : "需要当天的参考位置。",
+					"以当天有连续采样最多的区域为参考；天文时间不代表当时身处该地。",
+					...(weather
+						? [
+								weather.kind === "historical" ? "历史天气 · 模型再分析" : "天气预报 · 模型资料",
+								...(!weather.complete
+									? [`部分资料（${weather.sampleCount}/${weather.expectedSamples} 个温度样本）`]
+									: []),
+							]
+						: []),
+				]}
+			>
+				<Text as="p" size="xs" tone="muted" className="mt-3">
+					数据来自{" "}
+					<a href="https://open-meteo.com/" target="_blank" rel="noreferrer" className="underline">
+						Open-Meteo
+					</a>{" "}
+					与{" "}
+					<a
+						href="https://sunrise-sunset.org"
+						target="_blank"
+						rel="noreferrer"
+						className="underline"
+					>
+						Sunrise-Sunset
+					</a>
+				</Text>
+			</StoryCardInfo>
 			<LayerCard.Header>
-				<StoryCardHeading
-					icon={SunMoon}
-					title="天气与天光"
-					subtitle={hasLocation ? reference : "需要当天的参考位置"}
-				/>
+				<StoryCardHeading icon={SunMoon} title="天气与天光" />
 			</LayerCard.Header>
 			{!hasLocation ? (
 				<LayerCard.Empty
@@ -67,12 +95,6 @@ export function DayContextCard({
 										: `${weather.windMaxKmh.toFixed(1)} km/h`}
 								</DescriptionList.Item>
 							</DescriptionList>
-							<Text as="p" size="xs" tone="muted">
-								{weather.kind === "historical" ? "历史天气 · 模型再分析" : "天气预报 · 模型资料"}
-								{!weather.complete
-									? ` · 部分资料（${weather.sampleCount}/${weather.expectedSamples} 个温度样本）`
-									: ""}
-							</Text>
 						</>
 					) : null}
 					{context?.weatherStatus === "unavailable" ? (
@@ -125,29 +147,6 @@ export function DayContextCard({
 							}
 						/>
 					) : null}
-					<Text as="p" size="xs" tone="muted">
-						以当天有连续采样最多的区域为参考；天文时间不代表当时身处该地。
-					</Text>
-					<Text as="p" size="xs" tone="muted">
-						数据来自{" "}
-						<a
-							href="https://open-meteo.com/"
-							target="_blank"
-							rel="noreferrer"
-							className="underline"
-						>
-							Open-Meteo
-						</a>{" "}
-						与{" "}
-						<a
-							href="https://sunrise-sunset.org"
-							target="_blank"
-							rel="noreferrer"
-							className="underline"
-						>
-							Sunrise-Sunset
-						</a>
-					</Text>
 				</LayerCard.Body>
 			)}
 		</LayerCard>

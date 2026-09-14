@@ -466,12 +466,16 @@ export function DayTimelineView({
 				</div>
 				<aside className="day-meta" aria-label="当日信息">
 					<LayerCard className="story-card story-overview">
+						<StoryCardInfo
+							label="当天概况"
+							notes={[
+								`展示时区：${timeline.timezone}`,
+								`汇总当前可见来源；位置区域按 ${story.places.radiusKm} km 半径归组。`,
+								"有记录的小时仅表示存在观测，不代表该小时一直在活动。",
+							]}
+						/>
 						<LayerCard.Header>
-							<StoryCardHeading
-								icon={CalendarClock}
-								title="当天概况"
-								subtitle={timeline.timezone}
-							/>
+							<StoryCardHeading icon={CalendarClock} title="当天概况" />
 						</LayerCard.Header>
 						<LayerCard.Body>
 							<StoryMetrics
@@ -484,9 +488,6 @@ export function DayTimelineView({
 										: []),
 								]}
 							/>
-							<p className="day-meta-caption">
-								汇总当前可见来源 · 区域半径 {story.places.radiusKm} km
-							</p>
 						</LayerCard.Body>
 					</LayerCard>
 					<DayContextCard context={context} reference={reference} hasLocation={hasMap} />
@@ -502,6 +503,10 @@ export function DayTimelineView({
 					<DayInsightsCard insights={insights} />
 					{githubEmpty ? (
 						<LayerCard className="story-card story-github" data-github-empty="">
+							<StoryCardInfo
+								label="GitHub"
+								notes={["已保存首次查询结果。清除对应缓存后，可以重新查询这一天。"]}
+							/>
 							<LayerCard.Header>
 								<Text as="h3" variant="heading" size="md" className="flex items-center gap-2">
 									<GitFork size={20} aria-hidden="true" /> GitHub
@@ -509,7 +514,6 @@ export function DayTimelineView({
 							</LayerCard.Header>
 							<LayerCard.Body>
 								<p className="text-sm">当天没有 Commits 或 PR 活动。</p>
-								<p className="day-meta-caption">已保存首次查询结果。</p>
 							</LayerCard.Body>
 						</LayerCard>
 					) : null}

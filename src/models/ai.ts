@@ -1,3 +1,4 @@
+import type { DiarySections } from "./diary";
 import { normalizeTimestamp } from "./time";
 
 export const DEFAULT_AI_MODEL = "@cf/qwen/qwen3-30b-a3b-fp8";
@@ -44,6 +45,8 @@ export interface DaySummaryGenerateInput extends DaySummaryQuery {
 
 export interface DaySummary extends DaySummaryQuery {
 	content: string;
+	/** Absent on a legacy plain-text diary. */
+	sections?: DiarySections;
 	provider: string;
 	model: string;
 	generatedAt: string;

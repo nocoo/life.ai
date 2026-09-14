@@ -16,6 +16,7 @@ import { parseArgs, parseEnv } from "node:util";
 import { z } from "zod";
 import { validateSummaryQuery } from "../src/models/ai.js";
 import { buildDayInsights } from "../src/models/day-insights.js";
+import { parseDiaryDocument, readDiaryContent } from "../src/models/diary.js";
 import { generalSettingsSchema } from "../src/models/general-settings.js";
 import { buildHealthStory } from "../src/models/health-insights.js";
 import { PIXIU_COLUMNS, pixiuDayEvents, validatePixiuDay } from "../src/models/pixiu.js";
@@ -47,6 +48,13 @@ const caseSchema = z.object({
 	counterfactualOf: z.string().optional(),
 	sourceCounts: z.record(z.string(), z.number().int().nonnegative()).default({}),
 	signals: z.array(z.string()).default([]),
+	sourceEvidence: z
+		.object({
+			development: z.array(z.string()).default([]),
+			writing: z.array(z.string()).default([]),
+			github: z.array(z.string()).default([]),
+		})
+		.optional(),
 	pixiuRows: z.array(z.array(z.string()).length(9)).default([]),
 	personalSettings: generalSettingsSchema.optional(),
 	sleep: z
@@ -102,6 +110,7 @@ const judgmentSchema = z.object({
 type Grade = z.infer<typeof gradeSchema>;
 
 const JUDGE_SYSTEM = `你评审根据个人一天的痕迹写成的生活实录。A/B 的版本身份未知，不能偏爱位置、篇幅、数字多寡或某个固定人称。不要求唯一故事或特定关键词，不预设作者应该写哪种故事。
+稿件可能是纯文本，也可能是含 narrative 与 sections 的 JSON。对 JSON 的 narrative 评价生活正文，sections 的 development/writing/github 是独立卡片的补充内容。格式本身不加分；GPS 与消费备注应是生活主线，天气健康辅助，开发与机器日志不能挤掉个人活动；稀少的文章在 writing 得到合理分析也算保留了创作信号。
 目标是有依据地大胆还原生活场景，重点理解每笔消费备注并联系 GPS、健康、睡眠和天气。合理、自然标明的推测应当加分；只列事实、只换成散文语气不算完成。不能奖励编造确定的细节，也不能因为模型有分寸地推测而扣分。没有数据的维度不强求覆盖，稀疏案例容许短文和少推测。
 校准“合理推测”的含义：判断它是否符合这些线索和普通生活经验，不要求它是唯一可能发生的事。段首的“大概”“像是”可以覆盖该场景内的自然动作，后面的每个动词不用重复限定；“也可能是别的情况”本身不是反证。停车备注与同地 GPS 可以支持自驾外出、在周围走动；车票、异地定位与步行可以支持乘车、出站、携带行李等普通场景。不能仅以“停车也可能是代付”“没有亲眼到店证明”否定这些推测，除非材料确实有代付、预订等相反线索。给明确写了将来日期的票安排当天观看、凭空指认同伴姓名、把断开的睡眠写成整夜清醒，才是应当拦下的越界。模糊的体感词、轻微重复或一个不够好的修饰语应影响文笔评分，不把它们冒充关键情节错误。
 对每篇抽取 2–6 个关键场景断言（极短文可只有 1 个），逐条给出正文短引文、对应材料和 grounding：supported=材料直接支持；plausible=多条线索或明确备注与常识支持的、自然交代的推测；unsupported=没有线索支撑的具体情节或把推测写成确定事实；contradicted=与材料冲突。评价整段语境，一处“大概”可覆盖同一场景，不要求每句重复，但不能给后面无关的细节无条件背书。运动的典型动作等合理想象可算 plausible；没有线索的对话、人物姓名、退货原因或确定的到货/安装/入住情节不算。请先核对这些断言，再打分。
@@ -146,6 +155,7 @@ function sqliteBinding(sqlite: DatabaseSync): D1Database {
 }
 
 function checkProse(text: string): string[] {
+	text = readDiaryContent(text).content;
 	const errors: string[] = [];
 	if (!text.trim()) errors.push("empty prose");
 	if (/^\s*(?:#{1,6}\s|[-*]\s|\d+[.)、]\s)/m.test(text)) errors.push("headings or lists");
@@ -278,6 +288,7 @@ const implementationHash = hash(
 		"worker/day-summary.ts",
 		"worker/diary-evidence.ts",
 		"worker/diary-prompt.ts",
+		"src/models/diary.ts",
 		"src/models/general-settings.ts",
 		"src/models/day-places.ts",
 		"src/models/health-insights.ts",
@@ -385,6 +396,7 @@ async function evidence(item: EvalCase): Promise<Parameters<typeof buildDaySumma
 			[...item.signals, ...details],
 			undefined,
 			item.personalSettings ? formatPersonalContext(item.personalSettings) : [],
+			item.sourceEvidence,
 		];
 	}
 	const day = await streamDayEvents(env, Date.parse(query.start), Date.parse(query.end), query);
@@ -502,6 +514,8 @@ try {
 				baselineInput[7] = [...(input[7] ?? []), ...input[9]];
 				baselineInput[9] = undefined;
 			}
+			if (input[10])
+				baselineInput[7] = [...(baselineInput[7] ?? []), ...Object.values(input[10]).flat()];
 			const oldPrompt = baseline.buildDaySummaryPrompt(...baselineInput);
 			const prompt = buildDaySummaryPrompt(...input);
 			// Reuse the same factual formatters without either writer's instructions. The judge
@@ -518,6 +532,7 @@ try {
 					})),
 				),
 				coverage: { total: input[2], sources: input[3] },
+				sourceEvidence: input[10],
 				...(item.personalSettings ? { personalSettings: item.personalSettings } : {}),
 			};
 			save(resolve(output, `${item.id}.materials.json`), materials);
@@ -543,6 +558,7 @@ try {
 					infer(`${prefix}.baseline.json`, oldPrompt, baselineSystem),
 					infer(`${prefix}.candidate.json`, prompt, DIARY_SYSTEM_PROMPT),
 				]);
+				parseDiaryDocument(current.result.content);
 				if (
 					old.result.resolvedModel &&
 					current.result.resolvedModel &&

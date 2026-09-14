@@ -70,7 +70,7 @@ export function SleepStoryCard({ night }: { night: SleepNight | null }) {
 		<LayerCard className="health-story-card story-card story-sleep">
 			<StoryCardInfo label="睡眠" notes={night.evidence} />
 			<LayerCard.Header>
-				<StoryCardHeading icon={MoonStar} title="睡眠" subtitle="这一夜，醒来后回看" />
+				<StoryCardHeading icon={MoonStar} title="睡眠" />
 			</LayerCard.Header>
 			<LayerCard.Body>
 				<div className="health-sleep-summary">
@@ -144,7 +144,7 @@ export function HealthDayCard({ story }: { story: HealthStory }) {
 				]}
 			/>
 			<LayerCard.Header>
-				<StoryCardHeading icon={Activity} title="身体信号" subtitle="这一天的生理测量" />
+				<StoryCardHeading icon={Activity} title="身体信号" />
 			</LayerCard.Header>
 			<LayerCard.Body>
 				<DescriptionList columns={2}>
@@ -262,7 +262,7 @@ export function BloodPressureCard({ reading }: { reading: BloodPressureReading }
 	return (
 		<article className="health-story-moment">
 			<StoryCardInfo label="血压" notes={[`来源：${reading.sourceName}`, ...reading.evidence]} />
-			<StoryCardHeading icon={Gauge} title="血压" subtitle="一次血压测量" as="h3" />
+			<StoryCardHeading icon={Gauge} title="血压" as="h3" />
 			<time dateTime={reading.occurredAt}>{clock(reading.occurredAt)}</time>
 			<dl className="health-pressure-reading">
 				<div>
@@ -382,12 +382,7 @@ export function EcgStoryCard({
 	return (
 		<article className="health-story-moment">
 			<StoryCardInfo label="心电图" notes={ecg.evidence} />
-			<StoryCardHeading
-				icon={SquareActivity}
-				title="心电图"
-				subtitle="一次心电测量 · 原始波形"
-				as="h3"
-			/>
+			<StoryCardHeading icon={SquareActivity} title="心电图" as="h3" />
 			<time dateTime={ecg.occurredAt}>{clock(ecg.occurredAt)}</time>
 			<DescriptionList columns={2}>
 				<DescriptionList.Item term={<StoryMetricLabel icon={Watch}>设备分类</StoryMetricLabel>}>

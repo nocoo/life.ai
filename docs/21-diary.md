@@ -2,6 +2,8 @@
 
 当日 AI 摘要是一篇根据个人痕迹还原生活场景的实录。模型先代入当天的主人，理解消费、移动与身体活动之间的联系，再以“你”为主语写给用户。仍由用户手动生成，保存在 D1 `day_summaries`，全来源入账，不受页面筛选影响。
 
+2.0.1 起，主文以 GPS 与逐笔消费备注为第一层，天气与 Apple 健康为第二层。Gecko 开发/电脑活动、Firefly 文章创作和 GitHub 活动分别进入下方可展开的卡片；发表文章属于低频但重要的信号。结构化输出、来源对应校验与 Gecko 参考实现见 [29 分层日记](29-layered-diary.md)。
+
 ## 证据
 
 生成时收集：
@@ -31,9 +33,9 @@
 
 - `POST /api/day-summary` 可带可选 `revision`（最长 2000 字）
 - 再次生成前，界面用 Basalt Dialog 收集修改意见；有意见时服务端带上旧文供理解修改位置，旧文不作为事实来源。未填写意见时直接依据本次原始证据重新写，不继承旧稿中的推断
-- 成功覆盖，失败保留上一则；模型请求最多 90 秒、输出预算 8,192 tokens，生成租约 180 秒，为证据收集与保存留出余量
+- 成功覆盖，失败保留上一则；模型请求最多 90 秒、输出预算 8,192 tokens，生成租约 300 秒，为外部来源读取、证据收集与保存留出余量
 - 写作契约通过独立 system 消息传入。已知 OpenAI 推理模型和当前 `auto` 路由请求 `reasoningEffort: high`；`forceReasoning` 防止 SDK 因 `auto` 别名而省略该参数。其他兼容模型保留默认行为；Workers AI 生成日记时不再添加 `/no_think`，短连接测试仍保留
-- 正文去掉兼容端点可能混入的 `<think>` 块；未完成推理或输出被 token 限制截断时不保存半篇。评测可记录响应模型与 token 用量，公开日记 API 的结构不变
+- 去掉兼容端点可能混入的 `<think>` 块后，使用 `JSON.parse` 与严格 Zod schema 校验完整日记；未完成推理、截断、缺字段或卡片与来源不对应均不保存。评测可记录响应模型与 token 用量；日记 API 保留 `content` 正文，并为新稿增加 `sections`
 - 无记录返回 `400 no_records`；他人占用租约 `409 generation_in_progress`
 
 ## 文风
@@ -50,4 +52,4 @@
 
 2026-09-14 使用 2026-09-13 的生产数据进行真实生成与修改意见重写，核对保存内容、生成时间、输入哈希和再次 GET 的一致性。完整日窗口含 1,597 条虚拟事件；生成失败保留旧文与并发租约由隔离 Worker 测试覆盖。AI 生成是手动操作，浏览日期不会自动生成或覆盖日记。
 
-共享契约仍在 `src/models/ai.ts`。Worker 证据在 `worker/diary-evidence.ts` 与 `worker/day-summary.ts`。
+共享 API 契约在 `src/models/ai.ts`，JSON 文档校验在 `src/models/diary.ts`。Worker 证据在 `worker/diary-evidence.ts` 与 `worker/day-summary.ts`。

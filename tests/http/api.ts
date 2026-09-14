@@ -1094,6 +1094,19 @@ await scenario(
 			(await data<DaySummaryResult>(await request(summaryPath))).summary,
 			before.summary,
 		);
+		for (const model of ["life-test-invalid-json", "life-test-invalid-fields"]) {
+			await saveAi({ model });
+			const invalid = await request("/api/day-summary", { method: "POST", body: summaryDay });
+			assert.equal(invalid.status, 502);
+			assert.equal(
+				((await invalid.json()) as { error: { code: string } }).error.code,
+				"invalid_diary_format",
+			);
+			assert.deepEqual(
+				(await data<DaySummaryResult>(await request(summaryPath))).summary,
+				before.summary,
+			);
+		}
 		await saveAi();
 		const refreshed = await data<DaySummaryResult>(
 			await request("/api/day-summary", { method: "POST", body: summaryDay }),
