@@ -66,3 +66,9 @@ L1 覆盖设置校验、范围边界/重叠/日期线、匹配与睡眠故事、
 Chrome 通过 `https://life.dev.hexly.ai/settings/general` 只读复核了真实设置接口、真实 OSM 地图加载、折叠前后 logo 坐标和短屏导航，无页面异常、无写入请求。检查时设置尚未保存地点或作息，开发服务健康接口返回 1.7.0 / D1 ok。截图、原始评测和验证日志保留在本机私有工作目录。
 
 构建保留 Vite 对主客户端包超过 500 kB 的提示；通用设置为独立懒加载路由。Worker dry run 的压缩上传约 364 KiB，使用生产 D1/AI/Assets 绑定。
+
+代码提交 `79fa401` 已在 main，部署为 Worker 版本 `423bdafa-d316-4669-8fac-3a012a1b0937`，标签 `v1.7.0`。部署复核无待应用迁移，启动时间 21 ms。首次尝试因过期的 Wrangler OAuth 会话在迁移查询前停止，现有会话自动续期后重试成功；没有修改或轮换 `AI_SETTINGS_KEY`。
+
+18:20（UTC+8）完成 15 项只读上线检查：生产、机器域名、Caddy 的 `/api/live` 均为 200 / 1.7.0 / D1 ok；生产首页、通用设置页面及设置/日记 API 的匿名请求均跳转至 `nocoo.cloudflareaccess.com`；机器域名检查的七条页面/API 路径均为 404。Caddy 设置读取为 200，开发服务继续绑定 7011 并连接生产 D1。未通过上线检查写入地点、作息或重生成用户日记。
+
+部署代码的 [GitHub CI 34832380392](https://github.com/nocoo/life.ai/actions/runs/34832380392) 已完成并通过，包含 Linux 上的 L1/G1、构建、安全、L2 和 L3。
