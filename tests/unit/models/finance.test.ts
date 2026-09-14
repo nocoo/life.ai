@@ -6,7 +6,7 @@ import {
 	parsePixiu,
 	pixiuDayEvents,
 } from "../../../src/models/pixiu";
-import { buildDayTimeline } from "../../../src/models/time";
+import { buildDayTimeline, localDateKey, shiftLocalDate } from "../../../src/models/time";
 import type { LifeEvent } from "../../../src/models/types";
 
 async function events() {
@@ -55,9 +55,14 @@ describe("date-only financial story", () => {
 	});
 	it("keeps transactions out of the midnight hour and preserves all raw fields", async () => {
 		const original = await events();
-		const timeline = buildDayTimeline("2026-09-13", original);
+		// A UTC+8 accounting day belongs to the viewer's local date containing its UTC start.
+		expect(original[0]?.occurredAt).toBe("2026-09-12T16:00:00.000Z");
+		const displayDay = localDateKey(new Date("2026-09-12T16:00:00.000Z"));
+		const timeline = buildDayTimeline(displayDay, original);
 		expect(timeline.allDay).toHaveLength(9);
 		expect(timeline.hours.flatMap((hour) => hour.events)).toEqual([]);
+		for (const offset of [-1, 1])
+			expect(buildDayTimeline(shiftLocalDate(displayDay, offset), original).allDay).toEqual([]);
 		expect(original[0]?.data).toMatchObject({
 			备注: "咖啡与阅读",
 			资金账户: "现金",
