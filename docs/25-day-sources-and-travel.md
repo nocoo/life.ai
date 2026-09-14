@@ -1,6 +1,6 @@
 # 按天数据源、出行与通勤
 
-2026-09-14。实现仅在 Life.ai；Gecko、Firefly 仓库只读核验。开发地址为 `https://life.dev.hexly.ai/?day=2026-09-10`，继续使用已授权的生产 D1。与 [睡眠阶段图及页面加载](26-sleep-chart-and-loading.md) 一起纳入 2.0.0，最终发布记录见该文档。
+2026-09-14。实现仅在 Life.ai；Gecko、Firefly 仓库只读核验。开发地址为 `https://life.dev.hexly.ai/?day=2026-09-10`，继续使用已授权的生产 D1。与 [睡眠阶段图及页面加载](26-sleep-chart-and-loading.md) 一起纳入 2.0.0，最终发布记录见 [GitHub 集成与发布证据](27-github.md#验证与发布)。
 
 ## 已核实的项目与接口
 
@@ -99,4 +99,4 @@ GET 日记只读来源缓存，不调用上游。生成前与生成后均检查�
 - 用户提供的 Gecko 密钥已加密存储；两个来源均已启用。不在文档、日志或 Git 中保存真实密钥、轨迹或窗口标题。
 - 自动 HTTP/浏览器测试只通过隔离 runner，使用全新本地 SQLite、每次生成的 Access/AI 测试凭据及 loopback Gecko/Firefly fixture，不指向 `dev:prod`。
 - 最终 L1：80 个文件、1,496 项测试通过；语句 98.89%、分支 96.31%、函数 99.06%、行 99.27%。L2：27 个真实 HTTP 场景通过。L3：30 个浏览器用例通过，覆盖新来源、跨小时出行、暗色/移动布局与原有导入/日记/地图行为。
-- 严格类型检查、Biome、gitleaks、OSV、生产构建及 Wrangler 部署 dry run 通过。Caddy 开发域名 `/api/live` 返回 `status: ok`、`database: ok`；Worker 仍为已发布的 1.7.0，开发服务展示本次未发布变更。
+- 此阶段严格类型检查、Biome、gitleaks、OSV、生产构建及 Wrangler 部署 dry run 通过。Caddy 开发域名 `/api/live` 返回 `status: ok`、`database: ok`；当时生产 Worker 为 1.7.0。2026-09-15 已随 GitHub 集成发布 2.0.0，最终核验见上述发布记录。

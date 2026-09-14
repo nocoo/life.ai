@@ -15,6 +15,8 @@
 
 PAT 复用 AES-GCM 与现有 `AI_SETTINGS_KEY`，只由 Worker 解密后发送至固定 `api.github.com`，不跟随重定向。同源设置 API 受 Access、主机及来源检查保护；响应仅返回账号 ID/login 和 `hasApiKey`，不返回 PAT、密文或掩码片段。错误不透传上游正文或网络错误文本。保存成功及离开页面后清空输入，Gecko/GitHub 草稿彼此独立。
 
+Classic PAT 只查公开仓库时无须 scope；包含私有仓库时需要 `repo`。账号识别只读取公开的 ID/login，无须 `read:user` 或 `user:email`，也不需要 `workflow` 或管理权限。`repo` 本身包含写权限，但 Life.ai 只调用读取接口；组织仓库启用 SSO 时，还需授权该 PAT。参考 [GitHub scopes](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps) 与 [账号接口](https://docs.github.com/en/rest/users/users#get-the-authenticated-user)。
+
 `0008_github.sql` 保留原数据源配置和密文，扩展 provider 约束及账号字段，新增 `github_day_cache`。
 
 - 缓存键为 GitHub 数字账号 ID、日期、规范化时区和 UTC 窗口，与 PAT 和配置版本无关。完整成功结果永久保存，包括空日；命中不访问 GitHub、不写 D1。
@@ -35,6 +37,13 @@ PAT 复用 AES-GCM 与现有 `AI_SETTINGS_KEY`，只由 Worker 解密后发送�
 
 自动化测试使用隔离 Worker/SQLite、合成凭据和 loopback GitHub fixture，不使用真实 PAT。
 
-发布前检查：83 个 L1 文件、1,532 项测试通过，语句 98.92%、分支 96.39%、函数 99.09%、行 99.29%；28 个真实 HTTP 场景、35 个浏览器用例通过。严格类型检查、Biome、gitleaks、OSV、生产构建和 Wrangler dry run 通过。浏览器覆盖明暗状态色、PAT 清空、日期跳转、原文链接、空日卡片、手机布局和可访问性。
+合并远端 Node 运行时与日期导航修复后，发布前检查：84 个 L1 文件、1,544 项测试通过，语句 98.92%、分支 96.39%、函数 99.09%、行 99.29%；28 个真实 HTTP 场景、35 个浏览器用例通过。严格类型检查、Biome、gitleaks、OSV、生产构建和 Wrangler dry run 通过。浏览器覆盖明暗状态色、PAT 清空、日期跳转、原文链接、空日卡片、手机布局和可访问性。
 
-开发与生产的最终迁移、部署核验在完成后追加。
+2026-09-15 已从代码提交 `5cd1fa0` 部署 2.0.0，Worker 版本 `798e448c-1165-47cb-a7c1-986238ddf930`。原有 2.0.0 提交和远端 main 提交均保留。
+
+- 生产 D1 应用 `0008_github.sql`，本地 D1 正常执行 `0001` 至 `0008`；两者均无待执行迁移。迁移前后，既有两项数据源配置及密文的 SHA-256 指纹完全一致，六张数据表记录数量不变：`life_events` 0、`provider_days` 4,870、`health_series` 29,100、`health_files` 158、`day_summaries` 5、`general_settings` 1。
+- `life.hexly.ai/api/live`、`life.worker.hexly.ai/api/live` 和 Caddy 开发入口均返回 HTTP 200、版本 2.0.0、D1 `ok`。15 项只读检查通过：未认证及伪造 JWT 的生产页面/API 请求跳转 Access；机器导入主机的页面、数据源、事件、Connect 和数据管理入口均返回 404。
+- Caddy 的七项只读 API 检查通过，包括数据源、通用/AI 设置、真实日期记录和生产数据目标。桌面及手机浏览器确认 GitHub 设置存在、PAT 输入默认隐藏且为空、无横向溢出、无页面错误和写入操作。Gecko、Firefly 的既有启用状态保留。
+- `bun run dev:prod` 继续在 `127.0.0.1:7011` 服务 `https://life.dev.hexly.ai`；原有 `.dev.vars.devprod` 内容及 600 权限不变。未替换 `AI_SETTINGS_KEY`，未重导入数据或生成日记。
+
+本次未提供或保存真实 GitHub PAT；首次连接可在「设置 → 数据源 → GitHub」填写已有 PAT。真实凭据未输出或提交；自动化查询与缓存验证使用合成凭据和隔离上游 fixture。
