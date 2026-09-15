@@ -63,3 +63,14 @@ Fine-grained PAT 选择需要读取的仓库；私有数据需要 Contents、Pul
 - `bun run dev:prod` 继续在 `127.0.0.1:7011` 服务 `https://life.dev.hexly.ai`；原有 `.dev.vars.devprod` 内容及 600 权限不变。未替换 `AI_SETTINGS_KEY`，未重导入数据或生成日记。
 
 实现与发布验证未获取、填写或输出真实 GitHub PAT；用户可自行在设置中填写已有 PAT。真实凭据不提交；自动化查询与缓存验证使用合成凭据和隔离上游 fixture。
+
+## 2.0.2 发布验证
+
+2026-09-15 从代码提交 `c77c1256de76471b8d546356135745d7a22e3200` 部署，Worker 版本 `7448b44c-ba3d-4f6d-8d7f-2588d4f31532`。生产构建、Wrangler dry-run 及部署成功；本地与远程 D1 均无待执行迁移。
+
+- L1：88 个文件、1,602 个测试通过；statements 98.95%、branches 96.38%、functions 99.11%、lines 99.31%。严格类型与 Biome 检查通过。
+- L2：29 个隔离 Worker/SQLite HTTP 场景通过。完整浏览器回归覆盖 37 个用例；修正仍按旧记录/卡片数量断言的缓存测试后，相关用例重跑通过。GitHub 桌面、手机和明暗弹窗均无 Axe WCAG A/AA 问题。
+- 新增用例覆盖 101 个仓库分页、第二页的 2020 年历史 Release、六个并行仓库的上限、重复/无效/过多分页、失败时不写半份日缓存、换 PAT 及并发请求复用缓存。机器人发布者可解析但按账号 ID 排除，不会阻断该账号的查询；补充 fixture 后 37 项 GitHub 单元测试和四个来源浏览器用例再次通过。
+- gitleaks 与 OSV 通过；未添加依赖。自动化测试只使用隔离 SQLite 和合成上游，不使用真实 GitHub PAT。
+- 上线后 21 项只读检查通过：`life.hexly.ai`、`life.worker.hexly.ai`、`life.dev.hexly.ai` 均返回 2.0.2 与 D1 `ok`；仪表盘/API 保持 Access 保护，机器写入域名的页面、记录、设置、日记与缓存接口保持 404。
+- 生产 `AI_SETTINGS_KEY` secret 仍存在；未读取其值或替换密钥。生产数据 dev 服务继续监听 `127.0.0.1:7011`；`.dev.vars.devprod` 保持 0600 并受 Git 忽略。检查未清除真实缓存、重新生成日记或写入用户数据。
