@@ -64,14 +64,14 @@
 		"react-router": "8.3.1",
 		"recharts": "3.10.1",
 		"saxes": "6.0.0",
-		"zod": "4.6.2",
+		"zod": "4.6.5",
 		"zustand": "5.0.15"
 	},
 	"devDependencies": {
 		"@axe-core/playwright": "4.13.0",
 		"@biomejs/biome": "2.5.13",
-		"@cloudflare/vite-plugin": "1.54.8",
-		"@cloudflare/workers-types": "5.20260911.1",
+		"@cloudflare/vite-plugin": "1.54.9",
+		"@cloudflare/workers-types": "5.20260914.1",
 		"@playwright/test": "1.63.0",
 		"@tailwindcss/vite": "4.3.3",
 		"@testing-library/react": "16.3.3",
@@ -88,9 +88,9 @@
 		"jsdom": "30.0.1",
 		"tailwindcss": "4.3.3",
 		"typescript": "7.0.2",
-		"vite": "8.2.2",
+		"vite": "8.3.0",
 		"vitest": "5.0.0",
-		"wrangler": "4.131.1"
+		"wrangler": "4.131.2"
 	},
 	"trustedDependencies": [
 		"@biomejs/biome",
