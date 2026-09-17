@@ -1,10 +1,10 @@
-import { Button, ContentIsland, Sheet, SheetContent, SheetTitle, ThemeToggle } from "@nocoo/basalt";
+import { Button, ContentIsland, Sheet, SheetContent, SheetTitle } from "@nocoo/basalt";
 import { AppHeader } from "@nocoo/basalt/components/app-header";
 import { AppMain, AppShell, AppSkipLink } from "@nocoo/basalt/components/app-shell";
 import { Banner } from "@nocoo/basalt/components/banner";
 import { LayerCard } from "@nocoo/basalt/components/layer-card";
 import { LoadingScreen } from "@nocoo/basalt/components/loading-screen";
-import { ExternalLink, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router";
 import { useStore } from "zustand";
@@ -17,8 +17,8 @@ import {
 } from "../viewmodels/session-view-model";
 import { AccentControl } from "./accent-control";
 import { AppSidebar } from "./app-sidebar";
-import { APP_NAME, BRAND_MARK_SRC, GITHUB_REPO_URL } from "./brand";
-import { HexlyLink } from "./header-links";
+import { APP_NAME, BRAND_MARK_SRC } from "./brand";
+import { HeaderActions } from "./header-links";
 import { routeMeta } from "./navigation";
 import { PageFallback } from "./page-fallback";
 import { useIsMobile } from "./use-is-mobile";
@@ -147,22 +147,7 @@ export function AppFrame() {
 					actions={
 						<>
 							<AccentControl />
-							<Button variant="ghost" size="icon" asChild>
-								<a
-									href={GITHUB_REPO_URL}
-									target="_blank"
-									rel="noopener noreferrer"
-									aria-label="GitHub 仓库"
-								>
-									<ExternalLink
-										className="h-[18px] w-[18px]"
-										strokeWidth={1.5}
-										aria-hidden="true"
-									/>
-								</a>
-							</Button>
-							<HexlyLink />
-							<ThemeToggle aria-label="切换主题" />
+							<HeaderActions />
 						</>
 					}
 				/>
