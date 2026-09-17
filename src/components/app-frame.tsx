@@ -18,6 +18,7 @@ import {
 import { AccentControl } from "./accent-control";
 import { AppSidebar } from "./app-sidebar";
 import { APP_NAME, BRAND_MARK_SRC, GITHUB_REPO_URL } from "./brand";
+import { HexlyLink } from "./header-links";
 import { routeMeta } from "./navigation";
 import { PageFallback } from "./page-fallback";
 import { useIsMobile } from "./use-is-mobile";
@@ -145,6 +146,7 @@ export function AppFrame() {
 					breadcrumbs={[{ label: meta.title }]}
 					actions={
 						<>
+							<AccentControl />
 							<Button variant="ghost" size="icon" asChild>
 								<a
 									href={GITHUB_REPO_URL}
@@ -159,7 +161,7 @@ export function AppFrame() {
 									/>
 								</a>
 							</Button>
-							<AccentControl />
+							<HexlyLink />
 							<ThemeToggle aria-label="切换主题" />
 						</>
 					}
