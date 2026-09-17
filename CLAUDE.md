@@ -1,105 +1,99 @@
 # Life.ai
 
-A single person's life chronicle. Import records or receive hourly snapshots from named, write-only Connect tokens, then read them on a 24-hour daily timeline.
+A single person's life chronicle combining imported health, GPS, finance and write-only Connect snapshots.
+Profile: ts-worker-web.
+Direction: [chronicle architecture](docs/08-chronicle-rewrite.md), [domain contracts](docs/30-domain-contracts.md).
 
-## Sources of truth
+## Sources of Truth
 
-- Product, API contract, ownership and implementation status: [docs/08-chronicle-rewrite.md](docs/08-chronicle-rewrite.md).
-- Daily GPS/health/finance views, lizheng.blog profile and AI summaries: [docs/12-daily-view.md](docs/12-daily-view.md).
-- Current daily reading design, GPS/weather and record tabs: [docs/16-daily-context-and-record-tabs.md](docs/16-daily-context-and-record-tabs.md). [docs/13-story-timeline.md](docs/13-story-timeline.md) retains the 1.2.0 design and release.
-- Data Management, compact Footprint storage, CLI/Skill and 1.3.0 verification: [docs/15-data-management.md](docs/15-data-management.md).
-- Apple Health compact import, cross-night stories and verification: [docs/17-apple-health.md](docs/17-apple-health.md).
-- Pixiu compact daily import, accounting dates and completeness verification: [docs/22-pixiu-daily-import.md](docs/22-pixiu-daily-import.md); original source analysis: [docs/19-pixiu-import-analysis.md](docs/19-pixiu-import-analysis.md).
-- D1 solar/weather/place caching: [docs/20-public-context-cache.md](docs/20-public-context-cache.md). Persistent daily diary and evidence: [docs/21-diary.md](docs/21-diary.md). Prompt evaluation: [docs/23-diary-eval.md](docs/23-diary-eval.md).
-- Bottom sidebar settings, named map circles and personal sleep routines: [docs/24-general-settings.md](docs/24-general-settings.md).
-- Read-only Gecko/Firefly day sources, GPS movement/commute candidates and transient D1 recovery: [docs/25-day-sources-and-travel.md](docs/25-day-sources-and-travel.md).
-- Sleep-stage chart, stable sidebar identity and page-specific loading: [docs/26-sleep-chart-and-loading.md](docs/26-sleep-chart-and-loading.md).
-- Existing GitHub PAT settings, daily commits/PRs/issues/releases, hourly detail dialogs and permanent account/day caching: [docs/27-github.md](docs/27-github.md).
-- Content-header D1 cache management, date/shared scopes and manual invalidation: [docs/28-cache-management.md](docs/28-cache-management.md).
-- Personal-first diary evidence, strict JSON, computer/writing/GitHub sections inside AI summaries and compact information controls: [docs/29-layered-diary.md](docs/29-layered-diary.md).
-- Daily card colors, icons, supporting information and compact all-day layout: [docs/18-daily-card-design.md](docs/18-daily-card-design.md).
-- Version: root `package.json`; show the same version in the sidebar and `/api/live`.
-- UI contract: installed `@nocoo/basalt/ai/RECIPES.md` and `../basalt/INTEGRATION.md`. Use the published package, its providers, application chrome and tokens.
-- Quality: 6DQ from nmem `af0daa0f-0a10-4b0b-b328-f2dc32137bdc` and September revision `crystal_0c9c31f7de97`.
+This handbook is the contract; hooks, CI and config enforce it. Raise weaker enforcement rather than reducing requirements. Frameworks must not rewrite it.
 
-## Invariants
-
-- One owner and one dataset. Access authenticates the entrance; never partition records by Access subject/email.
-- Vite + React + Basalt + TypeScript strict + Biome; a Cloudflare Worker serves the SPA and API, with D1 database `life`.
-- No Next.js, Google OAuth, local SQLite production server, or compatibility API in the new runtime.
-- Persist and compare UTC instants. An absent offset means UTC, never server/browser local time. Convert only at presentation boundaries.
-- Pixiu is an explicit provider exception: date-only source values are confirmed UTC+8 accounting days. Preserve `sourceDate` and all nine original columns in one daily JSON row, including identical duplicates and zero amounts. The storage day key is technical; the actual interval starts at 16:00 UTC on the preceding date. Assign each accounting day once to the display day containing its start; never invent transaction times or combine currencies. Web and CLI share the codec; repeated imports replace included whole days, preserve absent dates, and leave identical content/timestamps unchanged. Conflicting same-day snapshots in one selection are rejected before writes.
-- Preserve day/hour/minute/second precision. Date-only records have no invented displayed clock time.
-- Footprint stores one complete compact JSON package per UTC day. Later imports replace included days completely; absent days remain. Parse the entire input before uploading, preserve all six GPS values and native segments, and compare current hashes for idempotence, including A → B → A. Maps and AI clip decoded points to the requested local-day UTC window.
-- Web and CLI share the Footprint model/client. The Skill calls `bun run data:import`; an explicit `--target` must match `/api/data/target` before writes. `dev:prod` is always `production`, regardless of its local/Caddy hostname.
-- Footprint uses `/data/footprint` and its dedicated Access-protected API; old `/api/imports` Footprint writes return 410. Cumulative provider statistics belong to `/data`. Keep raw exports, coordinates, tokens and private backups out of Git.
-- Apple Health uses `/data/apple-health`: complete ZIP/directory only. Web Worker + IndexedDB and CLI temporary disk share the parser/client. Preserve all original attributes, child nodes, coincident samples, routes, ECG samples, CDA and export metadata. One UTC start day × dimension series; split only for bounds. Included days replace all dimensions; absent dates remain. Compare canonical hashes for A → B → A. Old `/api/imports` writes return 410.
-- Health display reads prior 24 hours and following 12 hours for sleep; actual sleep belongs to its waking day, with in-bed time separate. Deduplicate overlapping sensor quantities for presentation without deleting raw observations. Workouts and overlapping Footprint use one map. ECG displays every sample in paged 5-second windows; voltage and heart-rate units stay separate. Blood pressure pairs only the same measurement time/source. Night GPS labels are evidence-based suggestions.
-- Health raw dimensions load only on the record tab; waveform/route attachments load separately. Coverage excludes sleep-goal settings and Unix-epoch-day measurements, while preserving their original dates and observations. Overview identifies epoch-dated records explicitly. Content hashes for AI omit virtual Health IDs/import timestamps and use stable content ordering for coincident samples.
-- Connect is write-only: a random token, SHA-256 digest at rest, plaintext shown once, revocable. It can only upsert its own UTC hour. Later writes replace that hour; future hours are valid.
-- `life.worker.hexly.ai` exposes only ingestion and `/api/live`; never serve the dashboard, records, imports or token management there.
-- Production verifies the Access JWT signature, issuer, audience and expiry. Never trust the presence of an Access header or asserted email alone.
-- MVVM: Views render and dispatch; ViewModels contain async state and transformations without View/DOM imports; services own HTTP; models own validation, UTC and import logic.
-- The daily timeline is the primary reading structure: 24 local hour ticks, body/spatial evidence on the left and narrative events on the right; mobile merges branches in time order. Daily totals, all-day records, full-day map, weather and AI belong in the right-hand metadata column. Interval bodies appear once with continuation links. Date-only events never occupy the midnight slot.
-- Daily Basalt tabs separate timeline, locations, finance and other raw records. Mount only the active tab; load the record table module on demand and render at most 50 raw rows per page. The finance table preserves all nine CSV columns and never triggers raw Health reads. Deduplicate cross-hour copies by event ID, not timestamp, preserving coincident GPS points. Tab changes reuse cached day data; never retain hidden raw record lists in the timeline.
-- GPS places use a fixed first-observation anchor with a 5/10 km radius; preserve ordered returns and native segment/gap breaks. Each hourly map uses only that hour's points. The first map of a stay expands; later maps in that same area collapse. Leaving and returning starts a new expanded arrival, even if the area appeared earlier. Moving between several areas is not a repeated stay. New days reset automatic expansion. Leaflet initializes near the viewport and is destroyed when its tab unmounts.
-- General settings use one `general_settings` D1 row, never one row per day. Named circles match actual coordinates before coarse grouping; smallest matching circle wins, then nearest center and stable ID. Keep different names separate even within 5 km, and do not spread a name to unmatched neighbors. Use labels in stories, maps/popups, raw location rows, sleep sampling centers and diary evidence. Current names do not prove past building use or continuous attendance. Raw GPS/provider records are unchanged.
-- A sleep routine is optional recurring `HH:mm` wall-clock background plus a canonical IANA timezone, not a UTC event. Start with empty clocks, allow clearing, and never infer observed sleep from settings. Render actual sleep instants in both display and routine timezones before the diary compares them. Personal settings enter the diary hash; read and changed-during-generation checks retain the last successful diary. The shared frontend settings store survives route changes; saves are serialized and preserve the other section's unsaved draft.
-- The sidebar's bottom Settings section contains general settings, AI settings, Connect and journal import. Provider imports remain in Data Management. Keep the logo anchor and profile footer intact; the navigation area, including settings, scrolls on short screens. Use Basalt controls and the existing Leaflet dependency for map center/radius editing.
-- Marker numbers remain centered after Leaflet CSS loads. Speed colors derive from valid adjacent UTC samples (<6 / 6–30 / ≥30 km/h), never from guessing GPX raw speed units. Preserve missing/negative raw values in the records table. Sparse or coarse-precision samples have unknown derived speed.
-- Public weather and solar context uses the selected day's representative GPS place. Fetch with bounded reads, timeout and cancellation; ignore responses for old selections. Convert hourly UTC measurements and solar instants into the selected local-day window. Missing location or unavailable provider data must not invent a city or time.
-- Frontend and diary share Access-protected D1 public-context caching. Complete solar results persist permanently by date/timezone/window/coarse location, and cache hits make no upstream request or D1 write. Do not permanently cache failed or partial solar responses. Historical complete weather persists; recent weather expires. Reverse-geocode at most four coarse GPS areas with cached Nominatim results and an atomic D1 one-request-per-second limit.
-- The daily view fills the content island. On wide screens, each hour's branches form responsive columns on both sides of the trunk; use available container width so sidebar collapse also frees space. Keep mobile reading order intact.
-- Cards in the same wide-screen grid row stretch to its tallest card; mobile keeps natural heights. The content-header cache dialog defaults to the selected date, offers all dates, and clearly marks shared place labels. Only clear allowlisted external caches; preserve credentials, imported data, diaries, leases and rate limits. Listing/clearing never triggers an implicit upstream refresh.
-- Daily cards use Basalt category colors and Lucide icons, with normal text alignment and natural widths for short records. Source/device explanations belong in the accessible upper-right information panel. Never show internal Health enums or orphaned units in story cards; preserve original data in raw tabs. All-day metrics share one card without nested card chrome. Motion respects reduced-motion preferences.
-- Daily diaries are generated manually from all records in the validated local-day UTC window, cross-night Health, GPS areas, weather/solar context and full-day Pixiu finance. Include all Health record dimensions by unit, timed walks/climbs/workouts and tonight's bedtime; distinguish raw ranges from deduplicated totals and recorded GPS windows from actual stays. Put the model in the owner's shoes, then write a warm chronicle addressed to the user. Prioritize complete, per-transaction expense remarks and infer meaningful scenes from purchases, GPS and Health together. Permit bold, naturally qualified inferences about purpose, travel, lodging or activities; never invent precise payment times, unsupported personal details, diagnoses or confirmed attendance from a preorder. Keep sparse days short, honor counterevidence and avoid statistical recaps. Persist the result; regeneration accepts optional feedback and replaces it only after success. Include the previous wording only when feedback is supplied; it is never additional factual evidence. Keep the last successful diary on failure; show stale data when its input hash changes, including the diary prompt version. Source filtering only changes the timeline/map/measured totals, not diary evidence.
-- Default AI uses the Workers AI binding. External keys are AES-GCM encrypted with `AI_SETTINGS_KEY`; keep that secret separate from D1 and never replace it without re-encrypting stored keys. External HTTP uses manual redirects and bounded reads.
-- Diary narrative prioritizes GPS and complete expense remarks, supported by weather and Apple Health. Gecko computer activity, rare Firefly articles and GitHub project activity live in separate structured sections inside one outer AI 总结 card; automated activity is never proof of continuous human work. Do not duplicate these external logs in personal event samples. New output must pass the strict versioned JSON schema and match available sources before replacing the saved document; store JSON in the existing content column and continue reading legacy prose unchanged. Views own the fixed Lucide headings, paragraph/list layout and independent collapsible sections. Source/scope/model explanations belong in the upper-right information control.
-- GitHub groups all records in one hourly timeline card with distinct Commit/PR/Issue/Release counts and a dialog retaining every action, full text, source URL and second-precision time. PR and Issue counts deduplicate by repository/number while preserving separate actions. Releases use all pages from explicitly accessible repositories and published_at, never a recent Events feed as historical coverage. Partial, oversized, failed or timed-out day queries do not become permanent cache entries. Existing account/day snapshots are never implicitly refetched when new record types or longer descriptions become available.
-- Gecko/Firefly are configured in Settings → 数据源. Only the Worker reads fixed upstream endpoints; Gecko keys never reach the browser after save, Firefly is public. External records are cached separately from imported events. Gecko has one local-hour card and excludes idle/lock/screen-saver activity; preserve different clipped fragments with the same session ID. Firefly filters by actual publication time, never an ignored upstream date parameter. Provider failure keeps the base day and any marked old cache readable; do not overwrite a diary when an enabled source is unavailable.
-- GPS journey cards and diary evidence use the same model: moving average excludes short stops, gaps/long stays break trips, native boundaries and raw values remain intact. Mode and commute are qualified hypotheses with reasons. Match POIs only from observed named circles, and never treat missing GPS as continuous work attendance. Anchor one journey body at its start and retain hourly map boundaries.
-- Session profile uses the authenticated email's SHA-256 with lizheng.blog. Missing/failed profiles fall back to session identity and initials, without changing Access authentication.
-- Sidebar collapse animates only the outer width. Keep the same logo and avatar DOM nodes; the 24px logo stays at x=24/y=16 throughout animation and reversal, with scrollable navigation and reduced-motion support. Loading placeholders match their page and record tab, and never present unknown settings as editable defaults or false empty states.
-- Sleep charts retain actual cross-night instants on separate awake/REM/core/deep rows. Unclassified sleep has its own labelled row; gaps and overlaps are not fabricated transitions. In-bed observations never become a sleep stage. The visual model leaves sleep statistics, source selection and diary evidence unchanged.
-- Work on `main`, no branches/worktrees for this rewrite. Coordinating Codex owns integration and commits; collaborators touch only assigned files. Never stage all files indiscriminately.
-
-## Environments and ports
-
-| Purpose | Address / resource |
+| Fact | Where |
 | --- | --- |
-| Production | `https://life.hexly.ai`, Worker `life`, D1 `life` |
-| Machine ingestion | `https://life.worker.hexly.ai/api/ingest` |
-| Access | team `nocoo`, issuer `https://nocoo.cloudflareaccess.com` |
-| Access audience | `3d1df7c70e4cb094a5bd4a1c2ec7a81aad0d5265e93f8b89424a206859269503` |
-| Local dev | `https://life.dev.hexly.ai` → Caddy → `127.0.0.1:7011` |
-| Local with production data | `bun run dev:prod`, same Caddy domain / 7011; remote D1 `life`; explicitly authorized by the user |
-| L2 / L3 | `17011` / `27011`, each with a fresh isolated local SQLite directory |
-| Optional sidecar | `37011`; integrated Vite Worker development does not need it |
+| Human docs | [README.md](README.md), [docs/README.md](docs/README.md) |
+| Detailed invariants | [domain/source/UI map](docs/30-domain-contracts.md); read the affected source contract before editing |
+| Version | Root `package.json`; same version in sidebar and `/api/live` |
+| Enforcement | `.husky/`, CI, `vitest.config.ts`, `scripts/run-tests.ts` |
+| Environment | Ignored `.env*`/`.dev.vars*`; preserve `AI_SETTINGS_KEY` and existing `.dev.vars.devprod` |
+| Accidents | [Retrospective.md](Retrospective.md) |
 
-Port allocation is confirmed by nmem `25b22d6b-1df5-4491-ae4d-269a556f6442`, not the older Basalt family inventory. Active Caddy config: `/opt/homebrew/etc/Caddyfile`; tracked mirror: `../workflow/caddy/Caddyfile`. Reuse the existing domain and certificate.
+## Project Invariants
 
-## Quality and release
+- One owner/dataset: Access authenticates the entrance, never partitions records by subject/email. Verify JWT signature, issuer, audience and expiry; ingest host exposes only ingestion and `/api/live`.
+- UTC storage/comparison and original precision are mandatory. Pixiu date-only values are UTC+8 accounting days; Footprint/Health day replacement and all source-preservation/hash/idempotence rules remain in [domain contracts](docs/30-domain-contracts.md).
+- Parse complete imports before writes; included days replace their whole source scope, absent dates survive. Never invent times, merge currencies, discard duplicates/raw observations, or commit private exports/coordinates/tokens/backups.
+- CLI and Web share codecs/clients; explicit import `--target` must match `/api/data/target`. `dev:prod` remains production even through localhost/Caddy. Old provider writes through `/api/imports` return 410.
+- Connect tokens are write-only, revocable, hashed at rest and shown once; each can replace only its own UTC hour, including future hours. Preserve host separation.
+- Preserve the 24-hour timeline, lazy active record tabs, precise sleep/GPS/day semantics, named-circle/settings rules and stable sidebar identity. Use published Basalt and MVVM; full UI and caching rules are in the linked contract.
+- Keep last successful diaries on failure/stale input; new structured output validates against sources before replacing saved content. AI keys are encrypted; `AI_SETTINGS_KEY` cannot rotate without re-encryption. External sources/cache invalidation never change imported records or manufacture evidence.
 
-- L1: Vitest, statements/branches/functions/lines each ≥95% on domain, ViewModels, services and Worker logic; thin Views are exercised by L3.
-- G1: strict typecheck and Biome with zero warnings/errors.
-- L2: real HTTP against the local Worker and SQLite, every API endpoint covered.
-- L3: Playwright covers timeline, import, Connect creation/revocation, responsive chrome and auth boundaries.
-- G2: gitleaks and osv-scanner, plus a production bundle/deployment dry run.
-- D1 isolation: fresh per-run state and cache directories; loopback only; `_test_marker` with `env=test`; never remote bindings or production credentials for automated tests.
-- AI tests use a loopback model fixture and per-run encryption key. The local test environment deliberately has no Workers AI binding, because that binding always runs remotely. Production-data development stores its encryption key only in ignored `.dev.vars.devprod`.
-- Before deploy: inspect migration state, apply required migrations, validate config and bundle. After deploy: verify Access protection, public JSON health, ingestion host isolation and running production version.
-- The user explicitly authorized this rewrite and production deployment. Keep docs current and report only verified outcomes.
+## Stack / Layout
 
-Version 2.0.2 was deployed on 2026-09-15 from code commit `c77c1256de76471b8d546356135745d7a22e3200`, Worker version `7448b44c-ba3d-4f6d-8d7f-2588d4f31532`. AI summary sections now live inside one card; GitHub groups each hour into one card with full-detail dialogs and adds authored Issue/Release activity. Existing D1 snapshots remain unchanged until explicit invalidation. L1: 1,602 tests in 88 files, all four coverage metrics ≥96.38%; G1/G2, 29 HTTP scenarios and 37 browser cases verified, with related cases rerun after updating old count assertions and adding bot-author fixtures. Local and remote D1 have no pending migrations. All three health endpoints report 2.0.2 with D1 healthy; 21 read-only checks verified Access and ingestion-host isolation. No real GitHub PAT was read or logged, and production-data dev remains on port 7011. See `docs/27-github.md` and `docs/29-layered-diary.md`.
+| Component | Choice |
+| --- | --- |
+| Runtime | One Vite/React SPA + Cloudflare Worker; D1 `life` |
+| Tooling | Bun 1.4.0, Node 22.20.x/24.x/26+, strict TypeScript, Biome |
+| Model/state | `src/models/`, `src/services/`, `src/viewmodels/`; Views only render/dispatch |
+| API/tests | `worker/`, `worker/migrations/`, `tests/unit/`, `tests/worker/`, `tests/http/`, `tests/browser/` |
 
-Version 2.0.1 was deployed on 2026-09-15 from code commit `428e1a3`, Worker version `8d24aa2b-a98e-47b5-899c-b9f39ba13767`. Local and remote D1 have no pending migrations; the diary document reuses the existing content column. Both production health endpoints and Caddy report 2.0.1 with D1 healthy; 21 read-only checks verified Access and ingest-host isolation, including the diary API. L1: 1,594 tests in 88 files, all four coverage metrics ≥96.42%; L2: 29 scenarios; L3: 37 browser cases; G1/G2 and production bundle/dry run passed. `docs/29-layered-diary.md` records the personal-first JSON contract, independent activity cards, compact Info controls and three synthetic manual model checks; these checks are separate from the historical A/B benchmark. No production diary was regenerated and no GitHub PAT was read or changed. Preserve the existing encryption key/private dev vars and keep the production-data dev server running.
+The current runtime has no Next.js, Google OAuth or local SQLite production server. Node 23/25 are unsupported by the current Vitest toolchain.
 
-Version 2.0.0 was deployed on 2026-09-15 from code commit `33d51c5`, Worker version `07cb27bd-7d66-4b24-b48b-7fcd475a5d89`. Migration `0008_github.sql` is applied remotely and locally; original source-setting fingerprints and six data-table counts were preserved during migration. Both public health endpoints and Caddy report 2.0.0 with D1 healthy; 19 read-only checks verified Access and ingest-host isolation, including cache management. Seven Caddy API reads and desktop/mobile settings checks passed; final daily/all-date cache reads also passed without real cache deletion. L1: 1,561 tests, all four coverage metrics ≥96.40%; L2: 29 scenarios; L3: 36 browser cases; G1/G2 and production bundle/dry run passed. `docs/27-github.md` and `docs/28-cache-management.md` record existing-PAT settings, automatic daily queries, permanent snapshots with explicit invalidation, Lucide icons, equal row heights and release evidence. The agent never obtained or entered a real GitHub PAT; automated tests use synthetic credentials. Preserve `AI_SETTINGS_KEY` and the existing private `.dev.vars.devprod`; keep the Caddy production-data dev server running.
+## Commands
 
-Version 1.7.0 was deployed on 2026-09-14 from `79fa401`, Worker version `423bdafa-d316-4669-8fac-3a012a1b0937`. Migration `0006_general_settings.sql` is applied. Both public health endpoints and Caddy report 1.7.0 with D1 healthy; 15 read-only checks verified Access protection, general settings and ingest-host isolation. Chrome verified the Caddy settings page and real map tiles without writes or page errors. L1: 1,425 tests, all four global coverage metrics ≥96.68%; L2: 26 scenarios; L3: 27 browser cases; G1/G2 and production bundle/dry run passed. `docs/24-general-settings.md` records the bottom settings partition, named circles, personal routines and release evidence. `docs/23-diary-eval.md` keeps the completed v4 16-pair/4-repeat results separate from the v6 personal-context 6-pair evaluation (4/6 strict passes, with grader limitations). No provider data was reimported or fictional production settings/diaries created. Keep the Caddy production-data dev server running.
+Run from root. Lifecycle hooks are installed explicitly by `prepare` under the repository install policy.
 
-Version 1.6.0 was deployed on 2026-09-14, Worker version `58414787-688d-43f5-b904-9457b66488a2`. At release, both public health endpoints reported 1.6.0 with D1 healthy; Access and ingest-host isolation were verified. Migration `0005_public_context.sql` is applied. `docs/22-pixiu-daily-import.md` records the complete import of 8,690 Pixiu records in 1,832 daily rows, unchanged replay and independent verification that Footprint/Health content and timestamps remain unchanged. Production D1 measured 158,007,296 bytes after replay. L1: 1,320 tests, all four coverage metrics ≥96.70%; L2: 25 scenarios; L3: 21 browser cases; G1/G2 and production bundle/dry run passed. `docs/20-public-context-cache.md` and `docs/21-diary.md` describe permanent solar caching and persistent narrative diaries. The Caddy development server remains available at `https://life.dev.hexly.ai` with production D1.
+```sh
+bun install --frozen-lockfile
+bun run prepare
+bun run db:migrate
+bun dev
+bun run typecheck
+bun run lint
+bun run build
+bun run test:coverage
+bun run test:l2
+bunx playwright install chromium
+bun run test:l3
+bun run gate:security
+bun run quality
+```
 
-Version 1.5.1 was deployed on 2026-09-14, Worker version `795724ab-d2ed-4879-b3e3-23cf3cd945b7`. `docs/18-daily-card-design.md` records the compact all-day layout, category colors/icons, supporting information panels, accessible motion and verified release checks. At release, both public health endpoints reported 1.5.1 with D1 healthy. That release had no migrations or data imports.
+Normal local tests need no real Access, model or source credentials: the harness creates signing/encryption keys, a loopback AI fixture and public-context fixtures. G2 requires OSV and gitleaks. `data:import`/`diary:eval` and `dev:prod` are operational tools; verify their targets and authorization before running them.
 
-Version 1.5.0 was deployed on 2026-09-14, Worker version `d121a787-e9e7-429e-b299-adfb9f8bbb44`. `docs/17-apple-health.md` records the full Apple Health import, independent original-node/attachment and production-snapshot verification, unchanged replay, daily health cards and release checks. Production holds 1,841,302 Health facts across 1,413 UTC storage dates / 49 dimensions in 31,999 content rows, preserving all attachments; measured coverage is 1,412 dates. Footprint remains 670,191 points in 1,625 daily rows, with unchanged content and timestamps. Actual total remote D1 size after replay is 155,381,760 bytes. `docs/16-daily-context-and-record-tabs.md` retains 1.4.0 maps/tabs/public-context evidence, `docs/15-data-management.md` retains the 1.3.0 GPS import and release, `docs/13-story-timeline.md` retains 1.2.0 timeline design/release evidence, `docs/12-daily-view.md` retains 1.1.0 daily views/AI evidence, and `docs/08-chronicle-rewrite.md` retains the original 1.0.0 rewrite and release evidence.
+## Verification
+
+6DQ = L1/L2/L3 + G1/G2 + D1. Status: `enforced`, `planned`, `manual`, `N/A`. No `.skip`/`.only`; L1 statements/branches/functions/lines each ≥95%.
+
+| Piece | Requirement and current reality | Status | Evidence |
+| --- | --- | --- | --- |
+| L1 | Four metrics ≥95% for models/services/ViewModels/Worker | enforced | Vitest config, pre-commit and quality CI |
+| L2 | Real HTTP + SQLite for every endpoint/method | planned | Push hook/CI run `tests/http/api.ts`; complete endpoint/method inventory proof remains required |
+| L3 | Import, timeline, Connect, responsive/auth journeys | enforced | CI l3 → Playwright guarded by LIFE_TEST_URL/state |
+| G1 | Four type configurations and zero-warning/error Biome | enforced | `typecheck`/`lint`, pre-commit/CI |
+| G2 | OSV and gitleaks, missing binary fails | enforced | `scripts/security.ts`, pre-push and dedicated CI |
+| D1 | Fresh SQLite/cache, credentials stripped, local guards and marker | enforced | `run-tests.ts`, `local-db.ts`, `verify-test-bindings.ts` |
+| Build | Vite bundle | enforced | Quality CI and `quality` |
+| Docs | Provider/diary/UI evidence preserved | manual | [domain contracts](docs/30-domain-contracts.md) |
+
+Current hooks run L1/G1 and L2/G2 in parallel on working files; the security snapshot includes the reviewable working tree. Required follow-up: full index-snapshot checks <30s and stdin pushed-ref checks <3min. Hooks must remain check-only; never bypass commit or branch-push checks.
+
+## Resources / Isolation
+
+| Purpose | Ports / resource | Isolation |
+| --- | --- | --- |
+| Dev | `https://life.dev.hexly.ai` → Caddy → 7011 | `.wrangler/state`; one integrated Vite Worker |
+| Production-data dev | `bun run dev:prod`, same host/7011 | Remote production D1; keep existing server/key intact |
+| L2 / L3 | 17011 / 27011 | Per-run `.wrangler/tests/l2-*` / `l3-*` SQLite/cache |
+| Production / ingest | `life.hexly.ai` / `life.worker.hexly.ai` | D1 `life`, Access team `nocoo`; exact audience in Wrangler |
+
+Optional sidecar 37011 is reserved, not needed by Vite. Keep Caddy and workflow mirror aligned. Tests reject remote bindings and use `_test_marker(env=test)` before migrations/cleanup, fresh XDG directories and loopback fixtures; no Workers AI binding because it runs remotely. Never create remote `-test` resources or touch production/daily-dev data in tests.
+
+## Operations / Release
+
+Authorized deployment uses `bun run deploy`: inspect migrations, build/dry-run, migrate before dependent code, then verify Access, public health/version and ingest-host isolation. Detailed historical releases are in [domain contracts](docs/30-domain-contracts.md). Documentation normalization does not run a deployment, import or diary regeneration.
+
+## Retrospective
+
+Store accident narratives in [Retrospective.md](Retrospective.md); recurring rules stay brief here, cross-project lessons in global rules/nmem, deterministic safeguards in tests/hooks.
+
+- Preserve source content/timestamps on identical import replay and preserve saved diaries when any enabled source is unavailable.
