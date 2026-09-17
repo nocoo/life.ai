@@ -49,12 +49,12 @@
 		"diary:eval": "bun scripts/eval-diary.ts"
 	},
 	"dependencies": {
-		"@ai-sdk/anthropic": "4.0.53",
-		"@ai-sdk/openai": "4.0.66",
+		"@ai-sdk/anthropic": "4.0.56",
+		"@ai-sdk/openai": "4.0.69",
 		"@nocoo/basalt": "2.1.7",
 		"@nocoo/next-ai": "0.4.0",
 		"@zip.js/zip.js": "2.15.0",
-		"ai": "7.0.100",
+		"ai": "7.0.105",
 		"jose": "6.2.12",
 		"leaflet": "1.9.4",
 		"lucide-react": "1.46.0",
