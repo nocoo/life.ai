@@ -47,7 +47,7 @@ jobs:
       node-version: "26.8.1"
       install-policy: "trusted"
       deploy-script: "bun run deploy"
-      wrangler-version: "4.133.0"
+      wrangler-version: "4.134.0"
       environment: production
       concurrency-group: deploy-life-production
       timeout-minutes: 20
