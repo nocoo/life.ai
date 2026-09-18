@@ -164,8 +164,11 @@ test("mobile navigation, theme controls and wide data stay usable", async ({ pag
 	await expect(navigation).toBeHidden();
 	await expect(page.getByRole("heading", { name: "Connect", exact: true })).toBeVisible();
 	await expect(page.locator("html")).toHaveClass(/light/);
-	await page.getByRole("button", { name: "切换主题", exact: true }).click();
+	await page.getByRole("button", { name: "切换主题（当前 light）", exact: true }).click();
 	await expect(page.locator("html")).toHaveClass(/dark/);
+	await expect(
+		page.getByRole("button", { name: "切换主题（当前 dark）", exact: true }),
+	).toBeVisible();
 	await page.evaluate(() =>
 		Promise.allSettled(document.getAnimations().map((animation) => animation.finished)),
 	);
