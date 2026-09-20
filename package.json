@@ -70,8 +70,8 @@
 	"devDependencies": {
 		"@axe-core/playwright": "4.13.0",
 		"@biomejs/biome": "2.5.14",
-		"@cloudflare/vite-plugin": "1.55.0",
-		"@cloudflare/workers-types": "5.20260917.1",
+		"@cloudflare/vite-plugin": "1.56.0",
+		"@cloudflare/workers-types": "5.20260918.1",
 		"@playwright/test": "1.63.0",
 		"@tailwindcss/vite": "4.3.3",
 		"@testing-library/react": "16.3.3",
@@ -90,7 +90,7 @@
 		"typescript": "7.0.2",
 		"vite": "8.3.0",
 		"vitest": "5.0.1",
-		"wrangler": "4.134.0"
+		"wrangler": "4.135.0"
 	},
 	"trustedDependencies": [
 		"@biomejs/biome",
