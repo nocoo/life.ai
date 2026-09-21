@@ -25,4 +25,4 @@ AI 链路使用每轮启动的回环 fixture，支持 OpenAI Responses 与 Anthr
 
 Linux 测试会在隔离 XDG 缓存前固定已安装的 Playwright 浏览器路径；只复用浏览器程序，Wrangler OAuth 配置、缓存和 SQLite 仍使用本轮独立目录。自定义 G2 命令使用 Bun，因此复用的 security workflow 必须显式设置 `package-manager: bun`。
 
-Husky pre-commit 执行 L1 + G1；pre-push 并行执行 L2 + G2。CI 同时运行全部维度，所有 GitHub Actions 可复用工作流固定到具体 SHA。
+Husky pre-commit 对 Git index 快照执行 L1 + G1；pre-push 并行执行 L2 + G2。CI 同时运行全部维度，所有 GitHub Actions 可复用工作流固定到具体 SHA。

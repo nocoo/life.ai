@@ -75,7 +75,7 @@ Normal local tests need no real Access, model or source credentials: the harness
 | Build | Vite bundle | enforced | Quality CI and `quality` |
 | Docs | Provider/diary/UI evidence preserved | manual | [domain contracts](docs/30-domain-contracts.md) |
 
-Current hooks run L1/G1 and L2/G2 in parallel on working files; the security snapshot includes the reviewable working tree. Required follow-up: full index-snapshot checks <30s and stdin pushed-ref checks <3min. Hooks must remain check-only; never bypass commit or branch-push checks.
+Current hooks run L1/G1 against a temporary Git index snapshot (coverage, typecheck, then lint) and L2/G2 on push. The security snapshot includes the reviewable working tree. Required follow-up: stdin pushed-ref checks <3min. Hooks must remain check-only; never bypass commit or branch-push checks.
 
 ## Resources / Isolation
 
