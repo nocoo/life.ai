@@ -19,7 +19,10 @@ cleanup() {
 	fi
 	exit "$status"
 }
-trap cleanup EXIT INT TERM HUP
+trap cleanup EXIT
+trap "exit 130" INT
+trap "exit 143" TERM
+trap "exit 129" HUP
 
 snapshot=$(mktemp -d "${TMPDIR:-/tmp}/life-index-XXXXXX")
 git checkout-index --all --prefix="$snapshot/"
