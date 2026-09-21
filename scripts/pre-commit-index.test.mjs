@@ -1,8 +1,9 @@
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import {
 	chmodSync,
 	mkdirSync,
 	mkdtempSync,
+	readdirSync,
 	readFileSync,
 	rmSync,
 	symlinkSync,
@@ -27,7 +28,19 @@ function git(repo, args, env) {
 	return execFileSync("git", args, { cwd: repo, env, encoding: "utf8" });
 }
 
-function createFixture() {
+async function waitUntil(check, timeoutMs) {
+	const started = Date.now();
+	while (!check()) {
+		if (Date.now() - started > timeoutMs) throw new Error("timed out");
+		await new Promise((resolve) => setTimeout(resolve, 20));
+	}
+}
+
+function snapshots(tmp) {
+	return readdirSync(tmp).filter((name) => name.startsWith("life-index-"));
+}
+
+function createFixture({ commit = true, coverage = 'node -e "process.exit(0)"' } = {}) {
 	const root = mkdtempSync(join(tmpdir(), "life-precommit-"));
 	fixtures.push(root);
 	const home = join(root, "home");
@@ -58,7 +71,7 @@ function createFixture() {
 		`${JSON.stringify(
 			{
 				scripts: {
-					"test:coverage": 'node -e "process.exit(0)"',
+					"test:coverage": coverage,
 					typecheck: "tsc --noEmit -p tsconfig.json",
 					lint: 'node -e "process.exit(0)"',
 				},
@@ -88,8 +101,8 @@ function createFixture() {
 	writeFileSync(join(repo, "main.ts"), "const value: number = 1;\n");
 	symlinkSync(join(repoRoot, "node_modules"), join(repo, "node_modules"));
 	git(repo, ["add", "package.json", "tsconfig.json", "bun.lock", "main.ts"], env);
-	git(repo, ["commit", "-m", "seed"], env);
-	return { repo, env };
+	if (commit) git(repo, ["commit", "-m", "seed"], env);
+	return { repo, env, tmp };
 }
 
 describe("pre-commit index snapshot", () => {
@@ -128,5 +141,30 @@ describe("pre-commit index snapshot", () => {
 		expect(readFileSync(join(repo, "main.ts"), "utf8")).toBe(
 			'const value: number = "worktree-bad";\n',
 		);
+	}, 30000);
+
+	it("exits nonzero on interruption and removes the snapshot", async () => {
+		for (const [signal, code] of [
+			["SIGTERM", 143],
+			["SIGINT", 130],
+			["SIGHUP", 129],
+		]) {
+			const { repo, env, tmp } = createFixture({
+				commit: false,
+				coverage: 'node -e "setTimeout(() => {}, 30000)"',
+			});
+			const child = spawn("sh", [join(repo, ".git/hooks/pre-commit")], {
+				cwd: repo,
+				env,
+				stdio: "ignore",
+			});
+			await waitUntil(() => snapshots(tmp).length > 0, 5000);
+			child.kill(signal);
+			const status = await new Promise((resolve) => {
+				child.once("exit", (exitCode) => resolve(exitCode));
+			});
+			expect(status, signal).toBe(code);
+			expect(snapshots(tmp), signal).toEqual([]);
+		}
 	}, 30000);
 });
