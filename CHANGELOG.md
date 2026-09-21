@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.0.3 — 2026-09-21
+
+- Run pre-commit coverage, strict type checks and warning-fatal lint against the Git index snapshot; preserve unstaged changes and reject interrupted checks.
+- Add regression tests for staged failures, healthy staged content with unrelated working-tree edits, and signal cleanup.
+- Add accessible header links and tooltips, align browser theme selectors, and refresh bilingual project documentation.
+- Update AI SDK, Cloudflare, React Router, Basalt and related tooling dependencies; automate production deployment after successful CI.
+
 ## 2.0.2 — 2026-09-15
 
 - 「当日日记」改为「AI 总结」；「电脑活动」「文章创作」「GitHub」位于总结内部，可各自展开，沿用已保存的结构化内容。
