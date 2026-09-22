@@ -9,7 +9,7 @@
         "@ai-sdk/openai": "4.0.72",
         "@nocoo/basalt": "2.1.8",
         "@nocoo/next-ai": "0.4.0",
-        "@zip.js/zip.js": "2.15.0",
+        "@zip.js/zip.js": "2.17.0",
         "ai": "7.0.107",
         "jose": "6.2.12",
         "leaflet": "1.9.4",
@@ -560,7 +560,7 @@
 
     "@workflow/serde": ["@workflow/serde@4.1.0", "", {}, "sha512-pav4F2BoirECWR7Nf1TKt+2eETcBj7jj4cBefQ8VXQCA6NPkaKeLfj/zMgi+3zYV5ZIBT4GuUiphsj0/b9hPQQ=="],
 
-    "@zip.js/zip.js": ["@zip.js/zip.js@2.15.0", "", {}, "sha512-hYAuHAaWjt0axbofaDL5XUlmrQPsBDcK3f45ApZuh6N+8UGVk26GoGdtGDvcvzahsHytTQ6DtBVXwG9IcCMjjQ=="],
+    "@zip.js/zip.js": ["@zip.js/zip.js@2.17.0", "", {}, "sha512-WxvSsJvlI+5v4f1gWjGfqvzOB8XkAIughO+iJUPOJR6OSpUkFauBzi1G4xS2MmK1fxHGuDAqq9Lnpq/ri7BWuw=="],
 
     "ai": ["ai@7.0.107", "", { "dependencies": { "@ai-sdk/gateway": "4.0.87", "@ai-sdk/provider": "4.0.17", "@ai-sdk/provider-utils": "5.0.45" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-PVYQ3W9kR8oYiGQxbg4aFIlhQzKskZm8UV+4E0zB2uKOzFr8ju3bXQncOOZtLsOgJY8vdpgyu3cXtomsfcdQYg=="],
 
