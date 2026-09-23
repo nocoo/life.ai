@@ -20,7 +20,7 @@
 
 D1 `life`（APAC）：`50a1d276-d24b-4c07-82af-e14683116489`。绑定 `DB`。Worker 静态资产绑定 `ASSETS`，所有请求先进入 Worker；`workers.dev` 和预览 URL 禁用，机器写入域名不会返回网页或读取接口。
 
-Access team 为 `nocoo`，issuer 为 `https://nocoo.cloudflareaccess.com`；audience 记录在 `CLAUDE.md` 和 `wrangler.jsonc`。服务端使用 Cloudflare 公钥验证 RS256 签名、issuer、audience、exp、sub。Connect token 是随机 32 字节，只保存 SHA-256 摘要。
+Access team 为 `nocoo`，issuer 为 `https://nocoo.cloudflareaccess.com`；audience 记录在 `AGENTS.md` 和 `wrangler.jsonc`。服务端使用 Cloudflare 公钥验证 RS256 签名、issuer、audience、exp、sub。Connect token 是随机 32 字节，只保存 SHA-256 摘要。
 
 部署前运行 `bun run quality`。`bun run deploy` 构建和 dry run 后检查迁移列表、应用缺失迁移，再部署两个域名。先迁移再更新服务，避免缺表。当前版本必须同时显示于侧栏与 `/api/live`。
 

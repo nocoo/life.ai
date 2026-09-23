@@ -12,7 +12,7 @@ Connect idempotency is `(connect source, UTC hour)`. Floor the request timestamp
 
 One root Bun package, Vite React SPA with Cloudflare Vite integration. `src/models/` owns shared types, UTC/precision validation, timeline projection and streaming import adapters. `src/services/`, `src/viewmodels/`, `src/views/`, `src/components/` implement MVVM. `worker/` owns HTTP, Access, Connect and D1 SQL; `worker/migrations/` owns schema. Basalt owns chrome and controls; timeline and source content remain application components.
 
-Production: Worker `life`, D1 `life`, dashboard `life.hexly.ai`. `life.worker.hexly.ai` only serves `/api/ingest` and `/api/live`. Disable `workers.dev` and previews. Verify Access issuer/audience from `CLAUDE.md`. Tests use isolated local identity/JWKS, never production credentials.
+Production: Worker `life`, D1 `life`, dashboard `life.hexly.ai`. `life.worker.hexly.ai` only serves `/api/ingest` and `/api/live`. Disable `workers.dev` and previews. Verify Access issuer/audience from `AGENTS.md`. Tests use isolated local identity/JWKS, never production credentials.
 
 ## API contract
 
