@@ -54,7 +54,7 @@
 		"@nocoo/basalt": "2.1.8",
 		"@nocoo/next-ai": "0.4.0",
 		"@zip.js/zip.js": "2.17.0",
-		"ai": "7.0.108",
+		"ai": "7.0.111",
 		"jose": "6.2.12",
 		"leaflet": "1.9.4",
 		"lucide-react": "1.47.0",
