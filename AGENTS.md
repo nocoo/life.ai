@@ -50,7 +50,7 @@ Normal local tests need no real Access, model or source credentials: the harness
 
 | Piece | Requirement and current reality | Status | Evidence |
 | --- | --- | --- | --- |
-| L1 | Four metrics ≥95% for models/services/ViewModels/Worker plus strict types/lint with installed rejection | planned | Configured and active subchecks — unique in this portfolio: pre-commit runs coverage, typecheck and lint against a temporary Git index snapshot (`vitest.config.ts`, pre-commit and quality CI; four type configs with `typecheck`/`lint`). <30s timing and rejection evidence are unrecorded, so complete unified L1 stays planned |
+| L1 | Four metrics ≥95% for models/services/ViewModels/Worker plus strict types/lint with installed rejection | planned | Configured and active subchecks: pre-commit runs coverage, typecheck and lint against a temporary Git index snapshot (`vitest.config.ts`, pre-commit and quality CI; four type configs with `typecheck`/`lint`). <30s timing and rejection evidence are unrecorded, so complete unified L1 stays planned |
 | L2 | Real HTTP + SQLite for every endpoint/method | planned | Push hook/CI run `tests/http/api.ts`; complete endpoint/method inventory proof remains required |
 | L3 | Import, timeline, Connect, responsive/auth journeys | enforced | CI l3 → Playwright guarded by LIFE_TEST_URL/state |
 | G2 | OSV and gitleaks, missing binary fails | enforced | `scripts/security.ts`, pre-push and dedicated CI |
