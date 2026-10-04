@@ -8,8 +8,22 @@ command -v bun >/dev/null 2>&1 || {
 	echo "pre-commit: bun is required" >&2
 	exit 1
 }
+command -v node >/dev/null 2>&1 || {
+	echo "pre-commit: node is required" >&2
+	exit 1
+}
 
 snapshot=
+active_check=
+interrupt() {
+	trap '' INT TERM HUP
+	if [ -n "$active_check" ]; then
+		kill "-$1" "$active_check" 2>/dev/null || :
+		wait "$active_check" 2>/dev/null || :
+		active_check=
+	fi
+	exit "$2"
+}
 cleanup() {
 	status=$?
 	trap - EXIT INT TERM HUP
@@ -20,9 +34,9 @@ cleanup() {
 	exit "$status"
 }
 trap cleanup EXIT
-trap "exit 130" INT
-trap "exit 143" TERM
-trap "exit 129" HUP
+trap 'interrupt INT 130' INT
+trap 'interrupt TERM 143' TERM
+trap 'interrupt HUP 129' HUP
 
 snapshot=$(mktemp -d "${TMPDIR:-/tmp}/life-index-XXXXXX")
 git checkout-index --all --prefix="$snapshot/"
@@ -55,6 +69,15 @@ export XDG_STATE_HOME="$snapshot/.cache"
 PATH="$snapshot/node_modules/.bin:$PATH"
 cd "$snapshot"
 
-bun run test:coverage
-bun run typecheck
-bun run lint
+run_check() {
+	node scripts/run-hook-command.mjs "$@" &
+	active_check=$!
+	check_status=0
+	wait "$active_check" || check_status=$?
+	active_check=
+	return "$check_status"
+}
+
+run_check bun run test:coverage
+run_check bun run typecheck
+run_check bun run lint
