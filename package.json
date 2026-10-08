@@ -49,15 +49,15 @@
 		"diary:eval": "bun scripts/eval-diary.ts"
 	},
 	"dependencies": {
-		"@ai-sdk/anthropic": "4.0.65",
-		"@ai-sdk/openai": "4.0.78",
+		"@ai-sdk/anthropic": "4.0.68",
+		"@ai-sdk/openai": "4.0.81",
 		"@nocoo/basalt": "2.2.0",
 		"@nocoo/next-ai": "0.4.0",
 		"@zip.js/zip.js": "2.18.2",
-		"ai": "7.0.118",
+		"ai": "7.0.122",
 		"jose": "6.2.12",
 		"leaflet": "1.9.4",
-		"lucide-react": "1.48.0",
+		"lucide-react": "1.49.0",
 		"papaparse": "5.7.0",
 		"react": "19.3.0",
 		"react-dom": "19.3.0",
@@ -71,7 +71,7 @@
 		"@axe-core/playwright": "4.13.0",
 		"@biomejs/biome": "2.5.15",
 		"@cloudflare/vite-plugin": "1.62.3",
-		"@cloudflare/workers-types": "5.20260927.1",
+		"@cloudflare/workers-types": "5.20260929.1",
 		"@playwright/test": "1.63.0",
 		"@tailwindcss/vite": "4.3.3",
 		"@testing-library/react": "16.3.3",
@@ -93,7 +93,9 @@
 		"wrangler": "4.145.0"
 	},
 	"overrides": {
-		"undici": "7.29.1"
+		"undici": "7.29.1",
+		"sharp": "0.35.5",
+		"source-map-js": "1.2.2"
 	},
 	"trustedDependencies": [
 		"@biomejs/biome",
