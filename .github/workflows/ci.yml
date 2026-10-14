@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   quality:
-    uses: nocoo/base-ci/.github/workflows/quality.yml@ad43150de3a2be2fa464b5cd2f921dc4fa9f8f0f
+    uses: nocoo/base-ci/.github/workflows/quality.yml@0394178ebcff0418c442d84a84119220f31f8987 # v2026.9
     with:
       runtime-version: '1.4.0'
       node-version: '26.8.1'
@@ -27,7 +27,7 @@ jobs:
       coverage-path: coverage/
 
   security:
-    uses: nocoo/base-ci/.github/workflows/security.yml@ad43150de3a2be2fa464b5cd2f921dc4fa9f8f0f
+    uses: nocoo/base-ci/.github/workflows/security.yml@0394178ebcff0418c442d84a84119220f31f8987 # v2026.9
     with:
       package-manager: bun
       runtime-version: '1.4.0'
@@ -44,7 +44,7 @@ jobs:
       fail-fast: false
       matrix:
         tier: [l2, l3]
-    uses: nocoo/base-ci/.github/workflows/test-job.yml@ad43150de3a2be2fa464b5cd2f921dc4fa9f8f0f
+    uses: nocoo/base-ci/.github/workflows/test-job.yml@0394178ebcff0418c442d84a84119220f31f8987 # v2026.9
     with:
       runtime-version: '1.4.0'
       node-version: '26.8.1'
@@ -58,4 +58,4 @@ jobs:
         playwright-report/
 
   workflows:
-    uses: nocoo/base-ci/.github/workflows/workflow-lint.yml@ad43150de3a2be2fa464b5cd2f921dc4fa9f8f0f
+    uses: nocoo/base-ci/.github/workflows/workflow-lint.yml@0394178ebcff0418c442d84a84119220f31f8987 # v2026.9
