@@ -90,7 +90,7 @@
 		"typescript": "7.0.2",
 		"vite": "8.3.4",
 		"vitest": "5.0.4",
-		"wrangler": "4.149.0"
+		"wrangler": "4.151.0"
 	},
 	"overrides": {
 		"undici": "7.29.1",
@@ -102,5 +102,8 @@
 		"@biomejs/biome",
 		"esbuild",
 		"workerd"
-	]
+	],
+	"patchedDependencies": {
+		"miniflare@5.20260930.0-alpha": "patches/miniflare@5.20260930.0-alpha.patch"
+	}
 }
