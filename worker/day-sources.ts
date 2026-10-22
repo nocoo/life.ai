@@ -117,10 +117,9 @@ export async function fetchGeckoDay(
 		return parsed.data;
 	};
 	// A past probe discovers the account timezone without requesting a future date.
-	const probe =
-		query.date > shiftLocalDate(dateInTimeZone(Date.now(), "UTC"), -1)
-			? shiftLocalDate(dateInTimeZone(Date.now(), "UTC"), -1)
-			: query.date;
+	const yesterday = shiftLocalDate(dateInTimeZone(Date.now(), "UTC"), -1);
+	// biome-ignore lint/complexity/useMathMinMax: ISO calendar days are compared lexicographically, not with Math.min
+	const probe = query.date > yesterday ? yesterday : query.date;
 	const first = await get(probe);
 	const from = dateInTimeZone(Date.parse(query.start), first.timezone);
 	const to = dateInTimeZone(Date.parse(query.end) - 1, first.timezone);

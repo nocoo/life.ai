@@ -23,11 +23,11 @@ Open [life.hexly.ai](https://life.hexly.ai) through Cloudflare Access. Every aut
 
 Choose a source under Data Management:
 
-| Source | Input and storage |
-| --- | --- |
-| Footprint | Complete GPX; all points are compacted by UTC day, replacing each included day |
+| Source       | Input and storage                                                                                                                                                                                                                                          |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Footprint    | Complete GPX; all points are compacted by UTC day, replacing each included day                                                                                                                                                                             |
 | Apple Health | Complete export ZIP or extracted directory; lossless UTC day × dimension storage preserves original attributes, nested metadata, observations from multiple devices, workout GPX, ECG CSV and CDA; all dimensions of an included day are replaced together |
-| Pixiu | One or more original CSV files; all nine columns, duplicates, zero amounts and multiple currencies survive; replacement uses UTC+8 accounting days, with expenses/income separated from transfers/repayments |
+| Pixiu        | One or more original CSV files; all nine columns, duplicates, zero amounts and multiple currencies survive; replacement uses UTC+8 accounting days, with expenses/income separated from transfers/repayments                                               |
 
 Settings groups general preferences, AI, Connect and diary import. Diaries accept JSON / NDJSON; ordinary JSON is limited to 10 MiB. Cancelling keeps completed batches.
 
@@ -78,14 +78,14 @@ Vitest runs unit tests. HTTP and browser tests use ports 17011 / 27011 with fres
 
 ## Stack
 
-| Technology | Role |
-| --- | --- |
-| React · Vite · Basalt | Web interface |
-| TypeScript · Bun · Biome | Types, scripts and static checks |
-| Cloudflare Workers · D1 | API, Access validation and storage |
-| Workers AI · AI SDK | Diary generation and model integration |
-| Leaflet · Recharts | Maps and statistics |
-| Vitest · Playwright | Unit, HTTP and browser tests |
+| Technology               | Role                                   |
+| ------------------------ | -------------------------------------- |
+| React · Vite · Basalt    | Web interface                          |
+| TypeScript · Bun · Biome | Types, scripts and static checks       |
+| Cloudflare Workers · D1  | API, Access validation and storage     |
+| Workers AI · AI SDK      | Diary generation and model integration |
+| Leaflet · Recharts       | Maps and statistics                    |
+| Vitest · Playwright      | Unit, HTTP and browser tests           |
 
 `src/models/`, `src/services/` and `src/viewmodels/` own domain logic, HTTP and state. Views render and dispatch actions; `worker/` owns the API and database.
 

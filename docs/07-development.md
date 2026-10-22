@@ -2,13 +2,13 @@
 
 ## 环境
 
-| 环境 | 地址 / 资源 |
-| --- | --- |
-| 开发 | `https://life.dev.hexly.ai` → Caddy → `127.0.0.1:7011` |
-| L2 | `127.0.0.1:17011`，每轮独立 SQLite |
-| L3 | `127.0.0.1:27011`，每轮独立 SQLite |
-| 生产 | `https://life.hexly.ai`，Worker `life`，D1 `life` |
-| 机器写入 | `https://life.worker.hexly.ai/api/ingest` |
+| 环境     | 地址 / 资源                                            |
+| -------- | ------------------------------------------------------ |
+| 开发     | `https://life.dev.hexly.ai` → Caddy → `127.0.0.1:7011` |
+| L2       | `127.0.0.1:17011`，每轮独立 SQLite                     |
+| L3       | `127.0.0.1:27011`，每轮独立 SQLite                     |
+| 生产     | `https://life.hexly.ai`，Worker `life`，D1 `life`      |
+| 机器写入 | `https://life.worker.hexly.ai/api/ingest`              |
 
 端口依据 nmem `25b22d6b-1df5-4491-ae4d-269a556f6442`。Caddy 配置位于 `/opt/homebrew/etc/Caddyfile`，镜像为 `../workflow/caddy/Caddyfile`。Vite 与 Worker 集成在一个端口，不需要额外 sidecar。
 

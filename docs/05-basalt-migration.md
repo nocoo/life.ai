@@ -6,17 +6,17 @@ Migrate all life.ai dashboard UI to the basalt design system while preserving fu
 
 ## Terminology
 
-| Term | Meaning |
-|------|---------|
-| **basalt** | Template project at `../basalt` — Vite SPA with a 3-tier luminance design system |
-| **life.ai** | This project — Next.js dashboard for health, footprint, and finance data |
-| **L0/L1/L2** | Basalt luminance layers: body → content panel → inner cards |
-| **Contribute** | Write a generic component into basalt so it can later be imported back |
+| Term           | Meaning                                                                          |
+| -------------- | -------------------------------------------------------------------------------- |
+| **basalt**     | Template project at `../basalt` — Vite SPA with a 3-tier luminance design system |
+| **life.ai**    | This project — Next.js dashboard for health, footprint, and finance data         |
+| **L0/L1/L2**   | Basalt luminance layers: body → content panel → inner cards                      |
+| **Contribute** | Write a generic component into basalt so it can later be imported back           |
 
 ## Guiding Principles
 
 1. **UI-only migration.** Services, models, viewmodels, API routes, and data pipelines stay untouched.
-2. **Phase 0 goes first.** Contribute missing generic components to basalt *before* starting migration, so life.ai can import from a single coherent design system.
+2. **Phase 0 goes first.** Contribute missing generic components to basalt _before_ starting migration, so life.ai can import from a single coherent design system.
 3. **Atomic commits.** Each commit is buildable and testable. Never mix phases.
 4. **Three-tier testing.** Every phase ends with UT + Lint + E2E green.
 
@@ -30,23 +30,23 @@ Enrich basalt with 8 reusable components from life.ai, making basalt a complete 
 
 ### Components to Contribute
 
-| # | Component | Source (life.ai) | Target (basalt) | Lines | Effort |
-|---|-----------|-------------------|------------------|-------|--------|
-| 1 | HeatmapCalendar | `charts/heatmap-calendar.tsx` | `components/dashboard/HeatmapCalendarCard.tsx` | 296 | Medium |
-| 2 | LineChart | `charts/line-chart.tsx` | `components/dashboard/LineChartCard.tsx` | 184 | Low |
-| 3 | BarChart (wrapper) | `charts/bar-chart.tsx` | `components/dashboard/WrappedBarChartCard.tsx` | 145 | Low |
-| 4 | PieChart / DonutChart | `charts/pie-chart.tsx` | `components/dashboard/PieChartCard.tsx` | 121 | Low |
-| 5 | StatCard + StatGrid | `charts/stat-card.tsx` | `components/dashboard/StatCard.tsx` | 102 | Low |
-| 6 | Map | `ui/map.tsx` | `components/ui/map.tsx` | 1552 | High |
-| 7 | Timeline | `views/day/timeline.tsx` | `components/dashboard/TimelineCard.tsx` | 81 | Low |
-| 8 | DateNavigation | `views/day/date-navigation.tsx` | `components/dashboard/DateNavigation.tsx` | 74 | Low |
+| #   | Component             | Source (life.ai)                | Target (basalt)                                | Lines | Effort |
+| --- | --------------------- | ------------------------------- | ---------------------------------------------- | ----- | ------ |
+| 1   | HeatmapCalendar       | `charts/heatmap-calendar.tsx`   | `components/dashboard/HeatmapCalendarCard.tsx` | 296   | Medium |
+| 2   | LineChart             | `charts/line-chart.tsx`         | `components/dashboard/LineChartCard.tsx`       | 184   | Low    |
+| 3   | BarChart (wrapper)    | `charts/bar-chart.tsx`          | `components/dashboard/WrappedBarChartCard.tsx` | 145   | Low    |
+| 4   | PieChart / DonutChart | `charts/pie-chart.tsx`          | `components/dashboard/PieChartCard.tsx`        | 121   | Low    |
+| 5   | StatCard + StatGrid   | `charts/stat-card.tsx`          | `components/dashboard/StatCard.tsx`            | 102   | Low    |
+| 6   | Map                   | `ui/map.tsx`                    | `components/ui/map.tsx`                        | 1552  | High   |
+| 7   | Timeline              | `views/day/timeline.tsx`        | `components/dashboard/TimelineCard.tsx`        | 81    | Low    |
+| 8   | DateNavigation        | `views/day/date-navigation.tsx` | `components/dashboard/DateNavigation.tsx`      | 74    | Low    |
 
 ### Component NOT Contributed (Domain-Specific)
 
-| Component | Reason |
-|-----------|--------|
+| Component                    | Reason                                                                                                                                              |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | EnhancedTimeline (359 lines) | Deeply coupled to Apple Health types, 18 Chinese health labels, sun position astronomy, heart rate zones. Will be restyled in-place during Phase 4. |
-| DayCalendar (27 lines) | Thin wrapper over shadcn Calendar — not worth standalone contribution. |
+| DayCalendar (27 lines)       | Thin wrapper over shadcn Calendar — not worth standalone contribution.                                                                              |
 
 ### Contribution Strategy Per Component
 
@@ -64,7 +64,7 @@ Enrich basalt with 8 reusable components from life.ai, making basalt a complete 
 - **Adapt:** Replace `chart-colors.ts` oklch palette with basalt's `palette.ts` HSL system.
 - **Adapt:** Each chart becomes a Card-wrapped component following basalt's `CardHeader + CardContent` pattern.
 - **Adapt:** Use basalt's `chartAxis`, `chartPrimary`, `CHART_COLORS` instead of hardcoded oklch.
-- **Note:** basalt already has inline Recharts in its dashboard cards (SummaryMetricCard, BarChartCard, etc.). These new wrappers provide *reusable, props-driven* versions — they complement, not replace, existing cards.
+- **Note:** basalt already has inline Recharts in its dashboard cards (SummaryMetricCard, BarChartCard, etc.). These new wrappers provide _reusable, props-driven_ versions — they complement, not replace, existing cards.
 - **Demo page:** Extend existing `StatsOverviewPage` or create `ChartShowcasePage` to demo all three wrappers with varied datasets.
 - **Test:** UT for each chart: renders without crashing, displays correct number of data points, handles empty data.
 
@@ -304,14 +304,14 @@ To:
 ```tsx
 // Basalt pattern (L2)
 <Card className="rounded-card border-0 bg-secondary shadow-none">
-  <CardHeader>
-    <div className="flex items-center gap-2">
-      <Icon className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
-      <CardTitle className="text-sm font-normal text-muted-foreground">Title</CardTitle>
-    </div>
-  </CardHeader>
-  <CardContent>...</CardContent>
-</Card>
+	<CardHeader>
+		<div className="flex items-center gap-2">
+			<Icon className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+			<CardTitle className="text-sm font-normal text-muted-foreground">Title</CardTitle>
+		</div>
+	</CardHeader>
+	<CardContent>...</CardContent>
+</Card>;
 ```
 
 #### StatCard Restyling
@@ -323,13 +323,13 @@ Update `StatCard` to match basalt's metric card pattern:
 
 #### View-by-View Changes
 
-| View | Files to Update | Key Changes |
-|------|----------------|-------------|
-| Day | `day-page.tsx`, `day-info-card.tsx`, `health-panel.tsx`, `activity-panel.tsx`, `summary-cards.tsx` | All cards → L2 style, mini bar charts keep inline div approach |
-| Day | `enhanced-timeline.tsx` | Wrap in L2 card, adapt pill colors to basalt palette |
-| Month | `month-page.tsx`, `month-health-panel.tsx`, `month-footprint-panel.tsx`, `month-pixiu-panel.tsx` | All StatCards + chart cards → L2 style |
-| Year | `year-page.tsx`, `year-health-panel.tsx`, `year-footprint-panel.tsx`, `year-pixiu-panel.tsx` | All StatCards + heatmaps + chart cards → L2 style |
-| Raw data | `raw-health-data.tsx`, `raw-footprint-data.tsx`, `raw-pixiu-data.tsx` | Table styling: borders → basalt border tokens |
+| View     | Files to Update                                                                                    | Key Changes                                                    |
+| -------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Day      | `day-page.tsx`, `day-info-card.tsx`, `health-panel.tsx`, `activity-panel.tsx`, `summary-cards.tsx` | All cards → L2 style, mini bar charts keep inline div approach |
+| Day      | `enhanced-timeline.tsx`                                                                            | Wrap in L2 card, adapt pill colors to basalt palette           |
+| Month    | `month-page.tsx`, `month-health-panel.tsx`, `month-footprint-panel.tsx`, `month-pixiu-panel.tsx`   | All StatCards + chart cards → L2 style                         |
+| Year     | `year-page.tsx`, `year-health-panel.tsx`, `year-footprint-panel.tsx`, `year-pixiu-panel.tsx`       | All StatCards + heatmaps + chart cards → L2 style              |
+| Raw data | `raw-health-data.tsx`, `raw-footprint-data.tsx`, `raw-pixiu-data.tsx`                              | Table styling: borders → basalt border tokens                  |
 
 #### Typography Updates
 
@@ -436,37 +436,37 @@ test: add e2e tests for sidebar navigation and theme switching
 
 ### New dependencies for life.ai
 
-| Package | Phase | Reason |
-|---------|-------|--------|
-| `tw-animate-css` | 1 | Basalt animation utilities |
+| Package          | Phase | Reason                     |
+| ---------------- | ----- | -------------------------- |
+| `tw-animate-css` | 1     | Basalt animation utilities |
 
 ### New dependencies for basalt (Phase 0)
 
-| Package | Component | Reason |
-|---------|-----------|--------|
-| `leaflet` | Map | Core map library |
-| `react-leaflet` | Map | React bindings |
-| `leaflet-draw` | Map | Drawing tools |
-| `leaflet.fullscreen` | Map | Fullscreen control |
-| `leaflet.markercluster` | Map | Marker clustering |
-| `react-leaflet-markercluster` | Map | React cluster bindings |
-| `@types/leaflet` | Map | TypeScript types |
-| `@types/leaflet-draw` | Map | TypeScript types |
-| `@types/leaflet.fullscreen` | Map | TypeScript types |
-| `@types/leaflet.markercluster` | Map | TypeScript types |
-| `date-fns` | DateNavigation | Date formatting |
+| Package                        | Component      | Reason                 |
+| ------------------------------ | -------------- | ---------------------- |
+| `leaflet`                      | Map            | Core map library       |
+| `react-leaflet`                | Map            | React bindings         |
+| `leaflet-draw`                 | Map            | Drawing tools          |
+| `leaflet.fullscreen`           | Map            | Fullscreen control     |
+| `leaflet.markercluster`        | Map            | Marker clustering      |
+| `react-leaflet-markercluster`  | Map            | React cluster bindings |
+| `@types/leaflet`               | Map            | TypeScript types       |
+| `@types/leaflet-draw`          | Map            | TypeScript types       |
+| `@types/leaflet.fullscreen`    | Map            | TypeScript types       |
+| `@types/leaflet.markercluster` | Map            | TypeScript types       |
+| `date-fns`                     | DateNavigation | Date formatting        |
 
 ---
 
 ## Risk Register
 
-| Risk | Severity | Mitigation |
-|------|----------|------------|
-| oklch → HSL color mismatch for heatmaps | Medium | Use precise conversion tool; visual verify each scale |
-| Map component heavy deps bloat basalt | Medium | Tree-shake; Leaflet is a peer dep, not bundled |
-| Sidebar breaks mobile App Router pages | Low | Test on 375px viewport; basalt pattern is proven |
-| 44 test files need className updates | High | Fix per-phase, not batched; keep CI green |
-| Recharts SVG ignores CSS vars | Low | basalt already validates `hsl(var(...))` works |
+| Risk                                    | Severity | Mitigation                                            |
+| --------------------------------------- | -------- | ----------------------------------------------------- |
+| oklch → HSL color mismatch for heatmaps | Medium   | Use precise conversion tool; visual verify each scale |
+| Map component heavy deps bloat basalt   | Medium   | Tree-shake; Leaflet is a peer dep, not bundled        |
+| Sidebar breaks mobile App Router pages  | Low      | Test on 375px viewport; basalt pattern is proven      |
+| 44 test files need className updates    | High     | Fix per-phase, not batched; keep CI green             |
+| Recharts SVG ignores CSS vars           | Low      | basalt already validates `hsl(var(...))` works        |
 
 ---
 

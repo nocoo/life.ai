@@ -349,6 +349,7 @@ export async function getDayWeather(
 				latitude: String(lat),
 				longitude: String(lon),
 				start_date: startDate < "1940-01-01" ? "1940-01-01" : startDate,
+				// biome-ignore lint/complexity/useMathMinMax: ISO calendar days are compared lexicographically
 				end_date: endDate > lastForecastDate ? lastForecastDate : endDate,
 				hourly: "temperature_2m,weather_code,precipitation,wind_speed_10m",
 				timezone: "GMT",

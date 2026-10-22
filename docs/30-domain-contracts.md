@@ -4,7 +4,6 @@
 
 ## 文档地图
 
-
 - Product, API contract, ownership and implementation status: [docs/08-chronicle-rewrite.md](08-chronicle-rewrite.md).
 - Daily GPS/health/finance views, lizheng.blog profile and AI summaries: [docs/12-daily-view.md](12-daily-view.md).
 - Current daily reading design, GPS/weather and record tabs: [docs/16-daily-context-and-record-tabs.md](16-daily-context-and-record-tabs.md). [docs/13-story-timeline.md](13-story-timeline.md) retains the 1.2.0 design and release.
@@ -25,7 +24,6 @@
 
 
 ## 领域与界面约定
-
 
 - One owner and one dataset. Access authenticates the entrance; never partition records by Access subject/email.
 - Vite + React + Basalt + TypeScript strict + Biome; a Cloudflare Worker serves the SPA and API, with D1 database `life`.

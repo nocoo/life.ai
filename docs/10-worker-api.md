@@ -45,6 +45,7 @@ To guarantee that test shortcuts cannot accidentally or maliciously activate in 
 - At rest, tokens are stored as **SHA-256** digests (`token_hash`).
 - Revocation sets `revoked_at` timestamp.
 - **Race Condition Prevention**: At ingestion time, the query uses an atomic single-statement insert with revocation fencing:
+
   ```sql
   INSERT INTO life_events (...)
   SELECT ?, id, NULL, ?, NULL, 'hour', ?, ?, ?, ?
@@ -53,6 +54,7 @@ To guarantee that test shortcuts cannot accidentally or maliciously activate in 
   ON CONFLICT(source_id, occurred_at) WHERE external_key IS NULL DO UPDATE ...
   RETURNING id, occurred_at, precision, updated_at
   ```
+
   If the token was concurrently revoked, 0 rows are selected and `row` is `null`, returning `403 token_revoked`.
 - `last_used_at` is only updated upon successful writes, preventing timestamp inflation from rejected or revoked requests.
 
@@ -127,7 +129,9 @@ ON life_events(source_id, occurred_at ASC, id ASC);
 ## 4. API Endpoints
 
 ### 4.1 `GET /api/live`
+
 - Public health check:
+
   ```json
   {
     "status": "ok",
@@ -139,8 +143,10 @@ ON life_events(source_id, occurred_at ASC, id ASC);
 - Queries `SELECT 1 as alive`. If DB query fails or does not return `alive === 1`, returns `503 Service Unavailable` with `database: "error"`.
 
 ### 4.2 `GET /api/session`
+
 - Authenticated via Cloudflare Access.
 - Response:
+
   ```json
   {
     "data": {
@@ -156,9 +162,11 @@ ON life_events(source_id, occurred_at ASC, id ASC);
 The profile uses SHA-256 of the normalized authenticated email with `lizheng.blog/api/authors/profile`. Missing or failed profiles return `name: null, avatar: null`; authentication and dataset ownership are unchanged.
 
 ### 4.3 `GET /api/sources`
+
 - Lists import and Connect sources with cached totals and indexed `lastEventAt` boundary reads (timestamp `0` is preserved). Revoked Connects remain available as historical sources. It does not count the entire historical event table on each date change.
 
 ### 4.4 `GET /api/events?start=ISO&end=ISO&source=ID&cursor=STRING`
+
 - Half-open UTC window `[start, end)`.
 - Validates window width $\le 32$ days.
 - In-window occurrence condition includes point events and zero-length intervals at window start (`occurred_at >= start AND occurred_at < end`), plus non-day interval events overlapping the window (`precision != 'day' AND end_at > occurred_at AND occurred_at < end AND end_at > start`).
@@ -166,6 +174,7 @@ The profile uses SHA-256 of the normalized authenticated email with `lizheng.blo
 - The first page also returns `footprintDays`, `healthSeries` and `pixiuDays` containing compact UTC packages intersecting the window, subject to the source filter. The frontend decodes and clips observations to the same window; subsequent event pages do not repeat the packages. `healthView=story` selects the timeline's health dimensions; omitted `healthView` returns all dimensions. A UTC date with a compact package excludes legacy events for that provider/date. Point and overlapping-interval branches use separate indexes.
 
 ### 4.5 `POST /api/imports`
+
 - Accepts batches of 1 to 100 records for `journal`. Old `footprint`, `apple-health` and `pixiu` submissions return 410 (`footprint_import_moved`, `health_import_moved`, `pixiu_import_moved`); use their dedicated complete-day APIs below.
 - Validates that records array contains only valid objects.
 - Precision defaults to `'hour'` only if `undefined`; explicit invalid values return `400 invalid_precision`.
@@ -174,16 +183,20 @@ The profile uses SHA-256 of the normalized authenticated email with `lizheng.blo
 - `ensureImportSource` executes only after all record validations succeed.
 
 ### 4.6 `GET /api/connects`
+
 - Lists Connect metadata (`id`, `name`, `prefix`, `createdAt`, `lastUsedAt`, `revokedAt`, `recordCount`). Plaintext token is never returned.
 
 ### 4.7 `POST /api/connects`
+
 - Body: `{ "name": "Apple Watch" }`.
 - Returns `{ "data": { "connect": Connect, "token": "life_..." } }` with HTTP 201 Created.
 
 ### 4.8 `DELETE /api/connects/:id`
+
 - Revokes Connect token idempotently while retaining historical event records.
 
 ### 4.9 `POST /api/ingest`
+
 - Authenticated via `Authorization: Bearer <connect-token>`.
 - Other methods return 405 on the app host before token authentication; the machine hostname's strict route allowlist returns 404 for those methods.
 - Body: `{ "timestamp": "...", "title": "...", "content": "...", "data": {...} }`.
@@ -195,28 +208,28 @@ The profile uses SHA-256 of the normalized authenticated email with `lizheng.blo
 
 ## 5. Input Boundaries & Payload Limits
 
-| Item | Limit |
-| --- | --- |
+| Item                     | Limit                                                             |
+| ------------------------ | ----------------------------------------------------------------- |
 | Default Max Request Body | 1 MiB (stream-capped); provider import limits below override this |
-| Max Event Data (`data`) | 32 KiB JSON |
-| Max Event Title | 200 characters |
-| Max Event Content | 8,000 characters |
-| Max Connect Name | 80 characters |
-| Max Events Range Window | 32 days |
-| Events Page Size | 200 records |
-| Max Import Batch Size | 100 records |
+| Max Event Data (`data`)  | 32 KiB JSON                                                       |
+| Max Event Title          | 200 characters                                                    |
+| Max Event Content        | 8,000 characters                                                  |
+| Max Connect Name         | 80 characters                                                     |
+| Max Events Range Window  | 32 days                                                           |
+| Events Page Size         | 200 records                                                       |
+| Max Import Batch Size    | 100 records                                                       |
 
 ## 6. AI settings and daily summaries
 
 All five AI method/path contracts require Access and the app hostname; browser writes also enforce origin checks. The machine hostname returns 404 for every AI route.
 
-| Endpoint | Behavior |
-| --- | --- |
-| `GET /api/settings/ai` | Returns `AiSettings` with `hasApiKey` / `configured`, never plaintext or ciphertext keys |
-| `PUT /api/settings/ai` | Saves provider, model, endpoint and protocol. Omitted keys only survive an unchanged provider/endpoint/SDK/auth tuple |
-| `POST /api/settings/ai/test` | Tests the saved configuration with a fixed prompt and 15-second timeout |
-| `GET /api/day-summary?date=...&timeZone=...&start=...&end=...` | Returns `{ summary, stale, eventCount }`; verifies the complete local-day UTC window |
-| `POST /api/day-summary` | Same fields as JSON plus optional `revision` (at most 2,000 characters); generates and persists a diary, with a 90-second model timeout |
+| Endpoint                                                       | Behavior                                                                                                                                |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/settings/ai`                                         | Returns `AiSettings` with `hasApiKey` / `configured`, never plaintext or ciphertext keys                                                |
+| `PUT /api/settings/ai`                                         | Saves provider, model, endpoint and protocol. Omitted keys only survive an unchanged provider/endpoint/SDK/auth tuple                   |
+| `POST /api/settings/ai/test`                                   | Tests the saved configuration with a fixed prompt and 15-second timeout                                                                 |
+| `GET /api/day-summary?date=...&timeZone=...&start=...&end=...` | Returns `{ summary, stale, eventCount }`; verifies the complete local-day UTC window                                                    |
+| `POST /api/day-summary`                                        | Same fields as JSON plus optional `revision` (at most 2,000 characters); generates and persists a diary, with a 90-second model timeout |
 
 Migration `0002_daily_ai.sql` adds `ai_settings` (singleton `default`), `day_summaries` (primary key `date, timezone`) and `day_summary_leases` (same key, ownership token and expiry). Record timestamps stay UTC; local date/timezone are summary lookup metadata. API keys use AES-GCM with the separate `AI_SETTINGS_KEY` Worker secret.
 
@@ -228,14 +241,14 @@ Summaries cover all sources in the day. Paged UTC reads feed the shared numeric 
 
 These six contracts require the app hostname and Access; browser mutations also check origin. Connect credentials grant no import access, and the ingestion hostname returns 404 for every data route.
 
-| Endpoint | Behavior |
-| --- | --- |
-| `GET /api/data/target` | Returns `{ data: { target } }`; configured `local` / `production`, or `test` for isolated fixtures |
-| `GET /api/data/overview` | Current import-provider counts, occupied UTC dates, payload bytes, latest completed import/channel and content-change time |
-| `POST /api/data/footprint/imports` | `{ fileName, totalDays, totalPoints, channel, target }`; verifies target, returns a five-minute leased session |
+| Endpoint                                               | Behavior                                                                                                                    |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/data/target`                                 | Returns `{ data: { target } }`; configured `local` / `production`, or `test` for isolated fixtures                          |
+| `GET /api/data/overview`                               | Current import-provider counts, occupied UTC dates, payload bytes, latest completed import/channel and content-change time  |
+| `POST /api/data/footprint/imports`                     | `{ fileName, totalDays, totalPoints, channel, target }`; verifies target, returns a five-minute leased session              |
 | `PUT /api/data/footprint/imports/:id/batches/:batchId` | `{ days }`; consecutive positive batch IDs, complete UTC days in ascending order, maximum 32 days / 768 KiB serialized body |
-| `POST /api/data/footprint/imports/:id/finish` | `{ status: "complete" \| "cancelled" }`; completion requires all manifest days and points to be committed |
-| `GET /api/data/footprint/days?start=ISO&end=ISO` | Complete packages intersecting a positive UTC window of at most 32 days; callers clip points to the requested window |
+| `POST /api/data/footprint/imports/:id/finish`          | `{ status: "complete" \| "cancelled" }`; completion requires all manifest days and points to be committed                   |
+| `GET /api/data/footprint/days?start=ISO&end=ISO`       | Complete packages intersecting a positive UTC window of at most 32 days; callers clip points to the requested window        |
 
 Migration `0003_provider_days.sql` adds `provider_days` with key `(source_id, utc_day)`, `provider_state` with transactional totals and revision-checked coverage caching, and one `footprint_imports` lease/latest receipt per provider. Individual canonical day envelopes are limited to 512 KiB. The Worker validates all point fields, ordering and day membership, then recomputes hashes, counts, extents, bytes and hourly summaries.
 
@@ -247,24 +260,24 @@ GPS AI evidence follows the same local-day UTC window. Hashes ignore import time
 
 All seven contracts require Access on the app hostname and use the same target/origin checks as Footprint. The machine hostname returns 404. Imports accept a fully prepared ZIP/directory plan through the shared client, not raw XML uploaded to the Worker.
 
-| Endpoint | Behavior |
-| --- | --- |
-| `POST /api/data/apple-health/imports` | `{ fileName, totalDays, totalRecords, files, channel, target }`; validates the attachment manifest and takes a five-minute provider lease |
-| `GET /api/data/apple-health/files` | Path/hash inventory used to skip unchanged attachments |
-| `PUT /api/data/apple-health/imports/:id/files/:fileIndex/parts/:part` | Uploads one immutable gzip/base64 part; verifies decoded bytes/hash and refreshes the lease. Publishes the file manifest only when every part is present |
-| `PUT /api/data/apple-health/imports/:id/batches/:batchId` | `{ days: [day] }`; one complete UTC day, consecutive positive batch IDs, ascending dates, maximum 4 MiB serialized request. All declared files must be committed before the first day |
-| `POST /api/data/apple-health/imports/:id/finish` | `{ status: "complete" \| "cancelled" }`; completion requires every declared day, event and attachment. Returns `committedRecords`, inserted/updated/unchanged day counts and session status |
-| `GET /api/data/apple-health/series?start=ISO&end=ISO&view=all` | Positive UTC window up to 32 days; `view=all` or `story`. Includes earlier series whose intervals overlap the window; callers decode and clip observations |
-| `GET /api/data/apple-health/file?path=PATH&part=INDEX` | Without `part`, returns the current manifest. With `part`, returns one lossless part and its hashes; ECG and workout maps request only their attachment |
+| Endpoint                                                              | Behavior                                                                                                                                                                                    |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/data/apple-health/imports`                                 | `{ fileName, totalDays, totalRecords, files, channel, target }`; validates the attachment manifest and takes a five-minute provider lease                                                   |
+| `GET /api/data/apple-health/files`                                    | Path/hash inventory used to skip unchanged attachments                                                                                                                                      |
+| `PUT /api/data/apple-health/imports/:id/files/:fileIndex/parts/:part` | Uploads one immutable gzip/base64 part; verifies decoded bytes/hash and refreshes the lease. Publishes the file manifest only when every part is present                                    |
+| `PUT /api/data/apple-health/imports/:id/batches/:batchId`             | `{ days: [day] }`; one complete UTC day, consecutive positive batch IDs, ascending dates, maximum 4 MiB serialized request. All declared files must be committed before the first day       |
+| `POST /api/data/apple-health/imports/:id/finish`                      | `{ status: "complete" \| "cancelled" }`; completion requires every declared day, event and attachment. Returns `committedRecords`, inserted/updated/unchanged day counts and session status |
+| `GET /api/data/apple-health/series?start=ISO&end=ISO&view=all`        | Positive UTC window up to 32 days; `view=all` or `story`. Includes earlier series whose intervals overlap the window; callers decode and clip observations                                  |
+| `GET /api/data/apple-health/file?path=PATH&part=INDEX`                | Without `part`, returns the current manifest. With `part`, returns one lossless part and its hashes; ECG and workout maps request only their attachment                                     |
 
 Migration `0004_apple_health.sql` adds three tables, reusing `provider_days`, `provider_state` and the existing per-provider lease table:
 
-| Table | Key and contents |
-| --- | --- |
-| `provider_days` | `(source_id, utc_day)`; one Apple Health daily header containing series descriptors and source/dimension/nested-node totals |
-| `health_series` | `(utc_day, dimension, part)`; gzip/base64 canonical original nodes, counts, time bounds and SHA-256. Each series is bounded at 512 KiB encoded / 8 MiB decoded; a day has at most 128 parts |
-| `health_files` | `path`; current original-file manifest, kind, counts, original byte length and hash |
-| `health_file_parts` | `(file_hash, part)`; immutable original bytes in parts of at most 512 KiB decoded / 768 KiB encoded |
+| Table               | Key and contents                                                                                                                                                                            |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `provider_days`     | `(source_id, utc_day)`; one Apple Health daily header containing series descriptors and source/dimension/nested-node totals                                                                 |
+| `health_series`     | `(utc_day, dimension, part)`; gzip/base64 canonical original nodes, counts, time bounds and SHA-256. Each series is bounded at 512 KiB encoded / 8 MiB decoded; a day has at most 128 parts |
+| `health_files`      | `path`; current original-file manifest, kind, counts, original byte length and hash                                                                                                         |
+| `health_file_parts` | `(file_hash, part)`; immutable original bytes in parts of at most 512 KiB decoded / 768 KiB encoded                                                                                         |
 
 Included days replace all dimensions atomically, including dimensions removed by the new export. Missing dates remain. Lease ownership, expiry, batch order and a write token fence every day mutation in one D1 transaction. Exact reimports preserve content, series/file timestamps and provider revision; the latest import receipt/time can change. A → B → A is compared against current canonical content. A failed import can retain already committed files/days and is retried from the complete input.
 
@@ -276,12 +289,12 @@ The daily view requests story dimensions with prior 24-hour/following 12-hour sl
 
 These Access-protected app-host APIs reuse the provider lease/receipt engine and `provider_days`; there is no per-transaction table or Pixiu schema migration.
 
-| Endpoint | Behavior |
-| --- | --- |
-| `POST /api/data/pixiu/imports` | `{ fileName, totalDays, totalRecords, channel, target }`; validates target and obtains the provider lease |
-| `PUT /api/data/pixiu/imports/:id/batches/:batchId` | `{ days }`; up to 32 complete source days / 768 KiB, consecutive batches, ascending dates |
-| `POST /api/data/pixiu/imports/:id/finish` | `{ status: "complete" \| "cancelled" }`; completion checks the full declared day/record counts |
-| `GET /api/data/pixiu/days?start=ISO&end=ISO` | Complete source packages assigned to the requested UTC window, at most 32 days |
+| Endpoint                                           | Behavior                                                                                                  |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `POST /api/data/pixiu/imports`                     | `{ fileName, totalDays, totalRecords, channel, target }`; validates target and obtains the provider lease |
+| `PUT /api/data/pixiu/imports/:id/batches/:batchId` | `{ days }`; up to 32 complete source days / 768 KiB, consecutive batches, ascending dates                 |
+| `POST /api/data/pixiu/imports/:id/finish`          | `{ status: "complete" \| "cancelled" }`; completion checks the full declared day/record counts            |
+| `GET /api/data/pixiu/days?start=ISO&end=ISO`       | Complete source packages assigned to the requested UTC window, at most 32 days                            |
 
 Source dates are explicitly UTC+8. `utc_day` is the technical source-date key; the real day starts eight hours earlier. Every daily JSON preserves all nine original strings, duplicate multiplicities and zero amounts. The server recomputes exact integer-cent summaries by currency/classification and validates hashes, lengths, bounds and counts. Identical imports preserve content/timestamps; changed days replace the complete snapshot, absent days remain, and A → B → A is supported. The overview reports accounting-date coverage, transaction counts and one content row per date. Details: [22 Pixiu](22-pixiu-daily-import.md).
 
@@ -293,9 +306,9 @@ Migration `0005_public_context.sql` adds compact JSON caches, per-key leases and
 
 ## 11. General settings
 
-| Endpoint | Behavior |
-| --- | --- |
-| `GET /api/settings/general` | Returns `{ data: { places, routine } }`; an absent singleton returns empty places and a null routine without writing |
+| Endpoint                    | Behavior                                                                                                                               |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/settings/general` | Returns `{ data: { places, routine } }`; an absent singleton returns empty places and a null routine without writing                   |
 | `PUT /api/settings/general` | Validates and replaces the complete settings object, returning the normalized result; identical content preserves the stored timestamp |
 
 Both methods require Access and the app hostname. PUT enforces the existing origin/media-type rules and a 64 KiB body limit. The ingestion hostname returns 404. Invalid settings return 400 `invalid_settings`; database or corrupt stored-data errors are not disguised as empty settings.

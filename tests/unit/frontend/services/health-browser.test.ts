@@ -102,7 +102,7 @@ describe("browser health preview", () => {
 describe("health browser Worker session", () => {
 	it("uses the module worker factory and transfers a directory's relative paths with only summaries returning", async () => {
 		const worker = new FakeWorker();
-		const workerFactory = vi.fn(function WorkerFactory(_url: URL, _options: WorkerOptions) {
+		const workerFactory = vi.fn(function mockHealthWorker(_url: URL, _options: WorkerOptions) {
 			return worker;
 		});
 		vi.stubGlobal("Worker", workerFactory);
