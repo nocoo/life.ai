@@ -6,13 +6,13 @@
 
 复用 `provider_days`，每个有记录的来源记账日一条 JSON 内容行，不另建逐笔流水表。九列表头只存一次，所有单元格以原始字符串存入 `rows`，包括逗号、换行、空字符串、零金额和完全相同的多笔流水。保留日内原始顺序，不承诺还原 CSV 的引号或换行编码字节。
 
-| 字段 | 含义 |
-| --- | --- |
-| `utc_day` | 技术日期键：原始 `sourceDate` 编码为 UTC 零点，符合已有表的整 UTC 日约束 |
-| `first_at` / `last_at` | 真实 UTC 账期起点 / 最后毫秒，即 `utc_day - 8h` 与起点加 24h 减 1ms |
-| `data_json` | `v: 1`、`precision: day`、`sourceDate`、`timeZone: Asia/Shanghai`、`utcOffsetMinutes: 480`、九个 `columns` 和完整 `rows` |
-| `summary_json` | 每币种 × 原始交易分类的条数、流入与流出最小货币单位整数 |
-| `content_hash` | SHA-256，包含全部原始字段及重复次数；忽略文件名、导入时间和仅有行顺序的变化 |
+| 字段                   | 含义                                                                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `utc_day`              | 技术日期键：原始 `sourceDate` 编码为 UTC 零点，符合已有表的整 UTC 日约束                                                 |
+| `first_at` / `last_at` | 真实 UTC 账期起点 / 最后毫秒，即 `utc_day - 8h` 与起点加 24h 减 1ms                                                      |
+| `data_json`            | `v: 1`、`precision: day`、`sourceDate`、`timeZone: Asia/Shanghai`、`utcOffsetMinutes: 480`、九个 `columns` 和完整 `rows` |
+| `summary_json`         | 每币种 × 原始交易分类的条数、流入与流出最小货币单位整数                                                                  |
+| `content_hash`         | SHA-256，包含全部原始字段及重复次数；忽略文件名、导入时间和仅有行顺序的变化                                              |
 
 例如 `2026-09-14` 的账期是 `[2026-09-13T16:00:00Z, 2026-09-14T16:00:00Z)`。它始终作为一份全天账目，归属于包含账期起点的那个展示日；切换时区不会让同一笔钱在相邻两天重复计入。原始记账日期在详情和账目表中保留，不推断交易发生时间，也不按时长分摊金额。
 
@@ -26,12 +26,12 @@
 
 已经提交的批次不会随取消回滚，重新提交完整选择即可继续。只有本次覆盖的日期才会清理旧逐笔 Pixiu 行。生产导入前快照确认旧 Pixiu 行数为 0。
 
-| API（均需 Access 与应用域名） | 用途 |
-| --- | --- |
-| `POST /api/data/pixiu/imports` | `{fileName,totalDays,totalRecords,channel,target}`，校验目标后创建会话 |
-| `PUT /api/data/pixiu/imports/:id/batches/:batchId` | `{days}`，重算可信哈希、范围、条数和金额后原子写入 |
-| `POST /api/data/pixiu/imports/:id/finish` | `{status: complete或cancelled}`，完整时核对清单与累计回执 |
-| `GET /api/data/pixiu/days?start=ISO&end=ISO` | 最多 32 天的 UTC 展示窗口，返回归属窗口的完整来源日包 |
+| API（均需 Access 与应用域名）                      | 用途                                                                   |
+| -------------------------------------------------- | ---------------------------------------------------------------------- |
+| `POST /api/data/pixiu/imports`                     | `{fileName,totalDays,totalRecords,channel,target}`，校验目标后创建会话 |
+| `PUT /api/data/pixiu/imports/:id/batches/:batchId` | `{days}`，重算可信哈希、范围、条数和金额后原子写入                     |
+| `POST /api/data/pixiu/imports/:id/finish`          | `{status: complete或cancelled}`，完整时核对清单与累计回执              |
+| `GET /api/data/pixiu/days?start=ISO&end=ISO`       | 最多 32 天的 UTC 展示窗口，返回归属窗口的完整来源日包                  |
 
 `/api/data/target`、`/api/data/overview` 与其他 provider 共用。Ingest 域名和只写 Connect 无权导入或读取。
 
@@ -62,15 +62,15 @@ bun run data:import --provider pixiu --file /path/to/貔貅记账 --target produ
 
 已将 Downloads 的 2020–2026 年七份原始 CSV 完整导入生产 D1 `life`，并以同一选择再次导入。两次均通过共享 CLI → 应用 provider API → D1 日包路径，使用用户已授权的 `dev:prod` 与 Caddy 地址，目标明确为 `production`。
 
-| 核验项 | 结果 |
-| --- | --- |
-| 首次导入 | 新增 1,832 天，8,690 笔；更新 0 天 |
-| 完整重复导入 | 新增 0、更新 0、未变化 1,832 天 |
-| 原始内容 | 所有九列、顺序、133 条双零流水、99 次额外重复均匹配 |
-| 金额 | 按币种、分类、类型、账户的整数分值核对一致，不混合币种 |
-| 内容载荷 | 日 JSON 与汇总合计 1,837,604 字节，1,832 条内容行 |
-| Footprint | 670,191 个点 / 1,625 条日记录，内容和时间戳未变 |
-| Apple Health | 1,841,302 条事实，内容和时间戳未变，全部附件保留 |
+| 核验项        | 结果                                                                               |
+| ------------- | ---------------------------------------------------------------------------------- |
+| 首次导入      | 新增 1,832 天，8,690 笔；更新 0 天                                                 |
+| 完整重复导入  | 新增 0、更新 0、未变化 1,832 天                                                    |
+| 原始内容      | 所有九列、顺序、133 条双零流水、99 次额外重复均匹配                                |
+| 金额          | 按币种、分类、类型、账户的整数分值核对一致，不混合币种                             |
+| 内容载荷      | 日 JSON 与汇总合计 1,837,604 字节，1,832 条内容行                                  |
+| Footprint     | 670,191 个点 / 1,625 条日记录，内容和时间戳未变                                    |
+| Apple Health  | 1,841,302 条事实，内容和时间戳未变，全部附件保留                                   |
 | D1 实际总大小 | 重复导入后 158,007,296 字节；较导入前增加 2,625,536 字节，包含新表、索引和公共缓存 |
 
 独立核验器不调用生产 Pixiu parser：用 PapaParse 与 BigInt 建立金额和原文 oracle，另用 Python CSV／Decimal 交叉核对。分别比较导入前、导入后与重复导入后的生产快照，`matched`、`otherProvidersUnchanged` 和重复导入的 `pixiuIdempotent` 均为 `true`。临时文件位于本机私有 `/tmp/life-pixiu-20260914`；明细不写入仓库。
@@ -83,16 +83,16 @@ bun run data:import --provider pixiu --file /path/to/貔貅记账 --target produ
 
 2026-09-14 部署到 Worker `life`，版本 ID `58414787-688d-43f5-b904-9457b66488a2`。生产已应用 `0005_public_context.sql`；部署前查询确认无待执行迁移，构建和 Wrangler dry run 成功。Worker 上传量约 1,646 KiB，gzip 359 KiB，部署报告启动耗时 26 ms。
 
-| 检查 | 结果 |
-| --- | --- |
-| L1 | 69 文件、1,320 测试通过；语句 98.96%、分支 96.70%、函数 98.91%、行 99.34% |
-| G1 | strict TypeScript 与 Biome 通过 |
-| L2 | 25 个场景通过，真实 Worker HTTP + 全新隔离 SQLite + 本机 AI／公共 API fixture |
-| L3 | 21 个浏览器用例通过，覆盖健康／GPS 保留、貔貅导入与账目 Tab、日记反馈、响应式和可访问性 |
-| G2 | gitleaks 与 OSV 检查通过 |
-| 生产健康 | 两个域名的 `/api/live` 均返回 200 JSON、版本 1.6.0、`database: ok` |
+| 检查     | 结果                                                                                                                          |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| L1       | 69 文件、1,320 测试通过；语句 98.96%、分支 96.70%、函数 98.91%、行 99.34%                                                     |
+| G1       | strict TypeScript 与 Biome 通过                                                                                               |
+| L2       | 25 个场景通过，真实 Worker HTTP + 全新隔离 SQLite + 本机 AI／公共 API fixture                                                 |
+| L3       | 21 个浏览器用例通过，覆盖健康／GPS 保留、貔貅导入与账目 Tab、日记反馈、响应式和可访问性                                       |
+| G2       | gitleaks 与 OSV 检查通过                                                                                                      |
+| 生产健康 | 两个域名的 `/api/live` 均返回 200 JSON、版本 1.6.0、`database: ok`                                                            |
 | 认证边界 | 未登录的应用页面与数据 API 跳转 `nocoo.cloudflareaccess.com`；写入域名的页面、记录、导入读取、日记和公共上下文 API 均返回 404 |
-| 本地预览 | Caddy 首页 200，开发 Worker 1.6.0、生产 D1 正常，7011 保持运行 |
+| 本地预览 | Caddy 首页 200，开发 Worker 1.6.0、生产 D1 正常，7011 保持运行                                                                |
 
 浏览器和自动测试使用独立状态。生产数据核验、真实地图／日记预览和部署健康检查的明细日志在本机私有临时目录；不会把账本、健康数据或坐标提交到 Git。
 

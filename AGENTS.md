@@ -48,26 +48,26 @@ Normal local tests need no real Access, model or source credentials: the harness
 
 6DQ keeps its name with unified L1, L2/L3, G2 and D1; the owner merged former G1 into L1 on 2026-09-21. Statuses: `enforced`, `planned`, `manual`, `N/A`. No `.skip`/`.only`; unified L1 requires statements/branches/functions/lines each ≥95% plus four strict type configurations, zero-warning/error check-only Biome, installed hooks and failure rejection.
 
-| Piece | Requirement and current reality | Status | Evidence |
-| --- | --- | --- | --- |
-| L1 | Four metrics ≥95% for models/services/ViewModels/Worker plus strict types/lint with installed rejection | planned | Configured and active subchecks: pre-commit runs coverage, typecheck and lint against a temporary Git index snapshot (`vitest.config.ts`, pre-commit and quality CI; four type configs with `typecheck`/`lint`). <30s timing and rejection evidence are unrecorded, so complete unified L1 stays planned |
-| L2 | Real HTTP + SQLite for every endpoint/method | planned | Push hook/CI run `tests/http/api.ts`; complete endpoint/method inventory proof remains required |
-| L3 | Import, timeline, Connect, responsive/auth journeys | enforced | CI l3 → Playwright guarded by LIFE_TEST_URL/state |
-| G2 | OSV and gitleaks, missing binary fails | enforced | `scripts/security.ts`, pre-push and dedicated CI |
-| D1 | Fresh SQLite/cache, credentials stripped, local guards and marker | enforced | `run-tests.ts`, `local-db.ts`, `verify-test-bindings.ts` |
-| Build | Vite bundle | enforced | Quality CI and `quality` |
-| Docs | Provider/diary/UI evidence preserved | manual | [domain contracts](docs/30-domain-contracts.md) |
+| Piece | Requirement and current reality                                                                         | Status   | Evidence                                                                                                                                                                                                                                                                                                 |
+| ----- | ------------------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| L1    | Four metrics ≥95% for models/services/ViewModels/Worker plus strict types/lint with installed rejection | planned  | Configured and active subchecks: pre-commit runs coverage, typecheck and lint against a temporary Git index snapshot (`vitest.config.ts`, pre-commit and quality CI; four type configs with `typecheck`/`lint`). <30s timing and rejection evidence are unrecorded, so complete unified L1 stays planned |
+| L2    | Real HTTP + SQLite for every endpoint/method                                                            | planned  | Push hook/CI run `tests/http/api.ts`; complete endpoint/method inventory proof remains required                                                                                                                                                                                                          |
+| L3    | Import, timeline, Connect, responsive/auth journeys                                                     | enforced | CI l3 → Playwright guarded by LIFE_TEST_URL/state                                                                                                                                                                                                                                                        |
+| G2    | OSV and gitleaks, missing binary fails                                                                  | enforced | `scripts/security.ts`, pre-push and dedicated CI                                                                                                                                                                                                                                                         |
+| D1    | Fresh SQLite/cache, credentials stripped, local guards and marker                                       | enforced | `run-tests.ts`, `local-db.ts`, `verify-test-bindings.ts`                                                                                                                                                                                                                                                 |
+| Build | Vite bundle                                                                                             | enforced | Quality CI and `quality`                                                                                                                                                                                                                                                                                 |
+| Docs  | Provider/diary/UI evidence preserved                                                                    | manual   | [domain contracts](docs/30-domain-contracts.md)                                                                                                                                                                                                                                                          |
 
 Current pre-commit runs unified-L1 checks against a temporary Git index snapshot (coverage, typecheck, then lint). pre-push runs L2/G2 on the working tree, and the security snapshot includes the reviewable working tree. Required follow-up: stdin pushed-ref checks <3min. Hooks must remain check-only; never bypass commit or branch-push checks.
 
 ## Resources and isolation
 
-| Purpose | Ports / resource | Isolation |
-| --- | --- | --- |
-| Dev | `https://life.dev.hexly.ai` → Caddy → 7011 | `.wrangler/state`; one integrated Vite Worker |
-| Production-data dev | `bun run dev:prod`, same host/7011 | Remote production D1; keep existing server/key intact |
-| L2 / L3 | 17011 / 27011 | Per-run `.wrangler/tests/l2-*` / `l3-*` SQLite/cache |
-| Production / ingest | `life.hexly.ai` / `life.worker.hexly.ai` | D1 `life`, Access team `nocoo`; exact audience in Wrangler |
+| Purpose             | Ports / resource                           | Isolation                                                 |
+| ------------------- | ------------------------------------------ | --------------------------------------------------------- |
+| Dev                 | `https://life.dev.hexly.ai` → Caddy → 7011 | `.wrangler/state`; one integrated Vite Worker             |
+| Production-data dev | `bun run dev:prod`, same host/7011         | Remote production D1; keep existing server/key intact     |
+| L2 / L3             | 17011 / 27011                              | Per-run `.wrangler/tests/l2-*` / `l3-*` SQLite/cache      |
+| Production / ingest | `life.hexly.ai` / `life.worker.hexly.ai`   | D1`life`, Access team `nocoo`; exact audience in Wrangler |
 
 Optional sidecar 37011 is reserved, not needed by Vite. Keep Caddy and workflow mirror aligned. Tests reject remote bindings and use `_test_marker(env=test)` before migrations/cleanup, fresh XDG directories and loopback fixtures; no Workers AI binding because it runs remotely. Never create remote `-test` resources or touch production/daily-dev data in tests.
 
@@ -78,5 +78,4 @@ Authorized deployment uses `bun run deploy`: inspect migrations, build/dry-run, 
 ## Retrospective
 
 Store accident narratives in [Retrospective.md](Retrospective.md); recurring rules stay brief here, cross-project lessons in global rules/nmem, deterministic safeguards in tests/hooks.
-
 - Preserve source content/timestamps on identical import replay and preserve saved diaries when any enabled source is unavailable.

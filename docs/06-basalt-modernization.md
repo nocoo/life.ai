@@ -24,7 +24,6 @@ Life.ai Dashboard 已从自建 Basalt 风格组件迁移到 npm 包 `@nocoo/basa
 直接使用 Basalt 的按钮、输入、日期选择、Select、Tabs、Badge、Table、ScrollArea、Skeleton、StatCard、HeatmapCalendar、Tooltip、命令面板和导航组件。
 
 图表适配器保留 Life.ai 原有数据接口：
-
 - 标准折线图和柱状图委托给 Basalt 图表。
 - 平均参考线、独立坐标轴控制、数据点和水平柱状图等 Basalt 尚未直接提供的行为继续由 Recharts fallback 实现。
 - Donut 图以 Basalt `ChartFrame` 提供可访问容器，同时保留原来的半径、标签和百分比 tooltip。
@@ -33,7 +32,6 @@ Life.ai Dashboard 已从自建 Basalt 风格组件迁移到 npm 包 `@nocoo/basa
 ## 项目专用组件
 
 以下组件没有等价的公共组合，继续保留在 `dashboard/src/components/ui/`：
-
 - Leaflet / Google Map 与绘制、图层、定位控件。
 - Photon 地点自动完成。
 - 地图需要的 Checkbox / Radio dropdown 与组合按钮。

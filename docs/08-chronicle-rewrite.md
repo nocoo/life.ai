@@ -18,17 +18,17 @@ Production: Worker `life`, D1 `life`, dashboard `life.hexly.ai`. `life.worker.he
 
 Success bodies: `{ data: T }`, except health. Errors: `{ error: { code: string, message: string } }` and appropriate HTTP status. Personal data and tokens use `Cache-Control: no-store`.
 
-| Method and path | Contract |
-| --- | --- |
-| `GET /api/live` | Public `{ status: "ok", version, timestamp, database: "ok" }`; database failure returns 503. |
-| `GET /api/session` | `{ data: { email: string \| null, subject: string, mode: "access" \| "local" } }` |
-| `GET /api/sources` | `{ data: Source[] }`, includes counts and last record time. |
+| Method and path                                          | Contract                                                                                                                                                                                                           |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `GET /api/live`                                          | Public `{ status: "ok", version, timestamp, database: "ok" }`; database failure returns 503.                                                                                                                       |
+| `GET /api/session`                                       | `{ data: { email: string \| null, subject: string, mode: "access" \| "local" } }`                                                                                                                                  |
+| `GET /api/sources`                                       | `{ data: Source[] }`, includes counts and last record time.                                                                                                                                                        |
 | `GET /api/events?start=ISO&end=ISO&source=ID&cursor=...` | Half-open UTC range; optional source/cursor; `{ data: { events: LifeEvent[], nextCursor: string \| null } }`. Page size 200; client follows cursors. Max window 32 days. Include intervals overlapping the window. |
-| `POST /api/imports` | `{ source: ImportSourceId, records: ImportRecord[] }`, 1–100 records/batch; `{ data: { accepted: number } }`. Stable-key upserts. |
-| `GET /api/connects` | `{ data: Connect[] }`, metadata only. |
-| `POST /api/connects` | `{ name }`; 201 `{ data: { connect: Connect, token: string } }`. Token appears only here. |
-| `DELETE /api/connects/:id` | Revoke, retain history; `{ data: Connect }`. Repeated revocation is idempotent. |
-| `POST /api/ingest` | Bearer Connect; `{ timestamp, title, content?, data? }`; `{ data: { id, occurredAt, precision: "hour", updatedAt } }`. Cannot read/manage. |
+| `POST /api/imports`                                      | `{ source: ImportSourceId, records: ImportRecord[] }`, 1–100 records/batch; `{ data: { accepted: number } }`. Stable-key upserts.                                                                                  |
+| `GET /api/connects`                                      | `{ data: Connect[] }`, metadata only.                                                                                                                                                                              |
+| `POST /api/connects`                                     | `{ name }`; 201 `{ data: { connect: Connect, token: string } }`. Token appears only here.                                                                                                                          |
+| `DELETE /api/connects/:id`                               | Revoke, retain history; `{ data: Connect }`. Repeated revocation is idempotent.                                                                                                                                    |
+| `POST /api/ingest`                                       | Bearer Connect; `{ timestamp, title, content?, data? }`; `{ data: { id, occurredAt, precision: "hour", updatedAt } }`. Cannot read/manage.                                                                         |
 
 `ImportSourceId`: `apple-health`, `footprint`, `pixiu`, `journal`. All shared types live in `src/models/types.ts`.
 
@@ -38,11 +38,11 @@ Input limits: name 80 chars, title 200, content 8000, per-record JSON data 32 Ki
 
 Existing `main` checkout only. Collaborators do not branch, commit, deploy, install packages or format outside their files. Codex integrates and commits.
 
-| Owner | Exclusive files |
-| --- | --- |
-| Codex | root tooling/config/packages, `src/models/**`, import logic, `tests/unit/models/**`, integration/E2E harness/tests, deployment, CLAUDE/README and this document |
+| Owner           | Exclusive files                                                                                                                                                                |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Codex           | root tooling/config/packages, `src/models/**`, import logic, `tests/unit/models/**`, integration/E2E harness/tests, deployment, CLAUDE/README and this document                |
 | grok (`w3A:p2`) | `src/services/**`, `src/viewmodels/**`, `src/views/**`, `src/components/**`, `src/App.tsx`, `src/main.tsx`, `src/styles.css`, `tests/unit/frontend/**`, `docs/09-basalt-ui.md` |
-| pi (`w3A:p3`) | `worker/**`, `tests/worker/**`, `docs/10-worker-api.md` |
+| pi (`w3A:p3`)   | `worker/**`, `tests/worker/**`, `docs/10-worker-api.md`                                                                                                                        |
 
 Coordinate shared-contract changes through Codex. Do not edit old `dashboard/` or `scripts/` while Codex replaces obsolete runtime paths. UI import service consumes `importFile(file, source, onBatch, onProgress, signal?)` from `src/models/import.ts`; batches contain at most 100 ImportRecords. It returns `{ processed, accepted }` and supports cancellation.
 
@@ -64,7 +64,6 @@ Both collaborators handed off their files after their checks. Codex owns the int
 ## Verification record
 
 Verified on 2026-09-13:
-
 - L1 aggregate: 261 tests in 21 files passed. Statements 99.08%, branches 96.55%, functions 99.39%, lines 99.13%; all four enforced thresholds exceed 95%.
 - L2: 15 scenarios passed against real local Worker + SQLite, covering all 9 method/path API contracts. Includes rejection of unsupported ingestion methods, signed JWT claims, token hashing, future hour replacement, concurrent idempotency, per-token isolation, revoke/history, import validation/atomicity/precision, UTC boundaries, 200-record pagination and machine hostname denial.
 - G1: strict typecheck across web, Worker, tooling and tests passed; Biome has zero errors/warnings.
@@ -80,14 +79,14 @@ Version **1.0.0**, Cloudflare tag `v1.0.0`, active Worker version **`21d51fb2-12
 
 Fourteen production read-only/denial checks passed at approximately `2026-09-13T10:19:55Z`. Both live endpoints were rechecked successfully after the ingestion method fix at `2026-09-13T10:28:18Z`:
 
-| Check | Actual result |
-| --- | --- |
-| `https://life.hexly.ai/api/live` | HTTP 200, JSON `status=ok`, `version=1.0.0`, `database=ok` |
-| `https://life.worker.hexly.ai/api/live` | Same healthy JSON over valid HTTPS |
-| Dashboard and session API without an Access session | HTTP 302 to `nocoo.cloudflareaccess.com/cdn-cgi/access/login/life.hexly.ai` |
-| Session API with a forged Access assertion | Same Access redirect; no records returned |
-| Machine host `/`, session/events/connects/imports APIs, logo, GET ingest | HTTP 404 JSON; no SPA, assets or read access |
-| Machine POST ingest without a token or with a nonexistent token | HTTP 401 JSON; no write |
+| Check                                                                    | Actual result                                                               |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| `https://life.hexly.ai/api/live`                                         | HTTP 200, JSON `status=ok`, `version=1.0.0`, `database=ok`                  |
+| `https://life.worker.hexly.ai/api/live`                                  | Same healthy JSON over valid HTTPS                                          |
+| Dashboard and session API without an Access session                      | HTTP 302 to `nocoo.cloudflareaccess.com/cdn-cgi/access/login/life.hexly.ai` |
+| Session API with a forged Access assertion                               | Same Access redirect; no records returned                                   |
+| Machine host `/`, session/events/connects/imports APIs, logo, GET ingest | HTTP 404 JSON; no SPA, assets or read access                                |
+| Machine POST ingest without a token or with a nonexistent token          | HTTP 401 JSON; no write                                                     |
 
 The machine hostname's new Google Trust Services certificate finished propagating after initial TLS handshake failures. Its SAN includes `life.worker.hexly.ai`; no DNS, Access or certificate-policy workaround was needed.
 

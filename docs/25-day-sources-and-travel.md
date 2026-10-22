@@ -4,11 +4,11 @@
 
 ## 已核实的项目与接口
 
-| 项目 | 本机位置与代码 | 现有读取契约 |
-| --- | --- | --- |
-| Life.ai | `/Users/nocoo/workspace/personal/life.ai`；`worker/day-sources.ts`、`src/models/day-sources.ts` | Access 保护的设置与日读取 API，服务端适配两个来源 |
-| Gecko | `/Users/nocoo/workspace/personal/gecko`；`apps/web-dashboard/src/app/api/v1/snapshot/route.ts`、`src/lib/session-queries.ts` | `GET https://gecko.hexly.ai/api/v1/snapshot?date=YYYY-MM-DD`，`Authorization: Bearer <API Key>` |
-| Firefly | `/Users/nocoo/workspace/personal/firefly`；`src/app/api/posts/route.ts`、`src/data/entities/post.ts` | `GET https://lizheng.blog/api/posts?page=N&page_size=20`，无须鉴权，强制只返回公开发表的文章 |
+| 项目    | 本机位置与代码                                                                                                               | 现有读取契约                                                                                    |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Life.ai | `/Users/nocoo/workspace/personal/life.ai`；`worker/day-sources.ts`、`src/models/day-sources.ts`                              | Access 保护的设置与日读取 API，服务端适配两个来源                                               |
+| Gecko   | `/Users/nocoo/workspace/personal/gecko`；`apps/web-dashboard/src/app/api/v1/snapshot/route.ts`、`src/lib/session-queries.ts` | `GET https://gecko.hexly.ai/api/v1/snapshot?date=YYYY-MM-DD`，`Authorization: Bearer <API Key>` |
+| Firefly | `/Users/nocoo/workspace/personal/firefly`；`src/app/api/posts/route.ts`、`src/data/entities/post.ts`                         | `GET https://lizheng.blog/api/posts?page=N&page_size=20`，无须鉴权，强制只返回公开发表的文章    |
 
 Gecko 返回未包装的 `{ date, timezone, stats, ai }`。`stats.sessions` 包含 `id`、`appName`、`bundleId`、`windowTitle`、`url`、`startTime`（Unix 秒）、`duration`（秒）。`timezone` 是账号时区。接口拒绝未来日期；跨午夜会裁剪会话时间，保留同一个会话 ID。Life.ai 只读 snapshot，不使用该密钥的同步写入能力。
 
@@ -18,21 +18,21 @@ Firefly 的 `/api/v1/snapshot` 当前不存在；`/api/posts?date=...` 会忽略
 
 所有接口经过现有 Access JWT 校验；写入同时校验浏览器 Origin。机器写入域名不开放这些接口。返回沿用 `{ data: ... }` / `{ error: { code, message } }`，均 `Cache-Control: no-store`。
 
-| 方法与路径 | 输入 / 输出 |
-| --- | --- |
-| `GET /api/settings/sources` | 返回两个来源的 `{ provider, enabled, hasApiKey }`；不返回密钥或密文 |
-| `PUT /api/settings/sources/gecko` | `{ enabled, apiKey? }`；首次启用需要 `gk_` 密钥，之后留空保留已存密钥 |
-| `PUT /api/settings/sources/firefly` | `{ enabled }`，拒绝不必要的密钥 |
-| `DELETE /api/settings/sources/:provider` | 移除连接及该来源缓存；停用则保留已加密密钥 |
+| 方法与路径                                  | 输入 / 输出                                                                                        |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `GET /api/settings/sources`                 | 返回两个来源的 `{ provider, enabled, hasApiKey }`；不返回密钥或密文                                |
+| `PUT /api/settings/sources/gecko`           | `{ enabled, apiKey? }`；首次启用需要 `gk_` 密钥，之后留空保留已存密钥                              |
+| `PUT /api/settings/sources/firefly`         | `{ enabled }`，拒绝不必要的密钥                                                                    |
+| `DELETE /api/settings/sources/:provider`    | 移除连接及该来源缓存；停用则保留已加密密钥                                                         |
 | `POST /api/settings/sources/:provider/test` | 已保存且启用的连接；请求体为下方日期查询，返回 `{ provider, success, eventCount, date, message? }` |
-| `GET /api/day-sources` | 下方日期查询为 URL 参数；返回 `{ events, sources, configuration }` |
+| `GET /api/day-sources`                      | 下方日期查询为 URL 参数；返回 `{ events, sources, configuration }`                                 |
 
 ```json
 {
-  "date": "2026-09-10",
-  "timeZone": "Asia/Shanghai",
-  "start": "2026-09-09T16:00:00.000Z",
-  "end": "2026-09-10T16:00:00.000Z"
+	"date": "2026-09-10",
+	"timeZone": "Asia/Shanghai",
+	"start": "2026-09-09T16:00:00.000Z",
+	"end": "2026-09-10T16:00:00.000Z"
 }
 ```
 
@@ -69,7 +69,6 @@ Firefly 的 `/api/v1/snapshot` 当前不存在；`/api/posts?date=...` 会忽略
 ## GPS 移动方式与通勤
 
 前端和日记 Worker 共用 `src/models/gps-journeys.ts`，只从有效 UTC 相邻采样推导，不改变原始 GPS 值，也不猜测 GPX 的原始 speed 单位。
-
 - 只用分/秒精度，密集点按约 30 秒归并；保留原始分段、来源边界和断档。相邻间隔超过 5 分钟不连线。
 - 低于 2 km/h 视为停等。连续停等不超过 5 分钟可连接前后移动，但不计入移动均速；更长停留拆成两次行程，首尾纯静止不计入。
 - 均速为有效移动距离 / 有效移动时间，另算按时间加权的 85 分位速度。忽略超过 450 km/h 的异常边。至少两个移动边、150 米、1 分钟，且离起点曾超过 100 米，避免局部漂移累计成出行。

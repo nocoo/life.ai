@@ -6,15 +6,15 @@ Version 1.5.0 on `main`. The complete production import and unchanged replay hav
 
 The 2026-09-14 export is a 60,212,536-byte ZIP containing an 850,057,473-byte main HealthData XML, a 516,462,443-byte CDA representation, 151 workout GPX files and 5 ECG CSV files. The extracted directory is 1,498,404,645 bytes. The main XML filename is localized; recognition uses its `HealthData` root.
 
-| Original content | Count | Preservation |
-| --- | ---: | --- |
-| Top-level `Record` | 1,839,360 | 45 original types, all attribute values and nested children |
-| `Workout` | 787 | Original statistics, events, metadata and route references |
-| `ActivitySummary` | 1,090 | Original day precision, quantities and units |
-| `Correlation` | 60 | Parent plus all 120 child Records |
-| ECG recordings | 5 | Metadata events plus all 76,800 CSV voltage samples |
+| Original content         |         Count | Preservation                                                                 |
+| ------------------------ | ------------: | ---------------------------------------------------------------------------- |
+| Top-level `Record`       |     1,839,360 | 45 original types, all attribute values and nested children                  |
+| `Workout`                |           787 | Original statistics, events, metadata and route references                   |
+| `ActivitySummary`        |         1,090 | Original day precision, quantities and units                                 |
+| `Correlation`            |            60 | Parent plus all 120 child Records                                            |
+| ECG recordings           |             5 | Metadata events plus all 76,800 CSV voltage samples                          |
 | **Total timeline facts** | **1,841,302** | Nested values and attachment points are not counted as extra top-level facts |
-| Workout routes | 151 | All 583,323 GPS points and original GPX bytes |
+| Workout routes           |           151 | All 583,323 GPS points and original GPX bytes                                |
 
 The main XML contains 1,489,040 nested metadata entries, including 1,481,504 directly under Records; 2,422 WorkoutStatistics; 10,723 WorkoutEvents; 8,702 HRV lists containing 460,398 instantaneous beats; and 151 workout route references. All remain with their parents. Coincident measurements and different device sources are retained separately.
 
@@ -24,13 +24,13 @@ There are 1,413 UTC storage dates and 49 dimensions. Four body measurements carr
 
 Each **UTC start day × dimension** becomes one lossless gzip/base64 JSON series. Splitting is deterministic and only necessary beyond 512 KiB encoded or 8 MiB decoded. The actual export needs no series splitting: the largest encoded series is 94,708 bytes and the largest decoded series is 3,381,759 bytes. The largest complete day request is 232,561 bytes, below the 4 MiB application limit. This keeps small dimensions cheap while letting the timeline request useful dimensions without reading every raw health metric.
 
-| Content table | Verified production rows |
-| --- | ---: |
-| `provider_days` daily descriptors | 1,413 |
-| `health_series` day/dimension series | 29,100 |
-| `health_files` original-file/metadata manifests | 158 |
-| `health_file_parts` lossless attachment parts | 1,328 |
-| **Total content rows** | **31,999** |
+| Content table                                   | Verified production rows |
+| ----------------------------------------------- | -----------------------: |
+| `provider_days` daily descriptors               |                    1,413 |
+| `health_series` day/dimension series            |                   29,100 |
+| `health_files` original-file/metadata manifests |                      158 |
+| `health_file_parts` lossless attachment parts   |                    1,328 |
+| **Total content rows**                          |               **31,999** |
 
 The prepared series and attachment bodies total 97,297,212 bytes (92.79 MiB), before daily descriptors, file manifests and physical SQLite overhead. The complete Health provider payload, including descriptors and manifests, is 104,726,161 bytes. File parts use 512 KiB original-byte slices, each independently compressed and hashed. The CDA alone compresses from 516,462,443 bytes to 13,010,620 encoded bytes, so retaining it is inexpensive compared with retaining another set of measurement rows. The complete content uses about 98.3% fewer rows than one row per top-level fact, while also preserving attachments.
 
@@ -43,7 +43,6 @@ After complete import and unchanged replay, `wrangler d1 info life` reports **15
 ## Import and replacement contract
 
 The new `/data/apple-health` page uses Basalt PageHeader, cards, FileDropzone, UploadQueue, status and progress components. It accepts a complete ZIP or extracted directory. Preview shows this input's counts; cumulative coverage, dimensions, rows, bytes and attachment statistics belong to `/data`. The old generic Health import entry is removed; `/api/imports` returns `410 health_import_moved` for Apple Health.
-
 - Web Worker + IndexedDB and CLI temporary disk share `src/models/apple-health.ts`, the archive reader and `src/services/health-client.ts`. The Skill calls the same CLI. Full parsing, ZIP CRC validation and referenced-file validation finish before any database write.
 - Every original attribute, nested node, source, unit and timestamp string is retained. Hashes use canonical decoded content, so compression differences between browsers and CLI do not create false changes.
 - `--target` must match `/api/data/target` before writes. The authorized local `dev:prod` service is still a production writer, even through Caddy/loopback. Main-domain CLI requests use the owner's Cloudflare Access credentials.
@@ -63,7 +62,6 @@ For an already authorized production-bound local server, append `--base-url http
 ## Reading a day
 
 Store and compare UTC; an absent offset also means UTC. Presentation uses the viewer's current timezone and preserves day/hour/minute/second precision. Day-only facts remain in the metadata column. The timeline requests useful Health dimensions plus the previous 24 hours and following 12 hours for sleep, without counting neighboring-day activity in today's totals.
-
 - **Sleep:** place each night at its waking instant. Prefer detailed wearable stages when sources overlap; distinguish actual sleep, time in bed and awake time. Show the preceding bedtime, waking time, stage strip and source evidence. A weaker source ending on another day cannot move the selected night's waking day. Tonight's bedtime remains a separate event until waking evidence exists.
 - **Sleep location:** combine nearby night Footprint with recurring overnight locations in the preceding month. Show qualified residence/familiar/travel/unknown suggestions and evidence. Sparse or absent GPS does not establish a home or hotel.
 - **Movement between GPS changes:** hourly steps, walking distance and climbs fill stationary-looking periods. Overlapping Watch/phone/app quantities use a source/interval preference for presentation, not a destructive deduplication of raw samples.

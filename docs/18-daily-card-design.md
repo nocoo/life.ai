@@ -4,17 +4,17 @@ The daily tree remains the reading structure. Cards now distinguish the kind of 
 
 ## Visual language
 
-| Evidence | Basalt palette | Main icons |
-| --- | --- | --- |
-| Sleep and bedtime | Grape, accent 10 | MoonStar, Moon, Sunrise, BedDouble |
-| Workouts and walking | Chart green | Bike, Footprints, Dumbbell, Mountain, Waves |
-| Climbing and daylight | Chart yellow | MoveUpRight, SunMoon, Sunrise |
-| Heart-rate moments | Chart pink | HeartPulse |
-| Blood pressure | Tangerine, accent 7 | Gauge, ArrowUp, ArrowDown |
-| ECG and daily vital signs | Bondi, accent 3 | SquareActivity, Activity, Heart, Droplets, Wind |
-| Occasional measurements | Lime, accent 5 | Scale, Ruler, ClipboardList, BellRing |
-| GPS | Chart blue | Map, MapPin |
-| AI and Connect | Indigo, accent 11 | Sparkles, Plug |
+| Evidence                  | Basalt palette      | Main icons                                      |
+| ------------------------- | ------------------- | ----------------------------------------------- |
+| Sleep and bedtime         | Grape, accent 10    | MoonStar, Moon, Sunrise, BedDouble              |
+| Workouts and walking      | Chart green         | Bike, Footprints, Dumbbell, Mountain, Waves     |
+| Climbing and daylight     | Chart yellow        | MoveUpRight, SunMoon, Sunrise                   |
+| Heart-rate moments        | Chart pink          | HeartPulse                                      |
+| Blood pressure            | Tangerine, accent 7 | Gauge, ArrowUp, ArrowDown                       |
+| ECG and daily vital signs | Bondi, accent 3     | SquareActivity, Activity, Heart, Droplets, Wind |
+| Occasional measurements   | Lime, accent 5      | Scale, Ruler, ClipboardList, BellRing           |
+| GPS                       | Chart blue          | Map, MapPin                                     |
+| AI and Connect            | Indigo, accent 11   | Sparkles, Plug                                  |
 
 Category colors identify the type of record; they do not indicate a medical judgement. Numbers, units and text labels remain readable without relying on color. The existing GPS speed colors and sleep-stage legend keep their original meaning.
 
@@ -42,14 +42,14 @@ Local review uses Chrome through `https://life.dev.hexly.ai` with production D1 
 
 ## Verification and release — 2026-09-14
 
-| Gate | Verified result |
-| --- | --- |
-| L1 | 1,114 tests in 62 files passed. Statements 99.17%, branches 97.31%, functions 99.20%, lines 99.38%. |
-| G1 | Strict TypeScript and Biome passed with no warnings or errors. Generated Worker types are unchanged. |
-| L2 | 23 scenarios passed through real HTTP and local D1. |
-| L3 | 20 browser scenarios passed, including source hover/focus/Escape, compact all-day metrics and complete raw enum values. |
-| G2 | Gitleaks and OSV passed; production build and Wrangler deployment dry run passed. |
-| D1 isolation | Automated tests used fresh local Worker/SQLite state. Production-data browser review issued no API mutations. |
+| Gate         | Verified result                                                                                                         |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| L1           | 1,114 tests in 62 files passed. Statements 99.17%, branches 97.31%, functions 99.20%, lines 99.38%.                     |
+| G1           | Strict TypeScript and Biome passed with no warnings or errors. Generated Worker types are unchanged.                    |
+| L2           | 23 scenarios passed through real HTTP and local D1.                                                                     |
+| L3           | 20 browser scenarios passed, including source hover/focus/Escape, compact all-day metrics and complete raw enum values. |
+| G2           | Gitleaks and OSV passed; production build and Wrangler deployment dry run passed.                                       |
+| D1 isolation | Automated tests used fresh local Worker/SQLite state. Production-data browser review issued no API mutations.           |
 
 Chrome 152.0.7977.83 review through Caddy covered 2560 × 1440 desktop and 390 × 844 mobile. Light desktop, dark desktop and dark mobile returned zero Axe WCAG A/AA violations after theme transitions settled. The mobile page had no horizontal overflow. Information panels opened with real touch input and dismissed outside; reduced-motion disabled the entrance animation. Computed styles confirmed that the texture layers survive Basalt's nested surface rules and that a short blood-pressure card occupies 280 px of a 750 px lane.
 

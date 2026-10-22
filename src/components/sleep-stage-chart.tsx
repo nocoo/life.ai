@@ -18,7 +18,7 @@ export function SleepStageChart({ night }: { night: SleepNight }) {
 	const descriptionId = useId();
 	if (!chart) return null;
 	const selected = chart.segments.find((segment) => segment.id === selectedId);
-	const describe = (segment: (typeof chart.segments)[number]) =>
+	const segmentDescription = (segment: (typeof chart.segments)[number]) =>
 		`${segment.label} · ${dateClock.format(segment.start)} — ${dateClock.format(segment.end)} · ${segment.minutes < 1 ? `${Math.max(1, Math.round(segment.minutes * 60))} 秒` : formatDurationMinutes(segment.minutes)}`;
 	return (
 		<figure className="health-sleep-chart">
@@ -76,7 +76,7 @@ export function SleepStageChart({ night }: { night: SleepNight }) {
 							width: `${segment.width}%`,
 							top: segment.row * ROW_HEIGHT + 28,
 						}}
-						aria-label={describe(segment)}
+						aria-label={segmentDescription(segment)}
 						aria-pressed={selectedId === segment.id}
 						onMouseEnter={() => setSelectedId(segment.id)}
 						onFocus={() => setSelectedId(segment.id)}
@@ -92,7 +92,9 @@ export function SleepStageChart({ night }: { night: SleepNight }) {
 				))}
 			</div>
 			<figcaption id={descriptionId} className="health-sleep-detail">
-				{selected ? describe(selected) : "点选色块查看起止时间与时长；空白处没有睡眠阶段记录。"}
+				{selected
+					? segmentDescription(selected)
+					: "点选色块查看起止时间与时长；空白处没有睡眠阶段记录。"}
 			</figcaption>
 		</figure>
 	);

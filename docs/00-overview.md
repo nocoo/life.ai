@@ -12,12 +12,12 @@ Life.ai 是一个人的生活实录。一天分成 24 个本地小时，把来�
 
 ## 分层
 
-| 层 | 路径 | 责任 |
-| --- | --- | --- |
-| Model | `src/models` | UTC、精度、日时间线、流式导入、共享类型 |
-| Service | `src/services` | HTTP、分页、错误与取消 |
-| ViewModel | `src/viewmodels` | 与 DOM 无关的状态及操作 |
-| View | `src/views`、`src/components` | Basalt 页面、可访问交互、响应式布局 |
-| API | `worker` | Access JWT、Connect、D1 SQL、主机隔离 |
+| 层        | 路径                          | 责任                                    |
+| --------- | ----------------------------- | --------------------------------------- |
+| Model     | `src/models`                  | UTC、精度、日时间线、流式导入、共享类型 |
+| Service   | `src/services`                | HTTP、分页、错误与取消                  |
+| ViewModel | `src/viewmodels`              | 与 DOM 无关的状态及操作                 |
+| View      | `src/views`、`src/components` | Basalt 页面、可访问交互、响应式布局     |
+| API       | `worker`                      | Access JWT、Connect、D1 SQL、主机隔离   |
 
 一个 Vite 构建同时产出 SPA 和 Worker。生产不运行 Node 服务，数据库使用 D1 `life`。Google OAuth、Next.js 和旧本地 SQLite 服务已移除；旧实现可在 Git 提交 `6cdb344` 查看。

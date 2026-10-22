@@ -8,12 +8,12 @@ Apple Health 在“数据管理 → Apple Health”导入完整 ZIP 或解压目
 
 日记保留 `/imports` 网页入口，按最多 100 条且小于 512 KiB 的批次提交；文件每次读取 64 KiB。失败或取消前已提交的批次保留，重新导入使用稳定键覆盖。
 
-| 来源 | 支持格式 | 映射 |
-| --- | --- | --- |
-| Apple Health | 完整 ZIP / 解压目录 | 独立页面或 CLI；完整 XML 节点、睡眠、锻炼、关联读数、ActivitySummary、GPX、ECG、CDA |
-| Footprint | GPX | 独立页面或 CLI；保留全部 trkpt / rtept / wpt、时间、经纬度、海拔、速度、方向及原始分段 |
-| 貔貅 | UTF-8 CSV | 日期、交易分类/类型、流入/流出金额、币种、资金账户、标签、备注 |
-| 日记 | JSON 对象/数组，NDJSON/JSONL | 通用实录字段；普通 JSON 限 10 MiB |
+| 来源         | 支持格式                     | 映射                                                                                   |
+| ------------ | ---------------------------- | -------------------------------------------------------------------------------------- |
+| Apple Health | 完整 ZIP / 解压目录          | 独立页面或 CLI；完整 XML 节点、睡眠、锻炼、关联读数、ActivitySummary、GPX、ECG、CDA    |
+| Footprint    | GPX                          | 独立页面或 CLI；保留全部 trkpt / rtept / wpt、时间、经纬度、海拔、速度、方向及原始分段 |
+| 貔貅         | UTF-8 CSV                    | 日期、交易分类/类型、流入/流出金额、币种、资金账户、标签、备注                         |
+| 日记         | JSON 对象/数组，NDJSON/JSONL | 通用实录字段；普通 JSON 限 10 MiB                                                      |
 
 Apple Health 选择完整导出包；仅上传 `导出.xml` 会遗漏附件，因此不支持这一方式。旧 `/api/imports` 的 Apple Health 写入返回 410。GPX 使用 Footprint 独立入口，注意文件中的每个 UTC 日会整日替换。貔貅 CSV 支持 BOM、引号、换行和同内容重复交易，全部原始单元格与重复次数均保留，文件改名不改变内容哈希。旧 `/api/imports` 的貔貅写入返回 410。XML 外部实体不会被解析或下载。
 
@@ -32,8 +32,14 @@ bun run data:import --provider pixiu --file /path/to/貔貅记账 --target produ
 
 ```json
 [
-  {"key":"day-1","date":"2026-09-13","title":"旅行第一天","precision":"day"},
-  {"key":"reading-1","occurredAt":"2026-09-13T08:30:00+08:00","precision":"minute","title":"阅读","data":{"pages":12}}
+	{ "key": "day-1", "date": "2026-09-13", "title": "旅行第一天", "precision": "day" },
+	{
+		"key": "reading-1",
+		"occurredAt": "2026-09-13T08:30:00+08:00",
+		"precision": "minute",
+		"title": "阅读",
+		"data": { "pages": 12 }
+	}
 ]
 ```
 

@@ -25,7 +25,6 @@ Classic PAT 只查公开仓库时无须 scope；包含私有仓库时需要 `rep
 Fine-grained PAT 选择需要读取的仓库；私有数据需要 Contents、Pull requests、Issues 的只读权限，仓库列表使用自动包含的 Metadata read。GitHub 仍可能限制 fine-grained PAT 对多个资源所有者及组织仓库的访问；以 token 实际授权范围为准。
 
 `0008_github.sql` 保留原数据源配置和密文，扩展 provider 约束及账号字段，新增 `github_day_cache`。
-
 - 缓存键为 GitHub 数字账号 ID、日期、规范化时区和 UTC 窗口，与 PAT 和配置版本无关。完整成功结果永久保存，包括空日；命中不访问 GitHub、不写 D1。用户可通过内容区右上角的[缓存管理](28-cache-management.md)手动清除，下次读取才重新查询。
 - 今天同样以首次成功查询为准，不自动刷新。换同账号 PAT、停用/启用、移除后再添加同账号，均复用既有日快照。不同账号及日期窗口分别缓存。
 - 移除删除 PAT 与账号配置，保留历史快照；未启用该账号时不展示缓存。
@@ -55,7 +54,6 @@ Fine-grained PAT 选择需要读取的仓库；私有数据需要 Contents、Pul
 合并远端 Node 运行时与日期导航修复、完成缓存管理和卡片调整后，发布前检查：87 个 L1 文件、1,561 项测试通过，语句 98.92%、分支 96.40%、函数 99.10%、行 99.28%；29 个真实 HTTP 场景、36 个浏览器用例通过。严格类型检查、Biome、gitleaks、OSV、生产构建和 Wrangler dry run 通过。浏览器覆盖明暗状态色、PAT 清空、日期自动查询、横排等高、原文链接、空日卡片、缓存范围及清除重试、手机布局和可访问性。
 
 2026-09-15 已从代码提交 `33d51c5` 部署最终 2.0.0，Worker 版本 `07cb27bd-7d66-4b24-b48b-7fcd475a5d89`。原有 2.0.0 提交和远端 main 提交均保留。
-
 - 生产 D1 应用 `0008_github.sql`，本地 D1 正常执行 `0001` 至 `0008`；两者均无待执行迁移。迁移前后，既有两项数据源配置及密文的 SHA-256 指纹完全一致，六张数据表记录数量不变：`life_events` 0、`provider_days` 4,870、`health_series` 29,100、`health_files` 158、`day_summaries` 5、`general_settings` 1。
 - `life.hexly.ai/api/live`、`life.worker.hexly.ai/api/live` 和 Caddy 开发入口均返回 HTTP 200、版本 2.0.0、D1 `ok`。19 项只读检查通过：未认证及伪造 JWT 的生产页面/API 请求跳转 Access；机器导入主机的页面、数据源、事件、Connect、数据管理及新增缓存入口均返回 404。
 - Caddy 的七项只读 API 检查通过，包括数据源、通用/AI 设置、真实日期记录和生产数据目标。桌面及手机浏览器确认 GitHub 设置存在、PAT 输入默认隐藏且为空、无横向溢出、无页面错误和写入操作。Gecko、Firefly 的既有启用状态保留。
@@ -67,7 +65,6 @@ Fine-grained PAT 选择需要读取的仓库；私有数据需要 Contents、Pul
 ## 2.0.2 发布验证
 
 2026-09-15 从代码提交 `c77c1256de76471b8d546356135745d7a22e3200` 部署，Worker 版本 `7448b44c-ba3d-4f6d-8d7f-2588d4f31532`。生产构建、Wrangler dry-run 及部署成功；本地与远程 D1 均无待执行迁移。
-
 - L1：88 个文件、1,602 个测试通过；statements 98.95%、branches 96.38%、functions 99.11%、lines 99.31%。严格类型与 Biome 检查通过。
 - L2：29 个隔离 Worker/SQLite HTTP 场景通过。完整浏览器回归覆盖 37 个用例；修正仍按旧记录/卡片数量断言的缓存测试后，相关用例重跑通过。GitHub 桌面、手机和明暗弹窗均无 Axe WCAG A/AA 问题。
 - 新增用例覆盖 101 个仓库分页、第二页的 2020 年历史 Release、六个并行仓库的上限、重复/无效/过多分页、失败时不写半份日缓存、换 PAT 及并发请求复用缓存。机器人发布者可解析但按账号 ID 排除，不会阻断该账号的查询；补充 fixture 后 37 项 GitHub 单元测试和四个来源浏览器用例再次通过。

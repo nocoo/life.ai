@@ -23,11 +23,11 @@ Life.ai 是单用户生活记录应用，通过 Web 时间线回看健康、GPS�
 
 在「数据管理」选择来源：
 
-| 来源 | 输入与保存方式 |
-| --- | --- |
-| Footprint | 完整 GPX；全部点按 UTC 日压缩保存，同日整份替换 |
+| 来源         | 输入与保存方式                                                                                                                           |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Footprint    | 完整 GPX；全部点按 UTC 日压缩保存，同日整份替换                                                                                          |
 | Apple Health | 完整导出 ZIP 或解压目录；按 UTC 日 × 维度无损保存，保留原始属性、嵌套元数据、多设备观测、锻炼 GPX、心电 CSV 和 CDA；同日全部维度一起替换 |
-| 貔貅记账 | 一个或多个原始 CSV；保留九列、重复、零金额与多币种，按 UTC+8 记账日整份替换；消费、收入与转账/还款分别展示 |
+| 貔貅记账     | 一个或多个原始 CSV；保留九列、重复、零金额与多币种，按 UTC+8 记账日整份替换；消费、收入与转账/还款分别展示                               |
 
 「设置」集中管理通用设置、AI、Connect 和日记导入。日记支持 JSON / NDJSON，普通 JSON 上限 10 MiB；取消时保留已完成批次。
 
@@ -78,14 +78,14 @@ bun run test:l3
 
 ## 技术栈
 
-| 技术 | 用途 |
-| --- | --- |
-| React · Vite · Basalt | Web 界面 |
-| TypeScript · Bun · Biome | 类型、脚本与静态检查 |
-| Cloudflare Workers · D1 | API、Access 校验和存储 |
-| Workers AI · AI SDK | 日记生成与模型接入 |
-| Leaflet · Recharts | 地图与统计 |
-| Vitest · Playwright | 单元、HTTP 与浏览器测试 |
+| 技术                     | 用途                    |
+| ------------------------ | ----------------------- |
+| React · Vite · Basalt    | Web 界面                |
+| TypeScript · Bun · Biome | 类型、脚本与静态检查    |
+| Cloudflare Workers · D1  | API、Access 校验和存储  |
+| Workers AI · AI SDK      | 日记生成与模型接入      |
+| Leaflet · Recharts       | 地图与统计              |
+| Vitest · Playwright      | 单元、HTTP 与浏览器测试 |
 
 `src/models/`、`src/services/`、`src/viewmodels/` 分别负责领域、HTTP 和状态；Views 渲染与派发操作，`worker/` 管理 API 与数据库。
 

@@ -386,7 +386,7 @@
 
 /* Overlay the material on Basalt's nested surface fill without replacing that fill. */
 :is([data-basalt-surface-root], .story-map-dialog)
-:is(.story-card, .story-branch)[data-basalt-surface] {
+	:is(.story-card, .story-branch)[data-basalt-surface] {
 	background-image:
 		repeating-linear-gradient(
 			125deg,

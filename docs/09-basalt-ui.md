@@ -7,7 +7,6 @@ Frontend ownership for the Life.ai rewrite. Chinese product UI, existing capybar
 The Next.js app under `dashboard/` already consumed `@nocoo/basalt` 2.1.7. That adoption is the baseline, not the product.
 
 Completed in the old app:
-
 - Root `ThemeProvider`, `AccentProvider`, `LinkProvider`, `TooltipProvider`, `Toaster`.
 - `AppShell` / `AppSkipLink` / `Sidebar*` / `AppHeader` / `AppMain` / `ContentIsland`.
 - Desktop 260px / 68px rail, mobile `Sheet` drawer, `ThemeToggle`, command palette, version pill from package.json.
@@ -17,7 +16,6 @@ Completed in the old app:
 - Domain leftovers that Basalt does not own: Leaflet / Google maps, Photon autocomplete, map checkbox chrome.
 
 Not completed, and intentionally not ported:
-
 - Next.js App Router, Auth.js Google login, login route.
 - Day / month / year health-dashboard information architecture.
 - Per-source SQLite dashboards and the old heatmaps. The central timeline and contextual daily map inform the current reading design; weather and solar moments now follow the selected GPS reference place. See `docs/16-daily-context-and-record-tabs.md`.
@@ -129,14 +127,12 @@ Views are not unit-tested here. Codex L3 covers timeline, import, Connect, respo
 ## Contract with Codex (`src/models`)
 
 Consumed as specified. No change required.
-
 - `src/models/time.ts`: `localDateKey`, `shiftLocalDate`, `localDayWindow`, `buildDayTimeline`, `normalizeTimestamp`.
 - `src/models/import.ts`: `importFile(file, source, onBatch, onProgress, signal?)`.
 - `src/models/day-insights.ts`: `buildDayInsights(events, window)`.
 - `src/models/ai.ts`: settings and day-summary types, `DEFAULT_AI_MODEL`.
 
 Assumptions:
-
 - `buildDayTimeline` returns 24 local hour slots and partitions day-precision events into `allDay`. A missing hour may still have instants when DST shortens the hour; only an empty `instants` array means the clock label does not occur.
 - A resolved `onBatch` means the UI POST succeeded; a throw fails the import. `onBatch` is `Promise<void>`, so the adapter cannot see `{ accepted }` from `/api/imports`. The success summary uses `importFile`'s `{ processed, accepted }`.
 - `normalizeTimestamp` is not called by the UI. Presentation formats API ISO strings with `Intl` in the local timezone.

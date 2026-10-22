@@ -2,14 +2,14 @@
 
 6DQ 采用 nmem `crystal_0c9c31f7de97` 的 2026-09 规范。
 
-| 维度 | 命令与要求 |
-| --- | --- |
-| L1 | `bun run test:coverage`；Model、Service、ViewModel、Worker 的 statements / branches / functions / lines 全部 ≥95% |
-| G1 | `bun run typecheck` 与 `bun run lint`；TypeScript strict、noUncheckedIndexedAccess；Biome 0 error / 0 warning |
-| L2 | `bun run test:l2`；全部 API 方法/路径契约，真实 HTTP → 本地 Worker → SQLite |
-| L3 | `bun run test:l3`；Playwright 验证认证边界、导入、时间线、Connect、响应式 UI |
-| G2 | `bun run gate:security`；gitleaks 扫可评审工作树、osv-scanner 扫根锁文件 |
-| D1 | 下述物理隔离，禁止远程测试资源 |
+| 维度 | 命令与要求                                                                                                        |
+| ---- | ----------------------------------------------------------------------------------------------------------------- |
+| L1   | `bun run test:coverage`；Model、Service、ViewModel、Worker 的 statements / branches / functions / lines 全部 ≥95% |
+| G1   | `bun run typecheck` 与 `bun run lint`；TypeScript strict、noUncheckedIndexedAccess；Biome 0 error / 0 warning     |
+| L2   | `bun run test:l2`；全部 API 方法/路径契约，真实 HTTP → 本地 Worker → SQLite                                       |
+| L3   | `bun run test:l3`；Playwright 验证认证边界、导入、时间线、Connect、响应式 UI                                      |
+| G2   | `bun run gate:security`；gitleaks 扫可评审工作树、osv-scanner 扫根锁文件                                          |
+| D1   | 下述物理隔离，禁止远程测试资源                                                                                    |
 
 L2/L3 每轮在 `.wrangler/tests/<tier>-<random>` 创建全新状态和 Vite 缓存。绑定检查要求 local 配置、回环监听、无远程路由、local/prod D1 ID 不同。首次写入仅初始化该新目录的 `_test_marker(key,value)`，写入 `env=test`；迁移、SQL 检查、清理均验证标记。
 
