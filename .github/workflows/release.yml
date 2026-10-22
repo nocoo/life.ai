@@ -44,7 +44,7 @@ jobs:
       tag: ${{ github.event_name == 'push' && github.ref_name || inputs.tag || '' }}
       package-version-match: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.tag != '') }}
       runtime-version: "1.4.0"
-      node-version: "26.8.1"
+      node-version: "26.12.1"
       install-policy: "trusted"
       deploy-script: "bun run deploy"
       environment: production
