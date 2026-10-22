@@ -55,7 +55,7 @@
 		"@nocoo/next-ai": "0.4.0",
 		"@zip.js/zip.js": "2.24.0",
 		"ai": "7.0.148",
-		"jose": "6.2.12",
+		"jose": "6.2.13",
 		"leaflet": "1.9.4",
 		"lucide-react": "1.61.0",
 		"papaparse": "5.7.0",
