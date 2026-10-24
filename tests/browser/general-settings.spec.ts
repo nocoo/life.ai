@@ -47,8 +47,15 @@ test("settings sit at the bottom of the sidebar and remain reachable when the ra
 	await page.getByRole("button", { name: "收起侧栏", exact: true }).click();
 	await expect(page.getByRole("button", { name: "展开侧栏", exact: true })).toBeVisible();
 	await expect(sidebar.getByRole("button", { name: "通用设置", exact: true })).toBeVisible();
+	// The shared rail centres the mark once the width transition settles.
+	await expect
+		.poll(async () => {
+			const box = await logo.boundingBox();
+			const rail = await sidebar.boundingBox();
+			return box && rail ? Math.round(box.x - rail.x) : -1;
+		})
+		.toBe(22);
 	const collapsedLogo = await logo.boundingBox();
-	expect(collapsedLogo?.x).toBe(logoBox?.x);
 	expect(collapsedLogo?.width).toBe(24);
 	await page.getByRole("button", { name: "展开侧栏", exact: true }).click();
 	await page.setViewportSize({ width: 1440, height: 360 });

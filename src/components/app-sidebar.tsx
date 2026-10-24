@@ -11,11 +11,11 @@ import {
 	CommandPalette,
 	Sidebar,
 	SidebarFooter,
+	SidebarGroup,
 	SidebarHeader,
 	SidebarIconItem,
 	SidebarItem,
 	SidebarNav,
-	SidebarPartition,
 	SidebarSearch,
 	SidebarUser,
 	Tooltip,
@@ -95,7 +95,6 @@ export function AppSidebar({
 						<SidebarIconItem
 							active={pathname === item.href}
 							aria-label={item.label}
-							className="self-center"
 							onClick={() => navigate(item.href)}
 						>
 							<item.icon className="h-4 w-4" strokeWidth={1.5} />
@@ -110,111 +109,139 @@ export function AppSidebar({
 
 	const expandedGroups = (groups: NavGroup[]) =>
 		groups.map((group) => (
-			<div key={group.id}>
-				<SidebarPartition>{group.label}</SidebarPartition>
-				<div className="flex flex-col gap-0.5 px-3">
-					{group.items.map((item) => (
-						<SidebarItem
-							key={item.href}
-							active={pathname === item.href}
-							onClick={() => navigate(item.href)}
-						>
-							<item.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
-							<span className="flex-1 truncate text-left">{item.label}</span>
-						</SidebarItem>
-					))}
-				</div>
-			</div>
+			<SidebarGroup key={group.id} label={group.label}>
+				{group.items.map((item) => (
+					<SidebarItem
+						key={item.href}
+						active={pathname === item.href}
+						onClick={() => navigate(item.href)}
+					>
+						<item.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
+						<span className="flex-1 truncate text-left">{item.label}</span>
+					</SidebarItem>
+				))}
+			</SidebarGroup>
 		));
 
 	return (
-		<Sidebar collapsed={collapsed} aria-label="主导航" className="life-sidebar">
-			<SidebarHeader className="life-sidebar-region gap-3 pl-6">
-				<img
-					src={BRAND_MARK_SRC}
-					alt={APP_NAME}
-					width={24}
-					height={24}
-					data-sidebar-logo=""
-					className="h-6 w-6 shrink-0"
-				/>
-				<div className="flex min-w-0 items-center gap-3" hidden={collapsed}>
-					<span className="whitespace-nowrap text-lg font-semibold text-basalt-foreground md:text-xl">
-						{APP_NAME}
-					</span>
-					<span className="shrink-0 rounded-md bg-basalt-secondary px-1.5 py-0.5 text-[10px] leading-none font-medium text-basalt-muted-foreground">
-						v{APP_VERSION}
-					</span>
-				</div>
-				<Button
-					variant="ghost"
-					size="icon"
-					className="life-sidebar-toggle"
-					onClick={onToggle}
-					aria-label={collapsed ? "展开侧栏" : "收起侧栏"}
-					aria-expanded={!collapsed}
+		<Sidebar collapsed={collapsed} aria-label="主导航">
+			<SidebarHeader>
+				<div
+					className={
+						collapsed
+							? "flex w-full justify-center"
+							: "flex w-full min-w-0 items-center justify-between"
+					}
 				>
-					<PanelLeft aria-hidden="true" />
-				</Button>
-			</SidebarHeader>
-			{collapsed ? (
-				<>
-					<Tooltip delayDuration={0}>
-						<TooltipTrigger asChild>
-							<SidebarIconItem
-								className="mt-11 mb-2 ml-[14px] shrink-0 self-start"
-								onClick={() => setSearchOpen(true)}
-								aria-label="搜索 (⌘K)"
-							>
-								<Search className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
-							</SidebarIconItem>
-						</TooltipTrigger>
-						<TooltipContent side="right" sideOffset={8}>
-							搜索 (⌘K)
-						</TooltipContent>
-					</Tooltip>
-					<div className="life-sidebar-region life-sidebar-scroll flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-						<SidebarNav className="w-full items-center gap-1 pt-1">
-							{collapsedIcons(MAIN_GROUPS)}
-						</SidebarNav>
-						{SETTINGS_GROUP ? (
-							<div className="mt-auto flex w-full flex-col items-center gap-1 border-t border-basalt-border/70 pt-2">
-								{collapsedIcons([SETTINGS_GROUP])}
-							</div>
+					<div
+						className={
+							collapsed ? "flex items-center" : "flex min-w-0 items-center gap-basalt-space-lg"
+						}
+					>
+						<img
+							src={BRAND_MARK_SRC}
+							alt={APP_NAME}
+							width={24}
+							height={24}
+							data-sidebar-logo=""
+							className="h-6 w-6 shrink-0"
+						/>
+						{!collapsed ? (
+							<>
+								<span className="truncate text-lg font-semibold text-basalt-foreground md:text-xl">
+									{APP_NAME}
+								</span>
+								<span className="shrink-0 rounded-md bg-basalt-secondary px-basalt-space-md py-basalt-space-xs text-[10px] leading-none font-medium text-basalt-muted-foreground">
+									v{APP_VERSION}
+								</span>
+							</>
 						) : null}
 					</div>
+					{!collapsed ? (
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-7 w-7 shrink-0"
+							onClick={onToggle}
+							aria-label="收起侧栏"
+							aria-expanded
+						>
+							<PanelLeft aria-hidden="true" />
+						</Button>
+					) : null}
+				</div>
+			</SidebarHeader>
+
+			{collapsed ? (
+				<>
+					<Button
+						variant="ghost"
+						size="icon"
+						className="mb-basalt-space-sm self-center"
+						onClick={onToggle}
+						aria-label="展开侧栏"
+						aria-expanded={false}
+					>
+						<PanelLeft aria-hidden="true" />
+					</Button>
+					<SidebarNav aria-label="页面">
+						<Tooltip delayDuration={0}>
+							<TooltipTrigger asChild>
+								<SidebarIconItem onClick={() => setSearchOpen(true)} aria-label="搜索 (⌘K)">
+									<Search className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+								</SidebarIconItem>
+							</TooltipTrigger>
+							<TooltipContent side="right" sideOffset={8}>
+								搜索 (⌘K)
+							</TooltipContent>
+						</Tooltip>
+						{collapsedIcons(MAIN_GROUPS)}
+					</SidebarNav>
+					{SETTINGS_GROUP ? (
+						<div className="mt-auto">
+							<SidebarNav aria-label="设置">{collapsedIcons([SETTINGS_GROUP])}</SidebarNav>
+						</div>
+					) : null}
 				</>
 			) : (
 				<>
-					<div className="life-sidebar-region px-3 pb-1">
+					<div className="px-basalt-nav-inset">
 						<SidebarSearch onClick={() => setSearchOpen(true)}>搜索</SidebarSearch>
 					</div>
-					<div className="life-sidebar-region life-sidebar-scroll flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-						<SidebarNav className="pt-1">{expandedGroups(MAIN_GROUPS)}</SidebarNav>
-						{SETTINGS_GROUP ? (
-							<div className="mt-auto border-t border-basalt-border/70 pb-1">
-								{expandedGroups([SETTINGS_GROUP])}
-							</div>
-						) : null}
-					</div>
+					<SidebarNav aria-label="页面">{expandedGroups(MAIN_GROUPS)}</SidebarNav>
+					{SETTINGS_GROUP ? (
+						<div className="mt-auto">
+							<SidebarNav aria-label="设置">{expandedGroups([SETTINGS_GROUP])}</SidebarNav>
+						</div>
+					) : null}
 				</>
 			)}
-			<SidebarFooter className="life-sidebar-region">
-				<SidebarUser
-					className="life-sidebar-user"
-					name={userName}
-					email={userEmail}
-					avatar={
-						<Tooltip delayDuration={0}>
-							<TooltipTrigger asChild>
-								<span className="inline-flex shrink-0">{avatar}</span>
-							</TooltipTrigger>
-							<TooltipContent side="right" sideOffset={8}>
-								{userName}
-							</TooltipContent>
-						</Tooltip>
-					}
-				/>
+			<SidebarFooter>
+				{collapsed ? (
+					<Tooltip delayDuration={0}>
+						<TooltipTrigger asChild>
+							<span className="inline-flex self-center">{avatar}</span>
+						</TooltipTrigger>
+						<TooltipContent side="right" sideOffset={8}>
+							{userName}
+						</TooltipContent>
+					</Tooltip>
+				) : (
+					<SidebarUser
+						name={userName}
+						email={userEmail}
+						avatar={
+							<Tooltip delayDuration={0}>
+								<TooltipTrigger asChild>
+									<span className="inline-flex shrink-0">{avatar}</span>
+								</TooltipTrigger>
+								<TooltipContent side="right" sideOffset={8}>
+									{userName}
+								</TooltipContent>
+							</Tooltip>
+						}
+					/>
+				)}
 			</SidebarFooter>
 
 			<CommandPalette open={searchOpen} onOpenChange={setSearchOpen}>

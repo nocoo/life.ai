@@ -24,7 +24,7 @@ test.afterEach(async ({ page }) => {
 	await page.unrouteAll({ behavior: "wait" });
 });
 
-test("sidebar preserves the exact logo anchor and shows profile name/avatar with a failed-image fallback", async ({
+test("sidebar renders the shared brand row and keeps profile name/avatar with a failed-image fallback", async ({
 	page,
 }) => {
 	let brokenAvatar = false;
@@ -50,21 +50,25 @@ test("sidebar preserves the exact logo anchor and shows profile name/avatar with
 	await page.goto("/");
 	await expect(page.getByText("Li Zheng", { exact: true })).toBeVisible();
 	await expect(page.getByRole("img", { name: "Li Zheng", exact: true })).toBeVisible();
+	const sidebar = page.getByRole("complementary", { name: "主导航" });
 	const logo = page.locator("[data-sidebar-logo]");
-	const before = await logo.boundingBox();
-	expect(before).not.toBeNull();
+	const railInset = () =>
+		sidebar.evaluate((rail) => {
+			const box = rail.getBoundingClientRect();
+			const mark = rail.querySelector("[data-sidebar-logo]")?.getBoundingClientRect();
+			return mark ? Math.round(mark.x - box.x) : -1;
+		});
+	const expandedInset = await railInset();
 	for (let attempt = 0; attempt < 2; attempt++) {
 		await page.getByRole("button", { name: "收起侧栏", exact: true }).click();
 		await expect(page.getByRole("button", { name: "展开侧栏", exact: true })).toBeVisible();
+		// The shared rail centres the collapsed header inside its 68px width.
+		await expect.poll(railInset).toBe(22);
 		const collapsed = await logo.boundingBox();
-		expect(collapsed?.x).toBe(before?.x);
-		expect(collapsed?.y).toBe(before?.y);
 		expect(collapsed?.width).toBe(24);
 		expect(collapsed?.height).toBe(24);
 		await page.getByRole("button", { name: "展开侧栏", exact: true }).click();
-		const expanded = await logo.boundingBox();
-		expect(expanded?.x).toBe(before?.x);
-		expect(expanded?.y).toBe(before?.y);
+		await expect.poll(railInset).toBe(expandedInset);
 	}
 	brokenAvatar = true;
 	await page.reload();

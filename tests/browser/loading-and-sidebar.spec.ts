@@ -28,8 +28,8 @@ test("sidebar keeps the same logo and avatar fixed through animation, reversal a
 	await expect(sidebar.getByRole("img", { name: "Sidebar Fixture" })).toBeVisible();
 	const frames = await sidebar.evaluate(async (rail) => {
 		const logo = rail.querySelector("[data-sidebar-logo]");
-		const avatar = rail.querySelector(".life-sidebar-user img");
-		const toggle = rail.querySelector<HTMLButtonElement>(".life-sidebar-toggle");
+		const avatar = rail.querySelector('[data-slot="sidebar-footer"] img');
+		const toggle = rail.querySelector<HTMLButtonElement>('[data-slot="sidebar-header"] button');
 		if (!logo || !avatar || !toggle) throw new Error("Sidebar identity is missing");
 		const box = (element: Element) => {
 			const { x, y, width, height } = element.getBoundingClientRect();
@@ -48,9 +48,7 @@ test("sidebar keeps the same logo and avatar fixed through animation, reversal a
 					avatar: box(avatar),
 					iconX: box(icon).x,
 					width: box(rail).width,
-					sameNodes:
-						logo === rail.querySelector("[data-sidebar-logo]") &&
-						avatar === rail.querySelector(".life-sidebar-user img"),
+					sameLogoNode: logo === rail.querySelector("[data-sidebar-logo]"),
 				});
 			} while (performance.now() - started < duration);
 		}
@@ -59,8 +57,13 @@ test("sidebar keeps the same logo and avatar fixed through animation, reversal a
 	expect(frames.length).toBeGreaterThan(10);
 	expect(frames.some((frame) => frame.width > 70 && frame.width < 258)).toBe(true);
 	for (const frame of frames) {
-		expect(frame.sameNodes).toBe(true);
-		expect(frame.logo).toEqual({ x: 24, y: 16, width: 24, height: 24 });
+		expect(frame.sameLogoNode).toBe(true);
+		// The shared header insets the mark and centres it on the collapsed rail:
+		// its size and row are fixed while x tracks that inset.
+		expect([frame.logo.width, frame.logo.height]).toEqual([24, 24]);
+		expect(frame.logo.y).toBe(16);
+		// Mid-transition the header centres inside the current width, so the settled
+		// insets are asserted once each state comes to rest below.
 		// Identity stays anchored: x is exact, and the vertical reflow of the
 		// identity text while the rail animates is allowed to move under 1px.
 		expect(frame.avatar.x).toBe(frames[0]?.avatar.x);
@@ -79,8 +82,19 @@ test("sidebar keeps the same logo and avatar fixed through animation, reversal a
 			expect(frame.iconX).toBeGreaterThanOrEqual(16);
 		}
 	}
+	const settledInset = async () => {
+		const box = await sidebar.boundingBox();
+		const mark = await page.locator("[data-sidebar-logo]").boundingBox();
+		return box && mark ? Math.round(mark.x - box.x) : -1;
+	};
+	const toggle = sidebar.getByRole("button", { name: /收起侧栏|展开侧栏/ });
+	if ((await sidebar.getAttribute("data-collapsed")) === null) await toggle.click();
+	await expect.poll(settledInset).toBe(22);
+	await toggle.click();
+	await expect.poll(settledInset).toBe(8);
+
 	await page.setViewportSize({ width: 1280, height: 420 });
-	const scroll = sidebar.locator(".life-sidebar-scroll");
+	const scroll = sidebar.locator('nav[aria-label="页面"]');
 	expect(await scroll.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(
 		true,
 	);

@@ -37,59 +37,14 @@
 	}
 }
 
-/* Like Surety, clip fixed region layouts while only the outer rail changes width. */
-.life-sidebar {
-	--life-sidebar-region-width: 260px;
-	overflow: hidden;
-	transition-property: width;
-}
-
-.life-sidebar[data-collapsed] {
-	--life-sidebar-region-width: 68px;
-}
-
-.life-sidebar-region {
-	width: var(--life-sidebar-region-width);
-	flex-shrink: 0;
-}
-
-/* Basalt 3.x centres a collapsed header; the brand keeps its fixed 24px inset
-   (the stable sidebar identity contract) instead of drifting with the rail. */
-.life-sidebar[data-collapsed] [data-slot="sidebar-header"] {
-	justify-content: flex-start;
-}
-
-.life-sidebar[data-collapsed] [data-slot="sidebar-footer"] {
-	align-items: flex-start;
-	justify-content: flex-start;
-}
-
-.life-sidebar-scroll > nav {
-	flex: none;
-	overflow: visible;
-}
-
-.life-sidebar-toggle {
-	position: absolute;
-	top: 14px;
-	left: 220px;
-	width: 28px;
-	height: 28px;
-}
-
-.life-sidebar[data-collapsed] .life-sidebar-toggle {
-	top: 56px;
-	left: 14px;
-	width: 40px;
-	height: 40px;
-}
-
-:where(.life-sidebar[data-collapsed]) .life-sidebar-user > div {
-	display: none;
+@media (prefers-reduced-motion: reduce) {
+	.life-sidebar {
+		transition: none;
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.life-sidebar {
+	[data-basalt-sidebar] {
 		transition: none;
 	}
 }
