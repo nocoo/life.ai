@@ -70,8 +70,8 @@
 	"devDependencies": {
 		"@axe-core/playwright": "4.14.0",
 		"@biomejs/biome": "2.6.2",
-		"@cloudflare/vite-plugin": "1.64.0",
-		"@cloudflare/workers-types": "5.20261021.1",
+		"@cloudflare/vite-plugin": "1.65.0",
+		"@cloudflare/workers-types": "5.20261023.1",
 		"@playwright/test": "1.64.1",
 		"@tailwindcss/vite": "4.3.3",
 		"@testing-library/react": "16.3.3",
@@ -90,21 +90,18 @@
 		"typescript": "7.0.2",
 		"vite": "8.3.5",
 		"vitest": "5.0.5",
-		"wrangler": "4.151.3"
+		"wrangler": "4.152.0"
 	},
 	"overrides": {
 		"undici": "7.30.1",
 		"sharp": "0.35.5",
 		"source-map-js": "1.2.2",
-		"miniflare": "5.20260930.0-alpha",
-		"wrangler": "4.151.3"
+		"miniflare": "5.20261019.2-beta",
+		"wrangler": "4.152.0"
 	},
 	"trustedDependencies": [
 		"@biomejs/biome",
 		"esbuild",
 		"workerd"
-	],
-	"patchedDependencies": {
-		"miniflare@5.20260930.0-alpha": "patches/miniflare@5.20260930.0-alpha.patch"
-	}
+	]
 }
