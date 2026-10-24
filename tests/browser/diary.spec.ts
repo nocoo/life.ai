@@ -113,7 +113,7 @@ test("AI summaries contain independent activity sections, compact information co
 	await expect(overview).not.toContainText("汇总当前可见来源");
 	await overview.getByRole("button", { name: "查看当天概况的来源与说明" }).focus();
 	await page.keyboard.press("Enter");
-	await expect(page.getByRole("tooltip")).toContainText("汇总当前可见来源");
+	await expect(page.getByRole("tooltip").filter({ hasText: "汇总当前可见来源" })).toBeVisible();
 	await page.keyboard.press("Escape");
 
 	expect(

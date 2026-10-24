@@ -53,6 +53,17 @@
 	flex-shrink: 0;
 }
 
+/* Basalt 3.x centres a collapsed header; the brand keeps its fixed 24px inset
+   (the stable sidebar identity contract) instead of drifting with the rail. */
+.life-sidebar[data-collapsed] [data-slot="sidebar-header"] {
+	justify-content: flex-start;
+}
+
+.life-sidebar[data-collapsed] [data-slot="sidebar-footer"] {
+	align-items: flex-start;
+	justify-content: flex-start;
+}
+
 .life-sidebar-scroll > nav {
 	flex: none;
 	overflow: visible;
