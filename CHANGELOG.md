@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.0.7 — 2026-10-24
+
+- Rebuild the sidebar on the Basalt template: shared header inset, collapsible groups, 38px rows, search inset, centred collapsed rail and identity footer replace the local rail regions, absolute toggle and wrapper padding.
+- Upgrade `@nocoo/basalt` to 3.2.1, Wrangler to 4.152.0 with `@cloudflare/vite-plugin` 1.65.0 and `@cloudflare/workers-types` 5.20261023.1, the AI SDK to 7.0.152 with provider 4.0.101/4.0.87, zustand to 5.0.16 and `@types/bun` to 1.4.4.
+- Drop the unused miniflare patch and align the override with the Vite plugin.
+- Override `undici` to 7.30.1 so the dependency scan stops reporting the advisories published against 7.29.1.
+
 ## v2.0.3 — 2026-09-21
 
 - Run pre-commit coverage, strict type checks and warning-fatal lint against the Git index snapshot; preserve unstaged changes and reject interrupted checks.
