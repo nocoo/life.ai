@@ -206,7 +206,12 @@ export function AppSidebar({
 			) : (
 				<>
 					<div className="px-basalt-nav-inset">
-						<SidebarSearch onClick={() => setSearchOpen(true)}>搜索</SidebarSearch>
+						<SidebarSearch
+							className="[&_span]:text-basalt-foreground"
+							onClick={() => setSearchOpen(true)}
+						>
+							搜索
+						</SidebarSearch>
 					</div>
 					<SidebarNav aria-label="页面">{expandedGroups(MAIN_GROUPS)}</SidebarNav>
 					{SETTINGS_GROUP ? (
