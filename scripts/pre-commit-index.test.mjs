@@ -18,6 +18,33 @@ import { afterEach, describe, expect, it } from "vitest";
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const preCommit = readFileSync(join(repoRoot, ".husky/pre-commit"), "utf8");
 const hookCommand = readFileSync(join(repoRoot, "scripts/run-hook-command.mjs"), "utf8");
+const verifySummary = readFileSync(join(repoRoot, "scripts/verify-coverage-summary.mjs"), "utf8");
+const fixtureUnitGate = `import { mkdirSync, writeFileSync } from "node:fs";
+mkdirSync("coverage", { recursive: true });
+mkdirSync("test-results", { recursive: true });
+writeFileSync(
+	"coverage/coverage-summary.json",
+	JSON.stringify({
+		total: {
+			statements: { pct: 100, total: 1 },
+			branches: { pct: 100, total: 1 },
+			functions: { pct: 100, total: 1 },
+			lines: { pct: 100, total: 1 },
+		},
+	}),
+);
+writeFileSync(
+	"test-results/unit.json",
+	JSON.stringify({
+		success: true,
+		numTotalTests: 1,
+		numPassedTests: 1,
+		numPendingTests: 0,
+		numTodoTests: 0,
+		numFailedTests: 0,
+	}),
+);
+`;
 const fixtures = [];
 const children = [];
 
@@ -51,7 +78,7 @@ function snapshots(tmp) {
 	return readdirSync(tmp).filter((name) => name.startsWith("life-index-"));
 }
 
-function createFixture({ commit = true, coverage = 'node -e "process.exit(0)"' } = {}) {
+function createFixture({ commit = true, unitCoverageScript = fixtureUnitGate } = {}) {
 	const root = mkdtempSync(join(tmpdir(), "life-precommit-"));
 	fixtures.push(root);
 	const home = join(root, "home");
@@ -80,12 +107,14 @@ function createFixture({ commit = true, coverage = 'node -e "process.exit(0)"' }
 	chmodSync(join(repo, ".git/hooks/pre-commit"), 0o755);
 	mkdirSync(join(repo, "scripts"));
 	writeFileSync(join(repo, "scripts/run-hook-command.mjs"), hookCommand);
+	writeFileSync(join(repo, "scripts/run-unit-coverage.mjs"), unitCoverageScript);
+	writeFileSync(join(repo, "scripts/verify-coverage-summary.mjs"), verifySummary);
 	writeFileSync(
 		join(repo, "package.json"),
 		`${JSON.stringify(
 			{
 				scripts: {
-					"test:coverage": coverage,
+					"test:coverage": "node scripts/run-unit-coverage.mjs",
 					typecheck: "tsc --noEmit -p tsconfig.json",
 					lint: 'node -e "process.exit(0)"',
 				},
@@ -116,7 +145,16 @@ function createFixture({ commit = true, coverage = 'node -e "process.exit(0)"' }
 	symlinkSync(join(repoRoot, "node_modules"), join(repo, "node_modules"));
 	git(
 		repo,
-		["add", "package.json", "tsconfig.json", "bun.lock", "main.ts", "scripts/run-hook-command.mjs"],
+		[
+			"add",
+			"package.json",
+			"tsconfig.json",
+			"bun.lock",
+			"main.ts",
+			"scripts/run-hook-command.mjs",
+			"scripts/run-unit-coverage.mjs",
+			"scripts/verify-coverage-summary.mjs",
+		],
 		env,
 	);
 	if (commit) git(repo, ["commit", "-m", "seed"], env);
@@ -171,7 +209,7 @@ describe("pre-commit index snapshot", () => {
 			const resist = resistTermination ? "process.on('SIGTERM', () => {}); " : "";
 			const { repo, env, tmp } = createFixture({
 				commit: false,
-				coverage: `node -e "${resist}require('node:fs').writeFileSync(process.env.LIFE_TEST_STAGE_READY, String(process.pid)); setTimeout(() => {}, 30000)"`,
+				unitCoverageScript: `import { writeFileSync } from "node:fs";\n${resist}writeFileSync(process.env.LIFE_TEST_STAGE_READY, String(process.pid));\nawait new Promise(() => {});\n`,
 			});
 			const child = spawn("sh", [join(repo, ".git/hooks/pre-commit")], {
 				cwd: repo,

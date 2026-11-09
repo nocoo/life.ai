@@ -78,6 +78,7 @@ run_check() {
 	return "$check_status"
 }
 
-run_check bun run test:coverage
+run_check node scripts/run-unit-coverage.mjs
+run_check node scripts/verify-coverage-summary.mjs
 run_check bun run typecheck
 run_check bun run lint
