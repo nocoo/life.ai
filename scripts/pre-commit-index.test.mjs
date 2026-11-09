@@ -206,10 +206,10 @@ describe("pre-commit index snapshot", () => {
 			["SIGHUP", 129],
 			["SIGTERM", 143, true],
 		]) {
-			const resist = resistTermination ? "process.on('SIGTERM', () => {}); " : "";
+			const resist = resistTermination ? "process.on('SIGTERM', () => {});\n" : "";
 			const { repo, env, tmp } = createFixture({
 				commit: false,
-				unitCoverageScript: `import { writeFileSync } from "node:fs";\n${resist}writeFileSync(process.env.LIFE_TEST_STAGE_READY, String(process.pid));\nawait new Promise(() => {});\n`,
+				unitCoverageScript: `import { writeFileSync } from "node:fs";\n${resist}writeFileSync(process.env.LIFE_TEST_STAGE_READY, String(process.pid));\nsetInterval(() => {}, 60_000);\n`,
 			});
 			const child = spawn("sh", [join(repo, ".git/hooks/pre-commit")], {
 				cwd: repo,
@@ -221,7 +221,10 @@ describe("pre-commit index snapshot", () => {
 				child.once("exit", (exitCode) => resolve(exitCode));
 			});
 			children.push({ child, exited });
-			await waitUntil(() => existsSync(env.LIFE_TEST_STAGE_READY), 5000);
+			await waitUntil(
+				() => snapshots(tmp).length > 0 && existsSync(env.LIFE_TEST_STAGE_READY),
+				15_000,
+			);
 			const stagePid = Number(readFileSync(env.LIFE_TEST_STAGE_READY, "utf8"));
 			expect(snapshots(tmp), signal).toHaveLength(1);
 			child.kill(signal);

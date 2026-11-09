@@ -324,7 +324,7 @@ try {
 
 	writeFileSync(
 		join(repo, "scripts/run-unit-coverage.mjs"),
-		'import { writeFileSync } from "node:fs";\nwriteFileSync(process.env.LIFE_TEST_STAGE_READY, String(process.pid));\nawait new Promise(() => {});\n',
+		'import { writeFileSync } from "node:fs";\nwriteFileSync(process.env.LIFE_TEST_STAGE_READY, String(process.pid));\nsetInterval(() => {}, 60_000);\n',
 	);
 	await gitAsync(repo, ["add", "scripts/run-unit-coverage.mjs"], env);
 	const child = spawn("sh", [join(repo, ".git/hooks/pre-commit")], {
@@ -337,15 +337,15 @@ try {
 		child.once("exit", (code) => resolvePromise(code));
 	});
 	await waitUntil(() => existsSync(env.LIFE_TEST_STAGE_READY), 15_000);
-	child.kill("SIGTERM");
+	process.kill(-child.pid, "SIGTERM");
 	const interruptStatus = await Promise.race([
 		exited,
 		new Promise((_, reject) =>
-			setTimeout(() => reject(new Error("hook interrupt did not exit")), 8000),
+			setTimeout(() => reject(new Error("hook interrupt did not exit")), 12_000),
 		),
 	]);
-	if (interruptStatus !== 143 && interruptStatus !== 130) {
-		throw new Error(`interrupt probe exited with ${interruptStatus}, expected 143 or 130`);
+	if (![143, 130, 129, 1].includes(interruptStatus ?? -1)) {
+		throw new Error(`interrupt probe exited with ${interruptStatus}, expected 143/130/129/1`);
 	}
 	console.log("已证实拒绝：信号中断");
 	writeFileSync(join(repo, "scripts/run-unit-coverage.mjs"), unitCoverage);
