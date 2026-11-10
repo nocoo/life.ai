@@ -32,6 +32,7 @@ import { NAV_GROUPS, type NavGroup, SETTINGS_GROUP_ID } from "./navigation";
 
 const MAIN_GROUPS = NAV_GROUPS.filter((group) => group.id !== SETTINGS_GROUP_ID);
 const SETTINGS_GROUP = NAV_GROUPS.find((group) => group.id === SETTINGS_GROUP_ID);
+const SIDEBAR_MARK_SLOT_CLASS = "flex w-full items-center";
 
 export interface AppSidebarProps {
 	collapsed: boolean;
@@ -80,7 +81,7 @@ export function AppSidebar({
 	);
 
 	const avatar = (
-		<Avatar className="h-9 w-9 shrink-0">
+		<Avatar className="h-9 w-9 shrink-0 cursor-pointer">
 			{userAvatar ? <AvatarImage src={userAvatar} alt={userName} /> : null}
 			<AvatarFallback>{sessionInitials(userName)}</AvatarFallback>
 		</Avatar>
@@ -127,17 +128,9 @@ export function AppSidebar({
 		<Sidebar collapsed={collapsed} aria-label="主导航">
 			<SidebarHeader>
 				<div
-					className={
-						collapsed
-							? "flex w-full justify-center"
-							: "flex w-full min-w-0 items-center justify-between"
-					}
+					className={`${SIDEBAR_MARK_SLOT_CLASS} ${collapsed ? "justify-center" : "justify-between pl-basalt-layout-sm"}`}
 				>
-					<div
-						className={
-							collapsed ? "flex items-center" : "flex min-w-0 items-center gap-basalt-space-lg"
-						}
-					>
+					<div className="flex min-w-0 items-center gap-basalt-space-lg text-basalt-foreground">
 						<img
 							src={BRAND_MARK_SRC}
 							alt={APP_NAME}
@@ -146,29 +139,28 @@ export function AppSidebar({
 							data-sidebar-logo=""
 							className="h-6 w-6 shrink-0"
 						/>
-						{!collapsed ? (
+						{collapsed ? null : (
 							<>
-								<span className="truncate text-lg font-semibold text-basalt-foreground md:text-xl">
+								<span className="truncate text-basalt-xl font-semibold text-basalt-foreground">
 									{APP_NAME}
 								</span>
-								<span className="shrink-0 rounded-md bg-basalt-secondary px-basalt-space-md py-basalt-space-xs text-[10px] leading-none font-medium text-basalt-muted-foreground">
+								<span className="shrink-0 rounded-basalt-md bg-basalt-secondary px-basalt-space-md py-basalt-space-xs text-basalt-sm leading-basalt-tight font-medium text-basalt-muted-foreground">
 									v{APP_VERSION}
 								</span>
 							</>
-						) : null}
+						)}
 					</div>
-					{!collapsed ? (
+					{collapsed ? null : (
 						<Button
 							variant="ghost"
 							size="icon"
-							className="h-7 w-7 shrink-0"
 							onClick={onToggle}
 							aria-label="收起侧栏"
 							aria-expanded
 						>
 							<PanelLeft aria-hidden="true" />
 						</Button>
-					) : null}
+					)}
 				</div>
 			</SidebarHeader>
 
@@ -224,28 +216,13 @@ export function AppSidebar({
 			<SidebarFooter>
 				{collapsed ? (
 					<Tooltip delayDuration={0}>
-						<TooltipTrigger asChild>
-							<span className="inline-flex self-center">{avatar}</span>
-						</TooltipTrigger>
+						<TooltipTrigger asChild>{avatar}</TooltipTrigger>
 						<TooltipContent side="right" sideOffset={8}>
 							{userName}
 						</TooltipContent>
 					</Tooltip>
 				) : (
-					<SidebarUser
-						name={userName}
-						email={userEmail}
-						avatar={
-							<Tooltip delayDuration={0}>
-								<TooltipTrigger asChild>
-									<span className="inline-flex shrink-0">{avatar}</span>
-								</TooltipTrigger>
-								<TooltipContent side="right" sideOffset={8}>
-									{userName}
-								</TooltipContent>
-							</Tooltip>
-						}
-					/>
+					<SidebarUser name={userName} email={userEmail} avatar={avatar} />
 				)}
 			</SidebarFooter>
 

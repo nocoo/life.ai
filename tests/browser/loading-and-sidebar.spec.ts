@@ -91,7 +91,7 @@ test("sidebar keeps the same logo and avatar fixed through animation, reversal a
 	if ((await sidebar.getAttribute("data-collapsed")) === null) await toggle.click();
 	await expect.poll(settledInset).toBe(22);
 	await toggle.click();
-	await expect.poll(settledInset).toBe(8);
+	await expect.poll(settledInset).toBe(20);
 
 	await page.setViewportSize({ width: 1280, height: 420 });
 	const scroll = sidebar.locator('nav[aria-label="页面"]');
