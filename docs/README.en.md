@@ -48,7 +48,7 @@ Create a named, write-only token in Connect; plaintext is shown once. Send Beare
 
 ## Development
 
-Requires Bun 1.4 and Node.js 22.20.x, 24.x or 26+; Node 23 / 25 are unsupported by the current test tools.
+Requires Bun 1.4 and Node.js 26.x LTS (see `.node-version`, 26.12.1 in CI).
 
 ```sh
 bun install --frozen-lockfile

@@ -48,7 +48,7 @@ bun run data:import --provider pixiu --file /path/to/pixiu --target production -
 
 ## 开发
 
-需要 Bun 1.4 与 Node.js 22.20.x、24.x 或 26+；Node 23 / 25 不受当前测试工具支持。
+需要 Bun 1.4 与 Node.js 26.x LTS（见 `.node-version`，与 CI 一致为 26.12.1）。
 
 ```sh
 bun install --frozen-lockfile
