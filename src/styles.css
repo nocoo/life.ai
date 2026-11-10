@@ -38,12 +38,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.life-sidebar {
-		transition: none;
-	}
-}
-
-@media (prefers-reduced-motion: reduce) {
 	[data-basalt-sidebar] {
 		transition: none;
 	}
