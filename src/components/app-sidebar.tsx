@@ -81,7 +81,7 @@ export function AppSidebar({
 	);
 
 	const avatar = (
-		<Avatar className="h-9 w-9 shrink-0">
+		<Avatar className="h-9 w-9 shrink-0 cursor-pointer">
 			{userAvatar ? <AvatarImage src={userAvatar} alt={userName} /> : null}
 			<AvatarFallback>{sessionInitials(userName)}</AvatarFallback>
 		</Avatar>
@@ -216,28 +216,13 @@ export function AppSidebar({
 			<SidebarFooter>
 				{collapsed ? (
 					<Tooltip delayDuration={0}>
-						<TooltipTrigger asChild>
-							<span className="inline-flex self-center">{avatar}</span>
-						</TooltipTrigger>
+						<TooltipTrigger asChild>{avatar}</TooltipTrigger>
 						<TooltipContent side="right" sideOffset={8}>
 							{userName}
 						</TooltipContent>
 					</Tooltip>
 				) : (
-					<SidebarUser
-						name={userName}
-						email={userEmail}
-						avatar={
-							<Tooltip delayDuration={0}>
-								<TooltipTrigger asChild>
-									<span className="inline-flex shrink-0">{avatar}</span>
-								</TooltipTrigger>
-								<TooltipContent side="right" sideOffset={8}>
-									{userName}
-								</TooltipContent>
-							</Tooltip>
-						}
-					/>
+					<SidebarUser name={userName} email={userEmail} avatar={avatar} />
 				)}
 			</SidebarFooter>
 

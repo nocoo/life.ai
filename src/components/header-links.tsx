@@ -1,4 +1,5 @@
-import { Button, LinkButton, Tooltip, TooltipContent, TooltipTrigger } from "@nocoo/basalt";
+import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@nocoo/basalt";
+import { LinkButton } from "@nocoo/basalt/components/button";
 import { useTheme } from "@nocoo/basalt/providers/theme";
 import { createLucideIcon, Monitor, Moon, Sun } from "lucide-react";
 import type { ReactElement } from "react";
