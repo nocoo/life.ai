@@ -33,6 +33,7 @@ This document details the backend implementation, database schema, authenticatio
 ### 2.2 Physical Test Isolation & Bypass Invariants
 
 To guarantee that test shortcuts cannot accidentally or maliciously activate in production:
+
 1. `RESOURCE_ENV === "test"`.
 2. Hostname strictly constrained to loopback (`127.0.0.1`, `localhost`, `::1`).
 3. **Physical DB Verification**: The database MUST contain the table `_test_marker` (schema: `key TEXT PRIMARY KEY, value TEXT`) with row `key = 'env'` and `value = 'test'`. If missing or throwing, bypass is rejected immediately and falls back to standard Access verification.

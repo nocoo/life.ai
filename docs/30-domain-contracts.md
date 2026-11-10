@@ -22,7 +22,6 @@
 - UI contract: installed `@nocoo/basalt/ai/RECIPES.md` and `../basalt/INTEGRATION.md`. Use the published package, its providers, application chrome and tokens.
 - Quality: 6DQ from nmem `af0daa0f-0a10-4b0b-b328-f2dc32137bdc` and September revision `crystal_0c9c31f7de97`.
 
-
 ## 领域与界面约定
 
 - One owner and one dataset. Access authenticates the entrance; never partition records by Access subject/email.
