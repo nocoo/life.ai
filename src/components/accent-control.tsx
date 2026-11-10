@@ -17,7 +17,7 @@ export function AccentControl() {
 			<HeaderTooltip label="切换强调色">
 				<DropdownMenuTrigger asChild>
 					<Button variant="ghost" size="icon" aria-label="切换强调色">
-						<Palette className="h-[18px] w-[18px]" strokeWidth={1.5} aria-hidden="true" />
+						<Palette aria-hidden="true" strokeWidth={1.5} />
 					</Button>
 				</DropdownMenuTrigger>
 			</HeaderTooltip>

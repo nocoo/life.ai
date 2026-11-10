@@ -1,4 +1,4 @@
-import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@nocoo/basalt";
+import { Button, LinkButton, Tooltip, TooltipContent, TooltipTrigger } from "@nocoo/basalt";
 import { useTheme } from "@nocoo/basalt/providers/theme";
 import { createLucideIcon, Monitor, Moon, Sun } from "lucide-react";
 import type { ReactElement } from "react";
@@ -37,12 +37,16 @@ function HeaderIconLink({
 }) {
 	return (
 		<HeaderTooltip label={label}>
-			<Button variant="ghost" size="icon" asChild>
-				<a href={href} target="_blank" rel="noopener noreferrer" aria-label={label}>
-					{children}
-					<span className="sr-only">{label}</span>
-				</a>
-			</Button>
+			<LinkButton
+				variant="ghost"
+				size="icon"
+				href={href}
+				target="_blank"
+				rel="noopener noreferrer"
+				aria-label={label}
+			>
+				{children}
+			</LinkButton>
 		</HeaderTooltip>
 	);
 }
@@ -57,13 +61,10 @@ export function HeaderActions() {
 	return (
 		<>
 			<HeaderIconLink label="GitHub 仓库" href={GITHUB_REPO_URL}>
-				<Github className="h-[18px] w-[18px]" aria-hidden="true" strokeWidth={1.5} />
+				<Github aria-hidden="true" strokeWidth={1.5} />
 			</HeaderIconLink>
 			<HeaderIconLink label="Life.ai on hexly.ai" href="https://hexly.ai/projects/life-ai">
 				<svg
-					className="h-[18px] w-[18px]"
-					width="18"
-					height="18"
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
@@ -84,7 +85,7 @@ export function HeaderActions() {
 					onClick={() => setTheme(nextTheme)}
 					aria-label={`切换主题（当前 ${theme}）`}
 				>
-					<ThemeIcon className="h-[18px] w-[18px]" aria-hidden="true" strokeWidth={1.5} />
+					<ThemeIcon aria-hidden="true" strokeWidth={1.5} />
 				</Button>
 			</HeaderTooltip>
 		</>

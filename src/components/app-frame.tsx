@@ -136,11 +136,11 @@ export function AppFrame() {
 						<Button
 							variant="ghost"
 							size="icon"
-							className="h-8 w-8 md:hidden"
+							className="md:hidden"
 							onClick={() => setMobileOpen(true)}
 							aria-label="打开导航"
 						>
-							<Menu className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
+							<Menu strokeWidth={1.5} aria-hidden="true" />
 						</Button>
 					}
 					breadcrumbs={[{ label: meta.title }]}
