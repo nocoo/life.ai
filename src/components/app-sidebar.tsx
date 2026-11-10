@@ -169,7 +169,6 @@ export function AppSidebar({
 					<Button
 						variant="ghost"
 						size="icon"
-						className="mb-basalt-space-sm self-center"
 						onClick={onToggle}
 						aria-label="展开侧栏"
 						aria-expanded={false}
