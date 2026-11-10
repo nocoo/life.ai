@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   quality:
-    uses: nocoo/base-ci/.github/workflows/quality.yml@ac635753a869cb85fad1f52aae4ccbd6119f3cae # main 2026-10-22
+    uses: nocoo/base-ci/.github/workflows/quality.yml@633a5545fcfec91b688840650d4edf3e9cc1abbd # v2026.10
     with:
       runtime-version: "1.4.0"
       node-version: "26.12.1"
@@ -27,7 +27,7 @@ jobs:
       coverage-path: coverage/
 
   security:
-    uses: nocoo/base-ci/.github/workflows/security.yml@ac635753a869cb85fad1f52aae4ccbd6119f3cae # main 2026-10-22
+    uses: nocoo/base-ci/.github/workflows/security.yml@633a5545fcfec91b688840650d4edf3e9cc1abbd # v2026.10
     with:
       package-manager: bun
       runtime-version: "1.4.0"
@@ -40,7 +40,7 @@ jobs:
 
   l1-proof:
     name: L1 pre-commit rejection proof
-    uses: nocoo/base-ci/.github/workflows/test-job.yml@ac635753a869cb85fad1f52aae4ccbd6119f3cae # main 2026-10-22
+    uses: nocoo/base-ci/.github/workflows/test-job.yml@633a5545fcfec91b688840650d4edf3e9cc1abbd # v2026.10
     with:
       runtime-version: "1.4.0"
       node-version: "26.12.1"
@@ -54,7 +54,7 @@ jobs:
       fail-fast: false
       matrix:
         tier: [l2, l3]
-    uses: nocoo/base-ci/.github/workflows/test-job.yml@ac635753a869cb85fad1f52aae4ccbd6119f3cae # main 2026-10-22
+    uses: nocoo/base-ci/.github/workflows/test-job.yml@633a5545fcfec91b688840650d4edf3e9cc1abbd # v2026.10
     with:
       runtime-version: "1.4.0"
       node-version: "26.12.1"
@@ -68,4 +68,4 @@ jobs:
         playwright-report/
 
   workflows:
-    uses: nocoo/base-ci/.github/workflows/workflow-lint.yml@ac635753a869cb85fad1f52aae4ccbd6119f3cae # main 2026-10-22
+    uses: nocoo/base-ci/.github/workflows/workflow-lint.yml@633a5545fcfec91b688840650d4edf3e9cc1abbd # v2026.10
