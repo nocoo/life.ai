@@ -60,10 +60,6 @@
 	overflow-wrap: anywhere;
 }
 
-.story-page-header {
-	margin-bottom: 16px;
-}
-
 .day-layout {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
@@ -1130,9 +1126,6 @@
 	.story-page {
 		--story-rail: 56px;
 		padding-top: 0;
-	}
-	.story-page-header {
-		margin-bottom: 16px;
 	}
 	.story-ribbon {
 		gap: 8px;

@@ -149,79 +149,77 @@ export function TimelinePage() {
 			onValueChange={(value) => timelineStore.getState().selectTab(value as TimelinePageTab)}
 			className="story-page"
 		>
-			<div className="story-page-header">
-				<PageHeader
-					title="每日实录"
-					description={formatLocalDate(day)}
-					actions={<CacheManager day={day} />}
-					filters={
-						<FilterBar
-							label="每日记录筛选"
-							active={sourceId !== ALL_SOURCES}
-							clearLabel="清除来源"
-							onClear={() => void timelineStore.getState().selectSource(ALL_SOURCES)}
+			<PageHeader
+				title="每日实录"
+				description={formatLocalDate(day)}
+				actions={<CacheManager day={day} />}
+				filters={
+					<FilterBar
+						label="每日记录筛选"
+						active={sourceId !== ALL_SOURCES}
+						clearLabel="清除来源"
+						onClear={() => void timelineStore.getState().selectSource(ALL_SOURCES)}
+					>
+						<DateNavigation
+							day={day}
+							isToday={isSelectedToday(day)}
+							onPrevDay={() => selectDay(shiftLocalDate(selectedDayForNavigation(), -1))}
+							onNextDay={() => selectDay(shiftLocalDate(selectedDayForNavigation(), 1))}
+							onToday={() => selectDay(localDateKey())}
+							onSelectDay={selectDay}
+						/>
+						<Select
+							value={sourceId}
+							onValueChange={(value) => void timelineStore.getState().selectSource(value)}
 						>
-							<DateNavigation
-								day={day}
-								isToday={isSelectedToday(day)}
-								onPrevDay={() => selectDay(shiftLocalDate(selectedDayForNavigation(), -1))}
-								onNextDay={() => selectDay(shiftLocalDate(selectedDayForNavigation(), 1))}
-								onToday={() => selectDay(localDateKey())}
-								onSelectDay={selectDay}
-							/>
-							<Select
-								value={sourceId}
-								onValueChange={(value) => void timelineStore.getState().selectSource(value)}
-							>
-								<SelectTrigger aria-label="按来源筛选" className="w-[220px]">
-									<SelectValue placeholder="全部来源" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value={ALL_SOURCES}>全部来源</SelectItem>
-									{sources.map((source) => (
-										<SelectItem key={source.id} value={source.id}>
-											{source.name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-							{tab === "timeline" ? (
-								<>
-									<Select
-										value={String(radiusKm)}
-										onValueChange={(value) =>
-											timelineStore.getState().selectRadius(Number(value) as 5 | 10)
-										}
-									>
-										<SelectTrigger aria-label="位置分组范围" className="w-[160px]">
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="5">区域半径 5 km</SelectItem>
-											<SelectItem value="10">区域半径 10 km</SelectItem>
-										</SelectContent>
-									</Select>
-									<Select
-										value={mapMode}
-										onValueChange={(value) =>
-											timelineStore.getState().selectMapMode(value as TimelineMapMode)
-										}
-									>
-										<SelectTrigger aria-label="时间线地图" className="w-[200px]">
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="auto">展开地图 · 合并重复</SelectItem>
-											<SelectItem value="all">展开全部地图</SelectItem>
-											<SelectItem value="none">收起全部地图</SelectItem>
-										</SelectContent>
-									</Select>
-								</>
-							) : null}
-						</FilterBar>
-					}
-				/>
-			</div>
+							<SelectTrigger aria-label="按来源筛选" className="w-[220px]">
+								<SelectValue placeholder="全部来源" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value={ALL_SOURCES}>全部来源</SelectItem>
+								{sources.map((source) => (
+									<SelectItem key={source.id} value={source.id}>
+										{source.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						{tab === "timeline" ? (
+							<>
+								<Select
+									value={String(radiusKm)}
+									onValueChange={(value) =>
+										timelineStore.getState().selectRadius(Number(value) as 5 | 10)
+									}
+								>
+									<SelectTrigger aria-label="位置分组范围" className="w-[160px]">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="5">区域半径 5 km</SelectItem>
+										<SelectItem value="10">区域半径 10 km</SelectItem>
+									</SelectContent>
+								</Select>
+								<Select
+									value={mapMode}
+									onValueChange={(value) =>
+										timelineStore.getState().selectMapMode(value as TimelineMapMode)
+									}
+								>
+									<SelectTrigger aria-label="时间线地图" className="w-[200px]">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="auto">展开地图 · 合并重复</SelectItem>
+										<SelectItem value="all">展开全部地图</SelectItem>
+										<SelectItem value="none">收起全部地图</SelectItem>
+									</SelectContent>
+								</Select>
+							</>
+						) : null}
+					</FilterBar>
+				}
+			/>
 			<TabsList aria-label="每日视图" className="mb-6">
 				<TabsTrigger value="timeline">时间线</TabsTrigger>
 				<TabsTrigger value="locations">位置记录</TabsTrigger>
