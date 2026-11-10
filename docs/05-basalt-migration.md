@@ -211,6 +211,7 @@ Replace flat Header layout with basalt's Sidebar + Content Panel architecture.
 ### New UI Primitives Needed
 
 Port from basalt if not already present in life.ai:
+
 - `ui/collapsible.tsx` (for sidebar groups)
 - `ui/command.tsx` (for ⌘K palette)
 - `ui/avatar.tsx` (for sidebar footer)
@@ -296,11 +297,13 @@ Apply basalt's L2 card styling to all dashboard cards across all views.
 #### Card Pattern Migration
 
 Every Card in every view switches from:
+
 ```tsx
 // Old pattern
 <Card className="rounded-lg border bg-card p-4 shadow-sm">
 ```
 To:
+
 ```tsx
 // Basalt pattern (L2)
 <Card className="rounded-card border-0 bg-secondary shadow-none">
@@ -317,6 +320,7 @@ To:
 #### StatCard Restyling
 
 Update `StatCard` to match basalt's metric card pattern:
+
 - Large value with `font-display tracking-tight`
 - Trend badge with `text-success` / `text-destructive`
 - Icon in header row (not top-right corner)
@@ -397,6 +401,7 @@ bun test                    # All pass
 ```
 
 Expected test fixes:
+
 - Tests that query by `role` or `className` may need updates for new card structure.
 - Tests that mock `AppHeader` need to mock `DashboardLayout` instead.
 - Chart tests may need updated color value assertions.

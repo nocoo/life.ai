@@ -5,6 +5,7 @@
 ## 概览
 
 这份数据来自 Apple Health 导出，目录内主要包含三类原始数据文件：
+
 - `导出.xml`：HealthKit 标准导出（包含 Record/Workout/Correlation/ActivitySummary 等实体）
 - `export_cda.xml`：CDA（HL7 Clinical Document Architecture）格式的临床文档导出
 - `electrocardiograms/*.csv`：心电图（ECG）原始采样序列
@@ -82,6 +83,7 @@
 ## 第一步建议（可视化与数据挖掘）
 
 第一步是“建立数据字典 + 统一时间轴索引”，把原始数据映射成可分析的结构化表：
+
 1. 从 `导出.xml` 解析出所有 `Record/Workout/Correlation/ActivitySummary` 的字段与 type 列表
 2. 生成一份 “type -> 语义/单位/来源” 的数据字典（可先自动抽取，再人工标注）
 3. 为所有数据统一时间字段（startDate/endDate/creationDate）并规范时区

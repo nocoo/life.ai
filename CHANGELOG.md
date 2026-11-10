@@ -44,7 +44,6 @@
 - Cloudflare Worker、Access JWT、D1 life、独立机器写入主机；只写 token 支持撤销和幂等覆盖。
 - 本地 Worker + SQLite 的隔离 L2/L3，四项 L1 ≥95% 门槛，TypeScript strict 与安全扫描。
 
-
 ## v0.2.1 — 2026-09-13
 
 - Upgrade the root lint toolchain and Dashboard dependencies, including Next.js 16.3.5, React 19.3.0, Lucide 1.45.0, and Happy DOM 20.14.5.

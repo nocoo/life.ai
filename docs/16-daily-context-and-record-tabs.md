@@ -42,6 +42,7 @@ Basalt `PageHeader` 统一每日实录、数据概览、Footprint、其他导入
 ## 天气与天文时刻
 
 参考位置优先选择当天连续采样时间最多的区域，再按点数和出现顺序确定。多来源重叠采样时间取并集，空档不累计。外部查询坐标按两位小数处理，界面标明参考区域。没有 GPS 时不默认城市。
+
 - Open-Meteo 的历史/预报接口返回 UTC Unix 小时数据；按选中本地日对应的 UTC 窗口裁剪，汇总温度、降水、风速和天气。降水时刻 `t` 表示 `(t−1h, t]`，避免把本地日边界外的雨量加进来。超出支持范围显示不可用。
 - Sunrise-Sunset v2 查询相邻日期，读取 UTC Unix 日出日落，再按本地日筛选、排序并放到正确的小时。支持极昼/极夜，不制造不存在的时刻。
 - 浏览器直接调用公开 API，不携带本站凭据或 Referer；每次读取限 128 KiB、12 秒超时，换日取消请求并忽略旧响应。天气与天文分别显示加载、失败和重试状态。
@@ -74,6 +75,7 @@ Footprint 独立页面使用 `PageHeader`、`FileDropzone`、`UploadQueue`、`St
 ### 真实数据与界面
 
 Chrome 通过 Caddy `https://life.dev.hexly.ai` 读取生产 D1，以 `2024-08-03`、Asia/Shanghai 时区的 3,526 个 GPS 点验证：
+
 - 14 个实际有采样的小时中，首次及有区域变化的 11 张地图展开，9、12、20 点的后续同区域地图收起。没有采样的小时不补图。
 - 初始时间线不加载记录表格模块；位置记录每页 50 行、末页 26 行，单条详情保留完整六字段与 UTC。退出时间线销毁地图，返回后正常加载瓦片。
 - 切换三个页签没有额外的 events/sources API 请求；未出现脚本错误或写请求。
@@ -88,6 +90,7 @@ Chrome 通过 Caddy `https://life.dev.hexly.ai` 读取生产 D1，以 `2024-08-0
 2026-09-14 发布 **1.4.0** 到 Worker `life`，版本 ID `53cc6dc5-d119-44f6-b70c-306a522ac317`。最终构建包含主分支的 React / React DOM 19.3.0 与 `@types/bun` 1.4.2 更新，上述单测、静态检查、浏览器场景、安全扫描和 Caddy 真实数据检查均在安装最终锁文件后通过。构建、dry-run 和远程迁移检查完成，无待执行迁移；现有 `AI_SETTINGS_KEY` 仍保留，没有新建或替换。
 
 发布后检查：
+
 - `life.hexly.ai/api/live` 与 `life.worker.hexly.ai/api/live` 均返回 HTTP 200 JSON，`status=ok`、`version=1.4.0`、`database=ok`。
 - 主站首页、事件、数据概览、Connect API 及本次真实构建的 JS 路径在无会话时均 302 到 `nocoo.cloudflareaccess.com`。
 - 机器域名的首页、这些读取接口和相同 JS 路径均 404。未携带 token 的 ingest 请求返回 401，不写入记录。

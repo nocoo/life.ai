@@ -78,4 +78,5 @@ Authorized deployment uses `bun run deploy`: inspect migrations, build/dry-run, 
 ## Retrospective
 
 Store accident narratives in [Retrospective.md](Retrospective.md); recurring rules stay brief here, cross-project lessons in global rules/nmem, deterministic safeguards in tests/hooks.
+
 - Preserve source content/timestamps on identical import replay and preserve saved diaries when any enabled source is unavailable.

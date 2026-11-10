@@ -43,6 +43,7 @@ After complete import and unchanged replay, `wrangler d1 info life` reports **15
 ## Import and replacement contract
 
 The new `/data/apple-health` page uses Basalt PageHeader, cards, FileDropzone, UploadQueue, status and progress components. It accepts a complete ZIP or extracted directory. Preview shows this input's counts; cumulative coverage, dimensions, rows, bytes and attachment statistics belong to `/data`. The old generic Health import entry is removed; `/api/imports` returns `410 health_import_moved` for Apple Health.
+
 - Web Worker + IndexedDB and CLI temporary disk share `src/models/apple-health.ts`, the archive reader and `src/services/health-client.ts`. The Skill calls the same CLI. Full parsing, ZIP CRC validation and referenced-file validation finish before any database write.
 - Every original attribute, nested node, source, unit and timestamp string is retained. Hashes use canonical decoded content, so compression differences between browsers and CLI do not create false changes.
 - `--target` must match `/api/data/target` before writes. The authorized local `dev:prod` service is still a production writer, even through Caddy/loopback. Main-domain CLI requests use the owner's Cloudflare Access credentials.
@@ -62,6 +63,7 @@ For an already authorized production-bound local server, append `--base-url http
 ## Reading a day
 
 Store and compare UTC; an absent offset also means UTC. Presentation uses the viewer's current timezone and preserves day/hour/minute/second precision. Day-only facts remain in the metadata column. The timeline requests useful Health dimensions plus the previous 24 hours and following 12 hours for sleep, without counting neighboring-day activity in today's totals.
+
 - **Sleep:** place each night at its waking instant. Prefer detailed wearable stages when sources overlap; distinguish actual sleep, time in bed and awake time. Show the preceding bedtime, waking time, stage strip and source evidence. A weaker source ending on another day cannot move the selected night's waking day. Tonight's bedtime remains a separate event until waking evidence exists.
 - **Sleep location:** combine nearby night Footprint with recurring overnight locations in the preceding month. Show qualified residence/familiar/travel/unknown suggestions and evidence. Sparse or absent GPS does not establish a home or hotel.
 - **Movement between GPS changes:** hourly steps, walking distance and climbs fill stationary-looking periods. Overlapping Watch/phone/app quantities use a source/interval preference for presentation, not a destructive deduplication of raw samples.

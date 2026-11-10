@@ -75,6 +75,7 @@
 ## 2.0.1 发布验证
 
 2026-09-15 从代码提交 `428e1a3610dd2e9cd75d9a5ca96dda4866cb3c15` 部署，Worker 版本 `8d24aa2b-a98e-47b5-899c-b9f39ba13767`。生产构建、Wrangler dry-run 通过；本地与远程 D1 均无待执行迁移，本次没有新增表或修改数据库结构。
+
 - L1：88 个文件、1,594 个测试；statements 98.94%、branches 96.42%、functions 99.10%、lines 99.30%。G1 TypeScript/Biome 通过。
 - L2：29 个隔离 Worker/SQLite HTTP 场景；L3：37 个浏览器案例，包含新日记卡片及桌面、手机和说明控件交互。G2 gitleaks/OSV 通过。
 - 发布后 21 项只读检查通过：两个生产 `/api/live` 和 Caddy 均返回 2.0.1、D1 `ok`；仪表盘与日记等 API 受 Access 保护；写入域名不暴露页面、日记、记录、设置或缓存管理。
