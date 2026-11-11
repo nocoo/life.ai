@@ -1,11 +1,19 @@
-import { Button, ContentIsland, Sheet, SheetContent, SheetTitle } from "@nocoo/basalt";
-import { AppHeader } from "@nocoo/basalt/components/app-header";
+import {
+	ContentIsland,
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+	SidebarProvider,
+} from "@nocoo/basalt";
+import { AppHeader, AppHeaderMenuButton, ProjectLinks } from "@nocoo/basalt/components/app-header";
 import { AppMain, AppShell, AppSkipLink } from "@nocoo/basalt/components/app-shell";
 import { Banner } from "@nocoo/basalt/components/banner";
 import { LayerCard } from "@nocoo/basalt/components/layer-card";
 import { LoadingScreen } from "@nocoo/basalt/components/loading-screen";
-import { Menu } from "lucide-react";
-import { Suspense, useEffect, useState } from "react";
+import { ThemeToggle } from "@nocoo/basalt/components/theme-toggle";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation } from "react-router";
 import { useStore } from "zustand";
 import { generalSettingsStore } from "../viewmodels/general-settings-view-model";
@@ -16,19 +24,18 @@ import {
 	sessionStore,
 } from "../viewmodels/session-view-model";
 import { AccentControl } from "./accent-control";
-import { AppSidebar } from "./app-sidebar";
+import { AppSidebar, PersistedSidebarProvider } from "./app-sidebar";
 import { APP_NAME, BRAND_MARK_SRC } from "./brand";
-import { HeaderActions } from "./header-links";
 import { routeMeta } from "./navigation";
 import { PageFallback } from "./page-fallback";
 import { useIsMobile } from "./use-is-mobile";
 
 export function AppFrame() {
-	const [collapsed, setCollapsed] = useState(false);
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const isMobile = useIsMobile();
 	const location = useLocation();
 	const pathname = location.pathname;
+	const menuButton = useRef<HTMLButtonElement>(null);
 	const session = useStore(sessionStore, (state) => state.session);
 	const status = useStore(sessionStore, (state) => state.status);
 	const error = useStore(sessionStore, (state) => state.error);
@@ -37,6 +44,14 @@ export function AppFrame() {
 	const userName = sessionDisplayName(session);
 	const userEmail = sessionSecondaryText(session);
 	const userAvatar = sessionAvatarUrl(session);
+	const sessionMode = session?.mode ?? null;
+
+	const sidebarUserProps = {
+		userName,
+		userEmail,
+		userAvatar,
+		sessionMode,
+	};
 
 	useEffect(() => {
 		void sessionStore.getState().load();
@@ -56,13 +71,6 @@ export function AppFrame() {
 			setMobileOpen(false);
 		}
 	}, [isMobile]);
-
-	useEffect(() => {
-		document.body.style.overflow = mobileOpen ? "hidden" : "";
-		return () => {
-			document.body.style.overflow = "";
-		};
-	}, [mobileOpen]);
 
 	if (status === "loading" && !session) {
 		return (
@@ -96,58 +104,78 @@ export function AppFrame() {
 		);
 	}
 
+	const breadcrumbs =
+		pathname === "/"
+			? [{ label: meta.title }]
+			: [{ label: "编年史", href: "/" }, { label: meta.title }];
+
 	return (
 		<AppShell>
 			<AppSkipLink>跳到主要内容</AppSkipLink>
 			{isMobile !== true && (
 				<div className="hidden md:block">
-					<AppSidebar
-						collapsed={collapsed}
-						enableShortcut={isMobile === false}
-						onToggle={() => setCollapsed((value) => !value)}
-						userName={userName}
-						userEmail={userEmail}
-						userAvatar={userAvatar}
-					/>
+					<PersistedSidebarProvider>
+						<AppSidebar ariaLabel="主导航" {...sidebarUserProps} />
+					</PersistedSidebarProvider>
 				</div>
 			)}
 			{isMobile !== false && (
 				<Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
 					<SheetContent
 						side="left"
-						className="w-[260px] max-w-[260px] border-0 bg-basalt-background p-0 md:hidden"
+						className="w-[260px] max-w-[260px] border-0 bg-basalt-background p-0 sm:max-w-[260px] sm:p-0"
+						onCloseAutoFocus={(event) => {
+							event.preventDefault();
+							menuButton.current?.focus();
+						}}
 					>
-						<SheetTitle className="sr-only">导航</SheetTitle>
-						<AppSidebar
-							collapsed={false}
-							enableShortcut={isMobile === true}
-							onToggle={() => setMobileOpen(false)}
-							onNavigate={() => setMobileOpen(false)}
-							userName={userName}
-							userEmail={userEmail}
-							userAvatar={userAvatar}
-						/>
+						<SheetHeader className="sr-only">
+							<SheetTitle>导航菜单</SheetTitle>
+							<SheetDescription>浏览 Life.ai 的主要页面</SheetDescription>
+						</SheetHeader>
+						<SidebarProvider collapsed={false} defaultWidth={260}>
+							<AppSidebar
+								ariaLabel="主导航抽屉"
+								variant="mobile"
+								enableShortcut={isMobile === true}
+								onNavigate={() => setMobileOpen(false)}
+								onDismiss={() => setMobileOpen(false)}
+								{...sidebarUserProps}
+							/>
+						</SidebarProvider>
 					</SheetContent>
 				</Sheet>
 			)}
 			<AppMain>
 				<AppHeader
 					leading={
-						<Button
-							variant="ghost"
-							size="icon"
-							className="md:hidden"
-							onClick={() => setMobileOpen(true)}
-							aria-label="打开导航"
-						>
-							<Menu strokeWidth={1.5} aria-hidden="true" />
-						</Button>
+						isMobile === true ? (
+							<AppHeaderMenuButton
+								ref={menuButton}
+								label="打开导航菜单"
+								onClick={() => setMobileOpen(true)}
+							/>
+						) : undefined
 					}
-					breadcrumbs={[{ label: meta.title }]}
+					breadcrumbs={breadcrumbs}
+					breadcrumbsLabel="面包屑导航"
 					actions={
 						<>
 							<AccentControl />
-							<HeaderActions />
+							<ProjectLinks
+								github="nocoo/life.ai"
+								hexly="life-ai"
+								name="Life.ai"
+								githubLabel="GitHub repository"
+								hexlyLabel="Life.ai on hexly.ai"
+							/>
+							<ThemeToggle
+								labels={{
+									light: "Switch to light theme",
+									dark: "Switch to dark theme",
+									system: "Use system theme",
+								}}
+							/>
 						</>
 					}
 				/>
