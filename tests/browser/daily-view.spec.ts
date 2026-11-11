@@ -51,11 +51,13 @@ test("sidebar renders the shared brand row and keeps profile name/avatar with a 
 	await expect(page.getByText("Li Zheng", { exact: true })).toBeVisible();
 	await expect(page.getByRole("img", { name: "Li Zheng", exact: true })).toBeVisible();
 	const sidebar = page.getByRole("complementary", { name: "主导航" });
-	const logo = page.locator("[data-sidebar-logo]");
+	const logo = page.locator('[data-slot="sidebar-brand-logo"] img');
 	const railInset = () =>
 		sidebar.evaluate((rail) => {
 			const box = rail.getBoundingClientRect();
-			const mark = rail.querySelector("[data-sidebar-logo]")?.getBoundingClientRect();
+			const mark = rail
+				.querySelector('[data-slot="sidebar-brand-logo"] img')
+				?.getBoundingClientRect();
 			return mark ? Math.round(mark.x - box.x) : -1;
 		});
 	const expandedInset = await railInset();
@@ -75,9 +77,11 @@ test("sidebar renders the shared brand row and keeps profile name/avatar with a 
 	await expect(page.getByText("LZ", { exact: true })).toBeVisible();
 	await expect(page.getByText("Li Zheng", { exact: true })).toBeVisible();
 	await page.setViewportSize({ width: 390, height: 844 });
-	await page.getByRole("button", { name: "打开导航" }).click();
+	await page.getByRole("button", { name: "打开导航菜单" }).click();
 	await expect(page.getByRole("dialog").getByText("Li Zheng", { exact: true })).toBeVisible();
-	await expect(page.getByRole("dialog").locator("[data-sidebar-logo]")).toBeVisible();
+	await expect(
+		page.getByRole("dialog").locator('[data-slot="sidebar-brand-logo"] img'),
+	).toBeVisible();
 });
 
 test("daily GPX map, health, workouts and currency totals follow the same selected local day", async ({

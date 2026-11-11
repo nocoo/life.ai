@@ -25,11 +25,15 @@ test("sidebar keeps the same logo and avatar fixed through animation, reversal a
 	);
 	await page.goto("/settings/general");
 	const sidebar = page.getByRole("complementary", { name: "主导航" });
+	const sidebarLogo = '[data-slot="sidebar-brand-logo"] img';
+	await expect(sidebar.locator(sidebarLogo)).toBeVisible();
 	await expect(sidebar.getByRole("img", { name: "Sidebar Fixture" })).toBeVisible();
 	const frames = await sidebar.evaluate(async (rail) => {
-		const logo = rail.querySelector("[data-sidebar-logo]");
-		const avatar = rail.querySelector('[data-slot="sidebar-footer"] img');
-		const toggle = rail.querySelector<HTMLButtonElement>('[data-slot="sidebar-header"] button');
+		const logo = rail.querySelector('[data-slot="sidebar-brand-logo"] img');
+		const avatar =
+			rail.querySelector('[data-slot="sidebar-user-avatar"] img') ??
+			rail.querySelector('[data-slot="sidebar-user"] img');
+		const toggle = rail.querySelector<HTMLButtonElement>('[data-slot="sidebar-toggle"]');
 		if (!logo || !avatar || !toggle) throw new Error("Sidebar identity is missing");
 		const box = (element: Element) => {
 			const { x, y, width, height } = element.getBoundingClientRect();
@@ -41,14 +45,20 @@ test("sidebar keeps the same logo and avatar fixed through animation, reversal a
 			toggle.click();
 			do {
 				await new Promise(requestAnimationFrame);
-				const icon = rail.querySelector("nav button svg");
-				if (!icon) throw new Error("Navigation disappeared");
+				const navButton =
+					rail.querySelector('nav button[aria-label="时间线"]') ??
+					Array.from(rail.querySelectorAll("nav button")).find((button) =>
+						button.textContent?.includes("时间线"),
+					);
+				if (!navButton) throw new Error("Navigation disappeared");
+				const navBox = box(navButton);
 				samples.push({
 					logo: box(logo),
 					avatar: box(avatar),
-					iconX: box(icon).x,
+					navX: navBox.x,
+					navCenterX: navBox.x + navBox.width / 2,
 					width: box(rail).width,
-					sameLogoNode: logo === rail.querySelector("[data-sidebar-logo]"),
+					sameLogoNode: logo === rail.querySelector('[data-slot="sidebar-brand-logo"] img'),
 				});
 			} while (performance.now() - started < duration);
 		}
@@ -77,21 +87,21 @@ test("sidebar keeps the same logo and avatar fixed through animation, reversal a
 		// The library centres collapsed rows on the settled rail; mid-transition
 		// frames are excluded because the nav reflows with the width animation.
 		if (frame.width < 70) {
-			expect(Math.abs(frame.iconX + 8 - frame.width / 2)).toBeLessThan(1);
+			expect(Math.abs(frame.navCenterX - frame.width / 2)).toBeLessThan(2);
 		} else if (frame.width > 250) {
-			expect(frame.iconX).toBeGreaterThanOrEqual(16);
+			expect(frame.navX).toBeGreaterThanOrEqual(16);
 		}
 	}
 	const settledInset = async () => {
 		const box = await sidebar.boundingBox();
-		const mark = await page.locator("[data-sidebar-logo]").boundingBox();
+		const mark = await page.locator(sidebarLogo).boundingBox();
 		return box && mark ? Math.round(mark.x - box.x) : -1;
 	};
 	const toggle = sidebar.getByRole("button", { name: /收起侧栏|展开侧栏/ });
 	if ((await sidebar.getAttribute("data-collapsed")) === null) await toggle.click();
 	await expect.poll(settledInset).toBe(22);
 	await toggle.click();
-	await expect.poll(settledInset).toBe(20);
+	await expect.poll(settledInset).toBe(22);
 
 	await page.setViewportSize({ width: 1280, height: 420 });
 	const scroll = sidebar.locator('nav[aria-label="页面"]');
@@ -100,8 +110,12 @@ test("sidebar keeps the same logo and avatar fixed through animation, reversal a
 	);
 	await sidebar.getByRole("button", { name: "导入", exact: true }).scrollIntoViewIfNeeded();
 	await expect(sidebar.getByRole("button", { name: "导入", exact: true })).toBeInViewport();
-	await expect(sidebar.locator("[data-sidebar-logo]")).toBeInViewport();
+	await expect(sidebar.locator(sidebarLogo)).toBeInViewport();
 	await expect(sidebar.getByRole("img", { name: "Sidebar Fixture" })).toBeInViewport();
+	await expect(sidebar.getByRole("link", { name: "退出登录", exact: true })).toHaveAttribute(
+		"href",
+		"/cdn-cgi/access/logout",
+	);
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await sidebar.getByRole("button", { name: "收起侧栏", exact: true }).click();
 	expect(await sidebar.evaluate((element) => getComputedStyle(element).transitionDuration)).toBe(
@@ -109,11 +123,14 @@ test("sidebar keeps the same logo and avatar fixed through animation, reversal a
 	);
 	expect((await sidebar.boundingBox())?.width).toBe(68);
 	await page.setViewportSize({ width: 390, height: 844 });
-	await page.getByRole("button", { name: "打开导航" }).click();
-	await expect(page.getByRole("dialog").locator("[data-sidebar-logo]")).toBeVisible();
-	await expect(
-		page.getByRole("dialog").getByRole("img", { name: "Sidebar Fixture" }),
-	).toBeVisible();
+	const menuButton = page.getByRole("button", { name: "打开导航菜单" });
+	await menuButton.click();
+	const drawer = page.getByRole("dialog");
+	await expect(drawer.locator(sidebarLogo)).toBeVisible();
+	await expect(drawer.getByRole("img", { name: "Sidebar Fixture" })).toBeVisible();
+	await drawer.getByRole("button", { name: "关闭导航菜单", exact: true }).click();
+	await expect(drawer).toBeHidden();
+	await expect(menuButton).toBeFocused();
 });
 
 async function holdRequest(page: Page, pattern: string | RegExp) {

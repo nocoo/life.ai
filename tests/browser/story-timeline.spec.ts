@@ -120,7 +120,9 @@ test("a whole day reads along one trunk with grouped evidence, record tabs and c
 	await eight.scrollIntoViewIfNeeded();
 	expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 	await page.screenshot({ path: "test-results/l3/story-mobile.png", fullPage: true });
-	await page.getByRole("button", { name: "切换主题" }).click();
+	await page
+		.getByRole("button", { name: /^Switch to (light|dark) theme$|^Use system theme$/ })
+		.click();
 	await expect(page.locator("html")).toHaveClass(/dark/);
 	await page.evaluate(async () => {
 		await Promise.allSettled(document.getAnimations().map((animation) => animation.finished));

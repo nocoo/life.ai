@@ -33,7 +33,7 @@ test("settings sit at the bottom of the sidebar and remain reachable when the ra
 	await page.goto("/settings/general");
 	await expect(page.getByRole("heading", { name: "通用设置", exact: true })).toBeVisible();
 	const sidebar = page.getByLabel("主导航", { exact: true });
-	const logo = sidebar.locator("[data-sidebar-logo]");
+	const logo = sidebar.locator('[data-slot="sidebar-brand-logo"] img');
 	const settingsItem = sidebar.getByRole("button", { name: "通用设置", exact: true });
 	await expect(settingsItem).toBeVisible();
 	const logoBox = await logo.boundingBox();
@@ -65,9 +65,9 @@ test("settings sit at the bottom of the sidebar and remain reachable when the ra
 	await settingsItem.scrollIntoViewIfNeeded();
 	await expect(settingsItem).toBeVisible();
 	await page.setViewportSize({ width: 390, height: 844 });
-	await page.getByRole("button", { name: "打开导航", exact: true }).click();
+	await page.getByRole("button", { name: "打开导航菜单", exact: true }).click();
 	const drawer = page.getByRole("dialog");
-	await expect(drawer.locator("[data-sidebar-logo]")).toBeVisible();
+	await expect(drawer.locator('[data-slot="sidebar-brand-logo"] img')).toBeVisible();
 	await expect(drawer.getByRole("button", { name: "通用设置", exact: true })).toBeVisible();
 	await expect(drawer.getByRole("button", { name: "导入", exact: true })).toBeVisible();
 });

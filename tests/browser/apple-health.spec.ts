@@ -179,7 +179,9 @@ test("ZIP and directory imports preserve health, replay unchanged, and tell the 
 		!(await page.evaluate(() => document.documentElement.classList.contains("dark")));
 		attempt++
 	)
-		await page.getByRole("button", { name: /^切换主题（当前 (system|light|dark)）$/ }).click();
+		await page
+			.getByRole("button", { name: /^Switch to (light|dark) theme$|^Use system theme$/ })
+			.click();
 	await expect(page.locator("html")).toHaveClass(/dark/);
 	await page.evaluate(async () => {
 		await Promise.allSettled(
