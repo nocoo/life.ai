@@ -157,18 +157,16 @@ test("mobile navigation, theme controls and wide data stay usable", async ({ pag
 	await page.addInitScript(() => window.localStorage.setItem("theme", "light"));
 	await page.goto("/");
 	await expect(page.locator("[data-hour]")).toHaveCount(24);
-	await page.getByRole("button", { name: "打开导航", exact: true }).click();
-	const navigation = page.getByRole("dialog", { name: "导航", exact: true });
+	await page.getByRole("button", { name: "打开导航菜单", exact: true }).click();
+	const navigation = page.getByRole("dialog", { name: "导航菜单", exact: true });
 	await expect(navigation).toBeVisible();
 	await navigation.getByRole("button", { name: "Connect", exact: true }).click();
 	await expect(navigation).toBeHidden();
 	await expect(page.getByRole("heading", { name: "Connect", exact: true })).toBeVisible();
 	await expect(page.locator("html")).toHaveClass(/light/);
-	await page.getByRole("button", { name: "切换主题（当前 light）", exact: true }).click();
+	await page.getByRole("button", { name: "Switch to dark theme", exact: true }).click();
 	await expect(page.locator("html")).toHaveClass(/dark/);
-	await expect(
-		page.getByRole("button", { name: "切换主题（当前 dark）", exact: true }),
-	).toBeVisible();
+	await expect(page.getByRole("button", { name: "Use system theme", exact: true })).toBeVisible();
 	await page.evaluate(() =>
 		Promise.allSettled(document.getAnimations().map((animation) => animation.finished)),
 	);

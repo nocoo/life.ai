@@ -1,26 +1,23 @@
 import {
-	Button,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@nocoo/basalt";
+import { HeaderAction } from "@nocoo/basalt/components/app-header";
 import { useAccent } from "@nocoo/basalt/providers/accent";
 import { Palette } from "lucide-react";
-import { HeaderTooltip } from "./header-links";
 
 export function AccentControl() {
 	const { accent, setAccent, swatches } = useAccent();
 
 	return (
 		<DropdownMenu>
-			<HeaderTooltip label="切换强调色">
-				<DropdownMenuTrigger asChild>
-					<Button variant="ghost" size="icon" aria-label="切换强调色">
-						<Palette aria-hidden="true" strokeWidth={1.5} />
-					</Button>
-				</DropdownMenuTrigger>
-			</HeaderTooltip>
+			<DropdownMenuTrigger asChild>
+				<HeaderAction label="Accent color" tooltip="Accent color">
+					<Palette aria-hidden="true" strokeWidth={1.5} />
+				</HeaderAction>
+			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">
 				{swatches.map((swatch) => (
 					<DropdownMenuItem

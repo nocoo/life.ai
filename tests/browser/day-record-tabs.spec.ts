@@ -95,7 +95,9 @@ test("raw records load only in their tab, paginate, and reuse the selected day's
 	expect(desktopAxe.violations).toEqual([]);
 	await page.setViewportSize({ width: 390, height: 844 });
 	expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-	await page.getByRole("button", { name: "切换主题" }).click();
+	await page
+		.getByRole("button", { name: /^Switch to (light|dark) theme$|^Use system theme$/ })
+		.click();
 	await expect(page.locator("html")).toHaveClass(/dark/);
 	await page.evaluate(async () => {
 		await Promise.allSettled(document.getAnimations().map((animation) => animation.finished));
