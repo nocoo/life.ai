@@ -1,5 +1,11 @@
 # Retrospective
 
+## 2026-11-14 — Inspect modal background controls through the correct locator
+
+The new SidebarDrawer application E2E initially queried the opener with an accessibility-role locator while the modal was open. Radix intentionally hides background controls from the accessibility tree, so the ARIA attribute check timed out even though the opener remained mounted. The test now includes hidden elements only when locating that specific opener; focus restoration is still asserted after closing, and all geometry, Escape, theme, viewport and route checks remain. Read the actual modal accessibility boundary before adding background-control assertions. The earlier isolated package probe also assumed Avatar had a data-slot it does not publish; inspecting the selected package implementation established the real token-class selector before measuring.
+
+The full quality run subsequently found an independent, intermittent data-overview Axe `scrollable-region-focusable` failure. The unchanged isolated rerun passed, but the full run remains failed. Preserve both results and stop publication rather than weakening Axe, changing consumer CSS or treating a rerun as an explanation.
+
 ## 2026-10-03 — Verify hook installation before committing
 
 The isolated dependency-maintenance clone had no `core.hooksPath` after installation, so its first local commit did not invoke pre-commit. The complete quality suite had passed, but that was not hook evidence. Running the documented `bun run prepare` activated the index-snapshot hook, and subsequent hook runs passed. The agent amended the unpublished commit without explicit user authorization; that was a process mistake, not the recommended correction. Preserve existing history and make a separate normal correction commit unless the user explicitly requests an amend. Verify `core.hooksPath` before the first commit in every retained clone.
