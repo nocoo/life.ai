@@ -1,19 +1,11 @@
-import {
-	ContentIsland,
-	Sheet,
-	SheetContent,
-	SheetDescription,
-	SheetHeader,
-	SheetTitle,
-	SidebarProvider,
-} from "@nocoo/basalt";
+import { ContentIsland, SidebarDrawer } from "@nocoo/basalt";
 import { AppHeader, AppHeaderMenuButton, ProjectLinks } from "@nocoo/basalt/components/app-header";
 import { AppMain, AppShell, AppSkipLink } from "@nocoo/basalt/components/app-shell";
 import { Banner } from "@nocoo/basalt/components/banner";
 import { LayerCard } from "@nocoo/basalt/components/layer-card";
 import { LoadingScreen } from "@nocoo/basalt/components/loading-screen";
 import { ThemeToggle } from "@nocoo/basalt/components/theme-toggle";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useId, useRef, useState } from "react";
 import { Outlet, useLocation } from "react-router";
 import { useStore } from "zustand";
 import { generalSettingsStore } from "../viewmodels/general-settings-view-model";
@@ -36,6 +28,7 @@ export function AppFrame() {
 	const location = useLocation();
 	const pathname = location.pathname;
 	const menuButton = useRef<HTMLButtonElement>(null);
+	const drawerId = useId();
 	const session = useStore(sessionStore, (state) => state.session);
 	const status = useStore(sessionStore, (state) => state.status);
 	const error = useStore(sessionStore, (state) => state.error);
@@ -120,31 +113,23 @@ export function AppFrame() {
 				</div>
 			)}
 			{isMobile !== false && (
-				<Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-					<SheetContent
-						side="left"
-						className="w-[260px] max-w-[260px] border-0 bg-basalt-background p-0 sm:max-w-[260px] sm:p-0"
-						onCloseAutoFocus={(event) => {
-							event.preventDefault();
-							menuButton.current?.focus();
-						}}
-					>
-						<SheetHeader className="sr-only">
-							<SheetTitle>导航菜单</SheetTitle>
-							<SheetDescription>浏览 Life.ai 的主要页面</SheetDescription>
-						</SheetHeader>
-						<SidebarProvider collapsed={false} defaultWidth={260}>
-							<AppSidebar
-								ariaLabel="主导航抽屉"
-								variant="mobile"
-								enableShortcut={isMobile === true}
-								onNavigate={() => setMobileOpen(false)}
-								onDismiss={() => setMobileOpen(false)}
-								{...sidebarUserProps}
-							/>
-						</SidebarProvider>
-					</SheetContent>
-				</Sheet>
+				<SidebarDrawer
+					id={drawerId}
+					open={mobileOpen}
+					onOpenChange={setMobileOpen}
+					returnFocusRef={menuButton}
+					title="导航菜单"
+					description="浏览 Life.ai 的主要页面"
+				>
+					<AppSidebar
+						ariaLabel="主导航抽屉"
+						variant="mobile"
+						enableShortcut={isMobile === true}
+						onNavigate={() => setMobileOpen(false)}
+						onDismiss={() => setMobileOpen(false)}
+						{...sidebarUserProps}
+					/>
+				</SidebarDrawer>
 			)}
 			<AppMain>
 				<AppHeader
@@ -153,6 +138,8 @@ export function AppFrame() {
 							<AppHeaderMenuButton
 								ref={menuButton}
 								label="打开导航菜单"
+								aria-controls={drawerId}
+								aria-expanded={mobileOpen}
 								onClick={() => setMobileOpen(true)}
 							/>
 						) : undefined
