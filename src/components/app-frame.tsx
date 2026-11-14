@@ -167,7 +167,7 @@ export function AppFrame() {
 					}
 				/>
 				<div className="flex min-h-0 flex-1 flex-col px-2 pb-2 md:px-3 md:pb-3">
-					<ContentIsland>
+					<ContentIsland role="region" aria-label="页面内容" tabIndex={0}>
 						<Suspense fallback={<PageFallback />}>
 							<Outlet />
 						</Suspense>
