@@ -86,6 +86,24 @@ for (const theme of ["light", "dark"] as const) {
 			await expect(page).toHaveURL(/\/settings\/general$/);
 			await expect(drawer).toBeHidden();
 		}
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await sidebar.getByRole("button", { name: "收起侧栏", exact: true }).click();
+		await page.mouse.move(1400, 400);
+		await expect.poll(async () => (await sidebar.boundingBox())?.width).toBe(68);
+		await page.setViewportSize({ width: 390, height: 900 });
+		await page.getByRole("button", { name: "打开导航菜单", exact: true }).click();
+		const mobileSidebar = page.locator('[data-slot="sidebar-drawer"] [data-basalt-sidebar]');
+		expect((await mobileSidebar.boundingBox())?.width).toBe(260);
+		await expect(mobileSidebar).not.toHaveAttribute("data-collapsed");
+		await page.keyboard.press("Escape");
+		await expect(page.locator('[data-slot="sidebar-drawer"]')).toBeHidden();
+		await expect(page.getByRole("button", { name: "打开导航菜单", exact: true })).toBeFocused();
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await expect.poll(async () => (await sidebar.boundingBox())?.width).toBe(68);
+		await expect(sidebar).toHaveAttribute("data-collapsed", "");
+		expect(await page.evaluate(() => localStorage.getItem("life.ai:sidebar-collapsed"))).toBe(
+			"true",
+		);
 		await testInfo.attach("sidebar-measurements", {
 			body: JSON.stringify({ theme, revision: "outer320-inner260-v1", measurements }, null, 2),
 			contentType: "application/json",
