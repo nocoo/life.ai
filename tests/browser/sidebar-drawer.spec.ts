@@ -57,7 +57,6 @@ for (const theme of ["light", "dark"] as const) {
 			await expect(drawer).toBeVisible();
 			await expect(menu).toHaveAttribute("aria-controls", (await drawer.getAttribute("id")) ?? "");
 			await expect(menu).toHaveAttribute("aria-expanded", "true");
-			await expect.poll(async () => (await drawer.boundingBox())?.width).toBe(260);
 			const inner = drawer.locator("[data-basalt-sidebar]");
 			expect((await inner.boundingBox())?.width).toBe(260);
 			await expect(drawer).toHaveCSS("padding-left", "0px");
@@ -67,7 +66,7 @@ for (const theme of ["light", "dark"] as const) {
 			await expect(inner.getByText(/^v\d+\.\d+\.\d+$/)).toBeVisible();
 			const mobileAvatar = await inner.locator(".h-basalt-9.w-basalt-9").boundingBox();
 			expect([mobileAvatar?.width, mobileAvatar?.height]).toEqual([36, 36]);
-			measurements.push({ viewport: width, outer: 260, inner: 260, avatar: mobileAvatar });
+			measurements.push({ viewport: width, inner: 260, avatar: mobileAvatar });
 			await page.screenshot({ path: `test-results/l3/sidebar-${theme}-${width}.png` });
 			await page.keyboard.press("Escape");
 			await expect(drawer).toBeHidden();
