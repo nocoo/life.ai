@@ -1,6 +1,6 @@
 import { Button } from "@nocoo/basalt";
 import { DatePicker } from "@nocoo/basalt/components/date-picker";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "@nocoo/basalt/icons";
 
 export interface DateNavigationProps {
 	day: string;

@@ -20,7 +20,7 @@ import {
 	TableRow,
 } from "@nocoo/basalt/components/table";
 import { type UploadFile, UploadQueue } from "@nocoo/basalt/components/upload-queue";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "@nocoo/basalt/icons";
 import { useEffect } from "react";
 import { Link } from "react-router";
 import { useStore } from "zustand";

@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@nocoo/basalt/icons";
 import {
 	CalendarClock,
 	Database,
@@ -10,7 +10,7 @@ import {
 	Settings2,
 	Upload,
 	Wallet,
-} from "lucide-react";
+} from "@nocoo/basalt/icons";
 
 export interface NavItem {
 	href: string;

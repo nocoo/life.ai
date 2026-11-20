@@ -27,7 +27,7 @@ import {
 	Sun,
 	Trash2,
 	X,
-} from "lucide-react";
+} from "@nocoo/basalt/icons";
 import { useEffect, useState } from "react";
 import { useStore } from "zustand";
 import { CACHE_NAMES, type CacheQuery } from "../models/cache";

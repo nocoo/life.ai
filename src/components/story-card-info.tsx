@@ -1,6 +1,6 @@
 import { Button, Text } from "@nocoo/basalt";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@nocoo/basalt/components/hover-card";
-import { Info } from "lucide-react";
+import { Info } from "@nocoo/basalt/icons";
 import { type ReactNode, useId, useState } from "react";
 
 export function StoryCardInfo({

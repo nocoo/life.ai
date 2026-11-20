@@ -1,6 +1,6 @@
 import { Button, LayerCard, Text } from "@nocoo/basalt";
 import { Empty } from "@nocoo/basalt/components/empty";
-import { Map as MapIcon } from "lucide-react";
+import { Map as MapIcon } from "@nocoo/basalt/icons";
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "zustand";
 import type { DayInsights, TrackPoint } from "../models/day-insights";

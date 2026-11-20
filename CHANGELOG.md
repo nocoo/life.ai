@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.0.10 — 2026-11-20
+
+- Upgrade `@nocoo/basalt` to `^3.5.1` (`3.5.1`) and remove `lucide-react` by rewriting icon imports to `@nocoo/basalt/icons`.
+- Migrate chart chrome imports from `@nocoo/basalt/charts/{config,frame,legend,tooltip}` to `@nocoo/basalt/components/chart`.
+- Adopt the 2-line `@import "@nocoo/basalt/styles"; @import "tailwindcss";` CSS setup, align `ContentIsland` outer inset tokens, and align sidebar width to Basalt's 240px default.
+
 ## v2.0.7 — 2026-10-24
 
 - Rebuild the sidebar on the Basalt template: shared header inset, collapsible groups, 38px rows, search inset, centred collapsed rail and identity footer replace the local rail regions, absolute toggle and wrapper padding.

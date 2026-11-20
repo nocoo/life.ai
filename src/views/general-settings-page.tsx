@@ -1,7 +1,7 @@
 import { Button, ConfirmDialog, Field, Input, LayerCard, Switch, Text } from "@nocoo/basalt";
 import { Banner } from "@nocoo/basalt/components/banner";
 import { PageHeader } from "@nocoo/basalt/components/page-header";
-import { MapPinned, Moon, Plus } from "lucide-react";
+import { MapPinned, Moon, Plus } from "@nocoo/basalt/icons";
 import { useEffect, useState } from "react";
 import { useStore } from "zustand";
 import { PlaceListSkeleton, RoutineSkeleton } from "../components/page-skeletons";

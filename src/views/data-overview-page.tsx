@@ -7,18 +7,18 @@ import {
 	StatStrip,
 	Text,
 } from "@nocoo/basalt";
+import { Banner } from "@nocoo/basalt/components/banner";
 import {
 	ANIMATION_PROPS,
 	AXIS_CONFIG,
 	BAR_RADIUS,
+	ChartFrame,
+	ChartLegend,
+	ChartTooltipContent,
 	chartTooltipProps,
 	GRID_PROPS,
 	getChartColor,
-} from "@nocoo/basalt/charts/config";
-import { ChartFrame } from "@nocoo/basalt/charts/frame";
-import { ChartLegend } from "@nocoo/basalt/charts/legend";
-import { ChartTooltipContent } from "@nocoo/basalt/charts/tooltip";
-import { Banner } from "@nocoo/basalt/components/banner";
+} from "@nocoo/basalt/components/chart";
 import { LayerCard } from "@nocoo/basalt/components/layer-card";
 import { PageHeader } from "@nocoo/basalt/components/page-header";
 import { ScrollArea } from "@nocoo/basalt/components/scroll-area";
@@ -38,7 +38,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@nocoo/basalt/components/table";
-import { RefreshCw, Upload } from "lucide-react";
+import { RefreshCw, Upload } from "@nocoo/basalt/icons";
 import { useEffect, useMemo } from "react";
 import { Link } from "react-router";
 import { Bar, BarChart, CartesianGrid, LabelList, Tooltip, XAxis, YAxis } from "recharts";
