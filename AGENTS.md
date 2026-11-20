@@ -1,82 +1,65 @@
 # Life.ai
 
-A single person's life chronicle combining imported health, GPS, finance and write-only Connect snapshots.
-Profile: ts-worker-web.
-Direction: [chronicle architecture](docs/08-chronicle-rewrite.md), [domain contracts](docs/30-domain-contracts.md).
+Single-owner life chronicle (Vite/React SPA + Cloudflare Worker + D1 `life`, `ts-worker-web`) combining imported health, GPS, finance, and write-only Connect snapshots.
+Docs: [README.md](README.md) · [Docs](docs/README.md) · [Architecture](docs/08-chronicle-rewrite.md) · [Domain Contracts](docs/30-domain-contracts.md) · [Dev & Deploy](docs/07-development.md) · [Quality](docs/11-quality.md) · [Retrospective](Retrospective.md)
 
-## Scope and instruction sources
+## Commands
 
-- This file is the only project handbook; nested files do not compete with it. Do not create a `CLAUDE.md` alias or copy.
-- This handbook is the contract; hooks, CI and config enforce it. Raise weaker enforcement rather than reducing requirements. Frameworks must not rewrite it.
-- Human docs: [README.md](README.md) and [docs/README.md](docs/README.md). Detailed invariants: [domain/source/UI map](docs/30-domain-contracts.md); read the affected source contract before editing. Version: root `package.json`; same version in sidebar and `/api/live`. Enforcement: `.husky/`, CI, `vitest.config.ts`, `scripts/run-tests.ts`. Environment: ignored `.env*`/`.dev.vars*`; preserve `AI_SETTINGS_KEY` and existing `.dev.vars.devprod`. Accidents: [Retrospective.md](Retrospective.md).
-
-## Project invariants
-
-- One owner/dataset: Access authenticates the entrance, never partitions records by subject/email. Verify JWT signature, issuer, audience and expiry; ingest host exposes only ingestion and `/api/live`.
-- UTC storage/comparison and original precision are mandatory. Pixiu date-only values are UTC+8 accounting days; Footprint/Health day replacement and all source-preservation/hash/idempotence rules remain in [domain contracts](docs/30-domain-contracts.md).
-- Parse complete imports before writes; included days replace their whole source scope, absent dates survive. Never invent times, merge currencies, discard duplicates/raw observations, or commit private exports/coordinates/tokens/backups.
-- CLI and Web share codecs/clients; explicit import `--target` must match `/api/data/target`. `dev:prod` remains production even through localhost/Caddy. Old provider writes through `/api/imports` return 410.
-- Connect tokens are write-only, revocable, hashed at rest and shown once; each can replace only its own UTC hour, including future hours. Preserve host separation.
-- Preserve the 24-hour timeline, lazy active record tabs, precise sleep/GPS/day semantics, named-circle/settings rules and stable sidebar identity. Use published Basalt and MVVM; full UI and caching rules are in the linked contract.
-- Keep last successful diaries on failure/stale input; new structured output validates against sources before replacing saved content. AI keys are encrypted; `AI_SETTINGS_KEY` cannot rotate without re-encryption. External sources/cache invalidation never change imported records or manufacture evidence.
-
-## Setup and commands
-
-One Vite/React SPA + Cloudflare Worker; D1 `life`. Bun 1.4.0, Node 26.x LTS (see `.node-version`), strict TypeScript, Biome. `src/models/`, `src/services/`, `src/viewmodels/` with Views only rendering/dispatching; `worker/`, `worker/migrations/`, `tests/unit/`, `tests/worker/`, `tests/http/`, `tests/browser/`. The current runtime has no Next.js, Google OAuth or local SQLite production server.
-
-Run from root. Lifecycle hooks are installed explicitly by `prepare` under the repository install policy.
+Run from root with Bun 1.4.0, Node 26.x LTS (`.node-version`), strict TypeScript, Biome; no Next.js, Google OAuth, or local SQLite prod server. Local secrets live in ignored `.env*`/`.dev.vars*`.
 
 ```sh
 bun install --frozen-lockfile
-bun run prepare
-bun run db:migrate
-bun dev
-bun run typecheck
-bun run lint
-bun run build
-bun run test:coverage
-bun run test:l2
+bun run prepare # install .husky/ hooks (verify core.hooksPath)
+bun run db:migrate # local D1 migrations (.wrangler/state)
+bun dev # https://life.dev.hexly.ai -> Caddy -> 127.0.0.1:7011
+bun run typecheck # S1: cf-typegen + 4 strict tsconfigs
+bun run lint # S2: Biome check-only, 0 warnings
+bun run test:coverage # L1: Vitest v8 >=95% (4 metrics)
+bun run test:l1 # L1: pre-commit rejection proof
+bun run build # B1: Vite SPA + Worker bundle
+bun run test:l2 # L3: Worker HTTP + isolated SQLite
 bunx playwright install chromium
-bun run test:l3
-bun run gate:security
-bun run quality
+bun run test:l3 # L4: Playwright E2E
+bun run gate:security # G1/G2: gitleaks + OSV
+bun run quality # full local suite
 ```
 
-Normal local tests need no real Access, model or source credentials: the harness creates signing/encryption keys, a loopback AI fixture and public-context fixtures. G2 requires OSV and gitleaks. `data:import`/`diary:eval` and `dev:prod` are operational tools; verify their targets and authorization before running them.
+Tests need no real credentials (ephemeral RSA/encryption keys + loopback AI/context fixtures); `gate:security` needs `gitleaks` and `osv-scanner`. `data:import`, `diary:eval`, `dev:prod`, and `deploy` are operational—verify targets and authorization first; doc edits never run them.
 
-## Testing and quality contract
+## Invariants
 
-Quality slots are enforced via `.github/workflows/quality-slots.yml` (`quality / Z1: Gate`, System1 v1.3.0 / `nocoo/base-ci v2026.15`). Statuses: `enforced`, `planned`, `manual`, `N/A`. No `.skip`/`.only`; unified L1 requires statements/branches/functions/lines each ≥95% plus four strict type configurations, zero-warning/error check-only Biome, installed hooks and failure rejection.
+- **Owner & Access**: Single owner/dataset; Access gates entry, never partitions by subject/email. Verify JWT signature, issuer, audience, expiry; `life.worker.hexly.ai` serves only ingest and `/api/live`.
+- **Connect**: Write-only, revocable, hashed at rest, shown once; each token replaces only its own UTC hour (including future hours). Preserve app/ingest host separation.
+- **Time & contracts**: Store/compare UTC instants at original precision; Pixiu date-only rows are UTC+8 accounting days. Read affected rules in [domain contracts](docs/30-domain-contracts.md) first.
+- **Imports**: Parse complete imports before writes; included days replace their source scope, absent dates survive, identical replays preserve content/timestamps. Legacy `/api/imports` writes return 410.
+- **Fidelity & privacy**: Never invent times, merge currencies, discard duplicates/raw observations, or commit private exports, coordinates, tokens, or backups.
+- **CLI/Web & targets**: CLI and Web share codecs/clients; `--target` must match `/api/data/target`. `bun run dev:prod` always targets prod even via localhost/Caddy.
+- **Architecture**: MVVM (`src/{models,services,viewmodels}/`, Views only render/dispatch; `worker/`, `worker/migrations/`, `tests/`) on `@nocoo/basalt`. Sync `package.json`, sidebar, and `/api/live` versions.
+- **Daily UI**: Preserve 24h timeline, lazy record tabs, sleep/GPS/day semantics, named-circle/settings rules, and stable sidebar identity ([domain contracts](docs/30-domain-contracts.md)).
+- **Diaries**: Keep last successful diaries on failure, stale input, or unavailable enabled sources; validate structured output against sources first. External sources/caches never mutate imports or invent evidence.
+- **Secrets**: AI keys are encrypted; `AI_SETTINGS_KEY` cannot rotate without re-encryption. Preserve `AI_SETTINGS_KEY` and existing `.dev.vars.devprod`.
+- **Release**: Authorized deploys run `bun run deploy` (inspect migrations, build/dry-run, migrate before code, verify Access, `/api/live`, and ingest-host isolation; [Dev & Deploy](docs/07-development.md)).
 
-| Piece | Requirement and current reality                                                                         | Status   | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| ----- | ------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| L1    | Four metrics ≥95% for models/services/ViewModels/Worker plus strict types/lint with installed rejection | enforced | Measured on clean install (`bun install --frozen-lockfile`, `bun run prepare`, Bun 1.4.0, Node 26.12.1): `sh .husky/pre-commit` exit `0`, cold ~16.4s / warm ~15.3–15.7s wall; snapshot steps `node scripts/run-unit-coverage.mjs`→`verify-coverage-summary.mjs`→`typecheck`→`lint` all exit `0` (index snapshots run unit coverage under Node, not Bun, to avoid flaky v8 merge failures). Coverage via `bun run test:coverage`: statements **98.95%**, branches **96.38%**, functions **99.12%**, lines **99.31%** (1605 tests, 89 files). Rejection: `bun run test:l1` (`scripts/verify-l1-gate.mjs`) in CI `l1-proof` plus `scripts/pre-commit-index.test.mjs`; proven reject for UT failure, each coverage metric shortfall, lint error/warning, type error, `.only`/skipped suite, staged-bad/unstaged-good, missing tool/coverage summary/`node_modules`, SIGTERM interrupt; healthy seed accepts. Hardening: `vitest.config.ts` `allowOnly: false`, dedicated unit/coverage validators in hook |
-| L2    | Real HTTP + SQLite for every endpoint/method                                                            | planned  | Push hook/CI run `tests/http/api.ts`; complete endpoint/method inventory proof remains required                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| L3    | Import, timeline, Connect, responsive/auth journeys                                                     | enforced | CI l3 → Playwright guarded by LIFE_TEST_URL/state                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| G2    | OSV and gitleaks, missing binary fails                                                                  | enforced | `scripts/security.ts`, pre-push and dedicated CI                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| D1    | Fresh SQLite/cache, credentials stripped, local guards and marker                                       | enforced | `run-tests.ts`, `local-db.ts`, `verify-test-bindings.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Build | Vite bundle                                                                                             | enforced | Quality CI and `quality`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Docs  | Provider/diary/UI evidence preserved                                                                    | manual   | [domain contracts](docs/30-domain-contracts.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+## Quality & Local Gates
 
-Current pre-commit runs `bun scripts/run-unit-coverage.mjs`, `node scripts/verify-coverage-summary.mjs`, `bun run typecheck` and `bun run lint` against a temporary Git index snapshot (`checkout-index`, no worktree mutation). Run `bun run test:l1` to replay hook rejection probes in an isolated temp repo with auto cleanup. pre-push runs L2/G2 on the working tree, and the security snapshot includes the reviewable working tree. Required follow-up: stdin pushed-ref checks <3min. Hooks must remain check-only; never bypass commit or branch-push checks.
+Follows `system1-quality`; CI slots and pinned `base-ci` live in `.github/workflows/quality-slots.yml` (`quality / Z1: Gate` + `l1-proof` required on `main`). Statuses: `enforced`, `planned`, `manual`, `N/A`. Raise weak enforcement; never weaken requirements.
 
-## Resources and isolation
+- **L1 & static**: >=95% statements/branches/functions/lines on `src/{models,services,viewmodels}/` and `worker/`, `allowOnly: false` (no `.skip`/`.only`), 4 strict tsconfigs, 0-warning check-only Biome.
+- **Gaps & N/A**: `L2 Runtime` is `N/A` (covered by `L3`/`L4`); `P1 Package` is `N/A` (private app); `L3 Integration` (`test:l2`) is `enforced` while full endpoint/method proof is `planned`; doc evidence is `manual`.
+- **Pre-commit**: Installed via `bun run prepare` (`.husky/`); check-only, never bypassed. Runs `node scripts/run-unit-coverage.mjs` → `verify-coverage-summary.mjs` → `typecheck` → `lint` on `checkout-index`.
+- **Pre-push & proof**: `.husky/pre-push` runs `test:l2` + `gate:security` on worktree (stdin pushed-ref `<3min` `planned`). Replay rejection probes via `bun run test:l1`; evidence in [Quality](docs/11-quality.md).
 
-| Purpose             | Ports / resource                           | Isolation                                                 |
-| ------------------- | ------------------------------------------ | --------------------------------------------------------- |
-| Dev                 | `https://life.dev.hexly.ai` → Caddy → 7011 | `.wrangler/state`; one integrated Vite Worker             |
-| Production-data dev | `bun run dev:prod`, same host/7011         | Remote production D1; keep existing server/key intact     |
-| L2 / L3             | 17011 / 27011                              | Per-run `.wrangler/tests/l2-*` / `l3-*` SQLite/cache      |
-| Production / ingest | `life.hexly.ai` / `life.worker.hexly.ai`   | D1`life`, Access team `nocoo`; exact audience in Wrangler |
+## Resources & Isolation
 
-Optional sidecar 37011 is reserved, not needed by Vite. Keep Caddy and workflow mirror aligned. Tests reject remote bindings and use `_test_marker(env=test)` before migrations/cleanup, fresh XDG directories and loopback fixtures; no Workers AI binding because it runs remotely. Never create remote `-test` resources or touch production/daily-dev data in tests.
+| Lane          | Endpoint / State                                    | Boundary                                             |
+| ------------- | --------------------------------------------------- | ---------------------------------------------------- |
+| Dev           | `life.dev.hexly.ai` → `:7011`, `.wrangler/state`    | Integrated Vite Worker (`37011` unused); align Caddy |
+| Prod-data dev | `dev:prod`, same host/`:7011`, remote D1 `life`     | Prod D1; preserve server, key & `.dev.vars.devprod`  |
+| L3 / L4 tests | `127.0.0.1:17011`/`27011`, `.wrangler/tests/*`      | Fresh SQLite/cache/XDG & loopback fixtures           |
+| Prod / Ingest | `life.hexly.ai` / `life.worker.hexly.ai`, D1 `life` | Access `nocoo` (`wrangler.jsonc`); read-only         |
 
-## Operations / release
-
-Authorized deployment uses `bun run deploy`: inspect migrations, build/dry-run, migrate before dependent code, then verify Access, public health/version and ingest-host isolation. Detailed historical releases are in [domain contracts](docs/30-domain-contracts.md). Documentation normalization does not run a deployment, import or diary regeneration.
+Tests reject remote bindings and Workers AI, require `_test_marker(env=test)` before migrations/cleanup, and never create remote `-test` resources or touch prod/daily-dev data.
 
 ## Retrospective
 
-Store accident narratives in [Retrospective.md](Retrospective.md); recurring rules stay brief here, cross-project lessons in global rules/nmem, deterministic safeguards in tests/hooks.
-
-- Preserve source content/timestamps on identical import replay and preserve saved diaries when any enabled source is unavailable.
+Record incidents in [Retrospective.md](Retrospective.md); promote recurring constraints to `Invariants` and deterministic guards to tests/hooks.

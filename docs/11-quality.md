@@ -1,15 +1,30 @@
 # 11 质量与隔离
 
-6DQ 采用 nmem `crystal_0c9c31f7de97` 的 2026-09 规范。
+遵循 `system1-quality` 12 槽位契约；CI 槽位实现与固定 `base-ci` 版本以 `.github/workflows/quality-slots.yml`（受保护分支要求 `quality / Z1: Gate`）为准。状态词汇统一使用 `enforced`、`planned`、`manual`、`N/A`。
 
-| 维度 | 命令与要求                                                                                                        |
-| ---- | ----------------------------------------------------------------------------------------------------------------- |
-| L1   | `bun run test:coverage`；Model、Service、ViewModel、Worker 的 statements / branches / functions / lines 全部 ≥95% |
-| G1   | `bun run typecheck` 与 `bun run lint`；TypeScript strict、noUncheckedIndexedAccess；Biome 0 error / 0 warning     |
-| L2   | `bun run test:l2`；全部 API 方法/路径契约，真实 HTTP → 本地 Worker → SQLite                                       |
-| L3   | `bun run test:l3`；Playwright 验证认证边界、导入、时间线、Connect、响应式 UI                                      |
-| G2   | `bun run gate:security`；gitleaks 扫可评审工作树、osv-scanner 扫根锁文件                                          |
-| D1   | 下述物理隔离，禁止远程测试资源                                                                                    |
+| 槽位               | 命令 / 实现与要求                                                                                               | 状态       | 说明                                                       |
+| ------------------ | --------------------------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------- |
+| `S1: Types`        | `bun run typecheck`（`cf-typegen` + 4 套严格 `tsconfig`、`noUncheckedIndexedAccess`）                           | `enforced` | pre-commit + CI                                            |
+| `S2: Lint`         | `bun run lint`（`biome check --error-on-warnings .`，check-only 0 error / 0 warning）                           | `enforced` | pre-commit + CI                                            |
+| `S3: Workflow`     | 校验 `.github/workflows/*.yml` 全部外部 action 固定到 40 位 SHA                                                 | `enforced` | CI                                                         |
+| `G1: Secrets`      | `gitleaks` 扫描可评审工作树 / CI 检出树（本地经 `bun run gate:security`）                                       | `enforced` | pre-push + CI                                              |
+| `G2: Dependencies` | `osv-scanner` 扫描 `bun.lock`，缺少扫描器直接失败（本地经 `bun run gate:security`）                             | `enforced` | pre-push + CI                                              |
+| `B1: Build`        | `bun run build`（Vite SPA + Worker 产物）                                                                       | `enforced` | `quality` + CI                                             |
+| `L1: Unit`         | `bun run test:coverage`；`src/{models,services,viewmodels}/` 与 `worker/` 四项覆盖率 ≥95%，禁止 `.skip`/`.only` | `enforced` | pre-commit + CI + `l1-proof`                               |
+| `L2: Runtime`      | —                                                                                                               | `N/A`      | Cloudflare Worker 绑定行为由 `L3`/`L4` 覆盖                |
+| `L3: Integration`  | `bun run test:l2`（历史脚本名；`tests/http/api.ts`，真实 HTTP → 本地 Worker → 隔离 SQLite）                     | `enforced` | pre-push + CI；完整 endpoint/method 清单证明仍为 `planned` |
+| `L4: E2E`          | `bun run test:l3`（历史脚本名；Playwright 覆盖认证边界、导入、时间线、Connect、响应式与可访问性）               | `enforced` | `quality` + CI                                             |
+| `P1: Package`      | —                                                                                                               | `N/A`      | 私有应用，不发布 npm 包                                    |
+| `Z1: Gate`         | `.github/workflows/quality-slots.yml` 汇总必需槽位与 `l1-proof`                                                 | `enforced` | 受保护分支 `main` 必需检查                                 |
+
+## L1 与本地 Hook 实测证据
+
+- **Pre-commit（index 快照）**：`.husky/pre-commit` 通过 `git checkout-index` 构建临时快照（不改写工作区），顺序执行 `node scripts/run-unit-coverage.mjs` → `node scripts/verify-coverage-summary.mjs` → `bun run typecheck` → `bun run lint`。index 快照下的单测覆盖率固定用 Node 而非 Bun 运行，避免 v8 coverage 合并偶发失败。
+- **干净安装实测**（`bun install --frozen-lockfile`、`bun run prepare`、Bun 1.4.0、Node 26.12.1）：`sh .husky/pre-commit` 退出码 `0`，冷启动约 16.4s、热启动约 15.3–15.7s；`bun run test:coverage` 实测 statements **98.95%**、branches **96.38%**、functions **99.12%**、lines **99.31%**（1,605 tests / 89 files）。
+- **拒绝证明与加固**：CI `l1-proof` 运行 `bun run test:l1`（`scripts/verify-l1-gate.mjs`），配合 `scripts/pre-commit-index.test.mjs` 在隔离临时仓自动清理复现；已验证拒绝 UT 失败、四项覆盖率任一不达标、lint error/warning、类型错误、`.only`/skipped suite、staged-bad/unstaged-good、缺工具/缺覆盖率报告/缺 `node_modules`、SIGTERM 中断，以及健康样本通过。`vitest.config.ts` 启用 `allowOnly: false`，hook 内带独立单测与覆盖率摘要校验器。
+- **Pre-push 与遗留跟进**：`.husky/pre-push` 当前在工作区并行执行 `bun run test:l2`（L3 Integration）与 `bun run gate:security`（G1/G2），可评审工作树快照进入 secret 扫描。后续跟进：改为按 stdin pushed refs 校验且控制在 `<3min`（`planned`）；补齐 `tests/http/api.ts` 全量 endpoint/method 清单证明（`planned`）。Provider / 日记 / UI 契约文档证据为 `manual`（见 [30 领域约定](30-domain-contracts.md)）。
+
+## 隔离边界与历史验证
 
 L2/L3 每轮在 `.wrangler/tests/<tier>-<random>` 创建全新状态和 Vite 缓存。绑定检查要求 local 配置、回环监听、无远程路由、local/prod D1 ID 不同。首次写入仅初始化该新目录的 `_test_marker(key,value)`，写入 `env=test`；迁移、SQL 检查、清理均验证标记。
 
@@ -23,6 +38,6 @@ AI 链路使用每轮启动的回环 fixture，支持 OpenAI Responses 与 Anthr
 
 [17 Apple Health](17-apple-health.md) 记录完整 ZIP/目录导入、跨夜睡眠、重叠传感器、心电图/血压、锻炼与 GPS 合并地图的验证。L1 检查保真编解码、租约和并发、幂等、异步取消与日期竞态；L3 覆盖真实 ZIP/目录选择、重复导入、波形分页、原始维度延迟读取、移动端/深色及可访问性。原始完整导出另外通过独立解析器逐节点/逐附件核对，再用只读 SQLite 快照核验生产导入和重导，健康值与坐标不进入报告或 Git。
 
-Linux 测试会在隔离 XDG 缓存前固定已安装的 Playwright 浏览器路径；只复用浏览器程序，Wrangler OAuth 配置、缓存和 SQLite 仍使用本轮独立目录。自定义 G2 命令使用 Bun，因此复用的 security workflow 必须显式设置 `package-manager: bun`。
+Linux 测试会在隔离 XDG 缓存前固定已安装的 Playwright 浏览器路径；只复用浏览器程序，Wrangler OAuth 配置、缓存和 SQLite 仍使用本轮独立目录。自定义安全扫描命令使用 Bun，因此 CI 中复用安装步骤时显式设置 `package-manager: bun`。
 
-Husky pre-commit 对 Git index 快照执行 L1 + G1；pre-push 在工作区并行执行 L2 + G2。CI 同时运行全部维度，所有 GitHub Actions 可复用工作流固定到具体 SHA。
+Husky pre-commit 对 Git index 快照执行 `L1` + `S1` + `S2`；pre-push 在工作区并行执行 `test:l2`（`L3`）与 `gate:security`（`G1`/`G2`）。CI 通过 `.github/workflows/quality-slots.yml` 独立运行全部启用槽位及 `l1-proof`，所有 GitHub Actions 外部引用均固定到 40 位 SHA。
