@@ -12,7 +12,7 @@ import { Banner } from "@nocoo/basalt/components/banner";
 import { FileDropzone } from "@nocoo/basalt/components/file-dropzone";
 import { PageHeader } from "@nocoo/basalt/components/page-header";
 import { type UploadFile, UploadQueue } from "@nocoo/basalt/components/upload-queue";
-import { ArrowUpRight, FolderUp } from "lucide-react";
+import { ArrowUpRight, FolderUp } from "@nocoo/basalt/icons";
 import { useEffect, useRef } from "react";
 import { Link } from "react-router";
 import { useStore } from "zustand";

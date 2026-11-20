@@ -20,7 +20,7 @@ import {
 	GitPullRequestClosed,
 	Tag,
 	X,
-} from "lucide-react";
+} from "@nocoo/basalt/icons";
 import { GITHUB_ACTION_LABELS, GITHUB_STATE_LABELS } from "../models/github";
 import type { StoryBranch } from "../viewmodels/day-story";
 import { formatLocalClock } from "../viewmodels/format";

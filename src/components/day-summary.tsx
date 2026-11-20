@@ -13,7 +13,7 @@ import {
 	Text,
 } from "@nocoo/basalt";
 import { Banner } from "@nocoo/basalt/components/banner";
-import { GitFork, Monitor, NotebookPen, Sparkles } from "lucide-react";
+import { GitFork, Monitor, NotebookPen, Sparkles } from "@nocoo/basalt/icons";
 import { useNavigate } from "react-router";
 import { useStore } from "zustand";
 import type { DaySummaryQuery } from "../models/ai";

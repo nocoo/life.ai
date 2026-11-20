@@ -5,8 +5,8 @@ import {
 	DropdownMenuTrigger,
 } from "@nocoo/basalt";
 import { HeaderAction } from "@nocoo/basalt/components/app-header";
+import { Palette } from "@nocoo/basalt/icons";
 import { useAccent } from "@nocoo/basalt/providers/accent";
-import { Palette } from "lucide-react";
 
 export function AccentControl() {
 	const { accent, setAccent, swatches } = useAccent();

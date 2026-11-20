@@ -15,7 +15,7 @@ import {
 	TrainFront,
 	Utensils,
 	Wallet,
-} from "lucide-react";
+} from "@nocoo/basalt/icons";
 import { type FinanceDay, formatMinor } from "../models/finance";
 import { timelineStore } from "../viewmodels/timeline-view-model";
 import { StoryCardHeading } from "./story-card-heading";

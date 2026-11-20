@@ -1,5 +1,5 @@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger, LayerCard } from "@nocoo/basalt";
-import { ArrowUpRight, Monitor, Newspaper } from "lucide-react";
+import { ArrowUpRight, Monitor, Newspaper } from "@nocoo/basalt/icons";
 import { useState } from "react";
 import type { StoryBranch } from "../viewmodels/day-story";
 import { formatDurationMinutes, formatLocalClock } from "../viewmodels/format";

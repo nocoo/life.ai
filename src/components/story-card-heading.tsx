@@ -1,5 +1,5 @@
 import { Text } from "@nocoo/basalt";
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@nocoo/basalt/icons";
 import type { ReactNode } from "react";
 
 export function StoryCardHeading({

@@ -23,7 +23,7 @@ import {
 	Plug,
 	Route,
 	Tag,
-} from "lucide-react";
+} from "@nocoo/basalt/icons";
 import type { DayInsights } from "../models/day-insights";
 import { healthMetrics, type StoryMetric } from "../viewmodels/day-story";
 import { StoryCardHeading, StoryMetricLabel } from "./story-card-heading";

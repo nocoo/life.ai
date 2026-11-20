@@ -28,7 +28,7 @@ import {
 	Watch,
 	Waves,
 	Wind,
-} from "lucide-react";
+} from "@nocoo/basalt/icons";
 import { useState } from "react";
 import {
 	type BloodPressureReading,

@@ -9,12 +9,12 @@ import {
 	ANIMATION_PROPS,
 	AXIS_CONFIG,
 	BAR_RADIUS,
+	ChartFrame,
+	ChartTooltipContent,
 	chartTooltipProps,
 	GRID_PROPS,
 	getChartColor,
-} from "@nocoo/basalt/charts/config";
-import { ChartFrame } from "@nocoo/basalt/charts/frame";
-import { ChartTooltipContent } from "@nocoo/basalt/charts/tooltip";
+} from "@nocoo/basalt/components/chart";
 import {
 	Table,
 	TableBody,

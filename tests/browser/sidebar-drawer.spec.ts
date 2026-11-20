@@ -20,7 +20,7 @@ for (const theme of ["light", "dark"] as const) {
 		const measurements = [];
 		for (const width of [1440, 1280]) {
 			await page.setViewportSize({ width, height: 900 });
-			await expect.poll(async () => (await sidebar.boundingBox())?.width).toBe(260);
+			await expect.poll(async () => (await sidebar.boundingBox())?.width).toBe(240);
 			await expect(avatar).toBeVisible();
 			const expanded = await avatar.boundingBox();
 			expect([expanded?.width, expanded?.height]).toEqual([36, 36]);
@@ -58,7 +58,7 @@ for (const theme of ["light", "dark"] as const) {
 			await expect(menu).toHaveAttribute("aria-controls", (await drawer.getAttribute("id")) ?? "");
 			await expect(menu).toHaveAttribute("aria-expanded", "true");
 			const inner = drawer.locator("[data-basalt-sidebar]");
-			expect((await inner.boundingBox())?.width).toBe(260);
+			expect((await inner.boundingBox())?.width).toBe(240);
 			await expect(drawer).toHaveCSS("padding-left", "0px");
 			await expect(drawer).toHaveCSS("padding-right", "0px");
 			await expect(drawer.getByRole("button", { name: "关闭导航菜单", exact: true })).toBeVisible();
@@ -66,7 +66,7 @@ for (const theme of ["light", "dark"] as const) {
 			await expect(inner.getByText(/^v\d+\.\d+\.\d+$/)).toBeVisible();
 			const mobileAvatar = await inner.locator(".h-basalt-9.w-basalt-9").boundingBox();
 			expect([mobileAvatar?.width, mobileAvatar?.height]).toEqual([36, 36]);
-			measurements.push({ viewport: width, inner: 260, avatar: mobileAvatar });
+			measurements.push({ viewport: width, inner: 240, avatar: mobileAvatar });
 			await page.screenshot({ path: `test-results/l3/sidebar-${theme}-${width}.png` });
 			await page.keyboard.press("Escape");
 			await expect(drawer).toBeHidden();
@@ -92,7 +92,7 @@ for (const theme of ["light", "dark"] as const) {
 		await page.setViewportSize({ width: 390, height: 900 });
 		await page.getByRole("button", { name: "打开导航菜单", exact: true }).click();
 		const mobileSidebar = page.locator('[data-slot="sidebar-drawer"] [data-basalt-sidebar]');
-		expect((await mobileSidebar.boundingBox())?.width).toBe(260);
+		expect((await mobileSidebar.boundingBox())?.width).toBe(240);
 		await expect(mobileSidebar).not.toHaveAttribute("data-collapsed");
 		await page.keyboard.press("Escape");
 		await expect(page.locator('[data-slot="sidebar-drawer"]')).toBeHidden();

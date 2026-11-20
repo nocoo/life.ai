@@ -16,7 +16,7 @@ import {
 	MoonStar,
 	Ruler,
 	Scale,
-} from "lucide-react";
+} from "@nocoo/basalt/icons";
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "zustand";
 import { formatLocalClock } from "../viewmodels/format";

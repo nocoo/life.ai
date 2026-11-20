@@ -1,6 +1,6 @@
 import { DescriptionList, LayerCard, Text } from "@nocoo/basalt";
 import { Banner } from "@nocoo/basalt/components/banner";
-import { CloudRain, CloudSun, SunMoon, Sunrise, Sunset, Wind } from "lucide-react";
+import { CloudRain, CloudSun, SunMoon, Sunrise, Sunset, Wind } from "@nocoo/basalt/icons";
 import { weatherDescription } from "../models/day-context";
 import { type DayContextState, dayContextStore } from "../viewmodels/day-context-view-model";
 import { formatDurationMinutes } from "../viewmodels/format";

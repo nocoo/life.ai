@@ -1,5 +1,5 @@
 import { LayerCard } from "@nocoo/basalt";
-import { Bike, Car, Footprints, Route, TrainFront } from "lucide-react";
+import { Bike, Car, Footprints, Route, TrainFront } from "@nocoo/basalt/icons";
 import { type GpsJourney, TRAVEL_MODE_LABELS } from "../models/gps-journeys";
 import { storyDistance } from "../viewmodels/day-story";
 import { formatDurationMinutes, formatLocalClock } from "../viewmodels/format";

@@ -2,7 +2,7 @@ import { Badge, Button, Field, LayerCard, Text } from "@nocoo/basalt";
 import { Banner } from "@nocoo/basalt/components/banner";
 import { PageHeader } from "@nocoo/basalt/components/page-header";
 import { SensitiveInput } from "@nocoo/basalt/components/sensitive-input";
-import { GitFork, Monitor, Newspaper } from "lucide-react";
+import { GitFork, Monitor, Newspaper } from "@nocoo/basalt/icons";
 import { useEffect } from "react";
 import { useStore } from "zustand";
 import { DaySourcesSkeleton } from "../components/page-skeletons";

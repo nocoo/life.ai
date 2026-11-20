@@ -3,7 +3,7 @@ import { Banner } from "@nocoo/basalt/components/banner";
 import { FileDropzone } from "@nocoo/basalt/components/file-dropzone";
 import { PageHeader } from "@nocoo/basalt/components/page-header";
 import { type UploadFile, UploadQueue } from "@nocoo/basalt/components/upload-queue";
-import { ArrowUpRight, CalendarDays, Wallet } from "lucide-react";
+import { ArrowUpRight, CalendarDays, Wallet } from "@nocoo/basalt/icons";
 import { useEffect } from "react";
 import { Link } from "react-router";
 import { useStore } from "zustand";
