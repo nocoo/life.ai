@@ -2,6 +2,10 @@
 
 Record the date when known, what happened, its cause, and the follow-up. Do not invent an incident to populate this file. Keep recurring project rules brief in `AGENTS.md`; cross-project lessons belong in global rules, and deterministic checks belong in hooks or tests.
 
+## 2026-11-22 — Measure the sidebar drawer only after its open animation settles
+
+The dependency-maintenance quality run failed twice in `tests/browser/sidebar-drawer.spec.ts` with a drawer inner width of `239.99999237060547` instead of `240`. The drawer sheet animates for 350 ms, and Chromium reports sub-pixel widths while that transform is running; sampling the width every 20 ms for 800 ms showed 8 to 10 of 40 readings off by roughly 1e-5 px, in both the old and the new Chromium build, so the assertion raced the animation instead of exposing a layout regression. The two one-shot `toBe(240)` reads now poll like the desktop sibling assertions already did, which keeps the exact `240` requirement and only waits for the animation to finish; five consecutive reruns of the spec passed. Measure an animated element with a polling assertion, and reproduce a suspected regression against the pre-change build before attributing it to a new dependency.
+
 ## 2026-11-14 — Inspect modal background controls through the correct locator
 
 The new SidebarDrawer application E2E initially queried the opener with an accessibility-role locator while the modal was open. Radix intentionally hides background controls from the accessibility tree, so the ARIA attribute check timed out even though the opener remained mounted. The test now includes hidden elements only when locating that specific opener; focus restoration is still asserted after closing, and all geometry, Escape, theme, viewport and route checks remain. Read the actual modal accessibility boundary before adding background-control assertions. The earlier isolated package probe also assumed Avatar had a data-slot it does not publish; inspecting the selected package implementation established the real token-class selector before measuring.
