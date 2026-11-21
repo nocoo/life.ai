@@ -58,7 +58,7 @@ for (const theme of ["light", "dark"] as const) {
 			await expect(menu).toHaveAttribute("aria-controls", (await drawer.getAttribute("id")) ?? "");
 			await expect(menu).toHaveAttribute("aria-expanded", "true");
 			const inner = drawer.locator("[data-basalt-sidebar]");
-			expect((await inner.boundingBox())?.width).toBe(240);
+			await expect.poll(async () => (await inner.boundingBox())?.width).toBe(240);
 			await expect(drawer).toHaveCSS("padding-left", "0px");
 			await expect(drawer).toHaveCSS("padding-right", "0px");
 			await expect(drawer.getByRole("button", { name: "关闭导航菜单", exact: true })).toBeVisible();
@@ -92,7 +92,7 @@ for (const theme of ["light", "dark"] as const) {
 		await page.setViewportSize({ width: 390, height: 900 });
 		await page.getByRole("button", { name: "打开导航菜单", exact: true }).click();
 		const mobileSidebar = page.locator('[data-slot="sidebar-drawer"] [data-basalt-sidebar]');
-		expect((await mobileSidebar.boundingBox())?.width).toBe(240);
+		await expect.poll(async () => (await mobileSidebar.boundingBox())?.width).toBe(240);
 		await expect(mobileSidebar).not.toHaveAttribute("data-collapsed");
 		await page.keyboard.press("Escape");
 		await expect(page.locator('[data-slot="sidebar-drawer"]')).toBeHidden();
