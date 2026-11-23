@@ -178,7 +178,7 @@ test("slow API reads preserve page-specific cards and do not flash empty or edit
 			} else if (path === "/data") {
 				const historyPlot = loading.locator(".data-overview-history-plot");
 				await expect(historyPlot).toBeVisible();
-				expect((await historyPlot.boundingBox())?.height).toBe(280);
+				await expect.poll(async () => (await historyPlot.boundingBox())?.height).toBe(280);
 				await expect(page.getByText("还没有导入数据", { exact: true })).toHaveCount(0);
 			} else if (path === "/settings/sources") {
 				await expect(loading.getByRole("heading", { name: "Gecko", exact: true })).toBeVisible();
