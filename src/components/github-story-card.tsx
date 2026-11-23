@@ -1,7 +1,6 @@
 import {
 	Button,
 	Dialog,
-	DialogClose,
 	DialogContent,
 	DialogDescription,
 	DialogHeader,
@@ -19,7 +18,6 @@ import {
 	GitPullRequest,
 	GitPullRequestClosed,
 	Tag,
-	X,
 } from "@nocoo/basalt/icons";
 import { GITHUB_ACTION_LABELS, GITHUB_STATE_LABELS } from "../models/github";
 import type { StoryBranch } from "../viewmodels/day-story";
@@ -65,18 +63,12 @@ export function GitHubStoryCard({ branch }: { branch: StoryBranch }) {
 					</Button>
 				</DialogTrigger>
 			</LayerCard>
-			<DialogContent size="xl" className="github-detail-dialog story-github">
-				<DialogClose asChild>
-					<Button
-						variant="ghost"
-						size="icon"
-						className="absolute right-3 top-3"
-						aria-label="关闭 GitHub 详情"
-					>
-						<X size={18} aria-hidden="true" />
-					</Button>
-				</DialogClose>
-				<DialogHeader className="pr-8">
+			<DialogContent
+				size="xl"
+				closeLabel="关闭 GitHub 详情"
+				className="github-detail-dialog story-github"
+			>
+				<DialogHeader>
 					<DialogTitle>GitHub · {branch.period ?? "全天"}</DialogTitle>
 					<DialogDescription>{branch.title}，按发生时间排列。</DialogDescription>
 				</DialogHeader>

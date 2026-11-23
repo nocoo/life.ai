@@ -2,7 +2,6 @@ import { Badge, Button, LayerCard } from "@nocoo/basalt";
 import { Banner } from "@nocoo/basalt/components/banner";
 import {
 	Dialog,
-	DialogClose,
 	DialogContent,
 	DialogDescription,
 	DialogHeader,
@@ -26,7 +25,6 @@ import {
 	RefreshCw,
 	Sun,
 	Trash2,
-	X,
 } from "@nocoo/basalt/icons";
 import { useEffect, useState } from "react";
 import { useStore } from "zustand";
@@ -61,18 +59,8 @@ export function CacheManager({ day }: { day: string }) {
 					缓存
 				</Button>
 			</DialogTrigger>
-			<DialogContent size="lg">
-				<DialogClose asChild>
-					<Button
-						variant="ghost"
-						size="icon"
-						className="absolute right-3 top-3"
-						aria-label="关闭缓存面板"
-					>
-						<X size={16} aria-hidden="true" />
-					</Button>
-				</DialogClose>
-				<DialogHeader className="pr-8">
+			<DialogContent size="lg" closeLabel="关闭缓存面板">
+				<DialogHeader>
 					<DialogTitle>数据缓存</DialogTitle>
 					<DialogDescription>
 						清除后，下次读取会重新查询。PAT、原始记录和日记会保留。
