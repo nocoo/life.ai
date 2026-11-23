@@ -108,7 +108,7 @@ test("GitHub settings save only the connection, and the selected timeline day lo
 		const merged = details.locator('[data-state="merged"]').first();
 		await expect(merged).toHaveCSS(
 			"color",
-			theme === "dark" ? "rgb(163, 113, 247)" : "rgb(130, 80, 223)",
+			theme === "dark" ? "rgb(188, 140, 255)" : "rgb(130, 80, 223)",
 		);
 		await page.keyboard.press("Escape");
 		await pulls.getByRole("button", { name: "查看详情", exact: true }).click();

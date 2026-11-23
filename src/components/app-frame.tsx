@@ -1,4 +1,12 @@
-import { ContentIsland, SidebarDrawer } from "@nocoo/basalt";
+import {
+	ContentIsland,
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+	SidebarProvider,
+} from "@nocoo/basalt";
 import { AppHeader, AppHeaderMenuButton, ProjectLinks } from "@nocoo/basalt/components/app-header";
 import { AppMain, AppShell, AppSkipLink } from "@nocoo/basalt/components/app-shell";
 import { Banner } from "@nocoo/basalt/components/banner";
@@ -113,23 +121,36 @@ export function AppFrame() {
 				</div>
 			)}
 			{isMobile !== false && (
-				<SidebarDrawer
-					id={drawerId}
-					open={mobileOpen}
-					onOpenChange={setMobileOpen}
-					returnFocusRef={menuButton}
-					title="导航菜单"
-					description="浏览 Life.ai 的主要页面"
-				>
-					<AppSidebar
-						ariaLabel="主导航抽屉"
-						variant="mobile"
-						enableShortcut={isMobile === true}
-						onNavigate={() => setMobileOpen(false)}
-						onDismiss={() => setMobileOpen(false)}
-						{...sidebarUserProps}
-					/>
-				</SidebarDrawer>
+				<Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+					<SheetContent
+						id={drawerId}
+						data-slot="sidebar-drawer"
+						side="left"
+						showCloseButton={false}
+						className="basalt-sidebar-drawer max-h-dvh w-[var(--basalt-size-sidebar-width)] max-w-[var(--basalt-size-sidebar-width)] border-r-0 bg-basalt-background p-0 sm:p-0"
+						onCloseAutoFocus={(event) => {
+							if (menuButton.current) {
+								event.preventDefault();
+								menuButton.current.focus();
+							}
+						}}
+					>
+						<SheetHeader className="sr-only">
+							<SheetTitle>导航菜单</SheetTitle>
+							<SheetDescription>浏览 Life.ai 的主要页面</SheetDescription>
+						</SheetHeader>
+						<SidebarProvider collapsed={false}>
+							<AppSidebar
+								ariaLabel="主导航抽屉"
+								variant="mobile"
+								enableShortcut={isMobile === true}
+								onNavigate={() => setMobileOpen(false)}
+								onDismiss={() => setMobileOpen(false)}
+								{...sidebarUserProps}
+							/>
+						</SidebarProvider>
+					</SheetContent>
+				</Sheet>
 			)}
 			<AppMain>
 				<AppHeader
