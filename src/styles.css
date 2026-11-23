@@ -592,10 +592,10 @@
 }
 .dark .github-state[data-state="merged"],
 .dark .github-state[data-state="issue-closed"] {
-	color: #a371f7;
+	color: #bc8cff;
 }
 .dark .github-state[data-state="closed"] {
-	color: #f85149;
+	color: #ff7b72;
 }
 
 .story-travel {
