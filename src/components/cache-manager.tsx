@@ -104,7 +104,7 @@ export function CacheManager({ day }: { day: string }) {
 						<RefreshCw size={16} aria-hidden="true" />
 					</Button>
 				</div>
-				{error ? <Banner variant="error" title="缓存操作失败" description={error} /> : null}
+				{error ? <Banner tone="danger" title="缓存操作失败" description={error} /> : null}
 				{status === "idle" || status === "loading" ? (
 					<p role="status" className="text-sm text-basalt-muted-foreground">
 						正在读取缓存…
@@ -120,7 +120,7 @@ export function CacheManager({ day }: { day: string }) {
 										<div className="flex flex-wrap items-center gap-2 text-sm font-medium">
 											<Icon size={16} aria-hidden="true" />
 											{CACHE_NAMES[entry.kind]}
-											<Badge variant="secondary">{entry.count} 条</Badge>
+											<Badge tone="neutral">{entry.count} 条</Badge>
 										</div>
 										<p className="text-xs text-basalt-muted-foreground">
 											{cacheUpdatedLabel(entry.updatedAt)}

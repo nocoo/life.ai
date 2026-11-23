@@ -104,7 +104,7 @@ function WorkoutEntry({
 						) : null}
 						{state.status === "error" ? (
 							<Banner
-								variant="error"
+								tone="danger"
 								title="运动路线暂时不可用"
 								description={state.error ?? undefined}
 								action={
@@ -144,7 +144,7 @@ function EcgEntry({ item }: { item: Extract<HealthTimelineItem, { kind: "ecg" }>
 			/>
 			{state.error ? (
 				<Banner
-					variant="error"
+					tone="danger"
 					title="波形暂时不可用"
 					description={state.error}
 					action={

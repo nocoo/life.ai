@@ -1,5 +1,5 @@
-import { LayerCard, StatStrip, Text } from "@nocoo/basalt";
-import { SkeletonLine } from "@nocoo/basalt/components/skeleton-line";
+import { LayerCard, StatCard, StatGrid, Text } from "@nocoo/basalt";
+import { Skeleton } from "@nocoo/basalt/components/skeleton";
 import type { ReactNode } from "react";
 import type { DayRecordKind } from "../viewmodels/day-records";
 import "../views/data-overview.css";
@@ -45,9 +45,9 @@ function SkeletonCard({
 function TextLines() {
 	return (
 		<div className="space-y-3" aria-hidden="true">
-			<SkeletonLine minWidth={100} className="h-4" />
-			<SkeletonLine minWidth={76} className="h-4" />
-			<SkeletonLine className="h-4" />
+			<Skeleton className="h-4" />
+			<Skeleton width="88%" className="h-4" />
+			<Skeleton width="65%" className="h-4" />
 		</div>
 	);
 }
@@ -60,10 +60,10 @@ export function FormSkeleton({ fields }: { fields: readonly string[] }) {
 					<Text as="p" size="sm">
 						{field}
 					</Text>
-					<SkeletonLine minWidth={100} className="h-9 rounded-md" />
+					<Skeleton className="h-9 rounded-md" />
 				</div>
 			))}
-			<SkeletonLine minWidth={100} className="h-9 max-w-28 rounded-md" />
+			<Skeleton className="h-9 max-w-28 rounded-md" />
 		</div>
 	);
 }
@@ -75,10 +75,10 @@ export function PlaceListSkeleton() {
 				<LayerCard.Well key={slot}>
 					<div className="flex items-start justify-between gap-4" aria-hidden="true">
 						<div className="min-w-0 flex-1 space-y-3">
-							<SkeletonLine className="h-5 max-w-32" />
-							<SkeletonLine minWidth={100} className="h-4 max-w-64" />
+							<Skeleton width="65%" className="h-5 max-w-32" />
+							<Skeleton className="h-4 max-w-64" />
 						</div>
-						<SkeletonLine minWidth={100} className="h-8 max-w-24" />
+						<Skeleton className="h-8 max-w-24" />
 					</div>
 				</LayerCard.Well>
 			))}
@@ -89,7 +89,7 @@ export function PlaceListSkeleton() {
 export function RoutineSkeleton() {
 	return (
 		<LoadingRegion label="正在读取惯常作息" className="space-y-4">
-			<SkeletonLine minWidth={100} className="h-5" />
+			<Skeleton className="h-5" />
 			<FormSkeleton fields={["入睡时间", "起床时间", "时区"]} />
 		</LoadingRegion>
 	);
@@ -112,7 +112,7 @@ export function AiSettingsSkeleton() {
 	return (
 		<LoadingRegion label="正在读取 AI 设置" className="max-w-xl space-y-4">
 			<FormSkeleton fields={["提供方", "模型"]} />
-			<SkeletonLine minWidth={100} className="h-4" />
+			<Skeleton className="h-4" />
 		</LoadingRegion>
 	);
 }
@@ -129,7 +129,7 @@ export function DaySourcesSkeleton() {
 				<Text as="p" size="sm" tone="muted">
 					公开数据，无须账号或密钥。
 				</Text>
-				<SkeletonLine minWidth={100} className="h-9 max-w-28 rounded-md" />
+				<Skeleton className="h-9 max-w-28 rounded-md" />
 			</SkeletonCard>
 			<SkeletonCard title="GitHub">
 				<TextLines />
@@ -146,10 +146,10 @@ export function ConnectListSkeleton() {
 				<LayerCard.Well key={slot}>
 					<div className="space-y-4" aria-hidden="true">
 						<div className="flex justify-between gap-4">
-							<SkeletonLine className="h-5 max-w-48" />
-							<SkeletonLine minWidth={100} className="h-8 max-w-16" />
+							<Skeleton width="65%" className="h-5 max-w-48" />
+							<Skeleton className="h-8 max-w-16" />
 						</div>
-						<SkeletonLine className="h-4 max-w-64" />
+						<Skeleton width="65%" className="h-4 max-w-64" />
 						<div className="grid grid-cols-2 gap-4">
 							<TextLines />
 							<TextLines />
@@ -174,7 +174,7 @@ function TableSkeleton({ columns, minWidth }: { columns: number; minWidth: strin
 						style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
 					>
 						{TABLE_COLUMNS.slice(0, columns).map((column) => (
-							<SkeletonLine key={column} minWidth={100} className="h-4" />
+							<Skeleton key={column} className="h-4" />
 						))}
 					</div>
 				))}
@@ -188,12 +188,12 @@ export function RecordsSkeleton({ kind }: { kind: DayRecordKind }) {
 	return (
 		<LoadingRegion label={`正在加载${title}`}>
 			<SkeletonCard title={title}>
-				<SkeletonLine className="h-4 max-w-80" />
+				<Skeleton width="65%" className="h-4 max-w-80" />
 				<TableSkeleton
 					columns={kind === "locations" ? 11 : kind === "finance" ? 10 : 6}
 					minWidth={kind === "locations" ? "68rem" : "48rem"}
 				/>
-				<SkeletonLine minWidth={100} className="h-8 max-w-48" />
+				<Skeleton className="h-8 max-w-48" />
 			</SkeletonCard>
 		</LoadingRegion>
 	);
@@ -203,22 +203,20 @@ export function DataOverviewSkeleton() {
 	return (
 		<LoadingRegion label="正在读取数据概览" className="space-y-6">
 			<div className="space-y-3">
-				<StatStrip
-					aria-busy="true"
-					items={["覆盖天数", "原始记录", "D1 数据行", "JSON 正文"].map((label) => ({
-						label,
-						value: <SkeletonLine className="my-0.5 h-6 bg-basalt-muted-foreground/15" />,
-					}))}
-				/>
-				<SkeletonLine className="h-5 max-w-xl" />
+				<StatGrid>
+					{["覆盖天数", "原始记录", "D1 数据行", "JSON 正文"].map((label) => (
+						<StatCard key={label} label={label} loading />
+					))}
+				</StatGrid>
+				<Skeleton width="65%" className="h-5 max-w-xl" />
 			</div>
 			<SkeletonCard title="按月记录量">
-				<SkeletonLine minWidth={100} className="h-5" />
-				<SkeletonLine minWidth={100} className="data-overview-history-plot rounded-md" />
-				<SkeletonLine className="h-4 max-w-80" />
+				<Skeleton className="h-5" />
+				<Skeleton className="data-overview-history-plot rounded-md" />
+				<Skeleton width="65%" className="h-4 max-w-80" />
 			</SkeletonCard>
 			<SkeletonCard title="来源对照" className="data-overview-comparison-layout">
-				<SkeletonLine minWidth={100} className="data-overview-plot rounded-md" />
+				<Skeleton className="data-overview-plot rounded-md" />
 				<TableSkeleton columns={5} minWidth="520px" />
 			</SkeletonCard>
 		</LoadingRegion>
@@ -230,7 +228,7 @@ export function DiarySkeleton() {
 		<LoadingRegion label="正在读取 AI 总结" className="space-y-5">
 			<TextLines />
 			<TextLines />
-			<SkeletonLine minWidth={100} className="h-8 max-w-28 rounded-md" />
+			<Skeleton className="h-8 max-w-28 rounded-md" />
 		</LoadingRegion>
 	);
 }
@@ -239,17 +237,17 @@ export function WeatherSkeleton() {
 	return (
 		<LoadingRegion label="正在读取天气" className="space-y-5">
 			<div className="flex items-center gap-3" aria-hidden="true">
-				<SkeletonLine minWidth={100} className="size-8 max-w-8 rounded-full" />
+				<Skeleton variant="circle" />
 				<div className="flex-1 space-y-2">
-					<SkeletonLine className="h-6" />
-					<SkeletonLine className="h-4" />
+					<Skeleton width="65%" className="h-6" />
+					<Skeleton width="65%" className="h-4" />
 				</div>
 			</div>
 			<div className="grid grid-cols-2 gap-4">
 				<TextLines />
 				<TextLines />
 			</div>
-			<SkeletonLine className="h-3" />
+			<Skeleton width="65%" className="h-3" />
 		</LoadingRegion>
 	);
 }
@@ -258,10 +256,10 @@ export function SolarSkeleton() {
 	return (
 		<LoadingRegion label="正在读取日出日落" className="space-y-3">
 			<div className="grid grid-cols-2 gap-6">
-				<SkeletonLine minWidth={100} className="h-5" />
-				<SkeletonLine minWidth={100} className="h-5" />
+				<Skeleton className="h-5" />
+				<Skeleton className="h-5" />
 			</div>
-			<SkeletonLine className="h-4" />
+			<Skeleton width="65%" className="h-4" />
 		</LoadingRegion>
 	);
 }
@@ -269,7 +267,7 @@ export function SolarSkeleton() {
 export function TargetSkeleton() {
 	return (
 		<LoadingRegion label="正在确认数据环境" className="py-1">
-			<SkeletonLine minWidth={100} className="h-3 max-w-64" />
+			<Skeleton className="h-3 max-w-64" />
 		</LoadingRegion>
 	);
 }
@@ -278,7 +276,7 @@ export function MapSkeleton() {
 	return (
 		<LoadingRegion label="正在读取运动路线" className="story-map story-card">
 			<SkeletonCard title="运动路线">
-				<SkeletonLine minWidth={100} className="story-map-canvas story-map-compact rounded-md" />
+				<Skeleton className="story-map-canvas story-map-compact rounded-md" />
 			</SkeletonCard>
 		</LoadingRegion>
 	);
@@ -287,11 +285,11 @@ export function MapSkeleton() {
 export function EcgSkeleton() {
 	return (
 		<LoadingRegion label="正在读取心电波形" className="health-story-ecg-wrap">
-			<SkeletonLine minWidth={100} className="health-story-ecg rounded-md" />
+			<Skeleton className="health-story-ecg rounded-md" />
 			<div className="health-story-ecg-nav" aria-hidden="true">
-				<SkeletonLine minWidth={100} className="h-8 max-w-20 rounded-md" />
-				<SkeletonLine className="h-4 max-w-32" />
-				<SkeletonLine minWidth={100} className="h-8 max-w-20 rounded-md" />
+				<Skeleton className="h-8 max-w-20 rounded-md" />
+				<Skeleton width="65%" className="h-4 max-w-32" />
+				<Skeleton className="h-8 max-w-20 rounded-md" />
 			</div>
 		</LoadingRegion>
 	);
@@ -304,8 +302,8 @@ export function TimelineSkeleton() {
 				<div className="story-ribbon" aria-hidden="true">
 					{["night", "morning", "afternoon", "evening"].map((period) => (
 						<div key={period} className="space-y-3">
-							<SkeletonLine minWidth={100} className="h-7" />
-							<SkeletonLine className="h-4" />
+							<Skeleton className="h-7" />
+							<Skeleton width="65%" className="h-4" />
 						</div>
 					))}
 				</div>
@@ -313,17 +311,17 @@ export function TimelineSkeleton() {
 					{["first", "second", "third"].map((hour) => (
 						<div className="story-hour-block" key={hour}>
 							<div className="story-hour-axis">
-								<SkeletonLine minWidth={100} className="h-6 max-w-10" />
+								<Skeleton className="h-6 max-w-10" />
 							</div>
 							<div className="story-lane story-lane-left">
 								<LayerCard className="min-h-40 space-y-4">
-									<SkeletonLine className="h-5" />
+									<Skeleton width="65%" className="h-5" />
 									<TextLines />
 								</LayerCard>
 							</div>
 							<div className="story-lane story-lane-right">
 								<LayerCard className="min-h-32 space-y-4">
-									<SkeletonLine className="h-5" />
+									<Skeleton width="65%" className="h-5" />
 									<TextLines />
 								</LayerCard>
 							</div>
@@ -385,11 +383,9 @@ export function ImportPageSkeleton({
 					provider === "footprint" ? "选择 GPX" : provider === "pixiu" ? "选择 CSV" : "选择导出文件"
 				}
 			>
-				<SkeletonLine minWidth={100} className="h-44 rounded-md" />
-				{provider === "apple-health" ? (
-					<SkeletonLine minWidth={100} className="h-20 rounded-md" />
-				) : null}
-				<SkeletonLine className="h-5" />
+				<Skeleton className="h-44 rounded-md" />
+				{provider === "apple-health" ? <Skeleton className="h-20 rounded-md" /> : null}
+				<Skeleton width="65%" className="h-5" />
 			</SkeletonCard>
 			<div className="min-w-0 space-y-6">
 				{provider === "pixiu" ? (
@@ -412,11 +408,11 @@ export function JournalImportSkeleton() {
 	return (
 		<LoadingRegion label="正在加载日记导入" className="space-y-6">
 			<SkeletonCard title="来源与文件">
-				<SkeletonLine minWidth={100} className="h-44 rounded-md" />
-				<SkeletonLine minWidth={100} className="h-9 max-w-64 rounded-md" />
+				<Skeleton className="h-44 rounded-md" />
+				<Skeleton className="h-9 max-w-64 rounded-md" />
 			</SkeletonCard>
 			<SkeletonCard title="进度">
-				<SkeletonLine minWidth={100} className="h-16 rounded-md" />
+				<Skeleton className="h-16 rounded-md" />
 			</SkeletonCard>
 		</LoadingRegion>
 	);

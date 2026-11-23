@@ -23,7 +23,7 @@ export function DaySourcesPage() {
 			/>
 			{state.error ? (
 				<Banner
-					variant="error"
+					tone="danger"
 					title="数据源操作失败"
 					description={state.error}
 					action={
@@ -35,7 +35,7 @@ export function DaySourcesPage() {
 			) : null}
 			{state.connection ? (
 				<Banner
-					variant={state.connection.success ? "default" : "error"}
+					tone={state.connection.success ? "info" : "danger"}
 					title={`${DAY_SOURCE_NAMES[state.connection.provider]} ${state.connection.success ? "连接成功" : "读取失败"}`}
 					description={
 						state.connection.success
@@ -64,7 +64,7 @@ export function DaySourcesPage() {
 											{DAY_SOURCE_NAMES[provider]}
 										</Text>
 									</div>
-									<Badge variant={enabled ? "success" : "secondary"}>
+									<Badge tone={enabled ? "success" : "neutral"}>
 										{enabled ? "已启用" : "未启用"}
 									</Badge>
 								</LayerCard.Header>

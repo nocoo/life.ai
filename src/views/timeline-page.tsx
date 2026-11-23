@@ -233,7 +233,7 @@ export function TimelinePage() {
 			) : null}
 			{status === "ready" && daySourcesError ? (
 				<Banner
-					variant="alert"
+					tone="warning"
 					title="部分数据源暂未更新"
 					description={daySourcesError}
 					action={
@@ -245,7 +245,7 @@ export function TimelinePage() {
 			) : null}
 			{status === "error" ? (
 				<Banner
-					variant="error"
+					tone="danger"
 					title="无法加载这一天"
 					description={error ?? "请重试。"}
 					action={
@@ -291,7 +291,7 @@ export function TimelinePage() {
 										<RecordsSkeleton kind={kind} />
 									) : kind === "records" && recordsStatus === "error" ? (
 										<Banner
-											variant="error"
+											tone="danger"
 											title="完整记录暂时不可用"
 											description={recordsError ?? undefined}
 											action={

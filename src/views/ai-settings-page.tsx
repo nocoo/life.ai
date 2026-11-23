@@ -47,7 +47,7 @@ export function AiSettingsPage() {
 			/>
 			{status === "error" ? (
 				<Banner
-					variant="error"
+					tone="danger"
 					title={expired ? "会话已过期" : "无法读取设置"}
 					description={expired ? "请重新登录后再试。" : (error ?? "请重试。")}
 					action={
@@ -62,7 +62,7 @@ export function AiSettingsPage() {
 				/>
 			) : null}
 			{error && status !== "error" ? (
-				<Banner variant="error" title="保存失败" description={error} />
+				<Banner tone="danger" title="保存失败" description={error} />
 			) : null}
 			<LayerCard>
 				<LayerCard.Header>
@@ -210,11 +210,9 @@ export function AiSettingsPage() {
 								</Button>
 							</div>
 							{testResult?.success ? (
-								<Banner variant="default" title="连接成功" description={testResult.response} />
+								<Banner tone="info" title="连接成功" description={testResult.response} />
 							) : null}
-							{testError ? (
-								<Banner variant="error" title="连接失败" description={testError} />
-							) : null}
+							{testError ? <Banner tone="danger" title="连接失败" description={testError} /> : null}
 						</>
 					) : null}
 				</LayerCard.Body>

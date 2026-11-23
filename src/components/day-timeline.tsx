@@ -285,7 +285,7 @@ function HourRow({
 		>
 			<div className="story-hour-axis">
 				<span className="story-clock">{slot.label}</span>
-				{view.stateLabel ? <Badge variant="warning">{view.stateLabel}</Badge> : null}
+				{view.stateLabel ? <Badge tone="warning">{view.stateLabel}</Badge> : null}
 			</div>
 			<div className="story-hour-content">
 				{row.continuing.length > 0 ? (

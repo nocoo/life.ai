@@ -37,7 +37,7 @@ function ConnectRow({
 						<Text as="p" bold>
 							{connect.name}
 						</Text>
-						<Badge variant={revoked ? "secondary" : "success"}>{revoked ? "已撤销" : "有效"}</Badge>
+						<Badge tone={revoked ? "neutral" : "success"}>{revoked ? "已撤销" : "有效"}</Badge>
 					</div>
 					<Text as="p" size="sm" tone="muted">
 						前缀 {connect.prefix} · 记录 {connect.recordCount}
@@ -103,7 +103,7 @@ export function ConnectPage() {
 					</LayerCard.Header>
 					<LayerCard.Body className="space-y-3">
 						<Banner
-							variant="alert"
+							tone="warning"
 							title="请复制后自行保管"
 							description="关闭后无法再次查看明文。"
 						/>
@@ -159,7 +159,7 @@ export function ConnectPage() {
 			</LayerCard>
 			{status === "error" ? (
 				<Banner
-					variant="error"
+					tone="danger"
 					title="无法加载 Connect"
 					description={error ?? "请重试。"}
 					action={
@@ -168,7 +168,7 @@ export function ConnectPage() {
 				/>
 			) : null}
 			{error && status !== "error" ? (
-				<Banner variant="error" title="操作失败" description={error} />
+				<Banner tone="danger" title="操作失败" description={error} />
 			) : null}
 			<LayerCard>
 				<LayerCard.Header>

@@ -5,7 +5,8 @@ import {
 	CollapsibleTrigger,
 	DescriptionList,
 	LayerCard,
-	StatStrip,
+	StatCard,
+	StatGrid,
 	Text,
 } from "@nocoo/basalt";
 import { Banner } from "@nocoo/basalt/components/banner";
@@ -126,7 +127,7 @@ export function FootprintPage() {
 								}}
 							/>
 							{rejection ? (
-								<Banner variant="alert" title="文件未接受" description={rejection} />
+								<Banner tone="warning" title="文件未接受" description={rejection} />
 							) : null}
 							<UploadQueue
 								label="Footprint 导入进度"
@@ -157,7 +158,7 @@ export function FootprintPage() {
 					</LayerCard>
 					{status === "error" && error ? (
 						<Banner
-							variant="error"
+							tone="danger"
 							title={preview ? "提交失败" : "解析失败"}
 							description={error}
 							action={<Banner.Action onClick={() => void state.retry()}>重试</Banner.Action>}
@@ -165,7 +166,7 @@ export function FootprintPage() {
 					) : null}
 					{status === "cancelled" ? (
 						<Banner
-							variant="secondary"
+							tone="neutral"
 							title="已取消"
 							description="未完成的解析或提交已停止。已提交的日期会保留，可以重新导入。"
 						/>
@@ -184,13 +185,11 @@ export function FootprintPage() {
 								</div>
 							</LayerCard.Header>
 							<LayerCard.Body className="space-y-5">
-								<StatStrip
-									items={[
-										{ label: "UTC 日期", value: preview.days.length.toLocaleString() },
-										{ label: "位置点", value: preview.pointCount.toLocaleString() },
-										{ label: "整理后大小", value: formatByteSize(preview.payloadBytes) },
-									]}
-								/>
+								<StatGrid columns={3}>
+									<StatCard label="UTC 日期" value={preview.days.length.toLocaleString()} />
+									<StatCard label="位置点" value={preview.pointCount.toLocaleString()} />
+									<StatCard label="整理后大小" value={formatByteSize(preview.payloadBytes)} />
+								</StatGrid>
 								<Collapsible defaultOpen={preview.days.length <= 12}>
 									<CollapsibleTrigger>查看 {preview.days.length} 个 UTC 日</CollapsibleTrigger>
 									<CollapsibleContent unstyled>
@@ -226,7 +225,7 @@ export function FootprintPage() {
 								) : null}
 								{status === "success" ? (
 									<Banner
-										variant="default"
+										tone="info"
 										title="导入完成"
 										description="本次文件中的日期已更新，可以到每日实录中查看。"
 									/>
@@ -265,7 +264,7 @@ export function FootprintPage() {
 						{targetStatus === "error" ? (
 							<LayerCard.Body>
 								<Banner
-									variant="secondary"
+									tone="neutral"
 									title="暂时无法确认数据环境"
 									description={targetError ?? undefined}
 									action={

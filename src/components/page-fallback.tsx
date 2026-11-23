@@ -1,6 +1,6 @@
 import { LayerCard } from "@nocoo/basalt/components/layer-card";
 import { PageHeader } from "@nocoo/basalt/components/page-header";
-import { SkeletonLine } from "@nocoo/basalt/components/skeleton-line";
+import { Skeleton } from "@nocoo/basalt/components/skeleton";
 import { useLocation } from "react-router";
 import { routeMeta } from "./navigation";
 import {
@@ -22,16 +22,16 @@ export function PageFallback() {
 			<div className="story-page">
 				<PageHeader
 					title="每日实录"
-					description={<SkeletonLine className="h-4 max-w-40" />}
+					description={<Skeleton width="65%" className="h-4 max-w-40" />}
 					filters={
 						<div className="flex flex-wrap gap-3" aria-hidden="true">
 							{["date", "source", "radius", "map"].map((control) => (
-								<SkeletonLine key={control} minWidth={100} className="h-9 max-w-48 rounded-md" />
+								<Skeleton key={control} className="h-9 max-w-48 rounded-md" />
 							))}
 						</div>
 					}
 				/>
-				<SkeletonLine minWidth={100} className="mb-6 h-9 max-w-80 rounded-md" />
+				<Skeleton className="mb-6 h-9 max-w-80 rounded-md" />
 				<TimelineSkeleton />
 			</div>
 		);
@@ -43,13 +43,13 @@ export function PageFallback() {
 				description={meta.description}
 				actions={
 					pathname.startsWith("/data") ? (
-						<SkeletonLine minWidth={100} className="h-9 w-36 rounded-md" style={{ width: 144 }} />
+						<Skeleton width={144} className="h-9 rounded-md" />
 					) : undefined
 				}
 			/>
 			{pathname === "/data" ? (
 				<>
-					<SkeletonLine className="h-5 max-w-64" />
+					<Skeleton width="65%" className="h-5 max-w-64" />
 					<DataOverviewSkeleton />
 				</>
 			) : null}

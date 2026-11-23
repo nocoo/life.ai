@@ -2,7 +2,8 @@ import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
-	StatStrip,
+	StatCard,
+	StatGrid,
 	Text,
 } from "@nocoo/basalt";
 import {
@@ -36,13 +37,11 @@ export function HealthProviderOverview({ health }: { health: HealthProviderStats
 		.map((row) => ({ ...row, name: healthDimensionLabel(row.id) }));
 	return (
 		<section className="space-y-5" aria-label="健康维度与附件完整性">
-			<StatStrip
-				items={[
-					{ label: "健康维度", value: health.dimensions.length },
-					{ label: "锻炼路线", value: routes?.fileCount ?? 0 },
-					{ label: "心电图", value: ecgs?.fileCount ?? 0 },
-				]}
-			/>
+			<StatGrid columns={3}>
+				<StatCard label="健康维度" value={health.dimensions.length} />
+				<StatCard label="锻炼路线" value={routes?.fileCount ?? 0} />
+				<StatCard label="心电图" value={ecgs?.fileCount ?? 0} />
+			</StatGrid>
 			{chart.length ? (
 				<ChartFrame ariaLabel="健康指标覆盖天数" size="md">
 					<BarChart

@@ -5,7 +5,8 @@ import {
 	CollapsibleTrigger,
 	DescriptionList,
 	LayerCard,
-	StatStrip,
+	StatCard,
+	StatGrid,
 	Text,
 } from "@nocoo/basalt";
 import { Banner } from "@nocoo/basalt/components/banner";
@@ -166,7 +167,7 @@ export function AppleHealthPage() {
 							</div>
 
 							{rejection ? (
-								<Banner variant="alert" title="文件提示" description={rejection} />
+								<Banner tone="warning" title="文件提示" description={rejection} />
 							) : null}
 
 							<UploadQueue
@@ -211,7 +212,7 @@ export function AppleHealthPage() {
 
 					{status === "error" && error ? (
 						<Banner
-							variant="error"
+							tone="danger"
 							title={preview ? "提交失败" : "解析失败"}
 							description={error}
 							action={<Banner.Action onClick={() => void state.retry()}>重试</Banner.Action>}
@@ -220,7 +221,7 @@ export function AppleHealthPage() {
 
 					{status === "cancelled" ? (
 						<Banner
-							variant="secondary"
+							tone="neutral"
 							title="已取消"
 							description="导入已停止。已提交的完整日期会保留，重新导入同一份文件即可继续完成。"
 						/>
@@ -241,27 +242,19 @@ export function AppleHealthPage() {
 							</LayerCard.Header>
 
 							<LayerCard.Body className="space-y-5">
-								<StatStrip
-									items={[
-										{ label: "UTC 日包", value: `${preview.dayCount.toLocaleString()} 天` },
-										{
-											label: "健康记录",
-											value: `${preview.recordCount.toLocaleString()} 条`,
-										},
-										{
-											label: "运动轨迹点",
-											value: `${preview.routePointCount.toLocaleString()} 点`,
-										},
-										{
-											label: "心电采样",
-											value: `${preview.ecgSampleCount.toLocaleString()} 点`,
-										},
-										{
-											label: "紧凑包大小",
-											value: formatByteSize(preview.payloadBytes),
-										},
-									]}
-								/>
+								<StatGrid>
+									<StatCard label="UTC 日包" value={`${preview.dayCount.toLocaleString()} 天`} />
+									<StatCard label="健康记录" value={`${preview.recordCount.toLocaleString()} 条`} />
+									<StatCard
+										label="运动轨迹点"
+										value={`${preview.routePointCount.toLocaleString()} 点`}
+									/>
+									<StatCard
+										label="心电采样"
+										value={`${preview.ecgSampleCount.toLocaleString()} 点`}
+									/>
+									<StatCard label="紧凑包大小" value={formatByteSize(preview.payloadBytes)} />
+								</StatGrid>
 
 								<div className="space-y-2">
 									<Text as="p" size="sm" tone="muted">
@@ -304,7 +297,7 @@ export function AppleHealthPage() {
 
 								{status === "success" ? (
 									<Banner
-										variant="default"
+										tone="info"
 										title="导入完成"
 										description="本次健康数据已完整写入。涉及的 UTC 日期维度已更新，可以到每日实录中查看。"
 									/>
@@ -345,7 +338,7 @@ export function AppleHealthPage() {
 						{targetStatus === "error" ? (
 							<LayerCard.Body>
 								<Banner
-									variant="secondary"
+									tone="neutral"
 									title="暂时无法确认数据环境"
 									description={targetError ?? undefined}
 									action={

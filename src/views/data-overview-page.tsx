@@ -4,7 +4,8 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 	DescriptionList,
-	StatStrip,
+	StatCard,
+	StatGrid,
 	Text,
 } from "@nocoo/basalt";
 import { Banner } from "@nocoo/basalt/components/banner";
@@ -451,7 +452,7 @@ export function DataOverviewPage() {
 			</div>
 			{status === "error" ? (
 				<Banner
-					variant="error"
+					tone="danger"
 					title={expired ? "会话已过期" : "无法读取概览"}
 					description={expired ? "请重新登录后再试。" : (error ?? "请重试。")}
 					action={
@@ -469,31 +470,33 @@ export function DataOverviewPage() {
 			{overview ? (
 				<>
 					<div className="space-y-3">
-						<StatStrip
-							aria-label="全部来源的数据规模"
-							items={[
-								{
-									label: "覆盖天数",
-									value: formatOverviewMetric(summary.coverageDays, "coverageDays"),
-								},
-								{
-									label: "原始记录",
-									value: formatOverviewMetric(summary.recordCount, "recordCount"),
-								},
-								{
-									label: "D1 数据行",
-									value: formatOverviewMetric(summary.dataRows, "dataRows"),
-								},
-								{
-									label: "JSON 正文",
-									value: (
-										<span title={`${summary.payloadBytes.toLocaleString("zh-CN")} 字节`}>
-											{formatOverviewMetric(summary.payloadBytes, "payloadBytes")}
-										</span>
-									),
-								},
-							]}
-						/>
+						<StatGrid>
+							<StatCard
+								label="覆盖天数"
+								value={formatOverviewMetric(summary.coverageDays, "coverageDays")}
+							/>
+							<StatCard
+								label="原始记录"
+								value={formatOverviewMetric(summary.recordCount, "recordCount")}
+							/>
+							<StatCard
+								label="D1 数据行"
+								value={formatOverviewMetric(summary.dataRows, "dataRows")}
+							/>
+							<StatCard
+								label="JSON 正文"
+								ariaLabel={`JSON 正文 ${formatOverviewMetric(summary.payloadBytes, "payloadBytes")}`}
+								status={
+									<p
+										data-slot="stat-card-value"
+										title={`${summary.payloadBytes.toLocaleString("zh-CN")} 字节`}
+										className="font-basalt-display text-basalt-3xl leading-basalt-tight font-semibold tabular-nums text-basalt-foreground"
+									>
+										{formatOverviewMetric(summary.payloadBytes, "payloadBytes")}
+									</p>
+								}
+							/>
+						</StatGrid>
 						<Text as="p" size="sm" tone="muted">
 							已收录 {summary.importedProviders.length}{" "}
 							个来源。总体覆盖按来源日期标签去重；貔貅使用北京时间记账日。

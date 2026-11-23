@@ -79,7 +79,7 @@ export function AppFrame() {
 			<div className="flex h-screen items-center justify-center bg-basalt-background p-6">
 				<LayerCard className="max-w-md">
 					<Banner
-						variant="error"
+						tone="danger"
 						title={expired ? "会话已过期" : "无法读取会话"}
 						description={expired ? "请重新登录后再打开编年史。" : (error ?? "请重试。")}
 						action={

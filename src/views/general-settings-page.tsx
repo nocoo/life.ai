@@ -51,7 +51,7 @@ export function GeneralSettingsPage() {
 			/>
 			{status === "error" ? (
 				<Banner
-					variant="error"
+					tone="danger"
 					title={expired ? "会话已过期" : "无法读取设置"}
 					description={expired ? "请重新登录后再试。" : (error ?? "请重试。")}
 					action={
@@ -66,9 +66,9 @@ export function GeneralSettingsPage() {
 				/>
 			) : null}
 			{error && status !== "error" ? (
-				<Banner variant="error" title="保存失败" description={error} />
+				<Banner tone="danger" title="保存失败" description={error} />
 			) : null}
-			{message ? <Banner variant="default" title={message} /> : null}
+			{message ? <Banner tone="info" title={message} /> : null}
 			<div className="general-settings-layout">
 				<LayerCard>
 					<LayerCard.Header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2">

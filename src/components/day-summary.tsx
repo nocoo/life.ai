@@ -94,7 +94,7 @@ export function DaySummaryCard({ query }: { query: DaySummaryQuery }) {
 					<>
 						{status === "error" ? (
 							<Banner
-								variant="error"
+								tone="danger"
 								title={expired ? "会话已过期" : "无法读取摘要"}
 								description={expired ? "请重新登录后再试。" : (error ?? "请重试。")}
 								action={
@@ -109,11 +109,11 @@ export function DaySummaryCard({ query }: { query: DaySummaryQuery }) {
 							/>
 						) : null}
 						{error && status !== "error" ? (
-							<Banner variant="error" title="生成失败" description={error} />
+							<Banner tone="danger" title="生成失败" description={error} />
 						) : null}
 						{result?.stale && summary ? (
 							<Banner
-								variant="alert"
+								tone="warning"
 								title="摘要可能过时"
 								description="当天记录、通用设置或日记写法已更新。可以重新生成，失败时会保留上一份摘要。"
 							/>

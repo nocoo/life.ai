@@ -1,4 +1,4 @@
-import { Badge, Button, DescriptionList, LayerCard, StatStrip, Text } from "@nocoo/basalt";
+import { Badge, Button, DescriptionList, LayerCard, StatCard, StatGrid, Text } from "@nocoo/basalt";
 import { Banner } from "@nocoo/basalt/components/banner";
 import { FileDropzone } from "@nocoo/basalt/components/file-dropzone";
 import { PageHeader } from "@nocoo/basalt/components/page-header";
@@ -98,10 +98,10 @@ export function PixiuPage() {
 							/>
 						</LayerCard.Body>
 					</LayerCard>
-					{error ? <Banner variant="error" title="导入未完成" description={error} /> : null}
+					{error ? <Banner tone="danger" title="导入未完成" description={error} /> : null}
 					{status === "cancelled" ? (
 						<Banner
-							variant="secondary"
+							tone="neutral"
 							title="已取消"
 							description="已提交的日期会保留，可以重新导入同一批文件继续完成。"
 						/>
@@ -119,14 +119,12 @@ export function PixiuPage() {
 								</div>
 							</LayerCard.Header>
 							<LayerCard.Body className="space-y-5">
-								<StatStrip
-									items={[
-										{ label: "记账天数", value: plan.days.length.toLocaleString() },
-										{ label: "原始记录", value: plan.recordCount.toLocaleString() },
-										{ label: "保存行数", value: plan.days.length.toLocaleString() },
-										{ label: "整理后大小", value: formatByteSize(plan.payloadBytes) },
-									]}
-								/>
+								<StatGrid>
+									<StatCard label="记账天数" value={plan.days.length.toLocaleString()} />
+									<StatCard label="原始记录" value={plan.recordCount.toLocaleString()} />
+									<StatCard label="保存行数" value={plan.days.length.toLocaleString()} />
+									<StatCard label="整理后大小" value={formatByteSize(plan.payloadBytes)} />
+								</StatGrid>
 								<Text as="p" size="sm" tone="muted">
 									完整保留分类、类型、金额、币种、账户、标签和备注。同一天以本次导入为准。
 								</Text>
@@ -139,7 +137,7 @@ export function PixiuPage() {
 								) : null}
 								{status === "success" ? (
 									<Banner
-										variant="default"
+										tone="info"
 										title="导入完成"
 										description="账目已汇入每日实录的全天区域，累计统计可在数据概览查看。"
 									/>
@@ -203,7 +201,7 @@ export function PixiuPage() {
 						) : targetError ? (
 							<LayerCard.Body>
 								<Banner
-									variant="error"
+									tone="danger"
 									title="无法确认数据环境"
 									description={targetError}
 									action={

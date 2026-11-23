@@ -137,7 +137,7 @@ export function DayContextCard({
 					) : null}
 					{context?.weatherError || context?.sunError ? (
 						<Banner
-							variant="secondary"
+							tone="neutral"
 							title="部分公共资料暂未取得"
 							description={context.weatherError ?? context.sunError ?? undefined}
 							action={

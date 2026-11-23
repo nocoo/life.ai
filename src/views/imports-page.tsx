@@ -90,7 +90,7 @@ export function ImportsPage() {
 								);
 						}}
 					/>
-					{rejection ? <Banner variant="alert" title="文件未接受" description={rejection} /> : null}
+					{rejection ? <Banner tone="warning" title="文件未接受" description={rejection} /> : null}
 					{fileName ? (
 						<Field label="待导入文件" hint={meta.hint}>
 							<Text as="p">
@@ -133,7 +133,7 @@ export function ImportsPage() {
 				<LayerCard.Body className="space-y-4">
 					{status === "error" && error ? (
 						<Banner
-							variant="error"
+							tone="danger"
 							title="导入失败"
 							description={error}
 							action={
@@ -145,13 +145,13 @@ export function ImportsPage() {
 					) : null}
 					{status === "success" ? (
 						<Banner
-							variant="default"
+							tone="info"
 							title="导入完成"
 							description={`已处理 ${processed} 条，接受 ${accepted} 条。再次导入同一文件会更新已有记录。`}
 						/>
 					) : null}
 					{status === "cancelled" ? (
-						<Banner variant="secondary" title="已取消" description="未完成的导入已停止。" />
+						<Banner tone="neutral" title="已取消" description="未完成的导入已停止。" />
 					) : null}
 					<UploadQueue
 						label="导入队列"
