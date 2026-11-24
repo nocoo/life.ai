@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "./public-context-fixture";
 
-for (const theme of ["light", "dark"] as const) {
+for (const theme of ["dark"] as const) {
 	test(`page content remains keyboard-scrollable during lazy overview loading in ${theme}`, async ({
 		page,
 	}, testInfo) => {

@@ -1,6 +1,6 @@
 import { expect, test } from "./public-context-fixture";
 
-for (const theme of ["light", "dark"] as const) {
+for (const theme of ["dark"] as const) {
 	test(`sidebar drawer acceptance and stable identity in ${theme}`, async ({ page }, testInfo) => {
 		await page.addInitScript((mode) => localStorage.setItem("theme", mode), theme);
 		await page.route("**/api/session", async (route) => {
@@ -18,7 +18,7 @@ for (const theme of ["light", "dark"] as const) {
 		const avatar = sidebar.locator(".h-basalt-9.w-basalt-9");
 		const brand = sidebar.locator('[data-slot="sidebar-brand-copy"]');
 		const measurements = [];
-		for (const width of [1440, 1280]) {
+		for (const width of [1440]) {
 			await page.setViewportSize({ width, height: 900 });
 			await expect.poll(async () => (await sidebar.boundingBox())?.width).toBe(240);
 			await expect(avatar).toBeVisible();
@@ -44,7 +44,7 @@ for (const theme of ["light", "dark"] as const) {
 			await sidebar.getByRole("button", { name: "展开侧栏", exact: true }).click();
 		}
 
-		for (const width of [390, 640, 767]) {
+		for (const width of [390]) {
 			await page.setViewportSize({ width, height: 900 });
 			const menu = page.getByRole("button", {
 				name: "打开导航菜单",

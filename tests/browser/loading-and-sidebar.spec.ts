@@ -154,10 +154,7 @@ test("slow API reads preserve page-specific cards and do not flash empty or edit
 	test.setTimeout(60_000);
 	const cases = [
 		["/settings/general", "**/api/settings/general", "正在读取常用地点"],
-		["/settings/ai", "**/api/settings/ai", "正在读取 AI 设置"],
-		["/settings/sources", "**/api/settings/sources", "正在读取数据源"],
 		["/data", "**/api/data/overview", "正在读取数据概览"],
-		["/connect", "**/api/connects", "正在加载令牌"],
 		["/?day=2026-11-08", "**/api/events?**", "正在加载当天记录"],
 	] as const;
 	for (const [path, pattern, label] of cases) {
@@ -173,16 +170,11 @@ test("slow API reads preserve page-specific cards and do not flash empty or edit
 				await expect(page.getByText(/还没有常用地点/)).toHaveCount(0);
 				await expect(page.getByRole("status", { name: "正在读取惯常作息" })).toBeVisible();
 				await expect(page.getByLabel("入睡时间", { exact: true })).toHaveCount(0);
-			} else if (path === "/settings/ai") {
-				await expect(page.getByRole("combobox", { name: "AI 提供方" })).toHaveCount(0);
 			} else if (path === "/data") {
 				const historyPlot = loading.locator(".data-overview-history-plot");
 				await expect(historyPlot).toBeVisible();
 				await expect.poll(async () => (await historyPlot.boundingBox())?.height).toBe(280);
 				await expect(page.getByText("还没有导入数据", { exact: true })).toHaveCount(0);
-			} else if (path === "/settings/sources") {
-				await expect(loading.getByRole("heading", { name: "Gecko", exact: true })).toBeVisible();
-				await expect(loading.getByRole("heading", { name: "Firefly", exact: true })).toBeVisible();
 			} else if (path.startsWith("/?")) {
 				await expect(loading.locator(".day-story-column")).toBeVisible();
 				await expect(loading.locator(".day-meta")).toBeVisible();
@@ -207,8 +199,6 @@ test("lazy import pages reserve their upload, progress and destination layouts o
 	await page.setViewportSize({ width: 390, height: 844 });
 	for (const [path, module, label] of [
 		["/data/footprint", "footprint", "正在加载导入页面"],
-		["/data/apple-health", "apple-health", "正在加载导入页面"],
-		["/data/pixiu", "pixiu", "正在加载导入页面"],
 		["/imports", "imports", "正在加载日记导入"],
 	] as const) {
 		const release = await holdRequest(

@@ -32,7 +32,9 @@ test("AI summaries contain independent activity sections, compact information co
 	])
 		expect(
 			(
-				await request.put(`/api/settings/sources/${provider}`, { data: { enabled: true, apiKey } })
+				await request.put(`/api/settings/sources/${provider}`, {
+					data: { enabled: true, apiKey },
+				})
 			).ok(),
 		).toBe(true);
 	expect(
@@ -68,12 +70,12 @@ test("AI summaries contain independent activity sections, compact information co
 	await expect(narrative).toHaveText(summary.content);
 	await expect(narrative).not.toContainText('"sections"');
 	await expect(diary.locator("[data-diary-section]")).toHaveCount(3);
-	for (const [key, title, icon] of [
+	for (const [keyName, title, icon] of [
 		["development", "电脑活动", "monitor"],
 		["writing", "文章创作", "notebook-pen"],
 		["github", "GitHub", "git-fork"],
 	] as const) {
-		const card = diary.locator(`[data-diary-section="${key}"]`);
+		const card = diary.locator(`[data-diary-section="${keyName}"]`);
 		const trigger = card.getByRole("button", { name: title, exact: true });
 		await expect(trigger).toHaveAttribute("aria-expanded", "false");
 		await expect(card.locator(`.story-card-icon svg.lucide-${icon}`)).toBeVisible();
@@ -81,7 +83,9 @@ test("AI summaries contain independent activity sections, compact information co
 		await trigger.focus();
 		await page.keyboard.press("Enter");
 		await expect(trigger).toHaveAttribute("aria-expanded", "true");
-		await expect(card.getByRole("listitem")).toHaveText(summary.sections[key]?.highlights ?? []);
+		await expect(card.getByRole("listitem")).toHaveText(
+			summary.sections[keyName]?.highlights ?? [],
+		);
 	}
 	await expect(
 		diary.locator('[data-diary-section="development"] button[aria-expanded="true"]'),
