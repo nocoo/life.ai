@@ -68,19 +68,30 @@ for (const theme of ["dark"] as const) {
 			expect([mobileAvatar?.width, mobileAvatar?.height]).toEqual([36, 36]);
 			measurements.push({ viewport: width, inner: 240, avatar: mobileAvatar });
 			await page.screenshot({ path: `test-results/l3/sidebar-${theme}-${width}.png` });
+			const waitDrawerSettled = async () => {
+				await expect(drawer).toBeVisible();
+				await drawer.evaluate((element) =>
+					Promise.allSettled(
+						element.getAnimations({ subtree: true }).map((animation) => animation.finished),
+					),
+				);
+			};
 			await page.keyboard.press("Escape");
 			await expect(drawer).toBeHidden();
 			await expect(menu).toBeFocused();
 			await menu.click();
+			await waitDrawerSettled();
 			await drawer.getByRole("button", { name: "关闭导航菜单", exact: true }).click();
 			await expect(drawer).toBeHidden();
 			await expect(menu).toBeFocused();
 			await menu.click();
+			await waitDrawerSettled();
 			await drawer.getByRole("button", { name: "AI 设置", exact: true }).click();
 			await expect(page).toHaveURL(/\/settings\/ai$/);
 			await expect(drawer).toBeHidden();
 			await expect(menu).toBeFocused();
 			await menu.click();
+			await waitDrawerSettled();
 			await drawer.getByRole("button", { name: "通用设置", exact: true }).click();
 			await expect(page).toHaveURL(/\/settings\/general$/);
 			await expect(drawer).toBeHidden();
