@@ -1,11 +1,14 @@
-import { execFileSync, spawn, spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import {
 	chmodSync,
 	existsSync,
+	lstatSync,
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
 	rmSync,
+	symlinkSync,
+	unlinkSync,
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -17,6 +20,7 @@ const preCommit = readFileSync(join(repoRoot, ".husky/pre-commit"), "utf8");
 const hookCommand = readFileSync(join(repoRoot, "scripts/run-hook-command.mjs"), "utf8");
 const unitCoverage = readFileSync(join(repoRoot, "scripts/run-unit-coverage.mjs"), "utf8");
 const verifySummary = readFileSync(join(repoRoot, "scripts/verify-coverage-summary.mjs"), "utf8");
+const lockfileContent = readFileSync(join(repoRoot, "bun.lock"), "utf8");
 const marker = crypto.randomUUID();
 
 function run(cmd, args, { cwd, env, capture = true, timeout = 90_000 } = {}) {
@@ -48,7 +52,7 @@ function run(cmd, args, { cwd, env, capture = true, timeout = 90_000 } = {}) {
 			else resolvePromise(output);
 		};
 		child.once("error", (error) => finish(error));
-		child.once("exit", (code, signal) => {
+		child.once("close", (code, signal) => {
 			if (code === 0 && !signal) finish(undefined);
 			else finish(new Error(`${[cmd, ...args].join(" ")} failed (${code ?? signal})\n${output}`));
 		});
@@ -64,15 +68,14 @@ function captureOutput(env) {
 }
 
 async function gitAsync(repo, args, env) {
-	const text = await run("git", args, { cwd: repo, env, capture: true });
-	return text;
+	return await run("git", args, { cwd: repo, env, capture: true });
 }
 
 async function waitUntil(check, timeoutMs = 5000) {
 	const started = Date.now();
 	while (!check()) {
 		if (Date.now() - started > timeoutMs) throw new Error("timed out waiting for condition");
-		await new Promise((resolve) => setTimeout(resolve, 20));
+		await new Promise((resolvePromise) => setTimeout(resolvePromise, 20));
 	}
 }
 
@@ -83,6 +86,7 @@ const vitestConfig = `import { defineConfig } from "vitest/config";
 export default defineConfig({
 	test: {
 		allowOnly: false,
+		passWithNoTests: false,
 		include: ["sample.test.ts"],
 		coverage: {
 			provider: "v8",
@@ -93,6 +97,48 @@ export default defineConfig({
 	},
 });
 `;
+const basePackageJson = `${JSON.stringify(
+	{
+		scripts: {
+			"test:coverage": "node scripts/run-unit-coverage.mjs",
+			typecheck: "tsc --noEmit -p tsconfig.json",
+			lint: "biome check --error-on-warnings .",
+		},
+	},
+	null,
+	"\t",
+)}\n`;
+const baseBiomeJson = `${JSON.stringify(
+	{
+		files: { includes: ["source.ts", "sample.test.ts"] },
+		formatter: { enabled: false },
+		assist: { enabled: false },
+		linter: {
+			enabled: true,
+			rules: { recommended: true, suspicious: { noDebugger: "warn" } },
+		},
+	},
+	null,
+	"\t",
+)}\n`;
+
+function ensureNodeModulesLink(repo) {
+	const linkPath = join(repo, "node_modules");
+	try {
+		lstatSync(linkPath);
+	} catch {
+		symlinkSync(join(repoRoot, "node_modules"), linkPath);
+	}
+}
+
+function unlinkNodeModulesIfPresent(repo) {
+	const linkPath = join(repo, "node_modules");
+	try {
+		if (lstatSync(linkPath).isSymbolicLink()) {
+			unlinkSync(linkPath);
+		}
+	} catch {}
+}
 
 function writeFixtureFiles(repo) {
 	mkdirSync(join(repo, "scripts"), { recursive: true });
@@ -101,20 +147,7 @@ function writeFixtureFiles(repo) {
 	writeFileSync(join(repo, "scripts/run-hook-command.mjs"), hookCommand);
 	writeFileSync(join(repo, "scripts/run-unit-coverage.mjs"), unitCoverage);
 	writeFileSync(join(repo, "scripts/verify-coverage-summary.mjs"), verifySummary);
-	writeFileSync(
-		join(repo, "package.json"),
-		`${JSON.stringify(
-			{
-				scripts: {
-					"test:coverage": "node scripts/run-unit-coverage.mjs",
-					typecheck: "tsc --noEmit -p tsconfig.json",
-					lint: "biome check --error-on-warnings .",
-				},
-			},
-			null,
-			"\t",
-		)}\n`,
-	);
+	writeFileSync(join(repo, "package.json"), basePackageJson);
 	writeFileSync(
 		join(repo, "tsconfig.json"),
 		`${JSON.stringify(
@@ -133,37 +166,13 @@ function writeFixtureFiles(repo) {
 			"\t",
 		)}\n`,
 	);
-	writeFileSync(
-		join(repo, "biome.json"),
-		`${JSON.stringify(
-			{
-				files: { includes: ["source.ts", "sample.test.ts"] },
-				formatter: { enabled: false },
-				assist: { enabled: false },
-				linter: {
-					enabled: true,
-					rules: { recommended: true, suspicious: { noDebugger: "warn" } },
-				},
-			},
-			null,
-			"\t",
-		)}\n`,
-	);
+	writeFileSync(join(repo, "biome.json"), baseBiomeJson);
 	writeFileSync(join(repo, "vitest.config.ts"), vitestConfig);
 	writeFileSync(join(repo, "source.ts"), source);
 	writeFileSync(join(repo, "sample.test.ts"), tests);
-	writeFileSync(join(repo, "bun.lock"), readFileSync(join(repoRoot, "bun.lock"), "utf8"));
+	writeFileSync(join(repo, "bun.lock"), lockfileContent);
 	writeFileSync(join(repo, ".gitignore"), "node_modules/\ncoverage/\ntest-results/\n");
-	try {
-		execFileSync("cp", [
-			"-R",
-			"--reflink=auto",
-			join(repoRoot, "node_modules"),
-			join(repo, "node_modules"),
-		]);
-	} catch {
-		execFileSync("cp", ["-R", join(repoRoot, "node_modules"), join(repo, "node_modules")]);
-	}
+	ensureNodeModulesLink(repo);
 }
 
 function bootstrapEnv(root, home, tmp) {
@@ -182,7 +191,7 @@ function bootstrapEnv(root, home, tmp) {
 	return env;
 }
 
-async function createFixture() {
+async function createFixture({ verifyHook = true } = {}) {
 	const root = mkdtempSync(join(tmpdir(), "life-l1-proof-"));
 	const home = join(root, "home");
 	const tmp = join(root, "tmp");
@@ -212,7 +221,22 @@ async function createFixture() {
 	]) {
 		git(repo, ["add", path], env);
 	}
+	const commitArgs = verifyHook
+		? ["commit", "-m", "test: healthy seed"]
+		: ["commit", "--no-verify", "-m", "test: healthy seed"];
+	await gitAsync(repo, commitArgs, env);
 	return { root, repo, env, tmp };
+}
+
+function cleanupFixture({ root, repo }) {
+	unlinkNodeModulesIfPresent(repo);
+	if (existsSync(join(root, "run-id")) && readFileSync(join(root, "run-id"), "utf8") === marker) {
+		rmSync(root, { recursive: true, force: true });
+		return root;
+	}
+	console.error(`拒绝清理：标记不一致 ${root}`);
+	process.exitCode = 1;
+	return null;
 }
 
 async function rejectCommit(repo, env, label, requiredOutput) {
@@ -231,146 +255,162 @@ async function rejectCommit(repo, env, label, requiredOutput) {
 		throw new Error(`Probe ${label} advanced HEAD`);
 	}
 	await gitAsync(repo, ["reset", "--hard", "HEAD"], env);
-	console.log(`已证实拒绝：${label}`);
+	return `已证实拒绝：${label}`;
 }
 
-const { root, repo, env } = await createFixture();
+async function runWithPool(pool, taskFns) {
+	const results = new Array(taskFns.length);
+	const available = [...pool];
+	let next = 0;
+
+	async function worker() {
+		while (next < taskFns.length) {
+			const idx = next++;
+			const fixture = available.shift();
+			try {
+				results[idx] = await taskFns[idx](fixture);
+			} finally {
+				ensureNodeModulesLink(fixture.repo);
+				await gitAsync(fixture.repo, ["reset", "--hard", "HEAD"], fixture.env);
+				available.push(fixture);
+			}
+		}
+	}
+
+	await Promise.all(Array.from({ length: Math.min(pool.length, taskFns.length) }, () => worker()));
+	return results;
+}
+
+const fixtures = [];
 try {
-	await gitAsync(repo, ["commit", "-m", "test: healthy seed"], env);
+	const primary = await createFixture({ verifyHook: true });
+	fixtures.push(primary);
 	console.log("已证实：Husky 健康输入提交成功");
 
-	writeFileSync(join(repo, "sample.test.ts"), tests.replace("toBe(1)", "toBe(9)"));
-	await gitAsync(repo, ["add", "sample.test.ts"], env);
-	await rejectCommit(repo, env, "unit failure", "FAIL");
-
-	for (const metric of ["statements", "branches", "functions", "lines"]) {
-		writeFileSync(
-			join(repo, "vitest.config.ts"),
-			vitestConfig.replace(`${metric}: 95`, `${metric}: 101`),
-		);
-		await gitAsync(repo, ["add", "vitest.config.ts"], env);
-		await rejectCommit(repo, env, `${metric} coverage`, metric);
-		writeFileSync(join(repo, "vitest.config.ts"), vitestConfig);
-		await gitAsync(repo, ["add", "vitest.config.ts"], env);
-	}
-
-	for (const severity of ["warn", "error"]) {
-		writeFileSync(join(repo, "source.ts"), `${source}debugger;\n`);
-		if (severity === "error") {
-			writeFileSync(
-				join(repo, "biome.json"),
-				readFileSync(join(repo, "biome.json"), "utf8").replace('"warn"', '"error"'),
-			);
-		}
-		await gitAsync(repo, ["add", "source.ts", "biome.json"], env);
-		await rejectCommit(repo, env, `lint ${severity}`, "noDebugger");
-	}
-	writeFileSync(join(repo, "source.ts"), source);
-	writeFileSync(
-		join(repo, "biome.json"),
-		`${JSON.stringify(
-			{
-				files: { includes: ["source.ts", "sample.test.ts"] },
-				formatter: { enabled: false },
-				assist: { enabled: false },
-				linter: { enabled: true, rules: { recommended: true, suspicious: { noDebugger: "warn" } } },
-			},
-			null,
-			"\t",
-		)}\n`,
-	);
-	await gitAsync(repo, ["add", "source.ts", "biome.json"], env);
-
-	writeFileSync(join(repo, "source.ts"), `${source}const invalid: string = 1;\n`);
-	await gitAsync(repo, ["add", "source.ts"], env);
-	await rejectCommit(repo, env, "type error", "TS2322");
-
-	writeFileSync(
-		join(repo, "sample.test.ts"),
-		tests.replace('test("boundaries"', 'test.only("boundaries"'),
-	);
-	await gitAsync(repo, ["add", "sample.test.ts"], env);
-	await rejectCommit(repo, env, "focused test", ".only");
-
-	writeFileSync(
-		join(repo, "sample.test.ts"),
-		tests.replace('test("boundaries"', 'test.skip("boundaries"'),
-	);
-	await gitAsync(repo, ["add", "sample.test.ts"], env);
-	await rejectCommit(repo, env, "skipped suite", "threshold");
-	writeFileSync(join(repo, "sample.test.ts"), tests);
-	await gitAsync(repo, ["add", "sample.test.ts"], env);
-
-	writeFileSync(join(repo, "source.ts"), source.replace("-value", "value"));
-	await gitAsync(repo, ["add", "source.ts"], env);
-	await rejectCommit(repo, env, "staged logic bug", "FAIL");
-
-	writeFileSync(join(repo, "source.ts"), source.replace("-value", "value"));
-	await gitAsync(repo, ["add", "source.ts"], env);
-	writeFileSync(join(repo, "source.ts"), source);
-	await rejectCommit(repo, env, "staged bug with unstaged fix", "FAIL");
-
-	const manifest = JSON.parse(readFileSync(join(repo, "package.json"), "utf8"));
-	manifest.scripts.typecheck = "definitely-missing-life-tool";
-	writeFileSync(join(repo, "package.json"), `${JSON.stringify(manifest, null, "\t")}\n`);
-	await gitAsync(repo, ["add", "package.json"], env);
-	await rejectCommit(repo, env, "missing tool");
-
-	writeFileSync(join(repo, "scripts/run-unit-coverage.mjs"), "process.exit(0);\n");
-	await gitAsync(repo, ["add", "scripts/run-unit-coverage.mjs"], env);
-	await rejectCommit(repo, env, "missing coverage report", "coverage summary is missing");
-	writeFileSync(join(repo, "scripts/run-unit-coverage.mjs"), unitCoverage);
-	await gitAsync(repo, ["add", "scripts/run-unit-coverage.mjs"], env);
-
-	writeFileSync(
-		join(repo, "scripts/run-unit-coverage.mjs"),
-		'import { writeFileSync } from "node:fs";\nwriteFileSync(process.env.LIFE_TEST_STAGE_READY, String(process.pid));\nsetInterval(() => {}, 60_000);\n',
-	);
-	await gitAsync(repo, ["add", "scripts/run-unit-coverage.mjs"], env);
-	const child = spawn("sh", [join(repo, ".git/hooks/pre-commit")], {
-		cwd: repo,
-		env,
-		stdio: "ignore",
-		detached: true,
-	});
-	const exited = new Promise((resolvePromise) => {
-		child.once("exit", (code) => resolvePromise(code));
-	});
-	await waitUntil(() => existsSync(env.LIFE_TEST_STAGE_READY), 15_000);
-	process.kill(-child.pid, "SIGTERM");
-	const interruptStatus = await Promise.race([
-		exited,
-		new Promise((_, reject) =>
-			setTimeout(() => reject(new Error("hook interrupt did not exit")), 12_000),
-		),
+	const extra = await Promise.all([
+		createFixture({ verifyHook: false }),
+		createFixture({ verifyHook: false }),
+		createFixture({ verifyHook: false }),
 	]);
-	if (![143, 130, 129, 1].includes(interruptStatus ?? -1)) {
-		throw new Error(`interrupt probe exited with ${interruptStatus}, expected 143/130/129/1`);
-	}
-	console.log("已证实拒绝：信号中断");
-	writeFileSync(join(repo, "scripts/run-unit-coverage.mjs"), unitCoverage);
-	await gitAsync(repo, ["add", "scripts/run-unit-coverage.mjs"], env);
+	fixtures.push(...extra);
 
-	rmSync(join(repo, "node_modules"), { recursive: true, force: true });
-	await rejectCommit(repo, env, "missing node_modules", "node_modules is required");
-	try {
-		execFileSync("cp", [
-			"-R",
-			"--reflink=auto",
-			join(repoRoot, "node_modules"),
-			join(repo, "node_modules"),
-		]);
-	} catch {
-		execFileSync("cp", ["-R", join(repoRoot, "node_modules"), join(repo, "node_modules")]);
-	}
+	const tasks = [
+		async ({ repo, env }) => {
+			writeFileSync(join(repo, "sample.test.ts"), tests.replace("toBe(1)", "toBe(9)"));
+			await gitAsync(repo, ["add", "sample.test.ts"], env);
+			return rejectCommit(repo, env, "unit failure", "FAIL");
+		},
+		...["statements", "branches", "functions", "lines"].map((metric) => async ({ repo, env }) => {
+			writeFileSync(
+				join(repo, "vitest.config.ts"),
+				vitestConfig.replace(`${metric}: 95`, `${metric}: 101`),
+			);
+			await gitAsync(repo, ["add", "vitest.config.ts"], env);
+			return rejectCommit(repo, env, `${metric} coverage`, metric);
+		}),
+		async ({ repo, env }) => {
+			writeFileSync(join(repo, "source.ts"), `${source}debugger;\n`);
+			await gitAsync(repo, ["add", "source.ts"], env);
+			return rejectCommit(repo, env, "lint warn", "noDebugger");
+		},
+		async ({ repo, env }) => {
+			writeFileSync(join(repo, "source.ts"), `${source}debugger;\n`);
+			writeFileSync(join(repo, "biome.json"), baseBiomeJson.replace('"warn"', '"error"'));
+			await gitAsync(repo, ["add", "source.ts", "biome.json"], env);
+			return rejectCommit(repo, env, "lint error", "noDebugger");
+		},
+		async ({ repo, env }) => {
+			writeFileSync(join(repo, "source.ts"), `${source}const invalid: string = 1;\n`);
+			await gitAsync(repo, ["add", "source.ts"], env);
+			return rejectCommit(repo, env, "type error", "TS2322");
+		},
+		async ({ repo, env }) => {
+			writeFileSync(
+				join(repo, "sample.test.ts"),
+				tests.replace('test("boundaries"', 'test.only("boundaries"'),
+			);
+			await gitAsync(repo, ["add", "sample.test.ts"], env);
+			return rejectCommit(repo, env, "focused test", ".only");
+		},
+		async ({ repo, env }) => {
+			writeFileSync(
+				join(repo, "sample.test.ts"),
+				tests.replace('test("boundaries"', 'test.skip("boundaries"'),
+			);
+			await gitAsync(repo, ["add", "sample.test.ts"], env);
+			return rejectCommit(repo, env, "skipped suite", "threshold");
+		},
+		async ({ repo, env }) => {
+			writeFileSync(join(repo, "source.ts"), source.replace("-value", "value"));
+			await gitAsync(repo, ["add", "source.ts"], env);
+			return rejectCommit(repo, env, "staged logic bug", "FAIL");
+		},
+		async ({ repo, env }) => {
+			writeFileSync(join(repo, "source.ts"), source.replace("-value", "value"));
+			await gitAsync(repo, ["add", "source.ts"], env);
+			writeFileSync(join(repo, "source.ts"), source);
+			return rejectCommit(repo, env, "staged bug with unstaged fix", "FAIL");
+		},
+		async ({ repo, env }) => {
+			const manifest = JSON.parse(readFileSync(join(repo, "package.json"), "utf8"));
+			manifest.scripts.typecheck = "definitely-missing-life-tool";
+			writeFileSync(join(repo, "package.json"), `${JSON.stringify(manifest, null, "\t")}\n`);
+			await gitAsync(repo, ["add", "package.json"], env);
+			return rejectCommit(repo, env, "missing tool");
+		},
+		async ({ repo, env }) => {
+			writeFileSync(join(repo, "scripts/run-unit-coverage.mjs"), "process.exit(0);\n");
+			await gitAsync(repo, ["add", "scripts/run-unit-coverage.mjs"], env);
+			return rejectCommit(repo, env, "missing coverage report", "coverage summary is missing");
+		},
+		async ({ repo, env }) => {
+			writeFileSync(
+				join(repo, "scripts/run-unit-coverage.mjs"),
+				'import { writeFileSync } from "node:fs";\nwriteFileSync(process.env.LIFE_TEST_STAGE_READY, String(process.pid));\nsetInterval(() => {}, 60_000);\n',
+			);
+			await gitAsync(repo, ["add", "scripts/run-unit-coverage.mjs"], env);
+			const child = spawn("sh", [join(repo, ".git/hooks/pre-commit")], {
+				cwd: repo,
+				env,
+				stdio: "ignore",
+				detached: true,
+			});
+			const exited = new Promise((resolvePromise) => {
+				child.once("close", (code) => resolvePromise(code));
+			});
+			await waitUntil(() => existsSync(env.LIFE_TEST_STAGE_READY), 15_000);
+			process.kill(-child.pid, "SIGTERM");
+			const interruptStatus = await Promise.race([
+				exited,
+				new Promise((_, reject) =>
+					setTimeout(() => reject(new Error("hook interrupt did not exit")), 12_000),
+				),
+			]);
+			if (![143, 130, 129, 1].includes(interruptStatus ?? -1)) {
+				throw new Error(`interrupt probe exited with ${interruptStatus}, expected 143/130/129/1`);
+			}
+			return "已证实拒绝：信号中断";
+		},
+		async ({ repo, env }) => {
+			unlinkNodeModulesIfPresent(repo);
+			try {
+				return await rejectCommit(repo, env, "missing node_modules", "node_modules is required");
+			} finally {
+				ensureNodeModulesLink(repo);
+			}
+		},
+	];
 
+	const messages = await runWithPool(fixtures, tasks);
+	for (const message of messages) {
+		console.log(message);
+	}
 	console.log("L1 门禁负向与正向探针全部完成。");
 } finally {
-	if (existsSync(join(root, "run-id")) && readFileSync(join(root, "run-id"), "utf8") === marker) {
-		rmSync(root, { recursive: true, force: true });
-		console.log(`已清理探针目录 ${root}`);
-	} else {
-		console.error(`拒绝清理：标记不一致 ${root}`);
-		process.exit(1);
+	for (const fixture of fixtures) {
+		const cleaned = cleanupFixture(fixture);
+		if (cleaned) {
+			console.log(`已清理探针目录 ${cleaned}`);
+		}
 	}
 }
