@@ -42,7 +42,7 @@ Tests need no real credentials (ephemeral RSA/encryption keys + loopback AI/cont
 
 ## Quality & Local Gates
 
-Follows `system1-quality`; CI slots and pinned `base-ci` live in `.github/workflows/quality-slots.yml` (`quality / Z1: Gate` + `l1-proof` required on `main`). Statuses: `enforced`, `planned`, `manual`, `N/A`. Raise weak enforcement; never weaken requirements.
+Follows `system1-quality`; CI slots and pinned `base-ci` live in `.github/workflows/quality-slots.yml` (`quality / Z1: Gate` required on `main`, incl. `l1-precommit-gate`). Statuses: `enforced`, `planned`, `manual`, `N/A`. Raise weak enforcement; never weaken requirements.
 
 - **L1 & static**: >=95% statements/branches/functions/lines on `src/{models,services,viewmodels}/` and `worker/`, `allowOnly: false` (no `.skip`/`.only`), 4 strict tsconfigs, 0-warning check-only Biome.
 - **Gaps & N/A**: `L2 Runtime` is `N/A` (covered by `L3`/`L4`); `P1 Package` is `N/A` (private app); `L3 Integration` (`test:l2`) is `enforced` while full endpoint/method proof is `planned`; doc evidence is `manual`.

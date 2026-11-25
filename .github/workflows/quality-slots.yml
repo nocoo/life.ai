@@ -180,8 +180,8 @@ jobs:
     steps:
       - run: echo "N/A - Cloudflare Worker project, not published to npm"
 
-  l1-proof:
-    name: "L1 pre-commit rejection proof"
+  l1-precommit-gate:
+    name: "L1: Unit (Pre-commit Gate)"
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -211,7 +211,7 @@ jobs:
       - l3-integration
       - l4-e2e
       - p1-package
-      - l1-proof
+      - l1-precommit-gate
     outputs:
       tested-sha: ${{ github.sha }}
     steps:
@@ -228,7 +228,7 @@ jobs:
           echo "l3-integration: ${{ needs.l3-integration.result }}"
           echo "l4-e2e: ${{ needs.l4-e2e.result }}"
           echo "p1-package: ${{ needs.p1-package.result }}"
-          echo "l1-proof: ${{ needs.l1-proof.result }}"
+          echo "l1-precommit-gate: ${{ needs.l1-precommit-gate.result }}"
           for r in \
             "${{ needs.s1-types.result }}" \
             "${{ needs.s2-lint.result }}" \
@@ -239,7 +239,7 @@ jobs:
             "${{ needs.l1-unit.result }}" \
             "${{ needs.l3-integration.result }}" \
             "${{ needs.l4-e2e.result }}" \
-            "${{ needs.l1-proof.result }}"; do
+            "${{ needs.l1-precommit-gate.result }}"; do
             if [ "$r" != "success" ]; then
               echo "Required slot failed or was skipped: $r"
               exit 1
