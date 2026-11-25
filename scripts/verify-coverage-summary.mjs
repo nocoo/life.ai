@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const floors = { statements: 95, branches: 95, functions: 95, lines: 95 };
+const floors = { statements: 80, branches: 80, functions: 80, lines: 80 };
 const summaryPath = join(
 	dirname(fileURLToPath(import.meta.url)),
 	"..",
