@@ -14,7 +14,7 @@ if (
 export default defineConfig({
 	testDir: "tests/browser",
 	fullyParallel: false,
-	workers: process.env.CI ? 2 : 4,
+	workers: process.env.CI ? 3 : 4,
 	retries: 0,
 	timeout: 30_000,
 	expect: { timeout: 8000 },
@@ -30,9 +30,5 @@ export default defineConfig({
 		trace: "retain-on-failure",
 		screenshot: "only-on-failure",
 	},
-	projects: [
-		{ name: "parallel", testIgnore: /sources-and-cache\.spec\.ts|diary\.spec\.ts/ },
-		{ name: "diary", testMatch: /diary\.spec\.ts/, dependencies: ["parallel"] },
-		{ name: "sources", testMatch: /sources-and-cache\.spec\.ts/, dependencies: ["diary"] },
-	],
+	projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
 });

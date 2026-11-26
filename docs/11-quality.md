@@ -2,20 +2,20 @@
 
 遵循 `system1-quality` 12 槽位契约；CI 槽位实现与固定 `base-ci` 版本以 `.github/workflows/quality-slots.yml`（受保护分支要求 `quality / Z1: Gate`）为准。状态词汇统一使用 `enforced`、`planned`、`manual`、`N/A`。
 
-| 槽位               | 命令 / 实现与要求                                                                                               | 状态       | 说明                                                       |
-| ------------------ | --------------------------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------- |
-| `S1: Types`        | `bun run typecheck`（`cf-typegen` + 4 套严格 `tsconfig`、`noUncheckedIndexedAccess`）                           | `enforced` | pre-commit + CI                                            |
-| `S2: Lint`         | `bun run lint`（`biome check --error-on-warnings .`，check-only 0 error / 0 warning）                           | `enforced` | pre-commit + CI                                            |
-| `S3: Workflow`     | 校验 `.github/workflows/*.yml` 全部外部 action 固定到 40 位 SHA                                                 | `enforced` | CI                                                         |
-| `G1: Secrets`      | `gitleaks` 扫描可评审工作树 / CI 检出树（本地经 `bun run gate:security`）                                       | `enforced` | pre-push + CI                                              |
-| `G2: Dependencies` | `osv-scanner` 扫描 `bun.lock`，缺少扫描器直接失败（本地经 `bun run gate:security`）                             | `enforced` | pre-push + CI                                              |
-| `B1: Build`        | `bun run build`（Vite SPA + Worker 产物）                                                                       | `enforced` | `quality` + CI                                             |
-| `L1: Unit`         | `bun run test:coverage`；`src/{models,services,viewmodels}/` 与 `worker/` 四项覆盖率 ≥95%，禁止 `.skip`/`.only` | `enforced` | pre-commit + CI + `l1-precommit-gate`                      |
-| `L2: Runtime`      | —                                                                                                               | `N/A`      | Cloudflare Worker 绑定行为由 `L3`/`L4` 覆盖                |
-| `L3: Integration`  | `bun run test:l2`（历史脚本名；`tests/http/api.ts`，真实 HTTP → 本地 Worker → 隔离 SQLite）                     | `enforced` | pre-push + CI；完整 endpoint/method 清单证明仍为 `planned` |
-| `L4: E2E`          | `bun run test:l3`（历史脚本名；Playwright 覆盖认证边界、导入、时间线、Connect、响应式与可访问性）               | `enforced` | `quality` + CI                                             |
-| `P1: Package`      | —                                                                                                               | `N/A`      | 私有应用，不发布 npm 包                                    |
-| `Z1: Gate`         | `.github/workflows/quality-slots.yml` 汇总必需槽位与 `l1-precommit-gate`                                        | `enforced` | 受保护分支 `main` 必需检查                                 |
+| 槽位               | 命令 / 实现与要求                                                                                                     | 状态       | 说明                                                       |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------- |
+| `S1: Types`        | `bun run typecheck`（`cf-typegen` + 4 套严格 `tsconfig`、`noUncheckedIndexedAccess`）                                 | `enforced` | pre-commit + CI                                            |
+| `S2: Lint`         | `bun run lint`（`biome check --error-on-warnings .`，check-only 0 error / 0 warning）                                 | `enforced` | pre-commit + CI                                            |
+| `S3: Workflow`     | 校验 `.github/workflows/*.yml` 全部外部 action 固定到 40 位 SHA                                                       | `enforced` | CI                                                         |
+| `G1: Secrets`      | `gitleaks` 扫描可评审工作树 / CI 检出树（本地经 `bun run gate:security`）                                             | `enforced` | pre-push + CI                                              |
+| `G2: Dependencies` | `osv-scanner` 扫描 `bun.lock`，缺少扫描器直接失败（本地经 `bun run gate:security`）                                   | `enforced` | pre-push + CI                                              |
+| `B1: Build`        | `bun run build`（Vite SPA + Worker 产物）                                                                             | `enforced` | `quality` + CI                                             |
+| `L1: Unit`         | `bun run test:coverage`；`src/{models,services,viewmodels}/` 与 `worker/` 四项覆盖率 ≥95%，禁止 `.skip`/`.only`       | `enforced` | pre-commit + CI + `l1-precommit-gate`                      |
+| `L2: Runtime`      | —                                                                                                                     | `N/A`      | Cloudflare Worker 绑定行为由 `L3`/`L4` 覆盖                |
+| `L3: Integration`  | `bun run test:l2`（历史脚本名；`tests/http/api.ts`，真实 HTTP → 本地 Worker → 隔离 SQLite）                           | `enforced` | pre-push + CI；完整 endpoint/method 清单证明仍为 `planned` |
+| `L4: E2E`          | `bun run test:l3`（历史脚本名；Playwright 覆盖认证边界、导入、时间线、Connect、Apple Health、记账与 AI 总结核心冒烟） | `enforced` | `quality` + CI                                             |
+| `P1: Package`      | `bunx wrangler deploy --dry-run`（复用 `B1` 构建产物验证 Worker 打包与配置）                                          | `enforced` | CI                                                         |
+| `Z1: Gate`         | `.github/workflows/quality-slots.yml` 经 `nocoo/base-ci` `z1-gate`（`v2026.18`）校验全部必需与跳过槽位                | `enforced` | 受保护分支 `main` 必需检查                                 |
 
 ## L1 与本地 Hook 实测证据
 
