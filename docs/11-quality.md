@@ -15,7 +15,7 @@
 | `L3: Integration`  | `bun run test:l2`（历史脚本名；`tests/http/api.ts`，真实 HTTP → 本地 Worker → 隔离 SQLite）                           | `enforced` | pre-push + CI；完整 endpoint/method 清单证明仍为 `planned` |
 | `L4: E2E`          | `bun run test:l3`（历史脚本名；Playwright 覆盖认证边界、导入、时间线、Connect、Apple Health、记账与 AI 总结核心冒烟） | `enforced` | `quality` + CI                                             |
 | `P1: Package`      | `bunx wrangler deploy --dry-run`（复用 `B1` 构建产物验证 Worker 打包与配置）                                          | `enforced` | CI                                                         |
-| `Z1: Gate`         | `.github/workflows/quality-slots.yml` 经 `nocoo/base-ci` `z1-gate`（`v2026.18`）校验全部必需与跳过槽位                | `enforced` | 受保护分支 `main` 必需检查                                 |
+| `Z1: Gate`         | `.github/workflows/quality-slots.yml` 经 `nocoo/base-ci` `z1-gate`（`v2026.19`）校验全部必需与跳过槽位                | `enforced` | 受保护分支 `main` 必需检查                                 |
 
 ## L1 与本地 Hook 实测证据
 
