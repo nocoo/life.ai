@@ -129,14 +129,6 @@
 	white-space: nowrap;
 }
 
-.health-sleep-axis span:first-child {
-	transform: none;
-}
-
-.health-sleep-axis span:last-child {
-	transform: translateX(-100%);
-}
-
 .health-sleep-detail {
 	min-height: 40px;
 	font-size: 12px;
@@ -280,4 +272,12 @@
 .health-pressure-unit {
 	font-size: 13px;
 	color: hsl(var(--basalt-muted-foreground));
+}
+
+.health-sleep-axis span:first-child {
+	transform: none;
+}
+
+.health-sleep-axis span:last-child {
+	transform: translateX(-100%);
 }
