@@ -113,8 +113,8 @@ export function AppleHealthPage() {
 							<input
 								ref={folderInputRef}
 								type="file"
-								// @ts-expect-error webkitdirectory is standard in WebKit/Blink/Gecko browsers for folder picker
 								webkitdirectory=""
+								// @ts-expect-error directory is a non-standard fallback attribute for folder picker
 								directory=""
 								multiple
 								aria-label="选择完整 Apple 健康导出文件夹"
