@@ -31,7 +31,7 @@
         "@tailwindcss/vite": "4.3.5",
         "@testing-library/react": "16.3.3",
         "@types/bun": "1.4.5",
-        "@types/leaflet": "1.9.22",
+        "@types/leaflet": "1.9.23",
         "@types/node": "26.6.6",
         "@types/papaparse": "5.5.2",
         "@types/react": "19.3.3",
@@ -491,7 +491,7 @@
 
     "@types/geojson": ["@types/geojson@7946.0.16", "", {}, "sha512-6C8nqWur3j98U6+lXDfTUWIfgvZU+EumvpHKcYjujKH7woYyLj2sUmff0tRhrqM7BohUw7Pz3ZB1jj2gW9Fvmg=="],
 
-    "@types/leaflet": ["@types/leaflet@1.9.22", "", { "dependencies": { "@types/geojson": "*" } }, "sha512-h3lhECYEKDasG7LFHu+GiHqAvsgLuQvlJvVZzJDGONo3sEL+wUOqSFLnwkZlK0qVxnxbuGFW8iBlJNYs5wgndA=="],
+    "@types/leaflet": ["@types/leaflet@1.9.23", "", { "dependencies": { "@types/geojson": "*" } }, "sha512-rpvCoR7fQ2I4tFGIDjuyRAXl25e9YiJ9eE7AdJY5aJF8tkgg4ph3fRb9zafM6ZB1YO5LYziZQwh/vW3IOat/+Q=="],
 
     "@types/node": ["@types/node@26.6.6", "", { "dependencies": { "undici-types": "~8.9.0" } }, "sha512-MzQj+8Kx3XI40OmUAE6Qoh58ZMNstNNMwn2nfd3qWsfe7nDNSqJNzes4njhz6AHwrSHOffSLwXU6yb474Q4aog=="],
 
