@@ -128,10 +128,6 @@
 	transition: background-color 150ms ease;
 }
 
-.story-ribbon > a:hover {
-	background: hsl(var(--basalt-muted) / 0.65);
-}
-
 .story-ribbon-bars {
 	display: grid;
 	grid-template-columns: repeat(6, 1fr);
@@ -171,10 +167,6 @@
 	color: hsl(var(--basalt-muted-foreground));
 }
 
-.story-ribbon-label > span:last-child {
-	font-variant-numeric: tabular-nums;
-}
-
 .story-tree {
 	position: relative;
 	padding-top: 20px;
@@ -210,10 +202,6 @@
 	font-size: 11px;
 	letter-spacing: 0.14em;
 	color: hsl(var(--basalt-muted-foreground));
-}
-
-.story-lane-headings > span:first-child {
-	text-align: right;
 }
 
 .story-lane-headings > svg {
@@ -668,6 +656,14 @@
 	white-space: nowrap;
 }
 
+.story-lane-headings > span:first-child {
+	text-align: right;
+}
+
+.story-ribbon-label > span:last-child {
+	font-variant-numeric: tabular-nums;
+}
+
 .story-app-list p {
 	color: hsl(var(--basalt-muted-foreground));
 	font-size: 0.75rem;
@@ -1005,12 +1001,6 @@
 	font-size: 10px;
 	letter-spacing: 0.05em;
 	color: hsl(var(--basalt-muted-foreground));
-}
-
-.story-page a:focus-visible,
-.story-page summary:focus-visible {
-	outline: 2px solid hsl(var(--basalt-ring));
-	outline-offset: 4px;
 }
 
 .story-all-day-entry {
@@ -1507,6 +1497,14 @@
 }
 .day-solar-times svg {
 	color: color-mix(in srgb, var(--story-color) 50%, hsl(var(--basalt-foreground)));
+}
+.story-ribbon > a:hover {
+	background: hsl(var(--basalt-muted) / 0.65);
+}
+.story-page a:focus-visible,
+.story-page summary:focus-visible {
+	outline: 2px solid hsl(var(--basalt-ring));
+	outline-offset: 4px;
 }
 @media (max-width: 767px) {
 	.story-hour-axis {
