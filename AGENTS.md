@@ -42,10 +42,10 @@ Tests need no real credentials (ephemeral RSA/encryption keys + loopback AI/cont
 
 ## Quality & Local Gates
 
-Follows `system1-quality`; CI slots and pinned `base-ci` live in `.github/workflows/quality-slots.yml` (`quality / Z1: Gate` required on `main`). Statuses: `enforced`, `planned`, `manual`, `N/A`. Raise weak enforcement; never weaken requirements.
+Follows `system1-quality`; CI runs `.github/workflows/pipeline.yml` calling `.github/workflows/quality-slots.yml` (`quality / Z1: Gate` required on `main`, pinned to `nocoo/base-ci` `v2026.24`), and CD runs `deploy` (`D1–D5` via `nocoo/base-ci/.github/workflows/deploy-worker.yml`) on `main` push or `workflow_dispatch` (`deploy=true`), consuming `b1-dist` without rebuilding, applying remote D1 migrations to `life`, deploying the Worker, and verifying `/api/live` and Access. Statuses: `enforced`, `planned`, `manual`, `N/A`. Raise weak enforcement; never weaken requirements.
 
 - **L1 & static**: >=80% statements/branches/functions/lines on `src/{models,services,viewmodels}/` and `worker/` (Views excluded), `allowOnly: false` (no `.skip`/`.only`), 4 strict tsconfigs, 0-warning check-only Biome.
-- **Gaps & N/A**: `L2 Runtime` is `N/A` (covered by `L3`/`L4`); `P1 Package` is `enforced` (`wrangler deploy --dry-run` against the `B1` artifact); `L3 Integration` (`test:l2`) is `enforced` while full endpoint/method proof is `planned`; `L4 E2E` runs a single Desktop Chromium core smoke suite via `setup-playwright`; `Z1` uses `nocoo/base-ci` `z1-gate` (`v2026.20`); doc evidence is `manual`.
+- **Gaps & N/A**: `L2 Runtime` is `N/A` (covered by `L3`/`L4`); `P1 Package` is `enforced` (`wrangler deploy --dry-run` against the `B1` artifact); `L3 Integration` (`test:l2`) is `enforced` while full endpoint/method proof is `planned`; `L4 E2E` runs a single Desktop Chromium core smoke suite via `setup-playwright`; `Z1` uses `nocoo/base-ci` `z1-gate` (`v2026.24`); doc evidence is `manual`.
 - **Pre-commit**: Installed via `bun run prepare` (`.husky/`); check-only, never bypassed. Runs `node scripts/run-unit-coverage.mjs` → `verify-coverage-summary.mjs` → `typecheck` → `lint` on `checkout-index`.
 - **Pre-push & proof**: `.husky/pre-push` runs `test:l2` + `gate:security` on worktree (stdin pushed-ref `<3min` `planned`). Replay rejection probes via `bun run test:l1`; evidence in [Quality](docs/11-quality.md).
 
