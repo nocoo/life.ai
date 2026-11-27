@@ -82,7 +82,7 @@
 		"@types/react": "19.3.3",
 		"@types/react-dom": "19.3.0",
 		"@vitejs/plugin-react": "6.3.0",
-		"@vitest/coverage-v8": "5.1.1",
+		"@vitest/coverage-v8": "5.1.2",
 		"fake-indexeddb": "6.2.8",
 		"husky": "9.1.7",
 		"jsdom": "31.0.1",
