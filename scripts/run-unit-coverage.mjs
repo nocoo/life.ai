@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const report = join(root, "test-results", "unit.json");
 const summaryPath = join(root, "coverage", "coverage-summary.json");
-const floors = { statements: 80, branches: 80, functions: 80, lines: 80 };
+const floors = { statements: 90, branches: 85, functions: 90, lines: 90 };
 
 mkdirSync(join(root, "test-results"), { recursive: true });
 rmSync(report, { force: true });

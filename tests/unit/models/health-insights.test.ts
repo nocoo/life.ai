@@ -72,6 +72,27 @@ function gps(at: string, latitude: number, longitude: number): LifeEvent {
 	);
 }
 
+function workout(
+	activity: string,
+	start: string,
+	end: string,
+	duration: number,
+	sourceName = "Apple Watch",
+	dataExtra: Record<string, JsonValue> = {},
+	changes: Partial<LifeEvent> = {},
+): LifeEvent {
+	return event(
+		{
+			_healthKind: "Workout",
+			workoutActivityType: `HKWorkoutActivityType${activity}`,
+			duration,
+			durationUnit: "min",
+			...dataExtra,
+		},
+		{ occurredAt: start, endAt: end, sourceName, ...changes },
+	);
+}
+
 describe("buildHealthStory sleep", () => {
 	it("attributes a cross-midnight night to the wake-up day and does not split at 00:00", () => {
 		const story = buildHealthStory(
@@ -309,23 +330,12 @@ describe("buildHealthStory day and moments", () => {
 				quantity("HeartRate", 148, "count/min", "2026-09-13T07:40:00Z"),
 				quantity("DistanceWalkingRunning", 800, "m", "2026-09-13T07:40:00Z"),
 				quantity("FlightsClimbed", 4, "count", "2026-09-13T07:41:00Z"),
-				event(
-					{
-						_healthKind: "Workout",
-						workoutActivityType: "HKWorkoutActivityTypeRunning",
-						duration: 30,
-						durationUnit: "min",
-						totalDistance: 4000,
-						totalDistanceUnit: "m",
-						totalEnergyBurned: 280,
-						totalEnergyBurnedUnit: "kcal",
-					},
-					{
-						occurredAt: "2026-09-13T07:30:00Z",
-						endAt: "2026-09-13T08:00:00Z",
-						sourceName: "Apple Watch",
-					},
-				),
+				workout("Running", "2026-09-13T07:30:00Z", "2026-09-13T08:00:00Z", 30, "Apple Watch", {
+					totalDistance: 4000,
+					totalDistanceUnit: "m",
+					totalEnergyBurned: 280,
+					totalEnergyBurnedUnit: "kcal",
+				}),
 				gps("2026-09-13T07:35:00Z", 31.23, 121.47),
 				gps("2026-09-13T07:50:00Z", 31.2305, 121.4704),
 			],
@@ -371,40 +381,29 @@ describe("buildHealthStory workouts", () => {
 				],
 			},
 		];
-		const watch = event(
+		const watch = workout(
+			"Running",
+			"2026-09-13T07:30:00Z",
+			"2026-09-13T08:02:00Z",
+			32,
+			"Apple Watch",
 			{
-				_healthKind: "Workout",
-				workoutActivityType: "HKWorkoutActivityTypeRunning",
-				duration: 32,
-				durationUnit: "min",
 				totalDistance: 5000,
 				totalDistanceUnit: "m",
 				totalEnergyBurned: 300,
 				totalEnergyBurnedUnit: "kcal",
 				_healthChildren: children,
 			},
-			{
-				id: "watch-run",
-				occurredAt: "2026-09-13T07:30:00Z",
-				endAt: "2026-09-13T08:02:00Z",
-				sourceName: "Apple Watch",
-			},
+			{ id: "watch-run" },
 		);
-		const strava = event(
-			{
-				_healthKind: "Workout",
-				workoutActivityType: "HKWorkoutActivityTypeRunning",
-				duration: 31,
-				durationUnit: "min",
-				totalDistance: 4980,
-				totalDistanceUnit: "m",
-			},
-			{
-				id: "strava-run",
-				occurredAt: "2026-09-13T07:31:00Z",
-				endAt: "2026-09-13T08:02:00Z",
-				sourceName: "Strava",
-			},
+		const strava = workout(
+			"Running",
+			"2026-09-13T07:31:00Z",
+			"2026-09-13T08:02:00Z",
+			31,
+			"Strava",
+			{ totalDistance: 4980, totalDistanceUnit: "m" },
+			{ id: "strava-run" },
 		);
 		const story = buildHealthStory([watch, strava, watch], window);
 		expect(story.workouts).toHaveLength(1);
@@ -421,39 +420,28 @@ describe("buildHealthStory workouts", () => {
 	it("prefers exported active duration and fills distance from WorkoutStatistics", () => {
 		const story = buildHealthStory(
 			[
-				event(
-					{
-						_healthKind: "Workout",
-						workoutActivityType: "HKWorkoutActivityTypeRunning",
-						duration: 20,
-						durationUnit: "min",
-						_healthChildren: [
-							{
-								name: "WorkoutStatistics",
-								attributes: {
-									type: "HKQuantityTypeIdentifierDistanceWalkingRunning",
-									sum: "3.2",
-									unit: "km",
-								},
+				workout("Running", "2026-09-13T18:00:00Z", "2026-09-13T18:40:00Z", 20, "Apple Watch", {
+					_healthChildren: [
+						{
+							name: "WorkoutStatistics",
+							attributes: {
+								type: "HKQuantityTypeIdentifierDistanceWalkingRunning",
+								sum: "3.2",
+								unit: "km",
 							},
-							{
-								name: "WorkoutStatistics",
-								attributes: {
-									type: "HKQuantityTypeIdentifierActiveEnergyBurned",
-									sum: "180",
-									unit: "kcal",
-								},
+						},
+						{
+							name: "WorkoutStatistics",
+							attributes: {
+								type: "HKQuantityTypeIdentifierActiveEnergyBurned",
+								sum: "180",
+								unit: "kcal",
 							},
-							{ name: "FileReference", attributes: { path: "routes/a.gpx" } },
-							{ name: "FileReference", attributes: { path: "routes/a.gpx" } },
-						],
-					},
-					{
-						occurredAt: "2026-09-13T18:00:00Z",
-						endAt: "2026-09-13T18:40:00Z",
-						sourceName: "Apple Watch",
-					},
-				),
+						},
+						{ name: "FileReference", attributes: { path: "routes/a.gpx" } },
+						{ name: "FileReference", attributes: { path: "routes/a.gpx" } },
+					],
+				}),
 			],
 			window,
 		);
@@ -463,20 +451,9 @@ describe("buildHealthStory workouts", () => {
 		expect(story.workouts[0]?.canonical.routePaths).toEqual(["routes/a.gpx"]);
 		const paused = buildHealthStory(
 			[
-				event(
-					{
-						_healthKind: "Workout",
-						workoutActivityType: "HKWorkoutActivityTypeYoga",
-						duration: 0,
-						durationUnit: "min",
-						_healthChildren: [{ name: "FileReference", attributes: { path: "  " } }],
-					},
-					{
-						occurredAt: "2026-09-13T12:00:00Z",
-						endAt: "2026-09-13T12:15:00Z",
-						sourceName: "Apple Watch",
-					},
-				),
+				workout("Yoga", "2026-09-13T12:00:00Z", "2026-09-13T12:15:00Z", 0, "Apple Watch", {
+					_healthChildren: [{ name: "FileReference", attributes: { path: "  " } }],
+				}),
 			],
 			window,
 		);
@@ -487,45 +464,9 @@ describe("buildHealthStory workouts", () => {
 	it("does not merge different activities or non-overlapping sessions", () => {
 		const story = buildHealthStory(
 			[
-				event(
-					{
-						_healthKind: "Workout",
-						workoutActivityType: "HKWorkoutActivityTypeYoga",
-						duration: 20,
-						durationUnit: "min",
-					},
-					{
-						occurredAt: "2026-09-13T09:00:00Z",
-						endAt: "2026-09-13T09:20:00Z",
-						sourceName: "Apple Watch",
-					},
-				),
-				event(
-					{
-						_healthKind: "Workout",
-						workoutActivityType: "HKWorkoutActivityTypeWalking",
-						duration: 20,
-						durationUnit: "min",
-					},
-					{
-						occurredAt: "2026-09-13T09:00:00Z",
-						endAt: "2026-09-13T09:20:00Z",
-						sourceName: "Strava",
-					},
-				),
-				event(
-					{
-						_healthKind: "Workout",
-						workoutActivityType: "HKWorkoutActivityTypeYoga",
-						duration: 20,
-						durationUnit: "min",
-					},
-					{
-						occurredAt: "2026-09-13T18:00:00Z",
-						endAt: "2026-09-13T18:20:00Z",
-						sourceName: "Strava",
-					},
-				),
+				workout("Yoga", "2026-09-13T09:00:00Z", "2026-09-13T09:20:00Z", 20),
+				workout("Walking", "2026-09-13T09:00:00Z", "2026-09-13T09:20:00Z", 20, "Strava"),
+				workout("Yoga", "2026-09-13T18:00:00Z", "2026-09-13T18:20:00Z", 20, "Strava"),
 			],
 			window,
 		);
@@ -533,32 +474,8 @@ describe("buildHealthStory workouts", () => {
 		expect(story.workouts.every((group) => group.duplicates.length === 0)).toBe(true);
 		const apps = buildHealthStory(
 			[
-				event(
-					{
-						_healthKind: "Workout",
-						workoutActivityType: "HKWorkoutActivityTypeCycling",
-						duration: 40,
-						durationUnit: "min",
-					},
-					{
-						occurredAt: "2026-09-13T14:00:00Z",
-						endAt: "2026-09-13T14:40:00Z",
-						sourceName: "Zwift",
-					},
-				),
-				event(
-					{
-						_healthKind: "Workout",
-						workoutActivityType: "HKWorkoutActivityTypeCycling",
-						duration: 36,
-						durationUnit: "min",
-					},
-					{
-						occurredAt: "2026-09-13T14:01:00Z",
-						endAt: "2026-09-13T14:37:00Z",
-						sourceName: "Peloton",
-					},
-				),
+				workout("Cycling", "2026-09-13T14:00:00Z", "2026-09-13T14:40:00Z", 40, "Zwift"),
+				workout("Cycling", "2026-09-13T14:01:00Z", "2026-09-13T14:37:00Z", 36, "Peloton"),
 			],
 			window,
 		);
@@ -631,58 +548,35 @@ describe("buildHealthStory edges", () => {
 					{ _healthKind: "Workout", duration: 12, durationUnit: "min" },
 					{ occurredAt: "2026-09-13T16:00:00Z" },
 				),
-				event(
-					{
-						_healthKind: "Workout",
-						workoutActivityType: "HKWorkoutActivityTypeCycling",
-						duration: 40,
-						durationUnit: "min",
-						_healthChildren: [
-							{
-								name: "WorkoutStatistics",
-								attributes: {
-									type: "HKQuantityTypeIdentifierDistanceCycling",
-									sum: "12",
-									unit: "km",
-								},
+				workout("Cycling", "2026-09-13T17:00:00Z", "2026-09-13T17:40:00Z", 40, "Strava", {
+					_healthChildren: [
+						{
+							name: "WorkoutStatistics",
+							attributes: {
+								type: "HKQuantityTypeIdentifierDistanceCycling",
+								sum: "12",
+								unit: "km",
 							},
-							{
-								name: "WorkoutStatistics",
-								attributes: { type: "HKQuantityTypeIdentifierStepCount", sum: "0", unit: "count" },
+						},
+						{
+							name: "WorkoutStatistics",
+							attributes: { type: "HKQuantityTypeIdentifierStepCount", sum: "0", unit: "count" },
+						},
+						{
+							name: "WorkoutStatistics",
+							attributes: {
+								type: "HKQuantityTypeIdentifierSomethingElse",
+								sum: "1",
+								unit: "count",
 							},
-							{
-								name: "WorkoutStatistics",
-								attributes: {
-									type: "HKQuantityTypeIdentifierSomethingElse",
-									sum: "1",
-									unit: "count",
-								},
-							},
-							{
-								name: "WorkoutStatistics",
-								attributes: { type: "HKQuantityTypeIdentifierHeartRate" },
-							},
-						],
-					},
-					{
-						occurredAt: "2026-09-13T17:00:00Z",
-						endAt: "2026-09-13T17:40:00Z",
-						sourceName: "Strava",
-					},
-				),
-				event(
-					{
-						_healthKind: "Workout",
-						workoutActivityType: "HKWorkoutActivityTypeCycling",
-						duration: 35,
-						durationUnit: "min",
-					},
-					{
-						occurredAt: "2026-09-13T17:02:00Z",
-						endAt: "2026-09-13T17:37:00Z",
-						sourceName: "iPhone",
-					},
-				),
+						},
+						{
+							name: "WorkoutStatistics",
+							attributes: { type: "HKQuantityTypeIdentifierHeartRate" },
+						},
+					],
+				}),
+				workout("Cycling", "2026-09-13T17:02:00Z", "2026-09-13T17:37:00Z", 35, "iPhone"),
 				event({ type: 12, value: 1 }, { occurredAt: "2026-09-13T11:00:00Z" }),
 				event(null, { occurredAt: "2026-09-13T11:00:00Z" }),
 			],

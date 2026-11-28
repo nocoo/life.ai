@@ -244,6 +244,26 @@ function physicalTotals() {
 		)
 		.get();
 }
+const SUFFIXES = [
+	"/imports",
+	"/files",
+	"/file",
+	"/series",
+	"/imports/id/batches/1",
+	"/imports/id/finish",
+	"/imports/id/files/0/parts/0",
+] as const;
+
+function snapshotHealthTables() {
+	return {
+		days: rows("provider_days"),
+		series: rows("health_series"),
+		files: rows("health_files"),
+		parts: rows("health_file_parts"),
+		state: state(),
+	};
+}
+
 function insertLegacy(id: string, at: number, end: number | null = null, source = "apple-health") {
 	fixture.sqlite
 		.prepare("INSERT INTO sources VALUES (?, ?, 'import', ?, 0) ON CONFLICT(id) DO NOTHING")
@@ -296,26 +316,22 @@ describe("Apple Health daily replacement in migrated SQLite", () => {
 		const file = originalFile();
 		const value = await day(DAY, [workout(file.path), measurement()]);
 		await imported([value], [file]);
-		const before = {
-			days: rows("provider_days"),
-			series: rows("health_series"),
-			files: rows("health_files"),
-			parts: rows("health_file_parts"),
-			state: state(),
-		};
+		const before = snapshotHealthTables();
 		clock.mockReturnValue(Date.now() + 1000);
 		expect(await imported([value], [file])).toMatchObject({
 			insertedDays: 0,
 			updatedDays: 0,
 			unchangedDays: 1,
 		});
-		expect(rows("provider_days")).toEqual(before.days);
-		expect(rows("health_series")).toEqual(before.series);
-		expect(rows("health_files")).toEqual(before.files);
-		expect(rows("health_file_parts")).toEqual(before.parts);
-		expect(state()).toMatchObject({
-			revision: before.state?.revision,
-			last_changed_at: before.state?.last_changed_at,
+		expect(snapshotHealthTables()).toMatchObject({
+			days: before.days,
+			series: before.series,
+			files: before.files,
+			parts: before.parts,
+			state: {
+				revision: before.state?.revision,
+				last_changed_at: before.state?.last_changed_at,
+			},
 		});
 		expect(state()?.last_imported_at).not.toBe(before.state?.last_imported_at);
 		expect(healthDayHeader(value).bytes).toBe(
@@ -1002,15 +1018,7 @@ describe("Apple Health API and Access boundaries", () => {
 	});
 
 	it("rejects unsupported methods, unknown endpoints and invalid UTC read windows", async () => {
-		for (const suffix of [
-			"/imports",
-			"/files",
-			"/file",
-			"/series",
-			"/imports/id/batches/1",
-			"/imports/id/finish",
-			"/imports/id/files/0/parts/0",
-		]) {
+		for (const suffix of SUFFIXES) {
 			await expect(route(new Request(url(suffix), { method: "DELETE" }))).rejects.toMatchObject({
 				status: 405,
 			});
@@ -1101,15 +1109,7 @@ describe("Apple Health API and Access boundaries", () => {
 	});
 
 	it("denies health reads and writes on the machine host and rejects cross-origin browser writes", async () => {
-		for (const suffix of [
-			"/imports",
-			"/files",
-			"/file",
-			"/series",
-			"/imports/id/batches/1",
-			"/imports/id/finish",
-			"/imports/id/files/0/parts/0",
-		]) {
+		for (const suffix of SUFFIXES) {
 			const response = await handleRequest(
 				new Request(`https://life.worker.hexly.ai${PREFIX}${suffix}`, {
 					method: suffix === "/imports" ? "POST" : "GET",

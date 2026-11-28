@@ -255,6 +255,24 @@ async function data(response: Response): Promise<DaySummaryResult> {
 function scan(env: WorkerEnv, evidence = true) {
 	return streamDayEvents(env, Date.parse(day.start), Date.parse(day.end), day, evidence);
 }
+function putSettings(env: WorkerEnv, body: unknown) {
+	return handlePutGeneralSettings(
+		new Request("http://localhost/api/settings/general", {
+			method: "PUT",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(body),
+		}),
+		env,
+	);
+}
+function lastUserPrompt(run: ReturnType<typeof setup>["run"]): string {
+	return (
+		run.mock.calls.at(-1)?.[1].messages.find((message) => message.role === "user")?.content ?? ""
+	);
+}
+function leaseCount(sqlite: DatabaseSync) {
+	return sqlite.prepare("SELECT COUNT(*) AS n FROM day_summary_leases").get()?.n;
+}
 
 describe("diary data sources and movement", () => {
 	it("retains its generation lease across source/context work in addition to the model budget", async () => {
@@ -343,8 +361,7 @@ describe("diary data sources and movement", () => {
 		expect(saved.summary?.sections).toEqual(externalSections);
 		const stored = sqlite.prepare("SELECT content FROM day_summaries").get()?.content;
 		expect(JSON.parse(String(stored))).toMatchObject({ version: 1, sections: externalSections });
-		const userPrompt =
-			run.mock.calls[0]?.[1].messages.find((message) => message.role === "user")?.content ?? "";
+		const userPrompt = lastUserPrompt(run);
 		expect(userPrompt).toContain("电脑前台活动");
 		expect(userPrompt).toContain("Life.ai 出行记录");
 		expect(userPrompt).toContain("公开发表文章");
@@ -376,7 +393,7 @@ describe("diary data sources and movement", () => {
 			code: "invalid_diary_format",
 		});
 		expect((await data(await handleGetDaySummary(env, url()))).summary).toEqual(saved.summary);
-		expect(sqlite.prepare("SELECT COUNT(*) AS n FROM day_summary_leases").get()?.n).toBe(0);
+		expect(leaseCount(sqlite)).toBe(0);
 	});
 	it("keeps the previous diary when an enabled source fails before or after AI runs", async () => {
 		const { env, sqlite, run } = setup();
@@ -403,7 +420,7 @@ describe("diary data sources and movement", () => {
 		});
 		await expect(handlePostDaySummary(request(), env)).rejects.toMatchObject({ status: 503 });
 		expect((await data(await handleGetDaySummary(env, url()))).summary).toEqual(saved.summary);
-		expect(sqlite.prepare("SELECT COUNT(*) AS n FROM day_summary_leases").get()?.n).toBe(0);
+		expect(leaseCount(sqlite)).toBe(0);
 	});
 	it("provides named POIs, moving average, excluded stops and commute reasoning to the AI", async () => {
 		const { env, run, putDay } = setup();
@@ -412,24 +429,16 @@ describe("diary data sources and movement", () => {
 			Date.parse("2026-09-13"),
 			positions.map((longitude, i) => [i * 60, 0, longitude, null, null, null]),
 		);
-		await handlePutGeneralSettings(
-			new Request("http://localhost/api/settings/general", {
-				method: "PUT",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					places: [
-						{ id: "home", label: "家", latitude: 0, longitude: 0, radiusMeters: 100 },
-						{ id: "work", label: "公司", latitude: 0, longitude: 0.09, radiusMeters: 100 },
-						{ id: "poi", label: "图书馆", latitude: 0, longitude: 0.03, radiusMeters: 100 },
-					],
-					routine: null,
-				}),
-			}),
-			env,
-		);
+		await putSettings(env, {
+			places: [
+				{ id: "home", label: "家", latitude: 0, longitude: 0, radiusMeters: 100 },
+				{ id: "work", label: "公司", latitude: 0, longitude: 0.09, radiusMeters: 100 },
+				{ id: "poi", label: "图书馆", latitude: 0, longitude: 0.03, radiusMeters: 100 },
+			],
+			routine: null,
+		});
 		await handlePostDaySummary(request(), env);
-		const userPrompt =
-			run.mock.calls[0]?.[1].messages.find((message) => message.role === "user")?.content ?? "";
+		const userPrompt = lastUserPrompt(run);
 		expect(userPrompt).toContain("连续移动 2026/09/13 08:00:00 至 2026/09/13 08:11:00");
 		expect(userPrompt).toContain('"movingAverageKmh":66.7');
 		expect(userPrompt).toContain('"excludedStopMinutes":2');
@@ -733,8 +742,7 @@ describe("compact Apple Health summary evidence", () => {
 		expect(evidence.insights.gps.pointCount).toBe(0);
 		expect((await scan(env, false)).inputHash).toBe(evidence.inputHash);
 		await handlePostDaySummary(request(), env);
-		const sent =
-			run.mock.calls[0]?.[1].messages.find((message) => message.role === "user")?.content ?? "";
+		const sent = lastUserPrompt(run);
 		expect(sent).toContain("睡眠 8小时30分");
 		expect(sent).toContain("09/12 22:00 入睡");
 		expect(sent).toContain("09/13 07:00 睡眠结束");
@@ -890,8 +898,7 @@ describe("compact Apple Health summary evidence", () => {
 			sampleCount: "15360",
 		});
 		await handlePostDaySummary(request(), env);
-		const sent =
-			run.mock.calls[0]?.[1].messages.find((message) => message.role === "user")?.content ?? "";
+		const sent = lastUserPrompt(run);
 		expect(sent).toContain("09/13 09:15 血压 122/78 mmHg（Cuff）");
 		expect(sent).toContain("09/13 09:30 血压 120/未记录 mmHg");
 		expect(sent).toContain("09/13 09:45 血压 未记录/80 mmHg");
@@ -1186,7 +1193,7 @@ describe("saved daily summaries", () => {
 			code: "no_records",
 		});
 		expect(run).not.toHaveBeenCalled();
-		expect(sqlite.prepare("SELECT COUNT(*) AS n FROM day_summary_leases").get()?.n).toBe(0);
+		expect(leaseCount(sqlite)).toBe(0);
 		await expect(
 			handleGetDaySummary(env, new URL("http://localhost/api/day-summary")),
 		).rejects.toMatchObject({ status: 400 });
@@ -1212,7 +1219,7 @@ describe("saved daily summaries", () => {
 		expect(next.summary?.content).toBe("新的当天总结。");
 		expect(next.stale).toBe(false);
 		expect(next.summary?.inputHash).not.toBe(first.summary?.inputHash);
-		expect(sqlite.prepare("SELECT COUNT(*) AS n FROM day_summary_leases").get()?.n).toBe(0);
+		expect(leaseCount(sqlite)).toBe(0);
 	});
 
 	it.each([
@@ -1249,7 +1256,7 @@ describe("saved daily summaries", () => {
 			});
 			expect(sqlite.prepare("SELECT * FROM day_summaries").get()).toEqual(stored);
 			expect((await data(await handleGetDaySummary(env, url()))).summary).toEqual(saved.summary);
-			expect(sqlite.prepare("SELECT COUNT(*) AS n FROM day_summary_leases").get()?.n).toBe(0);
+			expect(leaseCount(sqlite)).toBe(0);
 		},
 	);
 
@@ -1301,21 +1308,13 @@ describe("saved daily summaries", () => {
 		const { env, insert, run } = setup();
 		insert();
 		const save = (label: string, bedtime = "03:00") =>
-			handlePutGeneralSettings(
-				new Request("http://localhost/api/settings/general", {
-					method: "PUT",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						places: [{ id: "home", label, latitude: 31, longitude: 121, radiusMeters: 300 }],
-						routine: { bedtime, wakeTime: "11:00", timeZone: "Asia/Shanghai" },
-					}),
-				}),
-				env,
-			);
+			putSettings(env, {
+				places: [{ id: "home", label, latitude: 31, longitude: 121, radiusMeters: 300 }],
+				routine: { bedtime, wakeTime: "11:00", timeZone: "Asia/Shanghai" },
+			});
 		await save("家");
 		const saved = await data(await handlePostDaySummary(request(), env));
-		const prompt =
-			run.mock.calls[0]?.[1].messages.find((message) => message.role === "user")?.content ?? "";
+		const prompt = lastUserPrompt(run);
 		expect(prompt).toContain("用户确认的地点与作息背景，与当日观测分开");
 		expect(prompt).toContain("通常 03:00 入睡，11:00 起床");
 		expect(prompt).toContain('"label":"家"');
@@ -1338,17 +1337,10 @@ describe("saved daily summaries", () => {
 		const { env, insert, run } = setup();
 		insert();
 		run.mockImplementationOnce(async () => {
-			await handlePutGeneralSettings(
-				new Request("http://localhost/api/settings/general", {
-					method: "PUT",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						places: [],
-						routine: { bedtime: "09:00", wakeTime: "17:00", timeZone: "Asia/Shanghai" },
-					}),
-				}),
-				env,
-			);
+			await putSettings(env, {
+				places: [],
+				routine: { bedtime: "09:00", wakeTime: "17:00", timeZone: "Asia/Shanghai" },
+			});
 			return { response: diaryResponse("依据生成开始时的材料。") };
 		});
 		expect((await data(await handlePostDaySummary(request(), env))).stale).toBe(true);
@@ -1454,7 +1446,7 @@ describe("saved daily summaries", () => {
 		expect(run).toHaveBeenCalledOnce();
 		expect(interrupted.size).toBe(3);
 		expect(sqlite.prepare("SELECT COUNT(*) AS n FROM day_summaries").get()?.n).toBe(1);
-		expect(sqlite.prepare("SELECT COUNT(*) AS n FROM day_summary_leases").get()?.n).toBe(0);
+		expect(leaseCount(sqlite)).toBe(0);
 	});
 
 	it("never reports success or deletes another request's lease after losing ownership", async () => {
@@ -1573,8 +1565,7 @@ describe("saved daily summaries", () => {
 		expect(previous.length).toBeGreaterThan(4_000);
 		sqlite.prepare("UPDATE day_summaries SET content = ?").run(previous);
 		await handlePostDaySummary(request({ ...day, revision: "请修改末尾的 GitHub 卡片" }), env);
-		const sent =
-			run.mock.calls.at(-1)?.[1].messages.find((message) => message.role === "user")?.content ?? "";
+		const sent = lastUserPrompt(run);
 		expect(sent).toContain(previous);
 		expect(sent).toContain("末尾 GitHub 卡片的具体措辞");
 	});
@@ -1637,8 +1628,7 @@ describe("compact pixiu in diary evidence", () => {
 		});
 		expect(prompt(evidence)).not.toContain("旧行");
 		await handlePostDaySummary(request(), env);
-		const sent =
-			run.mock.calls.at(-1)?.[1].messages.find((message) => message.role === "user")?.content ?? "";
+		const sent = lastUserPrompt(run);
 		expect(sent).toContain("源记账日期，无交易时刻");
 		expect(sent).toContain("32.00");
 		expect(sent).toContain("原分类「餐饮」");
